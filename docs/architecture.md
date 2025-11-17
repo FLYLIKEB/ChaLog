@@ -360,6 +360,191 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
 ```
 - `src/utils/supabase/info.tsx`에는 프로젝트 ID와 공개 키가 하드코딩돼 있어 클라이언트 초기화 시 사용할 수 있습니다.
 
+## 백엔드 아키텍처 (NestJS + MySQL)
+- **스택**: NestJS 10(LTS) + TypeScript + `@nestjs/typeorm` + MySQL 8.x(PlanetScale 혹은 RDS) + `mysql2` 드라이버. CLI 템플릿을 `/backend` 디렉터리에서 `npm create nest@latest backend`로 생성한 뒤, 프런트와 PNPM/NPM 워크스페이스를 공유합니다.
+- **런타임**: `npm run start:dev`로 `apps/backend/src/main.ts`에 선언된 Nest 애플리케이션을 핫리로드하고, `.env`에는 `DATABASE_URL`, `PORT`, `JWT_SECRET`, `FRONTEND_URL`을 정의합니다.
+- **데이터 접근**: TypeORM 엔터티를 `libs/database/src/entities`에 정리하고, `DataSource`를 전역 `DatabaseModule`로 주입해 각 도메인 모듈(Users/Teas/Notes/Ratings)에서 Repository를 DI로 받아 사용합니다. Prisma를 선호한다면 `PrismaService`를 만들어 같은 자리에 끼워 넣을 수 있습니다.
+- **전송 계층**: React SPA는 `fetch`/`React Query`를 통해 Nest REST 엔드포인트(`/api/...`)를 호출하며, 인증 토큰(JWT)을 `Authorization` 헤더에 실어 보냅니다. Edge Function(Hono)은 헬스 체크·웹훅 등 보조 기능으로 남겨둡니다.
+
+### 모듈 구성
+- `AuthModule`: 이메일/비밀번호 혹은 Magic Link 검증. `@nestjs/passport`의 `LocalStrategy`, `JwtStrategy`를 포함하고, JWT payload를 `Request.user`로 주입합니다.
+- `UsersModule`: 프로필 조회/수정, 소셜 로그인 연동 시 계정 병합 로직을 담당합니다.
+- `TeasModule`: 차 검색, 상세, 태그·메타데이터 관리. PlanetScale의 읽기 전용 브랜치와 잘 어울리도록 캐시 계층을 붙일 수 있습니다.
+- `NotesModule`: 노트 CRUD, 공개 여부 토글, 홈 피드/내 노트 필터, `RatingsService`를 호출해 평균을 갱신합니다.
+- `RatingsModule`: 감각별 점수 저장·검증, 노트 삭제 시 cascade remove 처리.
+
+### API 라우팅
+| 메서드 | 경로 | 설명 | 연결 화면 |
+| --- | --- | --- | --- |
+| `GET /api/teas?query=` | 차 자동완성/검색 | `Search`, `NewNote` |
+| `GET /api/teas/:id` | 차 상세 + 공개 노트 요약 | `TeaDetail` |
+| `GET /api/notes?scope=public|mine` | 공개 피드/내 노트 | `Home`, `MyNotes` |
+| `POST /api/notes` | 새 노트 + 감각 점수 저장 | `NewNote` |
+| `PATCH /api/notes/:id/public` | 공개/비공개 토글 | `NoteDetail` |
+| `DELETE /api/notes/:id` | 노트·평점 삭제 | `NoteDetail` |
+| `POST /api/auth/sign-in` | 로그인 | 추후 도입 |
+| `POST /api/auth/sign-up` | 회원가입 | 추후 도입 |
+
+### DB 스키마 (MySQL)
+NestJS 서비스와 1:1로 매핑되는 최소 스키마는 아래와 같습니다. 기존 초안에서 제안했던 FK 부재/컬럼 네이밍 혼동 문제를 해결했고, `notes` 테이블의 텍스트 컬럼을 `content`로 교체했습니다.
+```sql
+-- USERS
+CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  name VARCHAR(100),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- TEAS
+CREATE TABLE teas (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  year INT,
+  type ENUM('백차','청차','홍차','녹차','흑차','기타'),
+  vendor VARCHAR(255),
+  origin VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_tea (name, year, vendor)
+);
+
+-- NOTES
+CREATE TABLE notes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  tea_id INT NOT NULL,
+  content TEXT,
+  is_public BOOLEAN DEFAULT FALSE,
+  avg_rating DECIMAL(2,1) DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_notes_user (user_id),
+  INDEX idx_notes_tea (tea_id),
+  CONSTRAINT fk_notes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notes_tea FOREIGN KEY (tea_id) REFERENCES teas(id) ON DELETE CASCADE
+);
+
+-- RATINGS
+CREATE TABLE ratings (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  note_id INT NOT NULL UNIQUE,
+  richness TINYINT CHECK (richness BETWEEN 0 AND 5),
+  intensity TINYINT CHECK (intensity BETWEEN 0 AND 5),
+  smoothness TINYINT CHECK (smoothness BETWEEN 0 AND 5),
+  clearness TINYINT CHECK (clearness BETWEEN 0 AND 5),
+  complexity TINYINT CHECK (complexity BETWEEN 0 AND 5),
+  CONSTRAINT fk_ratings_note FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+);
+```
+- 논리 삭제가 필요하면 `deleted_at` 컬럼을 추가하고, Nest에서 `softRemove` 혹은 `@DeleteDateColumn`을 사용합니다.
+- ENUM 차종은 추후 확장이 잦다면 `tea_types` 보조 테이블로 분리하거나 `VARCHAR` + CHECK 제약을 고려할 수 있습니다.
+
+### 대표 쿼리 레퍼런스
+아래 SQL은 Nest `Repository`/`QueryBuilder` 호출로도 쉽게 옮길 수 있는 MVP 시나리오 예시입니다.
+
+1. **새 차 등록**
+```sql
+INSERT INTO teas (name, year, type, vendor, origin)
+VALUES ('세설 백차', 2023, '백차', '일운차당', '복건성 정허현');
+```
+
+2. **새 시음노트 등록**
+```sql
+INSERT INTO notes (user_id, tea_id, content, is_public)
+VALUES (1, 3, '꽃향이 진하고 부드럽다. 여운이 길고 맑은 느낌.', TRUE);
+```
+
+3. **세부 평가 등록**
+```sql
+INSERT INTO ratings (note_id, richness, intensity, smoothness, clearness, complexity)
+VALUES (LAST_INSERT_ID(), 5, 4, 5, 4, 3);
+```
+
+4. **평균 평점 갱신**
+```sql
+UPDATE notes n
+SET avg_rating = (
+  SELECT ROUND(
+    (richness + intensity + smoothness + clearness + complexity) / 5, 1
+  )
+  FROM ratings r
+  WHERE r.note_id = n.id
+)
+WHERE n.id = LAST_INSERT_ID();
+```
+
+5. **특정 차의 평균 별점 / 리뷰 수**
+```sql
+SELECT
+  t.name,
+  t.year,
+  ROUND(AVG(n.avg_rating), 1) AS avg_rating,
+  COUNT(n.id) AS review_count
+FROM teas t
+LEFT JOIN notes n ON t.id = n.tea_id
+WHERE t.id = 3
+GROUP BY t.id;
+```
+
+6. **특정 차의 공개 노트 목록**
+```sql
+SELECT
+  n.id AS note_id,
+  u.name AS author,
+  n.avg_rating,
+  n.content,
+  n.created_at
+FROM notes n
+JOIN users u ON n.user_id = u.id
+WHERE n.tea_id = 3
+  AND n.is_public = TRUE
+ORDER BY n.created_at DESC;
+```
+
+7. **홈 피드(공개 노트 Top 10)**
+```sql
+SELECT
+  n.id,
+  t.name AS tea_name,
+  n.avg_rating,
+  n.content,
+  u.name AS author,
+  n.created_at
+FROM notes n
+JOIN teas t ON n.tea_id = t.id
+JOIN users u ON n.user_id = u.id
+WHERE n.is_public = TRUE
+ORDER BY n.created_at DESC
+LIMIT 10;
+```
+
+8. **자동완성용 차 검색**
+```sql
+SELECT id, name, year, vendor
+FROM teas
+WHERE name LIKE '%세%'
+ORDER BY year DESC
+LIMIT 10;
+```
+
+9. **특정 사용자의 시음노트 목록**
+```sql
+SELECT
+  n.id AS note_id,
+  t.name AS tea_name,
+  n.avg_rating,
+  n.created_at
+FROM notes n
+JOIN teas t ON n.tea_id = t.id
+WHERE n.user_id = 1
+ORDER BY n.created_at DESC;
+```
+
+10. **시음노트 및 평점 삭제**
+```sql
+DELETE FROM notes WHERE id = 10;
+-- ratings는 FK ON DELETE CASCADE 때문에 자동 삭제됩니다.
+```
+
 ## 스타일 · 빌드
 - `src/styles/globals.css`와 거대한 `src/index.css`는 Tailwind v4 피처(`@theme inline`, design tokens, 다크 모드 variants`)를 정의해 전역 타이포그래피/컬러 시스템을 통일합니다.  
 ```3:78:src/styles/globals.css
