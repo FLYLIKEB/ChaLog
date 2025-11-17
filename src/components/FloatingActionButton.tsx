@@ -1,0 +1,40 @@
+import React, { ReactNode } from 'react';
+import { cn } from './ui/utils';
+
+type FloatingActionButtonProps = {
+  onClick?: () => void;
+  ariaLabel?: string;
+  className?: string;
+  position?: 'default' | 'aboveNav';
+  children?: ReactNode;
+};
+
+const positionClasses: Record<NonNullable<FloatingActionButtonProps['position']>, string> = {
+  default: 'bottom-6',
+  aboveNav: 'bottom-20',
+};
+
+export function FloatingActionButton({
+  onClick,
+  ariaLabel = '새 항목 추가',
+  className,
+  position = 'default',
+  children,
+}: FloatingActionButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={cn(
+        'fixed right-6 w-14 h-14 rounded-full bg-emerald-600 text-white shadow-lg flex items-center justify-center transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
+        positionClasses[position],
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+
