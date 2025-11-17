@@ -404,7 +404,7 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
   --sidebar-ring: oklch(0.708 0 0);
 }
 ```
-- `build/`에는 `vite build` 결과물이 들어 있어 배포 시 그대로 활용 가능하며, 루트 `README.md`는 `npm i`, `npm run dev`만 안내합니다.
+- `dist/`에는 `vite build` 결과물이 들어 있어 배포 시 그대로 활용 가능하며, 루트 `README.md`는 `npm i`, `npm run dev`만 안내합니다.
 
 이 구조를 기반으로 실제 API 연동(예: Supabase)이나 상태 관리, 인증 등을 추가하면 곧바로 프로덕션 수준으로 확장할 수 있습니다.
 

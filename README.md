@@ -35,7 +35,7 @@ Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
 | 명령 | 설명 |
 | --- | --- |
 | `npm run dev` | Vite 개발 서버 실행 |
-| `npm run build` | 프로덕션 번들 생성 (`build/`) |
+| `npm run build` | 프로덕션 번들 생성 (`dist/`) |
 | `npm run preview` | 로컬에서 번들 미리보기 |
 | `npm run lint` *(존재 시)* | 린트/타입 검사 |
 
