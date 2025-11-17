@@ -1,5 +1,5 @@
 
-  import { defineConfig } from 'vite';
+  import { defineConfig } from 'vitest/config';
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
 
@@ -57,5 +57,14 @@
     server: {
       port: 3000,
       open: true,
+    },
+    test: {
+      environment: 'jsdom',
+      globals: true,
+      setupFiles: ['./src/test/setup.ts'],
+      css: true,
+      mockReset: true,
+      restoreMocks: true,
+      clearMocks: true,
     },
   });
