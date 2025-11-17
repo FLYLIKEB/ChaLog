@@ -35,9 +35,11 @@ Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
 | 명령 | 설명 |
 | --- | --- |
 | `npm run dev` | Vite 개발 서버 실행 |
-| `npm run build` | 프로덕션 번들 생성 (`build/`) |
+| `npm run build` | 프로덕션 번들 생성 (`dist/`) |
 | `npm run preview` | 로컬에서 번들 미리보기 |
 | `npm run lint` *(존재 시)* | 린트/타입 검사 |
+| `npm run test` | Vitest + Testing Library 기반 단위/통합 테스트 실행 |
+| `npm run test:run` | 워치 없이 일회성 테스트 실행 |
 
 ## 폴더 구조 하이라이트
 ```
@@ -69,14 +71,14 @@ src/
 ## 향후 작업 아이디어
 - Supabase Auth/DB와의 실시간 연동, RLS 적용
 - 노트 CRUD API와 Edge 함수 연결, optimistic update
-- Vitest/Testing Library 기반 단위·컴포넌트 테스트 추가
+- Playwright/Cypress 기반 E2E 테스트 도입
 - 다국어(i18n)·다크 모드 토글·접근성 개선
 
 ## Git 브랜치 전략
 - `main`: 실제 배포용 브랜치. PR 통과·CI 성공 후에만 병합하고 보호 규칙으로 직접 push를 막습니다.
 - `develop`: 다음 릴리스를 모으는 통합 브랜치. 모든 기능 작업은 여기에서 분기·병합합니다.
 - `feature/*`: 기능·버그 단위 작업 브랜치(`feature/note-filter` 등). 완료 후 PR을 통해 `develop`에 병합합니다.
-- `release/*`: 배포 준비 단계에서 생성해 QA·문서화를 마친 뒤 `main`에 병합하고 태그를 남깁니다.
+- `release/*`: 배포 준비 단계에서 생성해 QA·버전 태깅을 수행하고, 안정화되면 `main`과 `develop`에 모두 병합합니다.
 - `hotfix/*`: 운영 중 긴급 수정. `main`에서 분기해 패치 후 같은 커밋을 `main`·`develop`에 동시에 반영합니다.
 
 ### 운영 플로우
