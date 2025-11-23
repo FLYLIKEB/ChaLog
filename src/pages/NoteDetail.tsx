@@ -102,7 +102,7 @@ export function NoteDetail() {
       setIsDeleting(true);
       await notesApi.delete(id);
       toast.success('노트가 삭제되었습니다.');
-      setTimeout(() => navigate('/my-notes'), 500);
+      navigate('/my-notes', { replace: true });
     } catch (error) {
       console.error('Failed to delete note:', error);
       toast.error('삭제에 실패했습니다.');

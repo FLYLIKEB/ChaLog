@@ -107,7 +107,7 @@ class ApiClient {
 
       // 204 No Content 응답 처리
       if (response.status === 204) {
-        return undefined as T;
+        return null as T;
       }
 
       const data = await response.json();
@@ -115,7 +115,7 @@ class ApiClient {
       const parsedData = parseDates(data);
       
       // Note 관련 응답인 경우 정규화 (tea/user 객체에서 teaName/userName 추출)
-      if (endpoint.includes('/notes')) {
+      if (endpoint.startsWith('/notes') || /^\/notes\/[^/]+$/.test(endpoint)) {
         return normalizeNotes(parsedData) as T;
       }
       
@@ -146,8 +146,8 @@ class ApiClient {
     });
   }
 
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'DELETE' });
+  async delete(endpoint: string): Promise<void> {
+    await this.request<void>(endpoint, { method: 'DELETE' });
   }
 }
 
