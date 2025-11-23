@@ -1,2 +1,5 @@
 node_modules
 docs/memo.md
+.env
+.env.local
+.env.*.local

@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
+import { AuthProvider } from './contexts/AuthContext';
 import { Home } from './pages/Home';
 import { Search } from './pages/Search';
 import { TeaDetail } from './pages/TeaDetail';
@@ -9,6 +10,8 @@ import { NewNote } from './pages/NewNote';
 import { NoteDetail } from './pages/NoteDetail';
 import { MyNotes } from './pages/MyNotes';
 import { Settings } from './pages/Settings';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
 import { FloatingActionButton } from './components/FloatingActionButton';
 
 type FloatingActionRouteConfig = {
@@ -52,22 +55,26 @@ function FloatingActionButtonSwitcher() {
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="max-w-2xl mx-auto bg-white min-h-screen">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/tea/:id" element={<TeaDetail />} />
-          <Route path="/note/new" element={<NewNote />} />
-          <Route path="/note/:id" element={<NoteDetail />} />
-          <Route path="/my-notes" element={<MyNotes />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-        <FloatingActionButtonSwitcher />
-        <Toaster />
-      </div>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="max-w-2xl mx-auto bg-white min-h-screen">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/tea/:id" element={<TeaDetail />} />
+            <Route path="/note/new" element={<NewNote />} />
+            <Route path="/note/:id" element={<NoteDetail />} />
+            <Route path="/my-notes" element={<MyNotes />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+          <FloatingActionButtonSwitcher />
+          <Toaster />
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
