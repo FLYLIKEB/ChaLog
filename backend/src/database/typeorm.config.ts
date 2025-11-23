@@ -4,9 +4,13 @@ import { ConfigService } from '@nestjs/config';
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => {
   const databaseUrl = configService.get<string>('DATABASE_URL');
   
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
   // MySQL URL 파싱: mysql://user:password@host:port/database 또는 mysql://user@host:port/database
-  const urlMatchWithPassword = databaseUrl?.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-  const urlMatchWithoutPassword = databaseUrl?.match(/mysql:\/\/([^@]+)@([^:]+):(\d+)\/(.+)/);
+  const urlMatchWithPassword = databaseUrl.match(/^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
+  const urlMatchWithoutPassword = databaseUrl.match(/^mysql:\/\/([^@]+)@([^:]+):(\d+)\/(.+)$/);
   
   let username: string;
   let password: string | undefined;
@@ -20,7 +24,9 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     [, username, host, port, database] = urlMatchWithoutPassword;
     password = undefined;
   } else {
-    throw new Error('Invalid DATABASE_URL format. Expected: mysql://user:password@host:port/database or mysql://user@host:port/database');
+    throw new Error(
+      'Invalid DATABASE_URL format. Expected: mysql://user:password@host:port/database or mysql://user@host:port/database'
+    );
   }
 
   // SSL 설정 (AWS RDS/Aurora 사용 시 권장)
@@ -28,8 +34,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
   const sslConfig = sslEnabled
     ? {
         ssl: {
-          rejectUnauthorized: false, // RDS CA 인증서를 사용하려면 true로 변경하고 ca 인증서 경로 지정
-          // ca: fs.readFileSync(__dirname + '/../../rds-ca-2019-root.pem'), // CA 인증서 사용 시
+          rejectUnauthorized: false, // 프로덕션에서는 CA 인증서 사용 권장
         },
       }
     : {};
