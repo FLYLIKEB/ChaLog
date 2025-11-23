@@ -27,7 +27,9 @@
 **주요 명령어 요약:**
 - **Quick Commit & Push ("ch")**: 변경사항을 분석하여 기능별로 자동 커밋하고 푸시
 - **Quick Pull ("pl")**: 현재 브랜치와 주요 브랜치(`main`, `develop`)를 최신화
-- **Merge Main ("mg")**: 모든 로컬 브랜치에 `main`의 변경사항을 자동 머지
+- **Merge Main ("mg")**: 모든 로컬 브랜치에 `main`의 변경사항을 자동 머지 및 푸시
+- **Clean Branches ("clean" 또는 "cl")**: 원격에 없는 로컬 브랜치 자동 정리
+- **Create PR ("pr" 또는 "pr생성")**: 현재 브랜치의 PR 자동 생성
 
 ## 자동화 스크립트
 
@@ -65,6 +67,22 @@ git branch -D <branch-name>  # 삭제
 ### 브랜치 동기화
 주기적으로 모든 브랜치를 `main`과 동기화:
 - `mg` 명령어 사용 또는 수동으로 각 브랜치에 `main` 머지
+
+### 브랜치 정리
+원격에 없는 브랜치를 자동으로 정리:
+- `clean` 또는 `cl` 명령어 사용
+
+### Pre-commit 검증
+모든 커밋 전에 자동으로 실행되는 검증:
+- Lint 검사 (`npm run lint`)
+- 타입 검사 (`tsc --noEmit`)
+- 테스트 실행 (`npm run test:run`)
+- 검증 실패 시 커밋이 차단됩니다
+
+### Pull Request 자동 생성
+브랜치 푸시 후 PR을 자동으로 생성:
+- `pr` 또는 `pr생성` 명령어 사용
+- 브랜치명과 커밋 메시지를 기반으로 PR 제목 및 설명 자동 생성
 
 ### 정책 · 자동화 권장 사항
 - GitHub에서 `main`, `develop` 브랜치 보호 규칙을 설정해 최소 1인 리뷰·CI 통과·squash merge를 요구합니다.
