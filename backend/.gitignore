@@ -6,3 +6,8 @@ node_modules/
 [._]ss[a-gi-z]
 [._]sw[a-p]
 
+# 환경 변수 파일
+.env
+.env.local
+.env.*.local
+
