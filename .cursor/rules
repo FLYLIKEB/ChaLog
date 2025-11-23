@@ -55,6 +55,14 @@ When user types "pl" or "풀", automatically execute:
 3. Main branches pull: Update `main`, `develop` (checkout → pull → return)
 4. Summary: Provide updated branches and changes summary
 
+## Merge Main to All Branches ("merge-main" or "mg" command)
+
+When user types "merge-main" or "mg", automatically execute:
+
+1. Save current branch → update `main` → get all local branches (excluding `main`)
+2. For each branch: checkout → `git merge main --no-edit` → skip if conflicts
+3. Return to original branch → provide summary
+
 ## Code Style & Patterns
 
 ### Frontend (React + TypeScript)
