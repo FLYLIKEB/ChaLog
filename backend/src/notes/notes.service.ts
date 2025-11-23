@@ -32,23 +32,33 @@ export class NotesService {
     return savedNote;
   }
 
-  async findAll(userId?: string, isPublic?: boolean): Promise<Note[]> {
+  async findAll(userId?: string, isPublic?: boolean, teaId?: string): Promise<Note[]> {
     const queryBuilder = this.notesRepository
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
       .leftJoinAndSelect('note.tea', 'tea')
       .orderBy('note.createdAt', 'DESC');
 
+    const conditions: string[] = [];
+    const params: Record<string, any> = {};
+
     if (userId) {
-      queryBuilder.where('note.userId = :userId', { userId });
+      conditions.push('note.userId = :userId');
+      params.userId = userId;
     }
 
     if (isPublic !== undefined) {
-      if (userId) {
-        queryBuilder.andWhere('note.isPublic = :isPublic', { isPublic });
-      } else {
-        queryBuilder.where('note.isPublic = :isPublic', { isPublic });
-      }
+      conditions.push('note.isPublic = :isPublic');
+      params.isPublic = isPublic;
+    }
+
+    if (teaId) {
+      conditions.push('note.teaId = :teaId');
+      params.teaId = teaId;
+    }
+
+    if (conditions.length > 0) {
+      queryBuilder.where(conditions.join(' AND '), params);
     }
 
     return await queryBuilder.getMany();
