@@ -66,8 +66,50 @@ export function TeaDetail() {
     );
   }
 
-  // TODO: 노트 데이터를 바탕으로 상위 태그 계산 구현
-  const topTags = ['깨끗함', '부드러움', '복합적'];
+  // 노트 데이터를 바탕으로 상위 태그 계산
+  const calculateTopTags = (notes: Note[]): string[] => {
+    if (notes.length === 0) {
+      return ['깨끗함', '부드러움', '복합적']; // 기본 fallback
+    }
+
+    // 각 특성별 평균값 계산
+    const tagMap: Record<string, { sum: number; count: number }> = {
+      풍부함: { sum: 0, count: 0 },
+      강함: { sum: 0, count: 0 },
+      부드러움: { sum: 0, count: 0 },
+      깨끗함: { sum: 0, count: 0 },
+      복합적: { sum: 0, count: 0 },
+    };
+
+    notes.forEach(note => {
+      if (note.ratings) {
+        tagMap['풍부함'].sum += note.ratings.richness;
+        tagMap['풍부함'].count += 1;
+        tagMap['강함'].sum += note.ratings.strength;
+        tagMap['강함'].count += 1;
+        tagMap['부드러움'].sum += note.ratings.smoothness;
+        tagMap['부드러움'].count += 1;
+        tagMap['깨끗함'].sum += note.ratings.clarity;
+        tagMap['깨끗함'].count += 1;
+        tagMap['복합적'].sum += note.ratings.complexity;
+        tagMap['복합적'].count += 1;
+      }
+    });
+
+    // 평균값 계산 및 정렬
+    const tagAverages = Object.entries(tagMap)
+      .map(([tag, data]) => ({
+        tag,
+        average: data.count > 0 ? data.sum / data.count : 0,
+      }))
+      .sort((a, b) => b.average - a.average)
+      .slice(0, 3)
+      .map(item => item.tag);
+
+    return tagAverages.length > 0 ? tagAverages : ['깨끗함', '부드러움', '복합적'];
+  };
+
+  const topTags = calculateTopTags(publicNotes);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
