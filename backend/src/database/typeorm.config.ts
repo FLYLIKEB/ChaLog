@@ -21,7 +21,9 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     password,
     database,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: configService.get<string>('NODE_ENV') !== 'production', // 개발 환경에서만 자동 동기화
+    // synchronize는 개발 환경에서도 명시적으로 활성화해야 함 (데이터 손실 위험)
+    synchronize: configService.get<string>('NODE_ENV') === 'development' && 
+                 configService.get<string>('DB_SYNCHRONIZE') === 'true',
     logging: configService.get<string>('NODE_ENV') === 'development',
   };
 };
