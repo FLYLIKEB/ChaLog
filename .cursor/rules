@@ -1,15 +1,32 @@
-## Git Workflow Reminder
+## Git Workflow
 
-- 커밋이나 푸시 전 `docs/architecture.md`의 “Git 브랜치 운영 전략” 섹션을 확인해 브랜치 네이밍, 병합 절차, QA 요구 사항을 준수합니다.
-- 화면 구조나 라우트/페이지를 수정할 때는 `docs/architecture.md`를 먼저 확인하고 필요 시 해당 문서를 함께 업데이트합니다.
-
-## Commit Checklist
-
-- 커밋 전 `npm test` 또는 관련 테스트 명령을 실행해 실패 케이스가 없는지 확인합니다.
-- 커밋 전 `npm run lint`와 `tsc --noEmit`(또는 동등 명령)을 실행해 린트/타입 오류가 없도록 합니다.
+- Before commit/push: Check `docs/git-strategy.md` (branch naming, merge procedures)
+- When modifying screens/routes: Check `docs/architecture.md` and update if needed
+- Pre-commit checks: `npm test`, `npm run lint`, `tsc --noEmit`
+- Commit messages: Write in Korean (e.g., `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
 
 ## Release Automation
 
-- 전체 파이프라인을 한 번에 처리할 때는 `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature/branch]` 를 실행합니다.
-  - 예: `scripts/full-release.sh "feat: add note filters" v0.5.0`
-  - 스크립트는 테스트/린트/타입체크 → feature push → develop 병합 → release/<tag> 생성 → main 병합+태깅 → develop 재병합 → release 브랜치 삭제 순으로 진행합니다.
+- Full release: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature/branch]`
+  - Example: `scripts/full-release.sh "feat: add note filters" v0.5.0`
+  - Process: test/lint → feature push → develop merge → release creation → main merge+tag → develop re-merge
+
+## Quick Commit & Push ("ch" command)
+
+When user types "ch" or "커밋", automatically execute:
+
+1. Branch management: Check current branch → if `main`/`develop`, create `feature/*` branch based on changes
+2. Change analysis: `git status` → group by feature (auth, notes, teas, components, config, etc.)
+3. Feature-based commits: Stage each group → auto-generate Korean commit message (`feat:`, `fix:`, `refactor:`, etc.) → commit
+4. Push & summary: After all commits, push → provide branch/commit summary
+
+## Quick Pull ("pl" command)
+
+When user types "pl" or "풀", automatically execute:
+
+1. Remote update: `git fetch --all --prune`
+2. Current branch pull: `git pull origin <current-branch>`
+3. Main branches pull: Update `main`, `develop` (checkout → pull → return)
+4. Summary: Provide updated branches and changes summary
+
+Note: Branch strategy reference: `docs/git-strategy.md`
