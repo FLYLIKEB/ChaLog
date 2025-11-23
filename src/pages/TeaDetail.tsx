@@ -66,7 +66,7 @@ export function TeaDetail() {
     );
   }
 
-  // 노트 데이터를 바탕으로 상위 태그 계산 (간단한 예시)
+  // TODO: 노트 데이터를 바탕으로 상위 태그 계산 구현
   const topTags = ['깨끗함', '부드러움', '복합적'];
 
   return (
