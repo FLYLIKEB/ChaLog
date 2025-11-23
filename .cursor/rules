@@ -5,6 +5,31 @@
 - Pre-commit checks: `npm test`, `npm run lint`, `tsc --noEmit`
 - Commit messages: Write in Korean (e.g., `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
 
+## Documentation Updates
+
+When making code changes, automatically update relevant markdown files:
+
+- **README.md**: Update when adding new features, changing project structure, updating dependencies, or modifying setup instructions
+- **docs/architecture.md**: Update when modifying routes/pages, component structure, data flow, or architectural patterns
+- **docs/git-strategy.md**: Update when changing Git workflow or branch strategy
+- **Backend README** (`backend/README.md`): Update when modifying backend structure, API endpoints, or setup
+
+**Update triggers:**
+- New features → README.md (주요 기능 섹션), architecture.md (해당 섹션)
+- API changes → README.md (데이터 & 외부 연동), architecture.md (API 섹션)
+- Component changes → architecture.md (컴포넌트 구조)
+- Route/page changes → architecture.md (라우트 섹션), README.md (폴더 구조)
+- Dependency changes → README.md (NPM 스크립트, 환경 변수)
+- File structure changes → README.md (폴더 구조 하이라이트)
+- Backend module changes → backend/README.md, architecture.md
+
+**Update process:**
+1. Analyze code changes to identify what documentation needs updating
+2. Check relevant markdown files for sections that need updates
+3. Update documentation to reflect code changes accurately
+4. Ensure documentation examples match current code structure
+5. Include code changes in the same commit when possible
+
 ## Release Automation
 
 - Full release: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature/branch]`
@@ -17,8 +42,9 @@ When user types "ch" or "커밋", automatically execute:
 
 1. Branch management: Check current branch → if `main`/`develop`, create `feature/*` branch based on changes
 2. Change analysis: `git status` → group by feature (auth, notes, teas, components, config, etc.)
-3. Feature-based commits: Stage each group → auto-generate Korean commit message (`feat:`, `fix:`, `refactor:`, etc.) → commit
-4. Push & summary: After all commits, push → provide branch/commit summary
+3. Documentation check: Analyze changes → identify which markdown files need updates (README.md, docs/architecture.md, etc.) → update if needed
+4. Feature-based commits: Stage each group → auto-generate Korean commit message (`feat:`, `fix:`, `refactor:`, etc.) → commit
+5. Push & summary: After all commits, push → provide branch/commit summary
 
 ## Quick Pull ("pl" command)
 
