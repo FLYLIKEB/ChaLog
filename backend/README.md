@@ -78,7 +78,7 @@ npm run start:prod
 
 ## 프로젝트 구조
 
-```
+```text
 src/
 ├── auth/              # 인증 모듈
 │   ├── dto/          # 데이터 전송 객체
