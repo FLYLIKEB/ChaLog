@@ -234,10 +234,11 @@ export const teasApi = {
 };
 
 export const notesApi = {
-  getAll: (userId?: string, isPublic?: boolean) => {
+  getAll: (userId?: string, isPublic?: boolean, teaId?: string) => {
     const params = new URLSearchParams();
     if (userId) params.append('userId', userId);
     if (isPublic !== undefined) params.append('public', String(isPublic));
+    if (teaId) params.append('teaId', teaId);
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
