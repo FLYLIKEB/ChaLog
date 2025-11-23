@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { RatingSlider } from '../components/RatingSlider';
 import { Input } from '../components/ui/input';
@@ -8,15 +8,18 @@ import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
-import { mockTeas } from '../lib/mockData';
-import { filterTeasByQuery } from '../lib/teaSearch';
+import { teasApi, notesApi } from '../lib/api';
+import { Tea } from '../types';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 export function NewNote() {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const preselectedTeaId = searchParams.get('teaId');
 
+  const [teas, setTeas] = useState<Tea[]>([]);
   const [selectedTea, setSelectedTea] = useState(preselectedTeaId || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [ratings, setRatings] = useState({
@@ -28,6 +31,7 @@ export function NewNote() {
   });
   const [memo, setMemo] = useState('');
   const [isPublic, setIsPublic] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const ratingFields: { key: keyof typeof ratings; label: string }[] = [
     { key: 'richness', label: '풍부함' },
@@ -37,18 +41,45 @@ export function NewNote() {
     { key: 'complexity', label: '복합성' },
   ];
 
-  const filteredTeas = filterTeasByQuery(mockTeas, searchQuery);
-
-  const selectedTeaData = mockTeas.find(t => t.id === selectedTea);
+  useEffect(() => {
+    // 초기 로드 시 모든 차 목록 가져오기
+    const fetchTeas = async () => {
+      try {
+        const data = await teasApi.getAll();
+        setTeas(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch teas:', error);
+      }
+    };
+    fetchTeas();
+  }, []);
 
   useEffect(() => {
     if (preselectedTeaId) {
-      const tea = mockTeas.find(t => t.id === preselectedTeaId);
+      const tea = teas.find(t => t.id === preselectedTeaId);
       if (tea) setSearchQuery(tea.name);
     }
-  }, [preselectedTeaId]);
+  }, [preselectedTeaId, teas]);
 
-  const handleSave = () => {
+  // 검색 필터링
+  const filteredTeas = teas.filter(tea => {
+    const query = searchQuery.toLowerCase();
+    return (
+      tea.name.toLowerCase().includes(query) ||
+      tea.type.toLowerCase().includes(query) ||
+      (tea.seller && tea.seller.toLowerCase().includes(query))
+    );
+  });
+
+  const selectedTeaData = teas.find(t => t.id === selectedTea);
+
+  const handleSave = async () => {
+    if (!isAuthenticated) {
+      toast.error('로그인이 필요합니다.');
+      navigate('/settings');
+      return;
+    }
+
     if (!selectedTea) {
       toast.error('차를 선택해주세요.');
       return;
@@ -58,9 +89,34 @@ export function NewNote() {
       return;
     }
 
-    // 실제 저장 대신 임시 성공 메시지 표시
-    toast.success('기록이 저장되었습니다.');
-    setTimeout(() => navigate('/my-notes'), 500);
+    try {
+      setIsSaving(true);
+      
+      // 평균 평점 계산
+      const averageRating = (
+        ratings.richness +
+        ratings.strength +
+        ratings.smoothness +
+        ratings.clarity +
+        ratings.complexity
+      ) / 5;
+
+      await notesApi.create({
+        teaId: selectedTea,
+        rating: averageRating,
+        ratings,
+        memo: memo.trim(),
+        isPublic,
+      });
+
+      toast.success('기록이 저장되었습니다.');
+      setTimeout(() => navigate('/my-notes'), 500);
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      toast.error(error instanceof Error ? error.message : '저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -94,7 +150,7 @@ export function NewNote() {
                 >
                   <p className="text-sm">{tea.name}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {tea.type} · {tea.seller}
+                    {tea.type} · {tea.seller || '구매처 미상'}
                   </p>
                 </button>
               ))}
@@ -157,8 +213,19 @@ export function NewNote() {
         </section>
 
         {/* 저장 버튼 */}
-        <Button onClick={handleSave} className="w-full">
-          저장
+        <Button 
+          onClick={handleSave} 
+          className="w-full"
+          disabled={isSaving}
+        >
+          {isSaving ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              저장 중...
+            </>
+          ) : (
+            '저장'
+          )}
         </Button>
       </div>
     </div>

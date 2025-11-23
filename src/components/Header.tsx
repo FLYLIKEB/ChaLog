@@ -1,5 +1,6 @@
 import { User, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface HeaderProps {
   title?: string;
@@ -9,6 +10,7 @@ interface HeaderProps {
 
 export function Header({ title, showBack, showProfile }: HeaderProps) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   return (
     <header className="sticky top-0 z-10 bg-white border-b px-4 py-3 flex items-center justify-between">
@@ -31,7 +33,7 @@ export function Header({ title, showBack, showProfile }: HeaderProps) {
       </div>
       {showProfile && (
         <button
-          onClick={() => navigate('/settings')}
+          onClick={() => navigate(isAuthenticated ? '/settings' : '/login')}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors"
         >
           <User className="w-5 h-5" />

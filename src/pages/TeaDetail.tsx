@@ -1,20 +1,71 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
-import { mockTeas, mockNotes } from '../lib/mockData';
+import { teasApi, notesApi } from '../lib/api';
+import { Tea, Note } from '../types';
+import { toast } from 'sonner';
+
+function transformNote(note: any): Note {
+  return {
+    ...note,
+    teaName: note.tea?.name || '',
+    userName: note.user?.name || '',
+    createdAt: new Date(note.createdAt),
+  };
+}
 
 export function TeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const tea = mockTeas.find(t => t.id === id);
-  const publicNotes = mockNotes.filter(note => note.teaId === id && note.isPublic);
+  const [tea, setTea] = useState<Tea | null>(null);
+  const [publicNotes, setPublicNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+
+      try {
+        setIsLoading(true);
+        const [teaData, notesData] = await Promise.all([
+          teasApi.getById(id),
+          notesApi.getAll(undefined, true),
+        ]);
+
+        setTea(teaData as Tea);
+        
+        // 해당 차의 공개 노트만 필터링
+        const notesArray = Array.isArray(notesData) ? notesData : [];
+        const filteredNotes = notesArray
+          .filter((note: any) => note.teaId === id)
+          .map(transformNote);
+        setPublicNotes(filteredNotes);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        toast.error('데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <DetailFallback title="차 상세">
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+        </div>
+      </DetailFallback>
+    );
+  }
 
   if (!tea) {
     return (
@@ -24,7 +75,7 @@ export function TeaDetail() {
     );
   }
 
-  // 노트 데이터를 바탕으로 상위 태그 계산
+  // 노트 데이터를 바탕으로 상위 태그 계산 (간단한 예시)
   const topTags = ['깨끗함', '부드러움', '복합적'];
 
   return (
@@ -68,7 +119,7 @@ export function TeaDetail() {
             <div className="text-center">
               <div className="flex items-center gap-2 mb-1">
                 <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-                <span className="text-2xl">{tea.averageRating.toFixed(1)}</span>
+                <span className="text-2xl">{Number(tea.averageRating).toFixed(1)}</span>
               </div>
               <p className="text-xs text-gray-500">{tea.reviewCount}개 리뷰</p>
             </div>

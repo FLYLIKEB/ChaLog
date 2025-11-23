@@ -1,26 +1,76 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon, Plus, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
 import { EmptyState } from '../components/EmptyState';
-import { mockTeas } from '../lib/mockData';
-import { filterTeasByQuery } from '../lib/teaSearch';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { BottomNav } from '../components/BottomNav';
+import { teasApi } from '../lib/api';
+import { Tea } from '../types';
+import { toast } from 'sonner';
 
 export function Search() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  const [teas, setTeas] = useState<Tea[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // 검색어를 기준으로 차 목록 필터링
-  const filteredTeas = filterTeasByQuery(mockTeas, searchQuery, {
-    fields: ['name', 'type', 'seller'],
-  });
+  useEffect(() => {
+    // 초기 로드 시 모든 차 목록 가져오기
+    const fetchAllTeas = async () => {
+      try {
+        const data = await teasApi.getAll();
+        setTeas(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Failed to fetch teas:', error);
+      }
+    };
+    fetchAllTeas();
+  }, []);
 
-  const showResults = searchQuery.length > 0;
+  useEffect(() => {
+    // 검색어가 변경될 때마다 검색 실행
+    if (searchQuery.trim()) {
+      const timeoutId = setTimeout(() => {
+        handleSearch(searchQuery);
+      }, 300); // 디바운스
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // 검색어가 비어있으면 전체 목록 표시
+      const fetchAllTeas = async () => {
+        try {
+          const data = await teasApi.getAll();
+          setTeas(Array.isArray(data) ? data : []);
+          setHasSearched(false);
+        } catch (error) {
+          console.error('Failed to fetch teas:', error);
+        }
+      };
+      fetchAllTeas();
+    }
+  }, [searchQuery]);
+
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return;
+
+    try {
+      setIsLoading(true);
+      setHasSearched(true);
+      const data = await teasApi.getAll(query);
+      setTeas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Search failed:', error);
+      toast.error('검색에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const showResults = searchQuery.length > 0 || hasSearched;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -39,46 +89,30 @@ export function Search() {
           />
         </div>
 
-        {/* 자동완성 제안 */}
-        {!showResults && searchQuery && (
-          <div className="bg-white border rounded-lg divide-y">
-            {mockTeas.slice(0, 3).map(tea => (
-              <button
-                key={tea.id}
-                onClick={() => navigate(`/tea/${tea.id}`)}
-                className="w-full text-left p-3 hover:bg-gray-50 transition-colors"
-              >
-                <p>{tea.name}</p>
-                <p className="text-sm text-gray-500 mt-1">
-                  {tea.year && `${tea.year}년`} {tea.type} · {tea.seller}
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* 검색 결과 */}
         {showResults && (
           <>
-            {isSearching ? (
+            {isLoading ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
               </div>
-            ) : filteredTeas.length > 0 ? (
+            ) : teas.length > 0 ? (
               <div className="space-y-3">
-                {filteredTeas.map(tea => (
+                {teas.map(tea => (
                   <TeaCard key={tea.id} tea={tea} />
                 ))}
               </div>
             ) : (
-              <EmptyState type="search" message="등록된 차가 없습니다." />
+              <EmptyState type="search" message="검색 결과가 없습니다." />
             )}
 
             {/* 새 차 등록 버튼 */}
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => {}}
+              onClick={() => {
+                toast.info('새 차 등록 기능은 준비 중입니다.');
+              }}
             >
               <Plus className="w-4 h-4 mr-2" />
               새 차 등록
@@ -87,7 +121,7 @@ export function Search() {
         )}
 
         {/* 초기 안내 상태 */}
-        {!searchQuery && (
+        {!showResults && (
           <EmptyState type="search" message="검색어를 입력해주세요." />
         )}
       </div>

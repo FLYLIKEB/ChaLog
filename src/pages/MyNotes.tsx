@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
@@ -10,34 +10,91 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { mockNotes, currentUser } from '../lib/mockData';
 import { BottomNav } from '../components/BottomNav';
+import { notesApi } from '../lib/api';
+import { Note } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 type FilterType = 'all' | 'public' | 'private';
 type SortType = 'latest' | 'rating';
 
+function transformNote(note: any): Note {
+  return {
+    ...note,
+    teaName: note.tea?.name || '',
+    userName: note.user?.name || '',
+    createdAt: new Date(note.createdAt),
+  };
+}
+
 export function MyNotes() {
+  const { user, isAuthenticated } = useAuth();
   const [filter, setFilter] = useState<FilterType>('all');
   const [sort, setSort] = useState<SortType>('latest');
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 현재 사용자 노트 목록 가져오기
-  let myNotes = mockNotes.filter(note => note.userId === currentUser.id);
+  useEffect(() => {
+    const fetchNotes = async () => {
+      if (!isAuthenticated || !user) {
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const data = await notesApi.getAll(user.id);
+        const notesArray = Array.isArray(data) ? data : [];
+        setNotes(notesArray.map(transformNote));
+      } catch (error) {
+        console.error('Failed to fetch notes:', error);
+        toast.error('노트를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, [isAuthenticated, user]);
 
   // 필터 조건 적용
+  let filteredNotes = [...notes];
   if (filter === 'public') {
-    myNotes = myNotes.filter(note => note.isPublic);
+    filteredNotes = filteredNotes.filter(note => note.isPublic);
   } else if (filter === 'private') {
-    myNotes = myNotes.filter(note => !note.isPublic);
+    filteredNotes = filteredNotes.filter(note => !note.isPublic);
   }
 
   // 정렬 조건 적용
-  myNotes = [...myNotes].sort((a, b) => {
+  filteredNotes = filteredNotes.sort((a, b) => {
     if (sort === 'latest') {
       return b.createdAt.getTime() - a.createdAt.getTime();
     } else {
       return b.rating - a.rating;
     }
   });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <Header title="내 노트" />
+        <div className="p-4">
+          <EmptyState type="notes" message="로그인이 필요합니다." />
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -56,7 +113,7 @@ export function MyNotes() {
         {/* 정렬 드롭다운 */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">
-            총 {myNotes.length}개
+            총 {filteredNotes.length}개
           </span>
           <Select value={sort} onValueChange={(v) => setSort(v as SortType)}>
             <SelectTrigger className="w-32">
@@ -70,9 +127,9 @@ export function MyNotes() {
         </div>
 
         {/* 노트 목록 */}
-        {myNotes.length > 0 ? (
+        {filteredNotes.length > 0 ? (
           <div className="space-y-3">
-            {myNotes.map(note => (
+            {filteredNotes.map(note => (
               <NoteCard key={note.id} note={note} showTeaName />
             ))}
           </div>
