@@ -10,7 +10,7 @@ async function bootstrap() {
   
   // CORS 설정
   app.enableCors({
-    origin: configService.get<string>('FRONTEND_URL') || 'http://localhost:5173',
+    origin: (configService.get('FRONTEND_URL') as string) || 'http://localhost:5173',
     credentials: true,
   });
 
@@ -23,8 +23,12 @@ async function bootstrap() {
     }),
   );
 
-  const port = configService.get<number>('PORT') || 3000;
+  const port = parseInt((configService.get('PORT') as string) || '3000', 10);
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
 }
-bootstrap();
+
+bootstrap().catch((error) => {
+  console.error('Failed to start application:', error);
+  process.exit(1);
+});

@@ -46,4 +46,11 @@ export class TeasService {
       .orderBy('tea.createdAt', 'DESC')
       .getMany();
   }
+
+  async updateRating(teaId: string, averageRating: number, reviewCount: number): Promise<void> {
+    await this.teasRepository.update(teaId, {
+      averageRating: Number(averageRating.toFixed(2)),
+      reviewCount,
+    });
+  }
 }
