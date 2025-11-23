@@ -108,6 +108,8 @@ export class NotesService {
     });
 
     if (notes.length === 0) {
+      // 모든 노트가 삭제되었을 때 평점을 초기화
+      await this.teasService.updateRating(teaId, 0, 0);
       return;
     }
 
