@@ -70,64 +70,11 @@ src/
 
 ## 개발 가이드라인
 
-### 코드 스타일 및 패턴
+프로젝트의 코딩 스타일, 컴포넌트 패턴, 테스팅 전략 등 상세한 개발 가이드라인은 다음 문서들을 참고하세요:
 
-#### 프론트엔드 (React + TypeScript)
-- 함수형 컴포넌트와 훅 사용, 클래스 컴포넌트 지양
-- `components/ui/utils.ts`의 `cn()` 유틸리티로 className 병합
-- shadcn/ui 컴포넌트 패턴 준수: Radix UI 프리미티브 + CVA로 variants 구현
-- Import 경로: `@/` 별칭 사용 (예: `@/components/Button`)
-- 컴포넌트 구조: Props 인터페이스 → 컴포넌트 → export default
-- TypeScript strict 타입 사용, `any` 지양
-- 유틸리티는 named export, 컴포넌트는 default export 선호
-
-#### 백엔드 (NestJS)
-- `@Injectable()` 데코레이터로 의존성 주입 사용
-- NestJS 모듈 패턴 준수: Controller → Service → Entity
-- DTO를 사용한 요청/응답 검증
-- 에러 처리: NestJS 내장 예외 사용 (`NotFoundException`, `ForbiddenException` 등)
-- 서비스 메서드는 async로 Promise 반환
-- TypeORM 리포지토리는 `@InjectRepository()` 데코레이터 사용
-
-#### 파일 구조
-- 컴포넌트: `src/components/` (UI 컴포넌트는 `components/ui/`)
-- 페이지: `src/pages/` (라우트 컴포넌트)
-- 백엔드 모듈: `backend/src/{module}/` (controller, service, entities, dto)
-- 공유 타입: `packages/types/` (프론트엔드/백엔드 공용)
-- 유틸리티: `src/lib/` (프론트엔드), `backend/src/common/` (백엔드)
-
-### 컴포넌트 가이드라인
-- UI 컴포넌트: `components/ui/`의 shadcn/ui 컴포넌트를 기본으로 사용
-- 커스텀 컴포넌트: `components/`에 설명적인 이름(PascalCase)으로 생성
-- Props: 컴포넌트 위에 TypeScript 인터페이스 정의
-- 스타일링: Tailwind CSS 클래스 사용, 커스텀 CSS보다 유틸리티 클래스 선호
-- 접근성: 적절한 ARIA 레이블 및 키보드 내비게이션 포함
-- 아이콘: `lucide-react` 아이콘 사용, 개별 import
-
-### 타입 정의
-- 공유 타입: 프론트엔드/백엔드 공용으로 `packages/types/index.ts`에 정의
-- 컴포넌트 props: 인라인 또는 같은 파일에 정의
-- API 타입: 백엔드 DTO와 `packages/types/`에서 일치
-- TypeScript 유틸리티 타입 (`Pick`, `Omit`, `Partial`) 적절히 활용
-
-### 테스팅
-- 프론트엔드: Vitest + Testing Library, `__tests__/` 디렉토리에 테스트 파일
-- 백엔드: Jest, 소스 파일과 함께 `.spec.ts` 파일
-- 테스트 네이밍: `*.test.tsx` (프론트엔드), `*.spec.ts` (백엔드)
-- Mock 데이터: 프론트엔드 테스트는 `src/lib/mockData.ts` 사용
-- 테스트 구조: Arrange → Act → Assert 패턴
-
-### 에러 처리
-- 프론트엔드: try-catch 블록 사용, `sonner` 토스트로 사용자 친화적 에러 메시지 표시
-- 백엔드: 적절한 NestJS 예외 throw, 예외 필터가 응답 처리
-- API 에러: 백엔드에서 일관된 에러 형식 반환
-- 검증: DTO에 class-validator 데코레이터 사용 (백엔드)
-
-### 성능 최적화
-- React: 비용이 큰 컴포넌트는 `React.memo()` 사용, 필요시 `useMemo()`/`useCallback()` 활용
-- 코드 스플리팅: 필요시 `React.lazy()`로 라우트 지연 로드
-- 이미지: 적절한 크기 조정 및 지연 로드
-- 불필요한 리렌더링 방지: 훅의 의존성 배열 확인
+- **Cursor AI 개발 룰**: `.cursor/rules` - 코드 스타일, 컴포넌트 가이드라인, 타입 정의, 테스팅, 에러 처리, 성능 최적화 등
+- **아키텍처 가이드**: `docs/architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
+- **Git 전략**: `docs/git-strategy.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
 
 ## Cursor AI 명령어
 
