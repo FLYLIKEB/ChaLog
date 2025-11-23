@@ -4,7 +4,7 @@ NestJS 기반 백엔드 API 서버입니다.
 
 ## 요구 사항
 
-- Node.js 18 이상
+- Node.js 20 이상
 - MySQL 8.0 이상
 - npm 9 이상
 
@@ -20,6 +20,9 @@ npm install
 
 ```env
 DATABASE_URL=mysql://user:password@localhost:3306/chalog
+# 개발 환경에서만 true로 설정 (데이터 손실 위험 있음)
+DB_SYNCHRONIZE=false
+
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRES_IN=7d
 PORT=3000
@@ -64,7 +67,7 @@ npm run start:prod
 - `GET /teas` - 차 목록 조회
 - `GET /teas?q=검색어` - 차 검색
 - `GET /teas/:id` - 차 상세 조회
-- `POST /teas` - 차 생성
+- `POST /teas` - 차 생성 (JWT 필요)
 
 ### 노트(Note)
 
