@@ -32,6 +32,22 @@ export function Search() {
     }
   }, []);
 
+  const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+
+    try {
+      setIsLoading(true);
+      setHasSearched(true);
+      const data = await teasApi.getAll(query);
+      setTeas(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Search failed:', error);
+      toast.error('검색에 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     // 초기 로드 시 모든 차 목록 가져오기
     fetchAllTeas();
@@ -49,23 +65,7 @@ export function Search() {
       // 검색어가 비어있으면 전체 목록 표시
       fetchAllTeas();
     }
-  }, [searchQuery, fetchAllTeas]);
-
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) return;
-
-    try {
-      setIsLoading(true);
-      setHasSearched(true);
-      const data = await teasApi.getAll(query);
-      setTeas(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error('Search failed:', error);
-      toast.error('검색에 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [searchQuery, fetchAllTeas, handleSearch]);
 
   const showResults = searchQuery.length > 0 || hasSearched;
 
