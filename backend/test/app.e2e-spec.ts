@@ -75,6 +75,28 @@ describe('AppController (e2e)', () => {
   });
 
   describe('/teas', () => {
+    let authToken: string;
+
+    beforeAll(async () => {
+      // 테스트용 사용자 등록 및 로그인
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: 'teatest@example.com',
+          name: 'Tea Test User',
+          password: 'password123',
+        });
+
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          email: 'teatest@example.com',
+          password: 'password123',
+        });
+
+      authToken = loginResponse.body.access_token;
+    });
+
     it('GET /teas - should return empty array initially', () => {
       return request(app.getHttpServer())
         .get('/teas')
@@ -84,9 +106,10 @@ describe('AppController (e2e)', () => {
         });
     });
 
-    it('POST /teas - should create a new tea', () => {
+    it('POST /teas - should create a new tea with authentication', () => {
       return request(app.getHttpServer())
         .post('/teas')
+        .set('Authorization', `Bearer ${authToken}`)
         .send({
           name: '정산소종',
           year: 2023,
@@ -99,6 +122,17 @@ describe('AppController (e2e)', () => {
           expect(res.body).toHaveProperty('id');
           expect(res.body.name).toBe('정산소종');
         });
+    });
+
+    it('POST /teas - should fail without authentication', () => {
+      return request(app.getHttpServer())
+        .post('/teas')
+        .send({
+          name: '정산소종',
+          year: 2023,
+          type: '홍차',
+        })
+        .expect(401);
     });
   });
 });
