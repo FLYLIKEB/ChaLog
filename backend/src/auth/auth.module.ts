@@ -14,12 +14,23 @@ import { JwtStrategy } from './strategies/jwt.strategy';
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '7d',
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const jwtSecret = configService.get<string>('JWT_SECRET');
+        
+        if (!jwtSecret || jwtSecret.trim().length === 0) {
+          console.error('FATAL: JWT_SECRET environment variable is required and must not be empty');
+          process.exit(1);
+        }
+        
+        const jwtExpiresIn = configService.get<string>('JWT_EXPIRES_IN') || '7d';
+        
+        return {
+          secret: jwtSecret,
+          signOptions: {
+            expiresIn: jwtExpiresIn,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
   ],
