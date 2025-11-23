@@ -61,7 +61,38 @@ When user types "merge-main" or "mg", automatically execute:
 
 1. Save current branch → update `main` → get all local branches (excluding `main`)
 2. For each branch: checkout → `git merge main --no-edit` → skip if conflicts
-3. Return to original branch → provide summary
+3. Push all branches to remote: For each successfully merged branch, push to origin (use `--force-with-lease` if diverged)
+4. Return to original branch → provide summary
+
+## Clean Remote Branches ("clean" or "cl" command)
+
+When user types "clean" or "cl", automatically execute:
+
+1. Fetch and prune: `git fetch --all --prune`
+2. Find gone branches: List local branches that track remote branches that no longer exist
+3. Confirm and delete: Show list of branches to delete → delete them (use `git branch -D`)
+4. Summary: Provide list of deleted branches
+
+## Pre-commit Validation
+
+Before any commit, automatically execute:
+
+1. Lint check: `npm run lint` (if exists)
+2. Type check: `tsc --noEmit` (if TypeScript project)
+3. Test run: `npm run test:run` (if exists)
+4. If any check fails, prevent commit and show error message
+5. Only proceed with commit if all checks pass
+
+## Create Pull Request ("pr" or "pr생성" command)
+
+When user types "pr" or "pr생성", automatically execute:
+
+1. Check current branch: Must be a feature/hotfix/release branch
+2. Ensure branch is pushed: Push current branch to origin if not already pushed
+3. Generate PR title: Based on branch name and recent commits
+4. Generate PR description: Summarize commits, changed files, and affected modules
+5. Create PR: Use GitHub CLI (`gh pr create`) or provide manual instructions with URL
+6. Summary: Provide PR URL and details
 
 ## Code Style & Patterns
 
