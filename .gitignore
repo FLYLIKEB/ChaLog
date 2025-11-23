@@ -3,3 +3,11 @@ docs/memo.md
 .env
 .env.local
 .env.*.local
+
+# SSH Keys and sensitive files
+*.pem
+*.key
+*.p12
+*.pfx
+your-key.pem
+~/.ssh/your-key.pem
