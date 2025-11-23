@@ -11,15 +11,6 @@ import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note } from '../types';
 import { toast } from 'sonner';
 
-function transformNote(note: any): Note {
-  return {
-    ...note,
-    teaName: note.tea?.name || '',
-    userName: note.user?.name || '',
-    createdAt: new Date(note.createdAt),
-  };
-}
-
 export function TeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,9 +33,9 @@ export function TeaDetail() {
         
         // 해당 차의 공개 노트만 필터링
         const notesArray = Array.isArray(notesData) ? notesData : [];
+        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
         const filteredNotes = notesArray
-          .filter((note: any) => note.teaId === id)
-          .map(transformNote);
+          .filter((note: any) => note.teaId === id) as Note[];
         setPublicNotes(filteredNotes);
       } catch (error) {
         console.error('Failed to fetch data:', error);

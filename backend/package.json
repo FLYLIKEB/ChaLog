@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "dist/src/main",
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20"
   },
   "scripts": {
     "build": "nest build",
