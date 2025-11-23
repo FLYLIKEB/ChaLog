@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { TeasService } from './teas.service';
 import { CreateTeaDto } from './dto/create-tea.dto';
 
@@ -6,6 +7,7 @@ import { CreateTeaDto } from './dto/create-tea.dto';
 export class TeasController {
   constructor(private readonly teasService: TeasService) {}
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Body() createTeaDto: CreateTeaDto) {
     return this.teasService.create(createTeaDto);
