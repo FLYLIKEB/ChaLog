@@ -114,9 +114,6 @@ export class NotesService {
     const averageRating =
       notes.reduce((sum, note) => sum + Number(note.rating), 0) / notes.length;
 
-    await this.teasService['teasRepository'].update(teaId, {
-      averageRating: Number(averageRating.toFixed(2)),
-      reviewCount: notes.length,
-    });
+    await this.teasService.updateRating(teaId, averageRating, notes.length);
   }
 }
