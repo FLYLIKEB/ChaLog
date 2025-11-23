@@ -36,6 +36,42 @@ When making code changes, automatically update relevant markdown files:
   - Example: `scripts/full-release.sh "feat: add note filters" v0.5.0`
   - Process: test/lint → feature push → develop merge → release creation → main merge+tag → develop re-merge
 
+## Utility Scripts
+
+### Git Workflow Scripts
+
+- **Quick commit**: `scripts/quick-commit.sh [branch] [message]`
+  - Auto-commit and push changes
+  - Example: `scripts/quick-commit.sh feature/new-feature "feat: 새로운 기능 추가"`
+  - See `docs/SCRIPTS.md` for details
+
+- **Full release**: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature-branch]`
+  - Complete release automation (test → merge → tag → deploy)
+  - Example: `scripts/full-release.sh "Release v1.2.3" "v1.2.3" feature/new-feature`
+  - See `docs/SCRIPTS.md` for details
+
+### Database Management Scripts
+
+- **Start SSH tunnel**: `cd backend && ./scripts/start-ssh-tunnel.sh`
+  - Start SSH tunnel for RDS connection via EC2
+  - Requires `.env` file with SSH configuration
+  - See `docs/DATABASE.md` and `docs/SCRIPTS.md` for details
+
+- **Stop SSH tunnel**: `cd backend && ./scripts/stop-ssh-tunnel.sh`
+  - Stop running SSH tunnel
+
+- **Check database**: `cd backend && ./scripts/check-database.sh`
+  - Verify database connection and create database if needed
+  - Requires SSH tunnel to be running
+
+**Script usage workflow:**
+1. Before development: `cd backend && ./scripts/start-ssh-tunnel.sh`
+2. Verify connection: `cd backend && ./scripts/check-database.sh`
+3. Start backend: `cd backend && npm run start:dev`
+4. After development: `cd backend && ./scripts/stop-ssh-tunnel.sh`
+
+For detailed script documentation, see `docs/SCRIPTS.md`
+
 ## Quick Commit & Push ("ch" command)
 
 When user types "ch" or "커밋", automatically execute:
@@ -45,6 +81,11 @@ When user types "ch" or "커밋", automatically execute:
 3. Documentation check: Analyze changes → identify which markdown files need updates (README.md, docs/architecture.md, etc.) → update if needed
 4. Feature-based commits: Stage each group → auto-generate Korean commit message (`feat:`, `fix:`, `refactor:`, etc.) → commit
 5. Push & summary: After all commits, push → provide branch/commit summary
+
+**Alternative:** Use `scripts/quick-commit.sh` script for manual quick commits:
+```bash
+./scripts/quick-commit.sh [branch] [message]
+```
 
 ## Quick Pull ("pl" command)
 
@@ -82,6 +123,8 @@ Before any commit, automatically execute:
 3. Test run: `npm run test:run` (if exists)
 4. If any check fails, prevent commit and show error message
 5. Only proceed with commit if all checks pass
+
+**Note:** The `scripts/quick-commit.sh` script includes pre-commit validation automatically.
 
 ## Create Pull Request ("pr" or "pr생성" command)
 
@@ -158,4 +201,12 @@ When user types "pr" or "pr생성", automatically execute:
 - Images: Use proper sizing and lazy loading
 - Avoid unnecessary re-renders: Check dependencies in hooks
 
-Note: Branch strategy reference: `docs/git-strategy.md`
+## Documentation References
+
+- **Branch strategy**: `docs/git-strategy.md` - Git workflow and branch naming
+- **Scripts guide**: `docs/SCRIPTS.md` - All utility scripts usage and examples
+- **Database setup**: `docs/DATABASE.md` - Database configuration and connection guide
+- **Security guide**: `docs/SECURITY.md` - Security best practices and SSH key management
+- **Architecture**: `docs/architecture.md` - Project structure and design patterns
+
+When suggesting script usage or database operations, reference the appropriate documentation file.
