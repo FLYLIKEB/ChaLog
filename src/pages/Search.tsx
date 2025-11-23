@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search as SearchIcon, Plus, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -18,18 +18,24 @@ export function Search() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
 
+  const fetchAllTeas = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const data = await teasApi.getAll();
+      setTeas(Array.isArray(data) ? data : []);
+      setHasSearched(false);
+    } catch (error) {
+      console.error('Failed to fetch teas:', error);
+      toast.error('차 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     // 초기 로드 시 모든 차 목록 가져오기
-    const fetchAllTeas = async () => {
-      try {
-        const data = await teasApi.getAll();
-        setTeas(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error('Failed to fetch teas:', error);
-      }
-    };
     fetchAllTeas();
-  }, []);
+  }, [fetchAllTeas]);
 
   useEffect(() => {
     // 검색어가 변경될 때마다 검색 실행
@@ -41,18 +47,9 @@ export function Search() {
       return () => clearTimeout(timeoutId);
     } else {
       // 검색어가 비어있으면 전체 목록 표시
-      const fetchAllTeas = async () => {
-        try {
-          const data = await teasApi.getAll();
-          setTeas(Array.isArray(data) ? data : []);
-          setHasSearched(false);
-        } catch (error) {
-          console.error('Failed to fetch teas:', error);
-        }
-      };
       fetchAllTeas();
     }
-  }, [searchQuery]);
+  }, [searchQuery, fetchAllTeas]);
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return;
