@@ -20,8 +20,30 @@ if [ "$CURRENT_BRANCH" = "main" ] && [ "$BRANCH_NAME" != "main" ]; then
   fi
 fi
 
+# 변경사항 확인
+if git diff --quiet && git diff --cached --quiet; then
+  echo "⚠️  No changes to commit."
+  exit 0
+fi
+
 echo "📝 Staging changes..."
 git add .
+
+# 변경사항 미리보기
+echo "📋 Changes to be committed:"
+git diff --cached --name-status
+
+# 사용자 확인 (비대화형 모드에서는 스킵)
+if [ -t 0 ]; then
+  echo ""
+  read -p "Continue with commit? (y/n) " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "❌ Aborted."
+    git reset
+    exit 1
+  fi
+fi
 
 echo "💾 Committing: $COMMIT_MSG"
 git commit -m "$COMMIT_MSG"
