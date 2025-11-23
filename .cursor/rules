@@ -61,7 +61,8 @@ When user types "merge-main" or "mg", automatically execute:
 
 1. Save current branch → update `main` → get all local branches (excluding `main`)
 2. For each branch: checkout → `git merge main --no-edit` → skip if conflicts
-3. Return to original branch → provide summary
+3. Push all branches to remote: For each successfully merged branch, push to origin (use `--force-with-lease` if diverged)
+4. Return to original branch → provide summary
 
 ## Code Style & Patterns
 
