@@ -21,15 +21,6 @@ import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
-function transformNote(note: any): Note {
-  return {
-    ...note,
-    teaName: note.tea?.name || '',
-    userName: note.user?.name || '',
-    createdAt: new Date(note.createdAt),
-  };
-}
-
 export function NoteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,13 +39,14 @@ export function NoteDetail() {
       try {
         setIsLoading(true);
         const noteData = await notesApi.getById(id);
-        const transformedNote = transformNote(noteData);
-        setNote(transformedNote);
+        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
+        const normalizedNote = noteData as Note;
+        setNote(normalizedNote);
 
         // 차 정보 가져오기
-        if (transformedNote.teaId) {
+        if (normalizedNote.teaId) {
           try {
-            const teaData = await teasApi.getById(transformedNote.teaId);
+            const teaData = await teasApi.getById(normalizedNote.teaId);
             setTea(teaData as Tea);
           } catch (error) {
             console.error('Failed to fetch tea:', error);

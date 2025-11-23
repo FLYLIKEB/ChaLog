@@ -20,15 +20,6 @@ import { Loader2 } from 'lucide-react';
 type FilterType = 'all' | 'public' | 'private';
 type SortType = 'latest' | 'rating';
 
-function transformNote(note: any): Note {
-  return {
-    ...note,
-    teaName: note.tea?.name || '',
-    userName: note.user?.name || '',
-    createdAt: new Date(note.createdAt),
-  };
-}
-
 export function MyNotes() {
   const { user, isAuthenticated } = useAuth();
   const [filter, setFilter] = useState<FilterType>('all');
@@ -47,7 +38,8 @@ export function MyNotes() {
         setIsLoading(true);
         const data = await notesApi.getAll(user.id);
         const notesArray = Array.isArray(data) ? data : [];
-        setNotes(notesArray.map(transformNote));
+        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
+        setNotes(notesArray as Note[]);
       } catch (error) {
         console.error('Failed to fetch notes:', error);
         toast.error('노트를 불러오는데 실패했습니다.');

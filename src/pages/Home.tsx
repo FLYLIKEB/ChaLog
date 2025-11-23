@@ -9,16 +9,6 @@ import { Tea, Note } from '../types';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
-// 백엔드 응답을 프론트엔드 타입으로 변환
-function transformNote(note: any): Note {
-  return {
-    ...note,
-    teaName: note.tea?.name || '',
-    userName: note.user?.name || '',
-    createdAt: new Date(note.createdAt),
-  };
-}
-
 export function Home() {
   const [todayTea, setTodayTea] = useState<Tea | null>(null);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
@@ -42,9 +32,8 @@ export function Home() {
           setTodayTea(randomTea);
         }
 
-        // 노트 변환
-        const transformedNotes = notesArray.map(transformNote);
-        setPublicNotes(transformedNotes);
+        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
+        setPublicNotes(notesArray as Note[]);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');
