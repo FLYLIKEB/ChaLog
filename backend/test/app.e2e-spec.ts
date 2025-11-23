@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
+  let dataSource: DataSource;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -12,6 +14,8 @@ describe('AppController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    dataSource = moduleFixture.get<DataSource>(DataSource);
+    
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -97,13 +101,20 @@ describe('AppController (e2e)', () => {
       authToken = loginResponse.body.access_token;
     });
 
-    it('GET /teas - should return empty array initially', () => {
-      return request(app.getHttpServer())
+    beforeEach(async () => {
+      // 테스트 격리를 위해 각 테스트 전에 teas 및 관련 notes 데이터 정리
+      // 외래키 제약으로 인해 notes를 먼저 삭제
+      await dataSource.query('DELETE FROM notes');
+      await dataSource.query('DELETE FROM teas');
+    });
+
+    it('GET /teas - should return empty array initially', async () => {
+      const response = await request(app.getHttpServer())
         .get('/teas')
-        .expect(200)
-        .expect((res) => {
-          expect(Array.isArray(res.body)).toBe(true);
-        });
+        .expect(200);
+      
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(0);
     });
 
     it('POST /teas - should create a new tea with authentication', () => {
