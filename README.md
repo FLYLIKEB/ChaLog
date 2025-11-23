@@ -78,30 +78,14 @@ src/
 
 ## Cursor AI 명령어
 
-### Quick Commit & Push ("ch" 명령어)
-챗에 "ch" 또는 "커밋" 입력 시 자동 실행:
-1. 브랜치 관리: 현재 브랜치 확인 → `main`/`develop`이면 변경사항 기반 `feature/*` 브랜치 생성
-2. 변경사항 분석: `git status` → 기능별 그룹화 (auth, notes, teas, components, config 등)
-3. 기능별 커밋: 각 그룹별 스테이징 → 한글로 자동 커밋 메시지 생성 (`feat:`, `fix:`, `refactor:` 등) → 커밋
-4. 푸시 및 요약: 모든 커밋 완료 후 푸시 → 브랜치/커밋 요약 제공
+Cursor AI 명령어는 `.cursor/rules` 파일에 정의되어 있습니다. 상세한 사용법과 워크플로우는 해당 파일을 참고하세요.
 
-### Quick Pull ("pl" 명령어)
-챗에 "pl" 또는 "풀" 입력 시 자동 실행:
-1. 원격 업데이트: `git fetch --all --prune`
-2. 현재 브랜치 pull: `git pull origin <현재브랜치>`
-3. 주요 브랜치 pull: `main`, `develop` 최신화 (체크아웃 → pull → 복귀)
-4. 요약 제공: 업데이트된 브랜치 및 변경사항 요약
+**주요 명령어 요약:**
+- **Quick Commit & Push ("ch")**: 변경사항을 분석하여 기능별로 자동 커밋하고 푸시합니다
+- **Quick Pull ("pl")**: 현재 브랜치와 주요 브랜치(`main`, `develop`)를 최신화합니다
+- **릴리스 자동화**: `scripts/full-release.sh`를 사용하여 전체 릴리스 프로세스를 자동화합니다
 
-### Git 워크플로우
-- 커밋/푸시 전: `docs/git-strategy.md` 확인 (브랜치 네이밍, 병합 절차)
-- 화면/라우트 수정 시: `docs/architecture.md` 확인 및 필요시 업데이트
-- 커밋 전 체크: `npm test`, `npm run lint`, `tsc --noEmit`
-- 커밋 메시지: 한글로 작성 (예: `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
-
-### 릴리스 자동화
-- 전체 릴리스: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature/branch]`
-  - 예: `scripts/full-release.sh "feat: add note filters" v0.5.0`
-  - 프로세스: 테스트/린트 → feature push → develop 병합 → release 생성 → main 병합+태깅 → develop 재병합
+모든 Cursor AI 명령어, Git 워크플로우, 코드 스타일 가이드라인은 `.cursor/rules`에서 관리되며, 이 파일이 단일 소스입니다.
 
 ## 향후 작업 아이디어
 - Supabase Auth/DB와의 실시간 연동, RLS 적용
