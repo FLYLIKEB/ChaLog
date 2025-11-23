@@ -26,17 +26,14 @@ export function TeaDetail() {
         setIsLoading(true);
         const [teaData, notesData] = await Promise.all([
           teasApi.getById(id),
-          notesApi.getAll(undefined, true),
+          notesApi.getAll(undefined, true, id),
         ]);
 
         setTea(teaData as Tea);
         
-        // 해당 차의 공개 노트만 필터링
+        // 서버에서 이미 필터링된 노트 데이터 설정
         const notesArray = Array.isArray(notesData) ? notesData : [];
-        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
-        const filteredNotes = notesArray
-          .filter((note: any) => note.teaId === id) as Note[];
-        setPublicNotes(filteredNotes);
+        setPublicNotes(notesArray as Note[]);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');
