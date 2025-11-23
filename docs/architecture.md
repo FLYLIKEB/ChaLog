@@ -105,7 +105,7 @@ function FloatingActionButtonSwitcher() {
     </div>
 ```
 - **검색(`src/pages/Search.tsx`)**: `mockTeas` 기반 자동완성·검색 결과·로딩 상태를 단일 화면에서 관리합니다. 검색어가 없으면 `EmptyState` 안내가 뜨고, 입력 중에는 상단 추천 리스트 → 결과 영역 순으로 조건부 렌더링합니다.
-- **차 상세(`src/pages/TeaDetail.tsx`)**: URL 파라미터로 차를 찾아 기본 정보, 평균 평점/태그, 공개 노트 목록, “이 차로 노트 작성” CTA를 표시합니다. 데이터가 없으면 서버 오류용 `EmptyState`를 노출합니다.
+- **차 상세(`src/pages/TeaDetail.tsx`)**: URL 파라미터로 차를 찾아 기본 정보, 평균 평점/태그, 공개 노트 목록, "이 차로 노트 작성" CTA를 표시합니다. 태그는 해당 차의 공개 노트 데이터를 기반으로 각 평점 특성(richness, strength, smoothness, clarity, complexity)의 평균값을 계산하여 상위 3개를 동적으로 표시합니다. 데이터가 없으면 서버 오류용 `EmptyState`를 노출합니다.
 - **새 노트(`src/pages/NewNote.tsx`)**: 차 검색·선택, 다섯 가지 평점 슬라이더, 메모, 공개 스위치, 기본 검증/토스트 처리까지 포함된 기록 작성 폼입니다.  
 ```46:112:src/pages/NewNote.tsx
   const handleSave = () => {
