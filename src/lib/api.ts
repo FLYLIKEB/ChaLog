@@ -76,13 +76,17 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit & { timeout?: number } = {}
   ): Promise<T> {
     const token = localStorage.getItem('access_token');
+    const timeout = options.timeout ?? 30000; // 기본 30초
+    
+    // timeout을 제거한 fetch 옵션 생성
+    const { timeout: _, ...fetchOptions } = options;
     
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
-      ...options.headers,
+      ...fetchOptions.headers,
     };
 
     if (token) {
@@ -91,10 +95,17 @@ class ApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     
+    // AbortController를 사용한 타임아웃 설정
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
+    
     try {
       const response = await fetch(url, {
-        ...options,
+        ...fetchOptions,
         headers,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -121,10 +132,18 @@ class ApiClient {
       
       return parsedData as T;
     } catch (error) {
+      // AbortError 처리 (타임아웃)
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`요청 시간이 초과되었습니다 (${timeout}ms)`);
+      }
+      
       if (error instanceof Error) {
         throw error;
       }
       throw new Error('An unexpected error occurred');
+    } finally {
+      // fetch가 완료되면 타임아웃 클리어
+      clearTimeout(timeoutId);
     }
   }
 
