@@ -68,6 +68,25 @@ src/
 - shadcn/ui 래핑 컴포넌트와 `lucide-react` 아이콘 세트를 조합해 일관된 UI를 유지합니다.
 - `components/ui/utils.ts`의 `cn` 헬퍼로 조건부 클래스 병합을 단순화했습니다.
 
+## 개발 가이드라인
+
+프로젝트의 코딩 스타일, 컴포넌트 패턴, 테스팅 전략 등 상세한 개발 가이드라인은 다음 문서들을 참고하세요:
+
+- **Cursor AI 개발 룰**: `.cursor/rules` - 코드 스타일, 컴포넌트 가이드라인, 타입 정의, 테스팅, 에러 처리, 성능 최적화 등
+- **아키텍처 가이드**: `docs/architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
+- **Git 전략**: `docs/git-strategy.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
+
+## Cursor AI 명령어
+
+Cursor AI 명령어는 `.cursor/rules` 파일에 정의되어 있습니다. 상세한 사용법과 워크플로우는 해당 파일을 참고하세요.
+
+**주요 명령어 요약:**
+- **Quick Commit & Push ("ch")**: 변경사항을 분석하여 기능별로 자동 커밋하고 푸시합니다
+- **Quick Pull ("pl")**: 현재 브랜치와 주요 브랜치(`main`, `develop`)를 최신화합니다
+- **릴리스 자동화**: `scripts/full-release.sh`를 사용하여 전체 릴리스 프로세스를 자동화합니다
+
+모든 Cursor AI 명령어, Git 워크플로우, 코드 스타일 가이드라인은 `.cursor/rules`에서 관리되며, 이 파일이 단일 소스입니다.
+
 ## 향후 작업 아이디어
 - Supabase Auth/DB와의 실시간 연동, RLS 적용
 - 노트 CRUD API와 Edge 함수 연결, optimistic update
@@ -95,6 +114,8 @@ src/
 
 ## 추가 참고 문서
 - 아키텍처·페이지별 세부 흐름이 필요한 경우 `docs/architecture.md`를 참고하세요. 기존 README의 상세 설명과 코드 스니펫이 그대로 정리되어 있습니다.
+- Git 브랜치 전략 상세 내용은 `docs/git-strategy.md`를 참고하세요.
+- Cursor AI 개발 환경 설정 및 룰은 `.cursor/rules` 파일을 참고하세요.
 
 필요한 정보가 README에 없다면 이 문서를 업데이트하거나 `src/guidelines/Guidelines.md`를 참고해 주세요.
 

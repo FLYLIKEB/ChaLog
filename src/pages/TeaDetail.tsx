@@ -1,20 +1,59 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
-import { mockTeas, mockNotes } from '../lib/mockData';
+import { teasApi, notesApi } from '../lib/api';
+import { Tea, Note } from '../types';
+import { toast } from 'sonner';
 
 export function TeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const tea = mockTeas.find(t => t.id === id);
-  const publicNotes = mockNotes.filter(note => note.teaId === id && note.isPublic);
+  const [tea, setTea] = useState<Tea | null>(null);
+  const [publicNotes, setPublicNotes] = useState<Note[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+
+      try {
+        setIsLoading(true);
+        const [teaData, notesData] = await Promise.all([
+          teasApi.getById(id),
+          notesApi.getAll(undefined, true, id),
+        ]);
+
+        setTea(teaData as Tea);
+        
+        // 서버에서 이미 필터링된 노트 데이터 설정
+        const notesArray = Array.isArray(notesData) ? notesData : [];
+        setPublicNotes(notesArray as Note[]);
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+        toast.error('데이터를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <DetailFallback title="차 상세">
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+        </div>
+      </DetailFallback>
+    );
+  }
 
   if (!tea) {
     return (
@@ -25,7 +64,49 @@ export function TeaDetail() {
   }
 
   // 노트 데이터를 바탕으로 상위 태그 계산
-  const topTags = ['깨끗함', '부드러움', '복합적'];
+  const calculateTopTags = (notes: Note[]): string[] => {
+    if (notes.length === 0) {
+      return ['깨끗함', '부드러움', '복합적']; // 기본 fallback
+    }
+
+    // 각 특성별 평균값 계산
+    const tagMap: Record<string, { sum: number; count: number }> = {
+      풍부함: { sum: 0, count: 0 },
+      강함: { sum: 0, count: 0 },
+      부드러움: { sum: 0, count: 0 },
+      깨끗함: { sum: 0, count: 0 },
+      복합적: { sum: 0, count: 0 },
+    };
+
+    notes.forEach(note => {
+      if (note.ratings) {
+        tagMap['풍부함'].sum += note.ratings.richness;
+        tagMap['풍부함'].count += 1;
+        tagMap['강함'].sum += note.ratings.strength;
+        tagMap['강함'].count += 1;
+        tagMap['부드러움'].sum += note.ratings.smoothness;
+        tagMap['부드러움'].count += 1;
+        tagMap['깨끗함'].sum += note.ratings.clarity;
+        tagMap['깨끗함'].count += 1;
+        tagMap['복합적'].sum += note.ratings.complexity;
+        tagMap['복합적'].count += 1;
+      }
+    });
+
+    // 평균값 계산 및 정렬
+    const tagAverages = Object.entries(tagMap)
+      .map(([tag, data]) => ({
+        tag,
+        average: data.count > 0 ? data.sum / data.count : 0,
+      }))
+      .sort((a, b) => b.average - a.average)
+      .slice(0, 3)
+      .map(item => item.tag);
+
+    return tagAverages.length > 0 ? tagAverages : ['깨끗함', '부드러움', '복합적'];
+  };
+
+  const topTags = calculateTopTags(publicNotes);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
@@ -68,7 +149,7 @@ export function TeaDetail() {
             <div className="text-center">
               <div className="flex items-center gap-2 mb-1">
                 <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-                <span className="text-2xl">{tea.averageRating.toFixed(1)}</span>
+                <span className="text-2xl">{Number(tea.averageRating).toFixed(1)}</span>
               </div>
               <p className="text-xs text-gray-500">{tea.reviewCount}개 리뷰</p>
             </div>

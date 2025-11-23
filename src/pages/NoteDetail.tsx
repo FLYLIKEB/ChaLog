@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
@@ -16,29 +16,99 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
-import { mockNotes, mockTeas, currentUser } from '../lib/mockData';
+import { notesApi, teasApi } from '../lib/api';
+import { Note, Tea } from '../types';
 import { toast } from 'sonner';
+import { useAuth } from '../contexts/AuthContext';
 
 export function NoteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  
-  const note = mockNotes.find(n => n.id === id);
-  const tea = note ? mockTeas.find(t => t.id === note.teaId) : null;
-  const isMyNote = note?.userId === currentUser.id;
+  const [note, setNote] = useState<Note | null>(null);
+  const [tea, setTea] = useState<Tea | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  if (!note || !tea) {
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) return;
+
+      try {
+        setIsLoading(true);
+        const noteData = await notesApi.getById(id);
+        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
+        const normalizedNote = noteData as Note;
+        setNote(normalizedNote);
+
+        // 차 정보 가져오기
+        if (normalizedNote.teaId) {
+          try {
+            const teaData = await teasApi.getById(normalizedNote.teaId);
+            setTea(teaData as Tea);
+          } catch (error) {
+            console.error('Failed to fetch tea:', error);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch note:', error);
+        toast.error('노트를 불러오는데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <DetailFallback title="노트 상세">
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+        </div>
+      </DetailFallback>
+    );
+  }
+
+  if (!note) {
     return <DetailFallback title="노트 상세" message="노트를 찾을 수 없습니다." />;
   }
 
-  const handleTogglePublic = () => {
-    toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
+  const isMyNote = note.userId === user?.id;
+
+  const handleTogglePublic = async () => {
+    if (!id) return;
+
+    try {
+      setIsUpdating(true);
+      await notesApi.update(id, { isPublic: !note.isPublic });
+      setNote({ ...note, isPublic: !note.isPublic });
+      toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
+    } catch (error) {
+      console.error('Failed to update note:', error);
+      toast.error('업데이트에 실패했습니다.');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
-  const handleDelete = () => {
-    toast.success('노트가 삭제되었습니다.');
-    setTimeout(() => navigate('/my-notes'), 500);
+  const handleDelete = async () => {
+    if (!id) return;
+
+    try {
+      setIsDeleting(true);
+      await notesApi.delete(id);
+      toast.success('노트가 삭제되었습니다.');
+      navigate('/my-notes', { replace: true });
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      toast.error('삭제에 실패했습니다.');
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
   };
 
   return (
@@ -47,26 +117,28 @@ export function NoteDetail() {
       
       <div className="p-4 space-y-6">
         {/* 차 정보 요약 */}
-        <section className="bg-white rounded-lg p-4">
-          <button
-            onClick={() => navigate(`/tea/${tea.id}`)}
-            className="text-left w-full"
-          >
-            <h2 className="mb-2">{tea.name}</h2>
-            <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-              <span>{tea.type}</span>
-              {tea.year && <span>· {tea.year}년</span>}
-              {tea.seller && <span>· {tea.seller}</span>}
-            </div>
-          </button>
-        </section>
+        {tea && (
+          <section className="bg-white rounded-lg p-4">
+            <button
+              onClick={() => navigate(`/tea/${tea.id}`)}
+              className="text-left w-full"
+            >
+              <h2 className="mb-2">{tea.name}</h2>
+              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+                <span>{tea.type}</span>
+                {tea.year && <span>· {tea.year}년</span>}
+                {tea.seller && <span>· {tea.seller}</span>}
+              </div>
+            </button>
+          </section>
+        )}
 
         {/* 평균 평점 */}
         <section className="bg-white rounded-lg p-4">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-              <span className="text-2xl">{note.rating.toFixed(1)}</span>
+              <span className="text-2xl">{Number(note.rating).toFixed(1)}</span>
             </div>
             <Badge variant={note.isPublic ? 'default' : 'secondary'}>
               {note.isPublic ? (
@@ -97,8 +169,13 @@ export function NoteDetail() {
               variant="outline"
               onClick={handleTogglePublic}
               className="flex-1"
+              disabled={isUpdating}
             >
-              {note.isPublic ? '비공개로 전환' : '공개하기'}
+              {isUpdating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                note.isPublic ? '비공개로 전환' : '공개하기'
+              )}
             </Button>
             <Button
               variant="outline"
@@ -121,9 +198,17 @@ export function NoteDetail() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
-              삭제
+            <AlertDialogCancel disabled={isDeleting}>취소</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete} 
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                '삭제'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
