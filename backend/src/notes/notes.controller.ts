@@ -26,9 +26,13 @@ export class NotesController {
   }
 
   @Get()
-  findAll(@Query('userId') userId?: string, @Query('public') isPublic?: string) {
+  findAll(
+    @Query('userId') userId?: string,
+    @Query('public') isPublic?: string,
+    @Query('teaId') teaId?: string,
+  ) {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
-    return this.notesService.findAll(userId, publicFilter);
+    return this.notesService.findAll(userId, publicFilter, teaId);
   }
 
   @Get(':id')
