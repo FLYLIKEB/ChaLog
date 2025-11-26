@@ -245,30 +245,51 @@ jobs:
               rm -rf node_modules
             fi
             
-            # 의존성 설치 - 전체 설치 후 prune (peer dependencies 문제 해결)
-            echo "📦 전체 의존성 설치 중 (peer dependencies 포함)..."
-            $NPM_CMD install --legacy-peer-deps --no-audit --no-fund --loglevel=error
-            
-            # devDependencies 제거 (하지만 dependencies와 peer dependencies는 유지)
-            echo "🧹 devDependencies 제거 중..."
-            $NPM_CMD prune --production
-            
-            # class-transformer 강제 재설치 (peer dependency 문제 해결)
-            echo "📦 class-transformer 강제 재설치 중..."
-            $NPM_CMD install class-transformer@^0.5.1 class-validator@^0.14.2 --save --legacy-peer-deps --no-audit --no-fund --force
+            # package-lock.json 확인 및 동기화
+            if [ -f "package-lock.json" ]; then
+              echo "📦 package-lock.json 발견. 동기화 확인 중..."
+              # npm ci dry-run으로 동기화 확인
+              if $NPM_CMD ci --dry-run --production 2>&1 | grep -qi "missing\|invalid\|error"; then
+                echo "⚠️ package-lock.json이 package.json과 동기화되지 않음"
+                echo "📦 package-lock.json 재생성 중..."
+                rm -f package-lock.json
+                $NPM_CMD install --package-lock-only --legacy-peer-deps --no-audit --no-fund
+              fi
+              
+              # npm ci 시도
+              echo "📦 npm ci 실행 중..."
+              if $NPM_CMD ci --production --legacy-peer-deps 2>&1; then
+                echo "✅ npm ci 성공"
+              else
+                echo "⚠️ npm ci 실패. 상세 오류:"
+                $NPM_CMD ci --production --legacy-peer-deps 2>&1 | tail -30 || true
+                echo "📦 npm install로 대체..."
+                # --production 없이 전체 설치 (peer dependencies 포함)
+                echo "📦 전체 의존성 설치 중..."
+                $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
+                # devDependencies 제거
+                echo "🧹 devDependencies 제거 중..."
+                $NPM_CMD prune --production
+              fi
+            else
+              echo "📦 package-lock.json 없음. 생성 및 설치 중..."
+              # package-lock.json 생성
+              $NPM_CMD install --package-lock-only --legacy-peer-deps --no-audit --no-fund
+              # 전체 설치
+              $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
+              # devDependencies 제거
+              echo "🧹 devDependencies 제거 중..."
+              $NPM_CMD prune --production
+            fi
             
             # class-transformer 실제 존재 확인
             echo "🔍 class-transformer 실제 확인 중..."
             if [ -d "node_modules/class-transformer" ]; then
               echo "✅ class-transformer 디렉토리 존재"
-              echo "📋 class-transformer 버전: $(cat node_modules/class-transformer/package.json | grep '"version"' | head -1)"
-              ls -la node_modules/class-transformer | head -3
+              echo "📋 class-transformer 버전: $(cat node_modules/class-transformer/package.json 2>/dev/null | grep '"version"' | head -1 || echo '확인 불가')"
             else
-              echo "❌ class-transformer가 여전히 없습니다!"
-              echo "전체 재설치 시도..."
-              rm -rf node_modules package-lock.json
-              $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
-              $NPM_CMD prune --production
+              echo "❌ class-transformer가 없습니다! 재설치 중..."
+              $NPM_CMD install class-transformer@^0.5.1 class-validator@^0.14.2 --save --legacy-peer-deps --no-audit --no-fund
             fi
             
             # 설치 확인 및 누락된 패키지 재설치
