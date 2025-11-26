@@ -252,7 +252,8 @@ jobs:
                 echo "✅ npm ci 성공"
               else
                 echo "⚠️ npm ci 실패. npm install로 대체..."
-                # --production 없이 설치 후 node_modules 정리
+                # --production 없이 전체 설치 (peer dependencies 포함)
+                echo "📦 전체 의존성 설치 중..."
                 $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
                 # devDependencies 제거
                 echo "🧹 devDependencies 제거 중..."
@@ -260,15 +261,29 @@ jobs:
               fi
             else
               echo "📦 package-lock.json 없음. npm install 실행..."
+              # --production 없이 전체 설치
               $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
               # devDependencies 제거
               echo "🧹 devDependencies 제거 중..."
               $NPM_CMD prune --production
             fi
             
-            # class-transformer 명시적 설치 (peer dependency 문제 해결)
-            echo "📦 class-transformer 명시적 설치 중..."
-            $NPM_CMD install class-transformer class-validator --save --legacy-peer-deps --no-audit --no-fund || true
+            # class-transformer 실제 존재 확인 및 재설치
+            echo "🔍 class-transformer 실제 확인 중..."
+            if [ ! -d "node_modules/class-transformer" ]; then
+              echo "❌ class-transformer가 실제로 없습니다. 재설치 중..."
+              $NPM_CMD install class-transformer class-validator --save --legacy-peer-deps --no-audit --no-fund
+            else
+              echo "✅ class-transformer 디렉토리 존재 확인"
+              ls -la node_modules/class-transformer | head -5
+            fi
+            
+            # @nestjs/common의 peer dependencies 확인
+            echo "🔍 @nestjs/common peer dependencies 확인 중..."
+            if [ -f "node_modules/@nestjs/common/package.json" ]; then
+              echo "📋 @nestjs/common package.json 확인:"
+              grep -A 5 "peerDependencies" node_modules/@nestjs/common/package.json || echo "peerDependencies 없음"
+            fi
             
             # 설치 확인 및 누락된 패키지 재설치
             echo "🔍 설치된 패키지 확인:"
@@ -348,15 +363,29 @@ jobs:
             
             # Health check
             echo "🏥 Health check..."
-            sleep 5
+            sleep 10  # 앱 시작 시간 확보
             PM2_CMD=$(command -v pm2 || echo "/usr/local/bin/pm2")
+            
+            # PM2 상태 확인
+            echo "📊 PM2 상태:"
+            $PM2_CMD status || true
+            
+            # Health check 시도
             if curl -f http://localhost:3000/health > /dev/null 2>&1; then
               echo "✅ 배포 성공! Health check 통과"
             else
-              echo "⚠️ Health check 실패. 로그 확인:"
-              $PM2_CMD logs chalog-backend --lines 20 --nostream || true
+              echo "⚠️ Health check 실패. 상세 정보 확인:"
               echo "PM2 상태:"
               $PM2_CMD status || true
+              echo ""
+              echo "PM2 로그 (최근 50줄):"
+              $PM2_CMD logs chalog-backend --lines 50 --nostream || true
+              echo ""
+              echo "node_modules/class-transformer 확인:"
+              ls -la node_modules/class-transformer 2>&1 || echo "class-transformer 없음"
+              echo ""
+              echo "class-transformer 패키지 정보:"
+              cat node_modules/class-transformer/package.json 2>&1 | head -10 || echo "파일 없음"
               exit 1
             fi
             
