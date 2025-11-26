@@ -16,10 +16,12 @@ GitHub 저장소에서 다음 Secrets를 설정해야 합니다:
 
 #### 필수 Secrets
 
-1. **EC2_SSH_KEY**
+1. **EC2_SSH_KEY** ⚠️ 중요
    - EC2 인스턴스 접속용 SSH 개인 키
-   - 전체 내용을 복사 (`-----BEGIN RSA PRIVATE KEY-----` 부터 `-----END RSA PRIVATE KEY-----` 까지)
+   - **전체 내용을 정확히 복사** (`-----BEGIN RSA PRIVATE KEY-----` 부터 `-----END RSA PRIVATE KEY-----` 까지)
+   - **줄바꿈 포함하여 전체 복사** (마지막 줄바꿈도 포함)
    - 예: `~/.ssh/your-key.pem` 파일 내용
+   - **확인 방법**: Secret 저장 후 다시 열어서 첫 줄이 `-----BEGIN`로 시작하는지 확인
 
 2. **EC2_HOST**
    - EC2 인스턴스의 Public IP 또는 도메인
