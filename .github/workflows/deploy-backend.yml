@@ -159,21 +159,39 @@ jobs:
             
             BACKEND_DIR="/home/ubuntu/chalog-backend"
             
-            # Node.js 설치 확인 및 설치
-            if ! command -v node &> /dev/null; then
-              echo "📦 Node.js가 설치되지 않았습니다. 설치 중..."
-              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-              sudo apt-get install -y nodejs
-              echo "✅ Node.js 설치 완료: $(node --version)"
-            else
-              echo "✅ Node.js 이미 설치됨: $(node --version)"
+            # curl 설치 확인
+            if ! command -v curl &> /dev/null; then
+              echo "📦 curl 설치 중..."
+              sudo apt-get update
+              sudo apt-get install -y curl
             fi
             
-            # npm 확인
-            if ! command -v npm &> /dev/null; then
-              echo "❌ npm을 찾을 수 없습니다!"
-              exit 1
+            # Node.js 설치 확인 및 설치
+            if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+              echo "📦 Node.js/npm이 설치되지 않았습니다. 설치 중..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+              
+              # PATH 업데이트 (현재 세션에 반영)
+              export PATH="/usr/bin:$PATH"
+              
+              # 설치 확인
+              if command -v node &> /dev/null && command -v npm &> /dev/null; then
+                echo "✅ Node.js 설치 완료: $(node --version)"
+                echo "✅ npm 설치 완료: $(npm --version)"
+              else
+                echo "❌ Node.js/npm 설치 실패!"
+                echo "수동 설치가 필요할 수 있습니다."
+                exit 1
+              fi
+            else
+              echo "✅ Node.js 이미 설치됨: $(node --version)"
+              echo "✅ npm 이미 설치됨: $(npm --version)"
             fi
+            
+            # npm 경로 확인
+            echo "🔍 npm 경로: $(which npm)"
+            echo "🔍 node 경로: $(which node)"
             
             # 디렉토리 생성
             mkdir -p $BACKEND_DIR
