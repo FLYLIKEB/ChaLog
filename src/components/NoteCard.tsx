@@ -38,7 +38,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
         </div>
         <div className="flex items-center gap-1">
           <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-          <span className="text-sm">{note.rating.toFixed(1)}</span>
+          <span className="text-sm">{Number(note.rating).toFixed(1)}</span>
         </div>
       </div>
     </button>
