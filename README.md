@@ -41,6 +41,21 @@ Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
 | `npm run test` | Vitest + Testing Library 기반 단위/통합 테스트 실행 |
 | `npm run test:run` | 워치 없이 일회성 테스트 실행 |
 
+### 유틸리티 스크립트
+
+프로젝트에는 개발 및 배포를 위한 유틸리티 스크립트가 포함되어 있습니다.
+
+**Git 워크플로우:**
+- `scripts/quick-commit.sh` - 빠른 커밋 및 푸시
+- `scripts/full-release.sh` - 릴리스 자동화
+
+**데이터베이스 관리:**
+- `backend/scripts/start-ssh-tunnel.sh` - SSH 터널 시작
+- `backend/scripts/stop-ssh-tunnel.sh` - SSH 터널 종료
+- `backend/scripts/check-database.sh` - 데이터베이스 확인
+
+자세한 사용법은 [`docs/SCRIPTS.md`](./docs/SCRIPTS.md)를 참고하세요.
+
 ## 폴더 구조 하이라이트
 ```
 src/
@@ -113,9 +128,12 @@ Cursor AI 명령어는 `.cursor/rules` 파일에 정의되어 있습니다. 상�
 - 문서화: 브랜치 명명 규칙·릴리스 절차를 `docs/architecture.md`와 이 README에 유지해 팀 합의를 공유합니다.
 
 ## 추가 참고 문서
-- 아키텍처·페이지별 세부 흐름이 필요한 경우 `docs/architecture.md`를 참고하세요. 기존 README의 상세 설명과 코드 스니펫이 그대로 정리되어 있습니다.
-- Git 브랜치 전략 상세 내용은 `docs/git-strategy.md`를 참고하세요.
-- Cursor AI 개발 환경 설정 및 룰은 `.cursor/rules` 파일을 참고하세요.
+- **스크립트 사용법**: [`docs/SCRIPTS.md`](./docs/SCRIPTS.md) - 모든 유틸리티 스크립트의 역할과 사용법
+- **아키텍처**: [`docs/architecture.md`](./docs/architecture.md) - 프로젝트 구조, 라우팅, 데이터 흐름
+- **데이터베이스**: [`docs/DATABASE.md`](./docs/DATABASE.md) - 데이터베이스 설정 및 연결 가이드
+- **보안**: [`docs/SECURITY.md`](./docs/SECURITY.md) - 보안 가이드 및 모범 사례
+- **Git 전략**: [`docs/git-strategy.md`](./docs/git-strategy.md) - 브랜치 전략, 커밋 규칙, 릴리스 프로세스
+- **Cursor AI 룰**: [`.cursor/rules`](./.cursor/rules) - 개발 환경 설정 및 코딩 가이드라인
 
 필요한 정보가 README에 없다면 이 문서를 업데이트하거나 `src/guidelines/Guidelines.md`를 참고해 주세요.
 
