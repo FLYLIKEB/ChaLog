@@ -29,7 +29,10 @@ npm run dev
 Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
 
 ### 환경 변수
-실제 Supabase를 붙일 계획이라면 `.env` 혹은 `src/utils/supabase/info.tsx`를 참조해 공개 키/프로젝트 URL을 분리하세요. 현재 mock 데이터 모드에서는 추가 설정이 필요 없습니다.
+백엔드 API URL을 설정하려면 `.env` 파일에 `VITE_API_BASE_URL`을 설정하세요. 기본값은 `http://localhost:3000`입니다.
+```bash
+VITE_API_BASE_URL=http://localhost:3000
+```
 
 ### NPM 스크립트
 | 명령 | 설명 |
@@ -63,7 +66,7 @@ src/
 ├─ pages/                # Home, Search, TeaDetail, NoteDetail, MyNotes, Settings
 ├─ components/           # Header, NoteCard, TeaCard, EmptyState, FAB 등 UI 조각
 ├─ components/ui/        # shadcn 기반 래퍼와 `cn` 유틸
-├─ lib/mockData.ts       # currentUser, mockTeas, mockNotes
+├─ lib/api.ts            # API 클라이언트 및 엔드포인트 함수들
 ├─ supabase/functions/   # Hono Edge 함수 + KV 스토어 래퍼
 └─ styles/               # Tailwind v4 토큰(`globals.css`, `index.css`)
 ```
@@ -74,7 +77,9 @@ src/
 - 글로벌 알림은 `sonner`, 폼·컴포넌트 스타일은 shadcn/ui + Tailwind 유틸 조합을 사용합니다.
 
 ## 데이터 & 외부 연동
-- 임시 데이터는 `src/lib/mockData.ts` 하나에 모여 있어 상태 관리 라이브러리 없이도 플로우 점검이 가능합니다.
+- 모든 데이터는 NestJS 백엔드 API를 통해 제공되며, `src/lib/api.ts`의 `apiClient`를 통해 통신합니다.
+- `teasApi`, `notesApi`, `authApi`를 통해 차, 노트, 인증 관련 API를 호출합니다.
+- API 응답의 날짜 문자열은 자동으로 Date 객체로 변환되며, Note 응답은 백엔드의 관계 데이터에서 `teaName`, `userName`을 추출하여 정규화됩니다.
 - Supabase Edge 함수(`src/supabase/functions/server/index.tsx`)는 Hono 기반으로 구성됐으며, `kv_store.tsx`에서 KV 테이블 CRUD를 제공합니다.
 - 클라이언트 측 프로젝트 정보는 `src/utils/supabase/info.tsx`에 정의되어 있어 실제 연결 시 참고하거나 `.env`로 대체할 수 있습니다.
 

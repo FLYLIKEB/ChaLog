@@ -3,25 +3,48 @@ import userEvent from '@testing-library/user-event';
 import { Search } from '../Search';
 import { renderWithRouter } from '../../test/renderWithRouter';
 
-vi.mock('../../lib/mockData', () => ({
-  mockTeas: [
-    {
-      id: 'tea-a',
-      name: '무이암차',
-      type: '우롱차',
-      seller: '티하우스',
-      averageRating: 4.7,
-      reviewCount: 15,
-    },
-    {
-      id: 'tea-b',
-      name: '진행백차',
-      type: '백차',
-      seller: '차상회',
-      averageRating: 4.3,
-      reviewCount: 8,
-    },
-  ],
+const mockTeas = [
+  {
+    id: 'tea-a',
+    name: '무이암차',
+    type: '우롱차',
+    seller: '티하우스',
+    averageRating: 4.7,
+    reviewCount: 15,
+  },
+  {
+    id: 'tea-b',
+    name: '진행백차',
+    type: '백차',
+    seller: '차상회',
+    averageRating: 4.3,
+    reviewCount: 8,
+  },
+];
+
+vi.mock('../../lib/api', () => ({
+  teasApi: {
+    getAll: vi.fn((query?: string) => {
+      if (!query) {
+        return Promise.resolve(mockTeas);
+      }
+      // 검색 쿼리에 따라 필터링된 결과 반환
+      const filtered = mockTeas.filter(tea =>
+        tea.name.toLowerCase().includes(query.toLowerCase()) ||
+        tea.type.toLowerCase().includes(query.toLowerCase()) ||
+        (tea.seller && tea.seller.toLowerCase().includes(query.toLowerCase()))
+      );
+      return Promise.resolve(filtered);
+    }),
+  },
+}));
+
+vi.mock('sonner', () => ({
+  toast: {
+    error: vi.fn(),
+    success: vi.fn(),
+    info: vi.fn(),
+  },
 }));
 
 describe('Search 페이지', () => {
@@ -39,7 +62,7 @@ describe('Search 페이지', () => {
     await user.type(input, '무이');
 
     expect(await screen.findByText('무이암차')).toBeInTheDocument();
-    expect(screen.queryByText('등록된 차가 없습니다.')).not.toBeInTheDocument();
+    expect(screen.queryByText('검색 결과가 없습니다.')).not.toBeInTheDocument();
   });
 
   it('일치하는 차가 없으면 빈 상태를 보여준다', async () => {
@@ -49,7 +72,7 @@ describe('Search 페이지', () => {
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '없는차');
 
-    expect(await screen.findByText('등록된 차가 없습니다.')).toBeInTheDocument();
+    expect(await screen.findByText('검색 결과가 없습니다.')).toBeInTheDocument();
   });
 });
 
