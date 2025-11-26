@@ -44,18 +44,46 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          # SSH 키 저장 (줄바꿈 보존)
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          # SSH 키 형식 확인
+          head -1 ~/.ssh/deploy_key
+          # EC2 호스트 키 추가
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>&1 || true
+          chmod 644 ~/.ssh/known_hosts
+          # SSH 연결 테스트
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=10 \
+              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+              "echo 'SSH 연결 성공!'" || echo "SSH 연결 테스트 실패"
 
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
+          # SSH 연결 테스트
+          echo "🔍 SSH 연결 테스트 중..."
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=10 \
+              -o BatchMode=yes \
+              $EC2_USER@$EC2_HOST \
+              "echo 'SSH 연결 성공!'" || {
+            echo "❌ SSH 연결 실패!"
+            echo "EC2_SSH_KEY Secret을 확인하세요."
+            echo "자세한 내용: docs/SSH_KEY_TROUBLESHOOTING.md"
+            exit 1
+          }
+          
           # 배포 파일 전송
+          echo "📤 배포 파일 전송 중..."
           scp -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
+              -o ConnectTimeout=10 \
               backend/deploy.tar.gz \
               $EC2_USER@$EC2_HOST:/tmp/
 
