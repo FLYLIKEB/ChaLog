@@ -71,12 +71,12 @@ export class NotesService {
     });
 
     if (!note) {
-      throw new NotFoundException(`Note with ID ${id} not found`);
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
     }
 
     // 비공개 노트는 작성자만 볼 수 있음
     if (!note.isPublic && note.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to view this note');
+      throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
     }
 
     return note;
@@ -86,7 +86,7 @@ export class NotesService {
     const note = await this.findOne(id, userId);
 
     if (note.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to update this note');
+      throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
 
     Object.assign(note, updateNoteDto);
@@ -102,7 +102,7 @@ export class NotesService {
     const note = await this.findOne(id, userId);
 
     if (note.userId !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this note');
+      throw new ForbiddenException('이 노트를 삭제할 권한이 없습니다.');
     }
 
     const teaId = note.teaId;

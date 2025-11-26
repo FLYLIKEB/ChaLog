@@ -32,7 +32,7 @@ export class TeasService {
       relations: ['notes'],
     });
     if (!tea) {
-      throw new NotFoundException(`Tea with ID ${id} not found`);
+      throw new NotFoundException('차를 찾을 수 없습니다.');
     }
     return tea;
   }
