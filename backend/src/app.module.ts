@@ -6,6 +6,8 @@ import { UsersModule } from './users/users.module';
 import { TeasModule } from './teas/teas.module';
 import { NotesModule } from './notes/notes.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
+import { HealthController } from './health/health.controller';
+import { User } from './users/entities/user.entity';
 
 @Module({
   imports: [
@@ -18,10 +20,12 @@ import { getTypeOrmConfig } from './database/typeorm.config';
       useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
       inject: [ConfigService],
     }),
+    TypeOrmModule.forFeature([User]),
     AuthModule,
     UsersModule,
     TeasModule,
     NotesModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}
