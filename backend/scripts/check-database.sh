@@ -4,27 +4,71 @@
 # 사용법: ./scripts/check-database.sh
 # 주의: SSH 터널이 실행 중이어야 합니다 (./scripts/start-ssh-tunnel.sh)
 
-# .env 파일에서 DATABASE_URL 파싱
+# .env 파일 로드
 if [ ! -f .env ]; then
     echo "❌ .env 파일을 찾을 수 없습니다."
     exit 1
 fi
 
-# DATABASE_URL에서 정보 추출
-DATABASE_URL=$(grep "^DATABASE_URL=" .env | cut -d '=' -f2-)
+# .env 파일을 안전하게 로드
+set -a
+source .env
+set +a
 
+# DATABASE_URL 확인
 if [ -z "$DATABASE_URL" ]; then
-    echo "❌ DATABASE_URL을 .env 파일에서 찾을 수 없습니다."
+    echo "❌ DATABASE_URL 환경 변수가 설정되지 않았습니다."
     exit 1
 fi
 
-# URL 파싱: mysql://user:password@host:port/database
-# 간단한 파싱 (더 정교한 파싱이 필요할 수 있음)
-HOST=$(echo "$DATABASE_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')
-PORT=$(echo "$DATABASE_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
-USER=$(echo "$DATABASE_URL" | sed -n 's/mysql:\/\/\([^:]*\):.*/\1/p')
-PASSWORD=$(echo "$DATABASE_URL" | sed -n 's/mysql:\/\/[^:]*:\([^@]*\)@.*/\1/p')
-DATABASE=$(echo "$DATABASE_URL" | sed -n 's/.*\/\([^?]*\).*/\1/p')
+# Node.js를 사용하여 DATABASE_URL 파싱 (특수 문자, IPv6, 쿼리 파라미터 지원)
+# URL 클래스를 사용하여 견고하게 파싱
+PARSED=$(node -e "
+try {
+  const url = new URL(process.env.DATABASE_URL);
+  if (url.protocol !== 'mysql:') {
+    throw new Error('Invalid protocol');
+  }
+  const hostname = url.hostname || '';
+  const port = url.port || '3306';
+  const username = url.username || '';
+  const password = url.password || '';
+  const database = url.pathname.slice(1).split('?')[0] || '';
+  
+  // URL 디코딩
+  const decodedPassword = decodeURIComponent(password);
+  const decodedDatabase = decodeURIComponent(database);
+  
+  console.log('HOST=' + hostname);
+  console.log('PORT=' + port);
+  console.log('USER=' + username);
+  console.log('PASSWORD=' + decodedPassword);
+  console.log('DATABASE=' + decodedDatabase);
+} catch (error) {
+  console.error('DATABASE_URL 파싱 실패:', error.message);
+  process.exit(1);
+}
+")
+
+if [ $? -ne 0 ]; then
+    echo "❌ DATABASE_URL 파싱 실패"
+    exit 1
+fi
+
+# 파싱된 값을 환경 변수로 설정
+eval "$PARSED"
+
+# 필수 값 검증
+if [ -z "$HOST" ] || [ -z "$USER" ] || [ -z "$DATABASE" ]; then
+    echo "❌ DATABASE_URL에 필수 정보가 누락되었습니다."
+    exit 1
+fi
+
+# 데이터베이스 이름 검증 (SQL injection 방지)
+if ! echo "$DATABASE" | grep -qE '^[a-zA-Z0-9_]+$'; then
+    echo "❌ 데이터베이스 이름에 허용되지 않는 문자가 포함되어 있습니다: $DATABASE"
+    exit 1
+fi
 
 echo "📋 연결 정보:"
 echo "   호스트: $HOST"
@@ -85,12 +129,13 @@ fi
 echo ""
 echo "🔍 '$DATABASE' 데이터베이스 확인 중..."
 
-# 데이터베이스 존재 여부 확인
-DB_EXISTS=$(mysql -h "$HOST" -P "$PORT" -u "$USER" -e "SHOW DATABASES LIKE '$DATABASE';" 2>&1 | grep -c "$DATABASE")
+# 데이터베이스 존재 여부 확인 (백틱 사용)
+DB_EXISTS=$(mysql -h "$HOST" -P "$PORT" -u "$USER" -e "SHOW DATABASES LIKE \`$DATABASE\`;" 2>&1 | grep -c "$DATABASE")
 
 if [ "$DB_EXISTS" -eq 0 ]; then
     echo "📝 데이터베이스 '$DATABASE'가 없습니다. 생성 중..."
-    mysql -h "$HOST" -P "$PORT" -u "$USER" -e "CREATE DATABASE $DATABASE CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1
+    # 백틱으로 데이터베이스 이름을 감싸서 특수 문자 처리
+    mysql -h "$HOST" -P "$PORT" -u "$USER" -e "CREATE DATABASE \`$DATABASE\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" 2>&1
     
     if [ $? -eq 0 ]; then
         echo "✅ 데이터베이스 '$DATABASE' 생성 완료!"

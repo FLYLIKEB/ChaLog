@@ -10,4 +10,3 @@ docs/memo.md
 *.p12
 *.pfx
 your-key.pem
-~/.ssh/your-key.pem
