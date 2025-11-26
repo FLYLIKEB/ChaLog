@@ -8,8 +8,8 @@ export interface ApiError {
 }
 
 /**
- * ISO 날짜 문자열을 Date 객체로 변환하는 재귀적 유틸리티
- * 객체와 배열을 순회하며 모든 날짜 문자열을 Date 객체로 변환
+ * ISO 날짜 문자열을 Date 객체로 변환하고, DECIMAL 필드를 숫자로 변환하는 재귀적 유틸리티
+ * 객체와 배열을 순회하며 모든 날짜 문자열을 Date 객체로 변환하고, 평점 필드를 숫자로 변환
  */
 function parseDates<T>(obj: T): T {
   if (obj === null || obj === undefined) {
@@ -33,7 +33,13 @@ function parseDates<T>(obj: T): T {
           const date = new Date(value);
           // 유효한 날짜인지 확인
           parsed[key] = isNaN(date.getTime()) ? value : date;
-        } else {
+        } 
+        // 평점 필드인 경우 숫자로 변환 (DECIMAL 타입이 문자열로 반환됨)
+        else if ((key === 'rating' || key === 'averageRating') && typeof value === 'string') {
+          const num = parseFloat(value);
+          parsed[key] = isNaN(num) ? value : num;
+        } 
+        else {
           // 중첩된 객체나 배열인 경우 재귀 호출
           parsed[key] = parseDates(value);
         }
@@ -156,7 +162,49 @@ class ApiClient {
           message: response.statusText,
           statusCode: response.status,
         }));
-        throw new Error(error.message || `HTTP error! status: ${response.status}`);
+        
+        // 에러 메시지를 한글로 변환
+        let errorMessage = error.message || `HTTP error! status: ${response.status}`;
+        
+        // 백엔드에서 이미 한글 메시지를 보내지만, 혹시 모를 영어 메시지에 대비
+        if (response.status === 401) {
+          if (errorMessage.includes('Invalid credentials') || errorMessage.includes('invalid') || errorMessage.includes('credentials')) {
+            errorMessage = '이메일 또는 비밀번호가 올바르지 않습니다.';
+          } else if (errorMessage.includes('Unauthorized') && !errorMessage.includes('이메일')) {
+            errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+          }
+        } else if (response.status === 403) {
+          if (errorMessage.includes('permission') || errorMessage.includes('Forbidden')) {
+            // 백엔드에서 이미 한글 메시지를 보내므로 그대로 사용
+            if (!errorMessage.match(/[가-힣]/)) {
+              errorMessage = '접근 권한이 없습니다.';
+            }
+          } else {
+            errorMessage = '접근 권한이 없습니다.';
+          }
+        } else if (response.status === 404) {
+          if (!errorMessage.match(/[가-힣]/)) {
+            if (errorMessage.includes('Tea') || errorMessage.includes('tea')) {
+              errorMessage = '차를 찾을 수 없습니다.';
+            } else if (errorMessage.includes('Note') || errorMessage.includes('note')) {
+              errorMessage = '노트를 찾을 수 없습니다.';
+            } else if (errorMessage.includes('User') || errorMessage.includes('user')) {
+              errorMessage = '사용자를 찾을 수 없습니다.';
+            } else {
+              errorMessage = '요청한 리소스를 찾을 수 없습니다.';
+            }
+          }
+        } else if (response.status === 409) {
+          if (errorMessage.includes('already exists') || errorMessage.includes('exists')) {
+            errorMessage = '이미 존재하는 이메일입니다.';
+          }
+        } else if (response.status === 500) {
+          if (!errorMessage.match(/[가-힣]/)) {
+            errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+          }
+        }
+        
+        throw new Error(errorMessage);
       }
 
       // 204 No Content 응답 처리
