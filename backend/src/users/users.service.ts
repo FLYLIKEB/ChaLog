@@ -14,7 +14,7 @@ export class UsersService {
   async create(email: string, name: string, password: string): Promise<User> {
     const existingUser = await this.usersRepository.findOne({ where: { email } });
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw new ConflictException('이미 존재하는 이메일입니다.');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -30,7 +30,7 @@ export class UsersService {
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
     return user;
   }
