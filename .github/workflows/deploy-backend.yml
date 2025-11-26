@@ -42,42 +42,84 @@ jobs:
           tar -czf deploy.tar.gz -C deploy-package .
 
       - name: Configure SSH
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
+          # 환경 변수 확인
+          echo "🔍 환경 변수 확인:"
+          echo "EC2_HOST: ${EC2_HOST:+설정됨 (길이: ${#EC2_HOST})}"
+          echo "EC2_USER: ${EC2_USER:+설정됨 (값: $EC2_USER)}"
+          echo "EC2_SSH_KEY: ${EC2_SSH_KEY:+설정됨 (길이: ${#EC2_SSH_KEY})}"
+          
+          # 필수 변수 확인
+          if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ] || [ -z "$EC2_SSH_KEY" ]; then
+            echo "❌ 필수 Secrets가 설정되지 않았습니다!"
+            echo "다음 Secrets를 설정하세요:"
+            echo "  - EC2_HOST"
+            echo "  - EC2_USER"
+            echo "  - EC2_SSH_KEY"
+            exit 1
+          fi
+          
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
+          
           # SSH 키 저장 (줄바꿈 보존)
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          echo "$EC2_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          
           # SSH 키 형식 확인
+          echo "🔑 SSH 키 형식 확인:"
           head -1 ~/.ssh/deploy_key
+          tail -1 ~/.ssh/deploy_key
+          echo "키 파일 크기: $(wc -c < ~/.ssh/deploy_key) bytes"
+          
           # EC2 호스트 키 추가
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>&1 || true
+          echo "🔐 EC2 호스트 키 추가 중..."
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>&1 || true
           chmod 644 ~/.ssh/known_hosts
+          
           # SSH 연결 테스트
+          echo "🔍 SSH 연결 테스트 중..."
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
-              ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-              "echo 'SSH 연결 성공!'" || echo "SSH 연결 테스트 실패"
+              -v \
+              "$EC2_USER@$EC2_HOST" \
+              "echo 'SSH 연결 성공!'" || {
+            echo "⚠️ SSH 연결 테스트 실패 (이 단계는 계속 진행됩니다)"
+          }
 
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
+          # 환경 변수 확인
+          if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ]; then
+            echo "❌ EC2_HOST 또는 EC2_USER가 설정되지 않았습니다!"
+            exit 1
+          fi
+          
+          echo "🔍 배포 대상: $EC2_USER@$EC2_HOST"
+          
           # SSH 연결 테스트
           echo "🔍 SSH 연결 테스트 중..."
-          ssh -i ~/.ssh/deploy_key \
+          if ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
-              $EC2_USER@$EC2_HOST \
-              "echo 'SSH 연결 성공!'" || {
+              "$EC2_USER@$EC2_HOST" \
+              "echo 'SSH 연결 성공!'" 2>&1; then
+            echo "✅ SSH 연결 성공!"
+          else
             echo "❌ SSH 연결 실패!"
             echo "EC2_SSH_KEY Secret을 확인하세요."
             echo "자세한 내용: docs/SSH_KEY_TROUBLESHOOTING.md"
             exit 1
-          }
+          fi
           
           # 배포 파일 전송
           echo "📤 배포 파일 전송 중..."
@@ -85,12 +127,12 @@ jobs:
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               backend/deploy.tar.gz \
-              $EC2_USER@$EC2_HOST:/tmp/
+              "$EC2_USER@$EC2_HOST:/tmp/"
 
           # EC2에서 배포 실행
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
-              $EC2_USER@$EC2_HOST << 'ENDSSH'
+              "$EC2_USER@$EC2_HOST" << 'ENDSSH'
             set -e
             
             BACKEND_DIR="/home/ubuntu/chalog-backend"
