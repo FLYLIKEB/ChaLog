@@ -49,19 +49,39 @@ jobs:
         run: |
           # 환경 변수 확인
           echo "🔍 환경 변수 확인:"
-          echo "EC2_HOST: ${EC2_HOST:+설정됨 (길이: ${#EC2_HOST})}"
-          echo "EC2_USER: ${EC2_USER:+설정됨 (값: $EC2_USER)}"
-          echo "EC2_SSH_KEY: ${EC2_SSH_KEY:+설정됨 (길이: ${#EC2_SSH_KEY})}"
+          echo "EC2_HOST: ${EC2_HOST:+설정됨 (길이: ${#EC2_HOST})}${EC2_HOST:-❌ 설정되지 않음}"
+          echo "EC2_USER: ${EC2_USER:+설정됨 (값: '$EC2_USER')}${EC2_USER:-❌ 설정되지 않음}"
+          echo "EC2_SSH_KEY: ${EC2_SSH_KEY:+설정됨 (길이: ${#EC2_SSH_KEY})}${EC2_SSH_KEY:-❌ 설정되지 않음}"
           
-          # 필수 변수 확인
-          if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ] || [ -z "$EC2_SSH_KEY" ]; then
+          # 필수 변수 확인 (빈 문자열도 체크)
+          MISSING_SECRETS=()
+          if [ -z "${EC2_HOST:-}" ] || [ "$EC2_HOST" = "" ]; then
+            MISSING_SECRETS+=("EC2_HOST")
+          fi
+          if [ -z "${EC2_USER:-}" ] || [ "$EC2_USER" = "" ]; then
+            MISSING_SECRETS+=("EC2_USER")
+          fi
+          if [ -z "${EC2_SSH_KEY:-}" ] || [ "$EC2_SSH_KEY" = "" ]; then
+            MISSING_SECRETS+=("EC2_SSH_KEY")
+          fi
+          
+          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
             echo "❌ 필수 Secrets가 설정되지 않았습니다!"
-            echo "다음 Secrets를 설정하세요:"
-            echo "  - EC2_HOST"
-            echo "  - EC2_USER"
-            echo "  - EC2_SSH_KEY"
+            echo "누락된 Secrets:"
+            for secret in "${MISSING_SECRETS[@]}"; do
+              echo "  - $secret"
+            done
+            echo ""
+            echo "설정 방법:"
+            echo "1. GitHub 저장소 → Settings → Secrets and variables → Actions"
+            echo "2. New repository secret 클릭"
+            echo "3. Name과 Secret 값 입력"
+            echo ""
+            echo "자세한 내용: docs/GITHUB_SECRETS_CHECKLIST.md"
             exit 1
           fi
+          
+          echo "✅ 모든 필수 Secrets가 설정되었습니다!"
           
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
@@ -98,8 +118,10 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
         run: |
           # 환경 변수 확인
-          if [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ]; then
+          if [ -z "${EC2_HOST:-}" ] || [ -z "${EC2_USER:-}" ]; then
             echo "❌ EC2_HOST 또는 EC2_USER가 설정되지 않았습니다!"
+            echo "EC2_HOST: ${EC2_HOST:-❌ 없음}"
+            echo "EC2_USER: ${EC2_USER:-❌ 없음}"
             exit 1
           fi
           
