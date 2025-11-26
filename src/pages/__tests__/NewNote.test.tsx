@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { NewNote } from '../NewNote';
 import { toast } from 'sonner';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -63,7 +63,7 @@ vi.mock('react-router-dom', async () => {
 });
 
 const getNavigateSpy = () => {
-  const navigate = (globalThis as Record<string, ReturnType<typeof vi.fn> | undefined>).__navigate_spy__;
+  const navigate = (globalThis as unknown as Record<string, ReturnType<typeof vi.fn> | undefined>).__navigate_spy__;
   if (!navigate) {
     throw new Error('navigate spy is not initialised');
   }
