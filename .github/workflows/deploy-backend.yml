@@ -233,7 +233,20 @@ jobs:
               echo "❌ npm을 찾을 수 없습니다: $NPM_CMD"
               exit 1
             fi
-            $NPM_CMD ci --production
+            
+            # package-lock.json 확인
+            if [ -f "package-lock.json" ]; then
+              echo "📦 package-lock.json 발견. npm ci 시도..."
+              if $NPM_CMD ci --production --legacy-peer-deps 2>&1; then
+                echo "✅ npm ci 성공"
+              else
+                echo "⚠️ npm ci 실패. npm install로 대체..."
+                $NPM_CMD install --production --legacy-peer-deps
+              fi
+            else
+              echo "📦 package-lock.json 없음. npm install 실행..."
+              $NPM_CMD install --production --legacy-peer-deps
+            fi
             
             # PM2 설치 확인 및 설치
             NPM_CMD=$(command -v npm || echo "/usr/bin/npm")
