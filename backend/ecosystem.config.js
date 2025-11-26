@@ -6,6 +6,7 @@ module.exports = {
       script: './dist/src/main.js',
       instances: 1,
       exec_mode: 'fork',
+      cwd: '/home/ubuntu/chalog-backend',
       env: {
         NODE_ENV: 'production',
         PORT: 3000,
@@ -17,6 +18,7 @@ module.exports = {
       autorestart: true,
       max_memory_restart: '500M',
       watch: false,
+      node_args: '--require=reflect-metadata',
     },
   ],
 };

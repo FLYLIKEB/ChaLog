@@ -252,12 +252,23 @@ jobs:
                 echo "✅ npm ci 성공"
               else
                 echo "⚠️ npm ci 실패. npm install로 대체..."
-                $NPM_CMD install --production --legacy-peer-deps --no-audit --no-fund
+                # --production 없이 설치 후 node_modules 정리
+                $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
+                # devDependencies 제거
+                echo "🧹 devDependencies 제거 중..."
+                $NPM_CMD prune --production
               fi
             else
               echo "📦 package-lock.json 없음. npm install 실행..."
-              $NPM_CMD install --production --legacy-peer-deps --no-audit --no-fund
+              $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
+              # devDependencies 제거
+              echo "🧹 devDependencies 제거 중..."
+              $NPM_CMD prune --production
             fi
+            
+            # class-transformer 명시적 설치 (peer dependency 문제 해결)
+            echo "📦 class-transformer 명시적 설치 중..."
+            $NPM_CMD install class-transformer class-validator --save --legacy-peer-deps --no-audit --no-fund || true
             
             # 설치 확인 및 누락된 패키지 재설치
             echo "🔍 설치된 패키지 확인:"
