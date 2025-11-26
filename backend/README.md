@@ -181,3 +181,4 @@ src/
 npm run test
 ```
 
+# GitHub Actions 자동 배포 테스트

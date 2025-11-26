@@ -9,9 +9,47 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   
   // CORS 설정
+  // 여러 origin 허용 (로컬 개발 + Vercel 배포)
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://cha-log-gilt.vercel.app',
+  ];
+  
+  // 환경 변수에서 추가 origin 가져오기
+  const frontendUrl = configService.get('FRONTEND_URL') as string;
+  if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
+    allowedOrigins.push(frontendUrl);
+  }
+  
+  // FRONTEND_URLS 환경 변수로 여러 URL 설정 가능 (쉼표로 구분)
+  const additionalUrls = configService.get('FRONTEND_URLS') as string;
+  if (additionalUrls) {
+    additionalUrls.split(',').forEach(url => {
+      const trimmedUrl = url.trim();
+      if (trimmedUrl && !allowedOrigins.includes(trimmedUrl)) {
+        allowedOrigins.push(trimmedUrl);
+      }
+    });
+  }
+
   app.enableCors({
-    origin: (configService.get('FRONTEND_URL') as string) || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // origin이 없으면 (같은 origin 요청) 허용
+      if (!origin) {
+        return callback(null, true);
+      }
+      
+      // 허용된 origin인지 확인
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
   // 전역 ValidationPipe 설정

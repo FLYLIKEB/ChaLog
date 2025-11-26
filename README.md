@@ -221,6 +221,25 @@ npm run start:dev
 - `PATCH /notes/:id` - 노트 수정 (JWT 필요)
 - `DELETE /notes/:id` - 노트 삭제 (JWT 필요)
 
+## 백엔드 배포
+
+백엔드는 AWS EC2에 배포하며, GitHub Actions를 통해 자동 배포됩니다.
+
+### 자동 배포 (GitHub Actions)
+
+`main` 브랜치의 `backend/` 디렉토리에 변경사항을 푸시하면 자동으로 배포됩니다.
+
+**초기 설정:**
+1. GitHub Secrets 설정: [`docs/GITHUB_ACTIONS_SETUP.md`](./docs/GITHUB_ACTIONS_SETUP.md) 참고
+2. EC2 초기 설정: [`docs/AWS_EC2_DEPLOYMENT.md`](./docs/AWS_EC2_DEPLOYMENT.md) 참고
+
+### 수동 배포
+
+```bash
+cd backend
+./deploy.sh your-ec2-ip ubuntu ~/.ssh/your-key.pem
+```
+
 ## 향후 작업 아이디어
 - Supabase Auth/DB와의 실시간 연동, RLS 적용
 - 노트 CRUD API와 Edge 함수 연결, optimistic update

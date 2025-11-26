@@ -1,0 +1,124 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Build application
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Create deployment package
+        working-directory: ./backend
+        run: |
+          mkdir -p deploy-package
+          cp -r dist deploy-package/
+          cp package.json package-lock.json ecosystem.config.js deploy-package/
+          tar -czf deploy.tar.gz -C deploy-package .
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          # 배포 파일 전송
+          scp -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              backend/deploy.tar.gz \
+              $EC2_USER@$EC2_HOST:/tmp/
+
+          # EC2에서 배포 실행
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              $EC2_USER@$EC2_HOST << 'ENDSSH'
+            set -e
+            
+            BACKEND_DIR="/home/ubuntu/chalog-backend"
+            
+            # 디렉토리 생성
+            mkdir -p $BACKEND_DIR
+            cd $BACKEND_DIR
+            
+            # 기존 파일 백업
+            if [ -d "dist" ]; then
+              echo "💾 기존 파일 백업 중..."
+              BACKUP_DIR="/home/ubuntu/backups"
+              mkdir -p $BACKUP_DIR
+              tar -czf $BACKUP_DIR/backup-$(date +%Y%m%d-%H%M%S).tar.gz \
+                  dist/ package.json package-lock.json ecosystem.config.js 2>/dev/null || true
+            fi
+            
+            # 배포 파일 압축 해제
+            echo "📦 배포 파일 압축 해제 중..."
+            tar -xzf /tmp/deploy.tar.gz -C $BACKEND_DIR
+            
+            # 의존성 설치
+            echo "📥 의존성 설치 중..."
+            npm ci --production
+            
+            # PM2로 재시작
+            echo "🔄 PM2로 앱 재시작 중..."
+            pm2 delete chalog-backend 2>/dev/null || true
+            pm2 start ecosystem.config.js
+            pm2 save
+            
+            # Health check
+            echo "🏥 Health check..."
+            sleep 5
+            if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+              echo "✅ 배포 성공! Health check 통과"
+            else
+              echo "⚠️ Health check 실패. 로그 확인:"
+              pm2 logs chalog-backend --lines 20 --nostream
+              exit 1
+            fi
+            
+            # 정리
+            rm -f /tmp/deploy.tar.gz
+          ENDSSH
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
+          rm -rf backend/deploy-package backend/deploy.tar.gz
+
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo "✅ 배포 완료!"
+          echo "🌐 Backend URL: http://${{ secrets.EC2_HOST }}:3000"
+          echo "🏥 Health Check: http://${{ secrets.EC2_HOST }}:3000/health"
+

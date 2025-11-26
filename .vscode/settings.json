@@ -1,0 +1,16 @@
+{
+  "sqltools.connections": [
+    {
+      "name": "ChaLog Database",
+      "driver": "MySQL",
+      "server": "localhost",
+      "port": 3307,
+      "database": "chalog",
+      "username": "admin",
+      "password": "",
+      "connectionTimeout": 10,
+      "requestTimeout": 30
+    }
+  ]
+}
+
