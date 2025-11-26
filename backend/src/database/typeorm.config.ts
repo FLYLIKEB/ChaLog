@@ -8,25 +8,44 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     throw new Error('DATABASE_URL environment variable is not set');
   }
 
-  // MySQL URL 파싱: mysql://user:password@host:port/database 또는 mysql://user@host:port/database
-  const urlMatchWithPassword = databaseUrl.match(/^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
-  const urlMatchWithoutPassword = databaseUrl.match(/^mysql:\/\/([^@]+)@([^:]+):(\d+)\/(.+)$/);
-  
-  let username: string;
-  let password: string | undefined;
-  let host: string;
-  let port: string;
-  let database: string;
-
-  if (urlMatchWithPassword) {
-    [, username, password, host, port, database] = urlMatchWithPassword;
-  } else if (urlMatchWithoutPassword) {
-    [, username, host, port, database] = urlMatchWithoutPassword;
-    password = undefined;
-  } else {
+  // Node.js 내장 URL 클래스를 사용하여 견고한 파싱
+  // 특수 문자(:, @ 등)가 비밀번호에 포함되어도, IPv6, 쿼리 파라미터 등도 올바르게 처리
+  let url: URL;
+  try {
+    url = new URL(databaseUrl);
+  } catch (error) {
     throw new Error(
-      'Invalid DATABASE_URL format. Expected: mysql://user:password@host:port/database or mysql://user@host:port/database'
+      `Invalid DATABASE_URL format: ${error instanceof Error ? error.message : 'Invalid URL format'}. Expected: mysql://user:password@host:port/database`
     );
+  }
+
+  // 프로토콜 검증
+  if (url.protocol !== 'mysql:') {
+    throw new Error(`Invalid DATABASE_URL protocol: expected 'mysql:', got '${url.protocol}'`);
+  }
+
+  // 필수 값 추출 및 검증
+  const username = url.username;
+  if (!username) {
+    throw new Error('DATABASE_URL must include a username');
+  }
+
+  const password = url.password || undefined; // 빈 문자열은 undefined로 변환
+  const hostname = url.hostname;
+  if (!hostname) {
+    throw new Error('DATABASE_URL must include a hostname');
+  }
+
+  // 포트 처리: 없으면 MySQL 기본 포트(3306) 사용
+  const port = url.port ? parseInt(url.port, 10) : 3306;
+  if (isNaN(port) || port < 1 || port > 65535) {
+    throw new Error(`Invalid DATABASE_URL port: ${url.port}`);
+  }
+
+  // 데이터베이스 이름: pathname에서 첫 번째 '/' 제거
+  const database = url.pathname.slice(1);
+  if (!database) {
+    throw new Error('DATABASE_URL must include a database name in the path');
   }
 
   // SSL 설정 (AWS RDS/Aurora 사용 시 권장)
@@ -42,8 +61,8 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
 
   return {
     type: 'mysql',
-    host,
-    port: parseInt(port, 10),
+    host: hostname,
+    port,
     username,
     ...(password && { password }),
     database,
