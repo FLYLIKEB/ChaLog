@@ -245,44 +245,30 @@ jobs:
               rm -rf node_modules
             fi
             
-            # package-lock.json 확인
-            if [ -f "package-lock.json" ]; then
-              echo "📦 package-lock.json 발견. npm ci 시도..."
-              if $NPM_CMD ci --production --legacy-peer-deps 2>&1; then
-                echo "✅ npm ci 성공"
-              else
-                echo "⚠️ npm ci 실패. npm install로 대체..."
-                # --production 없이 전체 설치 (peer dependencies 포함)
-                echo "📦 전체 의존성 설치 중..."
-                $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
-                # devDependencies 제거
-                echo "🧹 devDependencies 제거 중..."
-                $NPM_CMD prune --production
-              fi
-            else
-              echo "📦 package-lock.json 없음. npm install 실행..."
-              # --production 없이 전체 설치
-              $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
-              # devDependencies 제거
-              echo "🧹 devDependencies 제거 중..."
-              $NPM_CMD prune --production
-            fi
+            # 의존성 설치 - 전체 설치 후 prune (peer dependencies 문제 해결)
+            echo "📦 전체 의존성 설치 중 (peer dependencies 포함)..."
+            $NPM_CMD install --legacy-peer-deps --no-audit --no-fund --loglevel=error
             
-            # class-transformer 실제 존재 확인 및 재설치
+            # devDependencies 제거 (하지만 dependencies와 peer dependencies는 유지)
+            echo "🧹 devDependencies 제거 중..."
+            $NPM_CMD prune --production
+            
+            # class-transformer 강제 재설치 (peer dependency 문제 해결)
+            echo "📦 class-transformer 강제 재설치 중..."
+            $NPM_CMD install class-transformer@^0.5.1 class-validator@^0.14.2 --save --legacy-peer-deps --no-audit --no-fund --force
+            
+            # class-transformer 실제 존재 확인
             echo "🔍 class-transformer 실제 확인 중..."
-            if [ ! -d "node_modules/class-transformer" ]; then
-              echo "❌ class-transformer가 실제로 없습니다. 재설치 중..."
-              $NPM_CMD install class-transformer class-validator --save --legacy-peer-deps --no-audit --no-fund
+            if [ -d "node_modules/class-transformer" ]; then
+              echo "✅ class-transformer 디렉토리 존재"
+              echo "📋 class-transformer 버전: $(cat node_modules/class-transformer/package.json | grep '"version"' | head -1)"
+              ls -la node_modules/class-transformer | head -3
             else
-              echo "✅ class-transformer 디렉토리 존재 확인"
-              ls -la node_modules/class-transformer | head -5
-            fi
-            
-            # @nestjs/common의 peer dependencies 확인
-            echo "🔍 @nestjs/common peer dependencies 확인 중..."
-            if [ -f "node_modules/@nestjs/common/package.json" ]; then
-              echo "📋 @nestjs/common package.json 확인:"
-              grep -A 5 "peerDependencies" node_modules/@nestjs/common/package.json || echo "peerDependencies 없음"
+              echo "❌ class-transformer가 여전히 없습니다!"
+              echo "전체 재설치 시도..."
+              rm -rf node_modules package-lock.json
+              $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
+              $NPM_CMD prune --production
             fi
             
             # 설치 확인 및 누락된 패키지 재설치
@@ -358,8 +344,22 @@ jobs:
             # PM2로 재시작
             echo "🔄 PM2로 앱 재시작 중..."
             $PM2_CMD delete chalog-backend 2>/dev/null || true
+            
+            # 환경 변수 파일 확인
+            if [ ! -f ".env" ]; then
+              echo "⚠️ .env 파일이 없습니다. 기본값 사용"
+            else
+              echo "✅ .env 파일 존재"
+            fi
+            
+            # PM2 시작
             $PM2_CMD start ecosystem.config.js
             $PM2_CMD save
+            
+            # 시작 확인
+            sleep 2
+            PM2_STATUS=$($PM2_CMD status | grep chalog-backend | awk '{print $10}')
+            echo "📊 PM2 초기 상태: $PM2_STATUS"
             
             # Health check
             echo "🏥 Health check..."
