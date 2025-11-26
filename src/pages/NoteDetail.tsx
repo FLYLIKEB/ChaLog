@@ -20,6 +20,7 @@ import { notesApi, teasApi } from '../lib/api';
 import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { logger } from '../lib/logger';
 
 export function NoteDetail() {
   const { id } = useParams();
@@ -49,11 +50,11 @@ export function NoteDetail() {
             const teaData = await teasApi.getById(normalizedNote.teaId);
             setTea(teaData as Tea);
           } catch (error) {
-            console.error('Failed to fetch tea:', error);
+            logger.error('Failed to fetch tea:', error);
           }
         }
       } catch (error) {
-        console.error('Failed to fetch note:', error);
+        logger.error('Failed to fetch note:', error);
         toast.error('노트를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
@@ -88,7 +89,7 @@ export function NoteDetail() {
       setNote({ ...note, isPublic: !note.isPublic });
       toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
     } catch (error) {
-      console.error('Failed to update note:', error);
+      logger.error('Failed to update note:', error);
       toast.error('업데이트에 실패했습니다.');
     } finally {
       setIsUpdating(false);
@@ -104,7 +105,7 @@ export function NoteDetail() {
       toast.success('노트가 삭제되었습니다.');
       navigate('/my-notes', { replace: true });
     } catch (error) {
-      console.error('Failed to delete note:', error);
+      logger.error('Failed to delete note:', error);
       toast.error('삭제에 실패했습니다.');
       setIsDeleting(false);
       setShowDeleteDialog(false);

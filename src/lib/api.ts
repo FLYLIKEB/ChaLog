@@ -1,3 +1,5 @@
+import { API_TIMEOUT } from '../constants';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 export interface ApiError {
@@ -9,19 +11,19 @@ export interface ApiError {
  * ISO 날짜 문자열을 Date 객체로 변환하는 재귀적 유틸리티
  * 객체와 배열을 순회하며 모든 날짜 문자열을 Date 객체로 변환
  */
-function parseDates(obj: any): any {
+function parseDates<T>(obj: T): T {
   if (obj === null || obj === undefined) {
     return obj;
   }
 
   // 배열인 경우 각 요소에 대해 재귀 호출
   if (Array.isArray(obj)) {
-    return obj.map(parseDates);
+    return obj.map(parseDates) as T;
   }
 
   // 객체인 경우
   if (typeof obj === 'object') {
-    const parsed: any = {};
+    const parsed = {} as Record<string, unknown>;
     for (const key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
         const value = obj[key];
@@ -37,34 +39,75 @@ function parseDates(obj: any): any {
         }
       }
     }
-    return parsed;
+    return parsed as T;
   }
 
   return obj;
+}
+
+interface BackendNote {
+  id: string;
+  teaId: string;
+  tea?: { name: string };
+  userId: string;
+  user?: { name: string };
+  rating: number;
+  ratings: {
+    richness: number;
+    strength: number;
+    smoothness: number;
+    clarity: number;
+    complexity: number;
+  };
+  memo: string;
+  isPublic: boolean;
+  createdAt: Date | string;
+}
+
+interface NormalizedNote {
+  id: string;
+  teaId: string;
+  teaName: string;
+  userId: string;
+  userName: string;
+  rating: number;
+  ratings: {
+    richness: number;
+    strength: number;
+    smoothness: number;
+    clarity: number;
+    complexity: number;
+  };
+  memo: string;
+  isPublic: boolean;
+  createdAt: Date;
 }
 
 /**
  * Note 응답을 프론트엔드 타입으로 정규화
  * 백엔드의 tea/user 객체에서 teaName/userName을 추출
  */
-function normalizeNote(note: any): any {
-  if (!note) return note;
+function normalizeNote(note: BackendNote): NormalizedNote {
+  if (!note) {
+    throw new Error('Note data is required');
+  }
   
   return {
     ...note,
     teaName: note.tea?.name || '',
     userName: note.user?.name || '',
+    createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
   };
 }
 
 /**
  * Note 배열 또는 단일 Note를 정규화
  */
-function normalizeNotes(data: any): any {
+function normalizeNotes<T extends BackendNote | BackendNote[]>(data: T): T extends BackendNote[] ? NormalizedNote[] : NormalizedNote {
   if (Array.isArray(data)) {
-    return data.map(normalizeNote);
+    return data.map(normalizeNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
   }
-  return normalizeNote(data);
+  return normalizeNote(data as BackendNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
 }
 
 class ApiClient {
@@ -79,7 +122,7 @@ class ApiClient {
     options: RequestInit & { timeout?: number } = {}
   ): Promise<T> {
     const token = localStorage.getItem('access_token');
-    const timeout = options.timeout ?? 30000; // 기본 30초
+    const timeout = options.timeout ?? API_TIMEOUT;
     
     // timeout을 제거한 fetch 옵션 생성
     const { timeout: _, ...fetchOptions } = options;
@@ -126,8 +169,9 @@ class ApiClient {
       const parsedData = parseDates(data);
       
       // Note 관련 응답인 경우 정규화 (tea/user 객체에서 teaName/userName 추출)
-      if (endpoint.startsWith('/notes') || /^\/notes\/[^/]+$/.test(endpoint)) {
-        return normalizeNotes(parsedData) as T;
+      const isNoteEndpoint = endpoint.startsWith('/notes');
+      if (isNoteEndpoint) {
+        return normalizeNotes(parsedData as BackendNote | BackendNote[]) as T;
       }
       
       return parsedData as T;

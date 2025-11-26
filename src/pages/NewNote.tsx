@@ -12,6 +12,8 @@ import { teasApi, notesApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { logger } from '../lib/logger';
+import { RATING_DEFAULT, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
 
 export function NewNote() {
   const navigate = useNavigate();
@@ -23,11 +25,11 @@ export function NewNote() {
   const [selectedTea, setSelectedTea] = useState(preselectedTeaId || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [ratings, setRatings] = useState({
-    richness: 3,
-    strength: 3,
-    smoothness: 3,
-    clarity: 3,
-    complexity: 3,
+    richness: RATING_DEFAULT,
+    strength: RATING_DEFAULT,
+    smoothness: RATING_DEFAULT,
+    clarity: RATING_DEFAULT,
+    complexity: RATING_DEFAULT,
   });
   const [memo, setMemo] = useState('');
   const [isPublic, setIsPublic] = useState(false);
@@ -48,7 +50,7 @@ export function NewNote() {
         const data = await teasApi.getAll();
         setTeas(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.error('Failed to fetch teas:', error);
+        logger.error('Failed to fetch teas:', error);
       }
     };
     fetchTeas();
@@ -99,7 +101,7 @@ export function NewNote() {
         ratings.smoothness +
         ratings.clarity +
         ratings.complexity
-      ) / 5;
+      ) / RATING_FIELDS_COUNT;
 
       await notesApi.create({
         teaId: selectedTea,
@@ -110,9 +112,9 @@ export function NewNote() {
       });
 
       toast.success('기록이 저장되었습니다.');
-      setTimeout(() => navigate('/my-notes'), 500);
+      setTimeout(() => navigate('/my-notes'), NAVIGATION_DELAY);
     } catch (error) {
-      console.error('Failed to save note:', error);
+      logger.error('Failed to save note:', error);
       toast.error(error instanceof Error ? error.message : '저장에 실패했습니다.');
     } finally {
       setIsSaving(false);

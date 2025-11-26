@@ -10,6 +10,8 @@ import { BottomNav } from '../components/BottomNav';
 import { teasApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
+import { logger } from '../lib/logger';
+import { SEARCH_DEBOUNCE_DELAY } from '../constants';
 
 export function Search() {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ export function Search() {
       setTeas(Array.isArray(data) ? data : []);
       setHasSearched(false);
     } catch (error) {
-      console.error('Failed to fetch teas:', error);
+      logger.error('Failed to fetch teas:', error);
       toast.error('차 목록을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
@@ -41,7 +43,7 @@ export function Search() {
       const data = await teasApi.getAll(query);
       setTeas(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error('Search failed:', error);
+      logger.error('Search failed:', error);
       toast.error('검색에 실패했습니다.');
     } finally {
       setIsLoading(false);
@@ -58,7 +60,7 @@ export function Search() {
     if (searchQuery.trim()) {
       const timeoutId = setTimeout(() => {
         handleSearch(searchQuery);
-      }, 300); // 디바운스
+      }, SEARCH_DEBOUNCE_DELAY);
 
       return () => clearTimeout(timeoutId);
     } else {
