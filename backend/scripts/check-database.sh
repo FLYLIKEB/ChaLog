@@ -20,11 +20,11 @@ fi
 
 # URL 파싱: mysql://user:password@host:port/database
 # 간단한 파싱 (더 정교한 파싱이 필요할 수 있음)
-HOST=$(echo $DATABASE_URL | sed -n 's/.*@\([^:]*\):.*/\1/p')
-PORT=$(echo $DATABASE_URL | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
-USER=$(echo $DATABASE_URL | sed -n 's/mysql:\/\/\([^:]*\):.*/\1/p')
-PASSWORD=$(echo $DATABASE_URL | sed -n 's/mysql:\/\/[^:]*:\([^@]*\)@.*/\1/p')
-DATABASE=$(echo $DATABASE_URL | sed -n 's/.*\/\([^?]*\).*/\1/p')
+HOST=$(echo "$DATABASE_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')
+PORT=$(echo "$DATABASE_URL" | sed -n 's/.*:\([0-9]*\)\/.*/\1/p')
+USER=$(echo "$DATABASE_URL" | sed -n 's/mysql:\/\/\([^:]*\):.*/\1/p')
+PASSWORD=$(echo "$DATABASE_URL" | sed -n 's/mysql:\/\/[^:]*:\([^@]*\)@.*/\1/p')
+DATABASE=$(echo "$DATABASE_URL" | sed -n 's/.*\/\([^?]*\).*/\1/p')
 
 echo "📋 연결 정보:"
 echo "   호스트: $HOST"
@@ -65,7 +65,7 @@ if [ $? -ne 0 ]; then
     
     # SSH 터널 확인 (localhost인 경우)
     if [ "$HOST" = "localhost" ]; then
-        TUNNEL_RUNNING=$(ps aux | grep "ssh.*$PORT.*database-1" | grep -v grep | wc -l)
+        TUNNEL_RUNNING=$(ps aux | grep "ssh.*$PORT" | grep -v grep | wc -l)
         if [ "$TUNNEL_RUNNING" -eq 0 ]; then
             echo "   1. SSH 터널이 실행되지 않았습니다."
             echo "      실행: ./scripts/start-ssh-tunnel.sh"

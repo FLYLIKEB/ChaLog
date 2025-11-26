@@ -17,7 +17,7 @@ SSH 개인 키 파일(`*.pem`, `*.key`)은 민감한 정보이므로 Git 저장�
 2. **`.gitignore`에 포함됨**
    - `*.pem`
    - `*.key`
-   - `your-key.pem`
+   - 모든 SSH 키 파일
 
 3. **환경 변수로 경로 관리**
    ```env

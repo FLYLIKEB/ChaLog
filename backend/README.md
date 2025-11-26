@@ -43,21 +43,21 @@ cp .env.example .env
 현재 AWS RDS MariaDB를 사용하고 있습니다. SSH 터널을 통해 연결됩니다.
 
 **연결 정보:**
-- 엔드포인트: `REDACTED_RDS_ENDPOINT`
 - 포트: `3306` (SSH 터널: 로컬 `3307`)
 - 데이터베이스: `chalog`
-- 사용자: `admin`
-- 비밀번호: `REDACTED_PASSWORD`
 
 **SSH 터널 설정:**
 
 `.env` 파일에 SSH 관련 설정이 포함되어 있습니다:
 ```env
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=REDACTED_EC2_IP
-EC2_USER=ubuntu
+EC2_HOST=YOUR_EC2_HOST
+EC2_USER=YOUR_EC2_USER
 SSH_TUNNEL_LOCAL_PORT=3307
+SSH_TUNNEL_REMOTE_HOST=YOUR_RDS_ENDPOINT
 ```
+
+> `.env.example` 파일을 참고하여 실제 값으로 설정하세요.
 
 터널 시작/종료:
 ```bash

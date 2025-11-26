@@ -26,8 +26,8 @@ cd backend
 ```env
 DATABASE_URL=mysql://admin:password@localhost:3307/chalog
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=REDACTED_EC2_IP
-EC2_USER=ubuntu
+EC2_HOST=YOUR_EC2_HOST
+EC2_USER=YOUR_EC2_USER
 ```
 
 ### 3. 백엔드 실행
@@ -40,10 +40,11 @@ npm run start:dev
 
 ### 현재 설정
 
-- **엔드포인트**: `REDACTED_RDS_ENDPOINT`
 - **포트**: 3306
 - **데이터베이스**: `chalog`
 - **엔진**: MariaDB
+
+> RDS 엔드포인트는 `.env` 파일의 `SSH_TUNNEL_REMOTE_HOST` 또는 `DATABASE_URL`에서 확인하세요.
 
 ### 초기 설정 (이미 완료됨)
 
@@ -77,10 +78,12 @@ ps aux | grep "ssh.*3307"
 
 ```bash
 ssh -i ~/.ssh/your-key.pem \
-    -L 3307:REDACTED_RDS_ENDPOINT:3306 \
+    -L 3307:YOUR_RDS_ENDPOINT:3306 \
     -N -f \
-    ubuntu@REDACTED_EC2_IP
+    YOUR_EC2_USER@YOUR_EC2_HOST
 ```
+
+> 실제 값은 `.env` 파일에서 확인하세요.
 
 ### 환경 변수 설정
 
@@ -94,12 +97,14 @@ DB_SSL_ENABLED=false
 
 # SSH Tunnel
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=REDACTED_EC2_IP
-EC2_USER=ubuntu
+EC2_HOST=YOUR_EC2_HOST
+EC2_USER=YOUR_EC2_USER
 SSH_TUNNEL_LOCAL_PORT=3307
-SSH_TUNNEL_REMOTE_HOST=REDACTED_RDS_ENDPOINT
+SSH_TUNNEL_REMOTE_HOST=YOUR_RDS_ENDPOINT
 SSH_TUNNEL_REMOTE_PORT=3306
 ```
+
+> `.env.example` 파일을 참고하여 실제 값으로 설정하세요.
 
 ## 문제 해결
 
@@ -125,7 +130,7 @@ SSH_TUNNEL_REMOTE_PORT=3306
 
 3. **EC2 연결 확인**
    ```bash
-   ssh -i ~/.ssh/your-key.pem ubuntu@REDACTED_EC2_IP "echo '연결 성공'"
+   ssh -i ~/.ssh/your-key.pem YOUR_EC2_USER@YOUR_EC2_HOST "echo '연결 성공'"
    ```
 
 ### 인증 실패 (ERROR 1045)
@@ -157,7 +162,7 @@ AWS RDS의 마스터 비밀번호는 **보안상의 이유로 생성 후에는 �
 ### 비밀번호 재설정
 
 1. **AWS 콘솔 → RDS**
-   - 데이터베이스 → `database-1` 선택
+   - 데이터베이스 → 해당 RDS 인스턴스 선택
    - "수정" 버튼 클릭
 
 2. **비밀번호 재설정**

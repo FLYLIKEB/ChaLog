@@ -50,10 +50,12 @@ cd backend
 **환경 변수 (`.env`):**
 ```env
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=REDACTED_EC2_IP
-EC2_USER=ubuntu
+EC2_HOST=YOUR_EC2_HOST
+EC2_USER=YOUR_EC2_USER
 SSH_TUNNEL_LOCAL_PORT=3307
 ```
+
+> `.env.example` 파일을 참고하여 실제 값으로 설정하세요.
 
 **터널 확인:** `ps aux | grep "ssh.*3307"`
 
