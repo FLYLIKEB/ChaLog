@@ -1,6 +1,6 @@
 # ChaLog App Structure
 
-차 기록을 위한 모바일 퍼스트 SPA입니다. React 18 + Vite 기반으로 홈·검색·노트·설정 등 핵심 플로우가 미리 구현돼 있으며, mock 데이터/디자인 토큰/Edge 함수 뼈대까지 포함되어 바로 실험하거나 확장할 수 있습니다.
+차 기록을 위한 모바일 퍼스트 SPA입니다. React 18 + Vite 기반으로 홈·검색·노트·설정 등 핵심 플로우가 구현되어 있으며, NestJS 백엔드 API와 AWS RDS 데이터베이스를 통해 실제 데이터를 관리합니다.
 
 - Figma 디자인: https://www.figma.com/design/yCBAKnVYnhz2ZDj7ECRLe9/ChaLog-App-Structure  
 - 코드 루트: `/Users/jwp/Documents/programming/ChaLog`
@@ -29,10 +29,40 @@ npm run dev
 Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
 
 ### 환경 변수
-백엔드 API URL을 설정하려면 `.env` 파일에 `VITE_API_BASE_URL`을 설정하세요. 기본값은 `http://localhost:3000`입니다.
+
+**프론트엔드:**
+프로젝트 루트에 `.env` 파일을 생성하고 다음을 설정하세요:
 ```bash
 VITE_API_BASE_URL=http://localhost:3000
 ```
+
+**백엔드:**
+`backend/.env` 파일에 다음을 설정하세요:
+```bash
+# 데이터베이스 연결 (SSH 터널을 통한 RDS 연결)
+DATABASE_URL=mysql://admin:password@localhost:3307/chalog
+DB_SYNCHRONIZE=false
+DB_SSL_ENABLED=false
+
+# JWT 설정
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
+
+# 서버 설정
+PORT=3000
+NODE_ENV=development
+FRONTEND_URL=http://localhost:5173
+
+# SSH 터널 설정 (RDS 연결용)
+SSH_KEY_PATH=~/.ssh/your-key.pem
+EC2_HOST=your-ec2-host
+EC2_USER=ubuntu
+SSH_TUNNEL_LOCAL_PORT=3307
+SSH_TUNNEL_REMOTE_HOST=your-rds-endpoint.rds.amazonaws.com
+SSH_TUNNEL_REMOTE_PORT=3306
+```
+
+자세한 설정은 [`docs/DATABASE.md`](./docs/DATABASE.md)를 참고하세요.
 
 ### NPM 스크립트
 | 명령 | 설명 |
@@ -56,6 +86,9 @@ VITE_API_BASE_URL=http://localhost:3000
 - `backend/scripts/start-ssh-tunnel.sh` - SSH 터널 시작
 - `backend/scripts/stop-ssh-tunnel.sh` - SSH 터널 종료
 - `backend/scripts/check-database.sh` - 데이터베이스 확인
+- `backend/scripts/create-tables.js` - 테이블 생성 (Node.js 스크립트)
+- `backend/scripts/create-tables.sql` - 테이블 생성 (SQL 스크립트)
+- `backend/scripts/insert-sample-data.js` - 샘플 데이터 삽입
 
 자세한 사용법은 [`docs/SCRIPTS.md`](./docs/SCRIPTS.md)를 참고하세요.
 
@@ -63,12 +96,34 @@ VITE_API_BASE_URL=http://localhost:3000
 ```
 src/
 ├─ App.tsx               # Router + FAB + Toaster 셸
-├─ pages/                # Home, Search, TeaDetail, NoteDetail, MyNotes, Settings
+├─ pages/                # Home, Search, TeaDetail, NoteDetail, MyNotes, Settings, Login, Register
 ├─ components/           # Header, NoteCard, TeaCard, EmptyState, FAB 등 UI 조각
 ├─ components/ui/        # shadcn 기반 래퍼와 `cn` 유틸
-├─ lib/api.ts            # API 클라이언트 및 엔드포인트 함수들
-├─ supabase/functions/   # Hono Edge 함수 + KV 스토어 래퍼
-└─ styles/               # Tailwind v4 토큰(`globals.css`, `index.css`)
+├─ lib/
+│  ├─ api.ts            # API 클라이언트 및 엔드포인트 함수들
+│  └─ logger.ts         # 로깅 유틸리티 (개발 환경 전용)
+├─ hooks/               # 커스텀 훅 (useAsyncData 등)
+├─ utils/                # 유틸리티 함수 (teaTags 등)
+├─ constants/           # 전역 상수 정의
+├─ contexts/            # React Context (AuthContext 등)
+├─ supabase/functions/  # Hono Edge 함수 + KV 스토어 래퍼
+└─ styles/              # Tailwind v4 토큰(`globals.css`, `index.css`)
+
+backend/
+├─ src/
+│  ├─ auth/            # 인증 모듈 (JWT, Local Strategy)
+│  ├─ users/           # 사용자 모듈
+│  ├─ teas/            # 차 모듈
+│  ├─ notes/           # 노트 모듈
+│  ├─ health/          # Health 체크 엔드포인트
+│  └─ database/        # TypeORM 설정
+└─ scripts/
+   ├─ create-tables.js      # 테이블 생성 스크립트
+   ├─ create-tables.sql     # 테이블 생성 SQL
+   ├─ insert-sample-data.js # 샘플 데이터 삽입 스크립트
+   ├─ start-ssh-tunnel.sh   # SSH 터널 시작
+   ├─ stop-ssh-tunnel.sh    # SSH 터널 종료
+   └─ check-database.sh     # 데이터베이스 확인
 ```
 
 ## 아키텍처 개요
@@ -79,7 +134,10 @@ src/
 ## 데이터 & 외부 연동
 - 모든 데이터는 NestJS 백엔드 API를 통해 제공되며, `src/lib/api.ts`의 `apiClient`를 통해 통신합니다.
 - `teasApi`, `notesApi`, `authApi`를 통해 차, 노트, 인증 관련 API를 호출합니다.
-- API 응답의 날짜 문자열은 자동으로 Date 객체로 변환되며, Note 응답은 백엔드의 관계 데이터에서 `teaName`, `userName`을 추출하여 정규화됩니다.
+- API 응답의 날짜 문자열은 자동으로 Date 객체로 변환되며, DECIMAL 타입(평점)은 숫자로 자동 변환됩니다.
+- Note 응답은 백엔드의 관계 데이터에서 `teaName`, `userName`을 추출하여 정규화됩니다.
+- 에러 메시지는 백엔드에서 한글로 제공되며, 프론트엔드에서도 영어 메시지를 한글로 변환합니다.
+- 데이터베이스는 AWS RDS MariaDB를 사용하며, SSH 터널을 통해 연결됩니다.
 - Supabase Edge 함수(`src/supabase/functions/server/index.tsx`)는 Hono 기반으로 구성됐으며, `kv_store.tsx`에서 KV 테이블 CRUD를 제공합니다.
 - 클라이언트 측 프로젝트 정보는 `src/utils/supabase/info.tsx`에 정의되어 있어 실제 연결 시 참고하거나 `.env`로 대체할 수 있습니다.
 
@@ -106,6 +164,62 @@ Cursor AI 명령어는 `.cursor/rules` 파일에 정의되어 있습니다. 상�
 - **릴리스 자동화**: `scripts/full-release.sh`를 사용하여 전체 릴리스 프로세스를 자동화합니다
 
 모든 Cursor AI 명령어, Git 워크플로우, 코드 스타일 가이드라인은 `.cursor/rules`에서 관리되며, 이 파일이 단일 소스입니다.
+
+## 백엔드 실행
+
+백엔드를 실행하려면:
+
+1. **SSH 터널 시작** (RDS 연결용):
+```bash
+cd backend
+./scripts/start-ssh-tunnel.sh
+```
+
+2. **데이터베이스 테이블 생성** (최초 1회):
+```bash
+cd backend
+node scripts/create-tables.js
+```
+
+3. **샘플 데이터 삽입** (선택사항):
+```bash
+cd backend
+node scripts/insert-sample-data.js
+```
+
+4. **백엔드 서버 실행**:
+```bash
+cd backend
+npm run start:dev
+```
+
+백엔드 서버는 `http://localhost:3000`에서 실행됩니다.
+
+## API 엔드포인트
+
+### Health Check
+- `GET /health` - 서버 및 데이터베이스 연결 상태 확인
+
+### 인증
+- `POST /auth/register` - 회원가입
+- `POST /auth/login` - 로그인
+- `POST /auth/profile` - 프로필 조회 (JWT 필요)
+
+### 차(Tea)
+- `GET /teas` - 차 목록 조회
+- `GET /teas?q=검색어` - 차 검색
+- `GET /teas/:id` - 차 상세 조회
+- `POST /teas` - 차 생성 (JWT 필요)
+
+### 노트(Note)
+- `GET /notes` - 노트 목록 조회
+- `GET /notes?userId=사용자ID` - 특정 사용자의 노트 조회
+- `GET /notes?public=true` - 공개 노트만 조회
+- `GET /notes?teaId=차ID` - 특정 차의 노트 조회
+- `GET /notes/:id` - 노트 상세 조회
+- `POST /notes` - 노트 생성 (JWT 필요)
+- `PATCH /notes/:id` - 노트 수정 (JWT 필요)
+- `DELETE /notes/:id` - 노트 삭제 (JWT 필요)
 
 ## 향후 작업 아이디어
 - Supabase Auth/DB와의 실시간 연동, RLS 적용

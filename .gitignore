@@ -4,6 +4,17 @@ docs/memo.md
 .env.local
 .env.*.local
 
+# Build outputs
+dist/
+build/
+backend/dist/
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+*.log
+*.tmp
+
 # SSH Keys and sensitive files
 *.pem
 *.key
