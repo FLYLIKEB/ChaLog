@@ -31,10 +31,11 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
 
   // SSL 설정 (AWS RDS/Aurora 사용 시 권장)
   const sslEnabled = configService.get<string>('DB_SSL_ENABLED') === 'true';
+  const sslRejectUnauthorized = configService.get<string>('DB_SSL_REJECT_UNAUTHORIZED') !== 'false';
   const sslConfig = sslEnabled
     ? {
         ssl: {
-          rejectUnauthorized: false, // 프로덕션에서는 CA 인증서 사용 권장
+          rejectUnauthorized: sslRejectUnauthorized, // 기본값: true (보안 강화), 개발/테스트에서만 false로 설정
         },
       }
     : {};

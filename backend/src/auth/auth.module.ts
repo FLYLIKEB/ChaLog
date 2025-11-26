@@ -18,8 +18,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         const jwtSecret = configService.get<string>('JWT_SECRET');
         
         if (!jwtSecret || jwtSecret.trim().length === 0) {
-          console.error('FATAL: JWT_SECRET environment variable is required and must not be empty');
-          process.exit(1);
+          throw new Error('JWT_SECRET environment variable is required and must not be empty');
         }
         
         const jwtExpiresIn = configService.get<string>('JWT_EXPIRES_IN') || '7d';
@@ -29,7 +28,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
           signOptions: {
             expiresIn: jwtExpiresIn,
           },
-        } as JwtModuleOptions;
+        };
       },
       inject: [ConfigService],
     }),

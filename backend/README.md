@@ -19,7 +19,8 @@ npm install
 `.env` 파일을 생성하고 `.env.example` 파일을 참고하여 다음 변수들을 설정하세요:
 
 ```bash
-# .env.example 파일을 복사하여 .env 파일 생성
+# backend 디렉토리에서 .env.example 파일을 복사하여 .env 파일 생성
+cd backend
 cp .env.example .env
 ```
 
