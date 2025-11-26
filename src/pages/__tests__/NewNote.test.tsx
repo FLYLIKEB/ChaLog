@@ -5,25 +5,39 @@ import { NewNote } from '../NewNote';
 import { toast } from 'sonner';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-vi.mock('../../lib/mockData', () => ({
-  mockTeas: [
-    {
-      id: 'tea-1',
-      name: '백호은침',
-      type: '백차',
-      seller: '티하우스',
-      averageRating: 4.6,
-      reviewCount: 12,
-    },
-    {
-      id: 'tea-2',
-      name: '정산소종',
-      type: '홍차',
-      seller: '차향',
-      averageRating: 4.4,
-      reviewCount: 15,
-    },
-  ],
+const mockTeas = [
+  {
+    id: 'tea-1',
+    name: '백호은침',
+    type: '백차',
+    seller: '티하우스',
+    averageRating: 4.6,
+    reviewCount: 12,
+  },
+  {
+    id: 'tea-2',
+    name: '정산소종',
+    type: '홍차',
+    seller: '차향',
+    averageRating: 4.4,
+    reviewCount: 15,
+  },
+];
+
+vi.mock('../../lib/api', () => ({
+  teasApi: {
+    getAll: vi.fn(() => Promise.resolve(mockTeas)),
+  },
+  notesApi: {
+    create: vi.fn(() => Promise.resolve({ id: 'new-note-id' })),
+  },
+}));
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    user: { id: 'user-1', name: '테스트 사용자', email: 'test@example.com' },
+  }),
 }));
 
 vi.mock('sonner', () => {

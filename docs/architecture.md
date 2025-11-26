@@ -258,50 +258,7 @@ export function FloatingActionButton({
 }
 ```
 - `Header`, `NoteCard`, `TeaCard`, `EmptyState`, `RatingSlider`, `RatingVisualization` 등이 모든 페이지에 공통 스타일을 제공하며, 대부분 `lucide-react` 아이콘과 `shadcn/ui` 래퍼(`src/components/ui/*`)를 활용합니다.
-- `mockData`는 현재 사용자를 포함해 차·노트 데이터를 in-memory로 제공하는 단일 소스이며 모든 화면이 이를 참조합니다.  
-```3:152:src/lib/mockData.ts
-export const currentUser: User = {
-  id: 'user-1',
-  name: '김차인',
-  email: 'tea@example.com',
-};
-
-export const mockTeas: Tea[] = [
-  {
-    id: 'tea-1',
-    name: '정산소종',
-    year: 2023,
-    type: '홍차',
-    seller: '차향',
-    origin: '중국 푸젠',
-    averageRating: 4.5,
-    reviewCount: 12,
-  },
-  ...
-];
-
-export const mockNotes: Note[] = [
-  {
-    id: 'note-1',
-    teaId: 'tea-1',
-    teaName: '정산소종',
-    userId: 'user-1',
-    userName: '김차인',
-    rating: 4.5,
-    ratings: {
-      richness: 4,
-      strength: 3,
-      smoothness: 5,
-      clarity: 4,
-      complexity: 4,
-    },
-    memo: '은은한 훈향이 매력적입니다. 부드러운 목넘김과 긴 여운이 좋았어요.',
-    isPublic: true,
-    createdAt: new Date('2024-11-10'),
-  },
-  ...
-];
-```
+- 모든 데이터는 백엔드 API(`src/lib/api.ts`)를 통해 가져오며, `teasApi`, `notesApi`, `authApi`를 통해 RESTful API와 통신합니다.
 - Tailwind 유틸 결합을 위해 `cn` 헬퍼를 두고 있습니다.  
 ```1:6:src/components/ui/utils.ts
 import { clsx, type ClassValue } from "clsx";
