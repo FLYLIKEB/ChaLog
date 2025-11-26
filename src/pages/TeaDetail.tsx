@@ -9,6 +9,8 @@ import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note } from '../types';
+import { logger } from '../lib/logger';
+import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
 
 export function TeaDetail() {
@@ -35,7 +37,7 @@ export function TeaDetail() {
         const notesArray = Array.isArray(notesData) ? notesData : [];
         setPublicNotes(notesArray as Note[]);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        logger.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);
@@ -62,49 +64,6 @@ export function TeaDetail() {
       </DetailFallback>
     );
   }
-
-  // 노트 데이터를 바탕으로 상위 태그 계산
-  const calculateTopTags = (notes: Note[]): string[] => {
-    if (notes.length === 0) {
-      return ['깨끗함', '부드러움', '복합적']; // 기본 fallback
-    }
-
-    // 각 특성별 평균값 계산
-    const tagMap: Record<string, { sum: number; count: number }> = {
-      풍부함: { sum: 0, count: 0 },
-      강함: { sum: 0, count: 0 },
-      부드러움: { sum: 0, count: 0 },
-      깨끗함: { sum: 0, count: 0 },
-      복합적: { sum: 0, count: 0 },
-    };
-
-    notes.forEach(note => {
-      if (note.ratings) {
-        tagMap['풍부함'].sum += note.ratings.richness;
-        tagMap['풍부함'].count += 1;
-        tagMap['강함'].sum += note.ratings.strength;
-        tagMap['강함'].count += 1;
-        tagMap['부드러움'].sum += note.ratings.smoothness;
-        tagMap['부드러움'].count += 1;
-        tagMap['깨끗함'].sum += note.ratings.clarity;
-        tagMap['깨끗함'].count += 1;
-        tagMap['복합적'].sum += note.ratings.complexity;
-        tagMap['복합적'].count += 1;
-      }
-    });
-
-    // 평균값 계산 및 정렬
-    const tagAverages = Object.entries(tagMap)
-      .map(([tag, data]) => ({
-        tag,
-        average: data.count > 0 ? data.sum / data.count : 0,
-      }))
-      .sort((a, b) => b.average - a.average)
-      .slice(0, 3)
-      .map(item => item.tag);
-
-    return tagAverages.length > 0 ? tagAverages : ['깨끗함', '부드러움', '복합적'];
-  };
 
   const topTags = calculateTopTags(publicNotes);
 
@@ -154,7 +113,7 @@ export function TeaDetail() {
               <p className="text-xs text-gray-500">{tea.reviewCount}개 리뷰</p>
             </div>
             
-            {tea.reviewCount >= 3 && (
+            {tea.reviewCount >= MIN_REVIEWS_FOR_TAGS && (
               <div className="flex-1">
                 <p className="text-xs text-gray-500 mb-2">주요 특징</p>
                 <div className="flex flex-wrap gap-2">
@@ -166,7 +125,7 @@ export function TeaDetail() {
             )}
           </div>
 
-          {tea.reviewCount < 3 && (
+          {tea.reviewCount < MIN_REVIEWS_FOR_TAGS && (
             <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
               평가 데이터가 부족합니다. 더 많은 리뷰가 필요해요.
             </p>

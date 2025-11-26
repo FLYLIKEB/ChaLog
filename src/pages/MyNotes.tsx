@@ -16,6 +16,7 @@ import { Note } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { logger } from '../lib/logger';
 
 type FilterType = 'all' | 'public' | 'private';
 type SortType = 'latest' | 'rating';
@@ -41,7 +42,7 @@ export function MyNotes() {
         // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
         setNotes(notesArray as Note[]);
       } catch (error) {
-        console.error('Failed to fetch notes:', error);
+        logger.error('Failed to fetch notes:', error);
         toast.error('노트를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);

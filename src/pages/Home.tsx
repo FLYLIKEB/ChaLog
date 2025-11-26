@@ -6,8 +6,9 @@ import { TeaCard } from '../components/TeaCard';
 import { BottomNav } from '../components/BottomNav';
 import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note } from '../types';
-import { toast } from 'sonner';
+import { logger } from '../lib/logger';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function Home() {
   const [todayTea, setTodayTea] = useState<Tea | null>(null);
@@ -28,14 +29,14 @@ export function Home() {
 
         // 랜덤 차 선택
         if (teasArray.length > 0) {
-          const randomTea = teasArray[Math.floor(Math.random() * teasArray.length)];
-          setTodayTea(randomTea);
+          const randomIndex = Math.floor(Math.random() * teasArray.length);
+          setTodayTea(teasArray[randomIndex]);
         }
 
         // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
         setPublicNotes(notesArray as Note[]);
       } catch (error) {
-        console.error('Failed to fetch data:', error);
+        logger.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');
       } finally {
         setIsLoading(false);

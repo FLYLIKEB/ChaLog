@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi, AuthResponse } from '../lib/api';
 import { toast } from 'sonner';
+import { logger } from '../lib/logger';
 
 interface User {
   id: string;
@@ -35,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         setUser(JSON.parse(storedUser));
       } catch (error) {
-        console.error('Failed to parse stored user data', error);
+        logger.error('Failed to parse stored user data', error);
         localStorage.removeItem('access_token');
         localStorage.removeItem('user');
       }
