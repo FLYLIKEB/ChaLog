@@ -172,16 +172,31 @@ jobs:
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
               
-              # PATH 업데이트 (현재 세션에 반영)
-              export PATH="/usr/bin:$PATH"
+              # 명령어 캐시 새로고침
+              hash -r
               
-              # 설치 확인
-              if command -v node &> /dev/null && command -v npm &> /dev/null; then
-                echo "✅ Node.js 설치 완료: $(node --version)"
-                echo "✅ npm 설치 완료: $(npm --version)"
+              # PATH에 Node.js 경로 추가
+              export PATH="/usr/bin:/usr/local/bin:$PATH"
+              
+              # 설치 확인 (전체 경로로도 시도)
+              if command -v node &> /dev/null || [ -f /usr/bin/node ]; then
+                NODE_CMD=$(command -v node || echo "/usr/bin/node")
+                NPM_CMD=$(command -v npm || echo "/usr/bin/npm")
+                
+                if [ -f "$NODE_CMD" ] && [ -f "$NPM_CMD" ]; then
+                  echo "✅ Node.js 설치 완료: $($NODE_CMD --version)"
+                  echo "✅ npm 설치 완료: $($NPM_CMD --version)"
+                  # 심볼릭 링크 생성 (필요시)
+                  [ ! -f /usr/local/bin/node ] && sudo ln -sf "$NODE_CMD" /usr/local/bin/node || true
+                  [ ! -f /usr/local/bin/npm ] && sudo ln -sf "$NPM_CMD" /usr/local/bin/npm || true
+                else
+                  echo "❌ Node.js/npm 설치 실패!"
+                  echo "Node.js 경로: $NODE_CMD"
+                  echo "npm 경로: $NPM_CMD"
+                  exit 1
+                fi
               else
                 echo "❌ Node.js/npm 설치 실패!"
-                echo "수동 설치가 필요할 수 있습니다."
                 exit 1
               fi
             else
@@ -190,8 +205,8 @@ jobs:
             fi
             
             # npm 경로 확인
-            echo "🔍 npm 경로: $(which npm)"
-            echo "🔍 node 경로: $(which node)"
+            echo "🔍 npm 경로: $(which npm || echo '/usr/bin/npm')"
+            echo "🔍 node 경로: $(which node || echo '/usr/bin/node')"
             
             # 디렉토리 생성
             mkdir -p $BACKEND_DIR
@@ -212,35 +227,53 @@ jobs:
             
             # 의존성 설치
             echo "📥 의존성 설치 중..."
-            npm ci --production
+            # npm 경로 확인 후 사용
+            NPM_CMD=$(command -v npm || echo "/usr/bin/npm")
+            if [ ! -f "$NPM_CMD" ]; then
+              echo "❌ npm을 찾을 수 없습니다: $NPM_CMD"
+              exit 1
+            fi
+            $NPM_CMD ci --production
             
             # PM2 설치 확인 및 설치
+            NPM_CMD=$(command -v npm || echo "/usr/bin/npm")
             if ! command -v pm2 &> /dev/null; then
               echo "📦 PM2가 설치되지 않았습니다. 설치 중..."
-              sudo npm install -g pm2
-              echo "✅ PM2 설치 완료: $(pm2 --version)"
-              
-              # PM2 부팅 시 자동 시작 설정
-              echo "⚙️ PM2 부팅 시 자동 시작 설정 중..."
-              pm2 startup systemd -u ubuntu --hp /home/ubuntu || echo "PM2 startup 설정은 수동으로 실행해야 할 수 있습니다."
+              sudo $NPM_CMD install -g pm2
+              hash -r
+              PM2_CMD=$(command -v pm2 || echo "/usr/local/bin/pm2")
+              if [ -f "$PM2_CMD" ]; then
+                echo "✅ PM2 설치 완료: $($PM2_CMD --version)"
+                
+                # PM2 부팅 시 자동 시작 설정
+                echo "⚙️ PM2 부팅 시 자동 시작 설정 중..."
+                $PM2_CMD startup systemd -u ubuntu --hp /home/ubuntu || echo "PM2 startup 설정은 수동으로 실행해야 할 수 있습니다."
+              else
+                echo "⚠️ PM2 설치 후 경로를 찾을 수 없습니다."
+                exit 1
+              fi
             else
-              echo "✅ PM2 이미 설치됨: $(pm2 --version)"
+              PM2_CMD=$(command -v pm2)
+              echo "✅ PM2 이미 설치됨: $($PM2_CMD --version)"
             fi
             
             # PM2로 재시작
             echo "🔄 PM2로 앱 재시작 중..."
-            pm2 delete chalog-backend 2>/dev/null || true
-            pm2 start ecosystem.config.js
-            pm2 save
+            $PM2_CMD delete chalog-backend 2>/dev/null || true
+            $PM2_CMD start ecosystem.config.js
+            $PM2_CMD save
             
             # Health check
             echo "🏥 Health check..."
             sleep 5
+            PM2_CMD=$(command -v pm2 || echo "/usr/local/bin/pm2")
             if curl -f http://localhost:3000/health > /dev/null 2>&1; then
               echo "✅ 배포 성공! Health check 통과"
             else
               echo "⚠️ Health check 실패. 로그 확인:"
-              pm2 logs chalog-backend --lines 20 --nostream
+              $PM2_CMD logs chalog-backend --lines 20 --nostream || true
+              echo "PM2 상태:"
+              $PM2_CMD status || true
               exit 1
             fi
             
