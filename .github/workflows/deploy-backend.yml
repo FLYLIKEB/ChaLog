@@ -159,6 +159,22 @@ jobs:
             
             BACKEND_DIR="/home/ubuntu/chalog-backend"
             
+            # Node.js 설치 확인 및 설치
+            if ! command -v node &> /dev/null; then
+              echo "📦 Node.js가 설치되지 않았습니다. 설치 중..."
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+              echo "✅ Node.js 설치 완료: $(node --version)"
+            else
+              echo "✅ Node.js 이미 설치됨: $(node --version)"
+            fi
+            
+            # npm 확인
+            if ! command -v npm &> /dev/null; then
+              echo "❌ npm을 찾을 수 없습니다!"
+              exit 1
+            fi
+            
             # 디렉토리 생성
             mkdir -p $BACKEND_DIR
             cd $BACKEND_DIR
@@ -179,6 +195,19 @@ jobs:
             # 의존성 설치
             echo "📥 의존성 설치 중..."
             npm ci --production
+            
+            # PM2 설치 확인 및 설치
+            if ! command -v pm2 &> /dev/null; then
+              echo "📦 PM2가 설치되지 않았습니다. 설치 중..."
+              sudo npm install -g pm2
+              echo "✅ PM2 설치 완료: $(pm2 --version)"
+              
+              # PM2 부팅 시 자동 시작 설정
+              echo "⚙️ PM2 부팅 시 자동 시작 설정 중..."
+              pm2 startup systemd -u ubuntu --hp /home/ubuntu || echo "PM2 startup 설정은 수동으로 실행해야 할 수 있습니다."
+            else
+              echo "✅ PM2 이미 설치됨: $(pm2 --version)"
+            fi
             
             # PM2로 재시작
             echo "🔄 PM2로 앱 재시작 중..."
