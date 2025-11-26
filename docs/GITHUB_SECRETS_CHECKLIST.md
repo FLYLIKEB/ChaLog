@@ -36,11 +36,17 @@ GitHub Actions 자동 배포를 위해 다음 Secrets를 반드시 설정해야 
    - Name: `EC2_HOST`
    - Secret: 예) `54.123.45.67` 또는 `api.yourdomain.com`
 
-### 3. EC2_USER
+### 3. EC2_USER ⚠️ 중요
 
 **설정 방법:**
-- Name: `EC2_USER`
-- Secret: `ubuntu` (Ubuntu 인스턴스인 경우)
+1. GitHub Secrets에 추가:
+   - Name: `EC2_USER` (정확히 이 이름으로)
+   - Secret: `ubuntu` (Ubuntu 인스턴스인 경우)
+   - 또는 `ec2-user` (Amazon Linux인 경우)
+
+**주의사항:**
+- Secret 값에 공백이나 줄바꿈이 없어야 합니다
+- 정확히 `ubuntu` 또는 `ec2-user`만 입력하세요
 
 ## 설정 확인
 
