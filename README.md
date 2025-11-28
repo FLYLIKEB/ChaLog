@@ -246,24 +246,20 @@ cd backend
 - Playwright/Cypress 기반 E2E 테스트 도입
 - 다국어(i18n)·다크 모드 토글·접근성 개선
 
-## Git 브랜치 전략
-- `main`: 실제 배포용 브랜치. PR 통과·CI 성공 후에만 병합하고 보호 규칙으로 직접 push를 막습니다.
-- `develop`: 다음 릴리스를 모으는 통합 브랜치. 모든 기능 작업은 여기에서 분기·병합합니다.
-- `feature/*`: 기능·버그 단위 작업 브랜치(`feature/note-filter` 등). 완료 후 PR을 통해 `develop`에 병합합니다.
-- `release/*`: 배포 준비 단계에서 생성해 QA·버전 태깅을 수행하고, 안정화되면 `main`과 `develop`에 모두 병합합니다.
-- `hotfix/*`: 운영 중 긴급 수정. `main`에서 분기해 패치 후 같은 커밋을 `main`·`develop`에 동시에 반영합니다.
+## Git 브랜치 전략 (GitHub Flow)
+- `main`: 배포 가능한 안정 버전. PR 통과·CI 성공 후에만 병합하고 보호 규칙으로 직접 push를 막습니다.
+- `feature/*`: 기능·버그 단위 작업 브랜치(`feature/note-filter` 등). 완료 후 PR을 통해 `main`에 직접 병합합니다.
 
 ### 운영 플로우
-1. `develop`에서 작업을 위한 `feature/*`를 생성합니다.
-2. 기능 구현·테스트 완료 시 PR을 열어 리뷰 후 `develop`에 병합합니다.
-3. 배포 주기에 맞춰 `release/*`를 만들어 QA·문서화를 마친 뒤 `main`에 병합하고 태그를 남깁니다.
-4. `main` 병합 직후 동일 커밋을 `develop`에 다시 병합해 이력 차이를 없앱니다.
-5. 사고 대응이 필요하면 `hotfix/*`로 즉시 수정하고, `main`과 `develop` 모두에 반영합니다.
+1. `main`에서 작업을 위한 `feature/*`를 생성합니다.
+2. 기능 구현·테스트 완료 시 PR을 열어 리뷰 후 `main`에 병합합니다 (squash merge 권장).
+3. 배포가 필요하면 `main`에 태그를 생성하고 배포합니다.
+4. 긴급 수정도 동일한 프로세스: `feature/hotfix-*` 브랜치 생성 → PR → `main` 병합 → 배포.
 
 ### 권장 설정
-- GitHub 브랜치 보호 규칙: `main`, `develop` 모두 최소 1인 리뷰와 CI 통과를 요구하고 squash merge를 권장합니다.
-- 자동화: `release/*` 생성 시 버전 검증, `main` 병합 시 태그·배포 스크립트를 실행하도록 CI를 구성합니다.
-- 문서화: 브랜치 명명 규칙·릴리스 절차를 `docs/architecture.md`와 이 README에 유지해 팀 합의를 공유합니다.
+- GitHub 브랜치 보호 규칙: `main` 브랜치에 최소 1인 리뷰와 CI 통과를 요구하고 squash merge를 권장합니다.
+- 자동화: `main` 병합 시 태그·배포 스크립트를 실행하도록 CI를 구성합니다.
+- 문서화: 브랜치 명명 규칙·릴리스 절차를 `docs/git-strategy.md`와 이 README에 유지해 팀 합의를 공유합니다.
 
 ## 추가 참고 문서
 - **스크립트 사용법**: [`docs/SCRIPTS.md`](./docs/SCRIPTS.md) - 모든 유틸리티 스크립트의 역할과 사용법

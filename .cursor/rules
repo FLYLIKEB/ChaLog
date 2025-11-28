@@ -34,7 +34,7 @@ When making code changes, automatically update relevant markdown files:
 
 - Full release: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature/branch]`
   - Example: `scripts/full-release.sh "feat: add note filters" v0.5.0`
-  - Process: test/lint → feature push → develop merge → release creation → main merge+tag → develop re-merge
+  - Process: test/lint → feature push → main merge+tag
 
 ## Utility Scripts
 
@@ -76,7 +76,7 @@ For detailed script documentation, see `docs/SCRIPTS.md`
 
 When user types "ch" or "커밋", automatically execute:
 
-1. Branch management: Check current branch → if `main`/`develop`, create `feature/*` branch based on changes
+1. Branch management: Check current branch → if `main`, create `feature/*` branch based on changes
 2. Change analysis: `git status` → group by feature (auth, notes, teas, components, config, etc.)
 3. Documentation check: Analyze changes → identify which markdown files need updates (README.md, docs/architecture.md, etc.) → update if needed
 4. Feature-based commits: Stage each group → auto-generate Korean commit message (`feat:`, `fix:`, `refactor:`, etc.) → commit
@@ -93,7 +93,7 @@ When user types "pl" or "풀", automatically execute:
 
 1. Remote update: `git fetch --all --prune`
 2. Current branch pull: `git pull origin <current-branch>`
-3. Main branches pull: Update `main`, `develop` (checkout → pull → return)
+3. Main branch pull: Update `main` (checkout → pull → return)
 4. Summary: Provide updated branches and changes summary
 
 ## Merge Main to All Branches ("merge-main" or "mg" command)
@@ -130,7 +130,7 @@ Before any commit, automatically execute:
 
 When user types "pr" or "pr생성", automatically execute:
 
-1. Check current branch: Must be a feature/hotfix/release branch
+1. Check current branch: Must be a feature branch (`feature/*`)
 2. Ensure branch is pushed: Push current branch to origin if not already pushed
 3. Generate PR title: Based on branch name and recent commits
 4. Generate PR description: Summarize commits, changed files, and affected modules

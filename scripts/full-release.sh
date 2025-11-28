@@ -7,16 +7,13 @@ if [[ $# -lt 2 ]]; then
 Usage: scripts/full-release.sh "<commit-message>" "<version-tag>" [feature-branch]
 
 - <commit-message>: 로컬 변경분을 커밋할 메시지
-- <version-tag>: 예) v1.2.3 (release/<version-tag> 브랜치와 동일하게 사용)
+- <version-tag>: 예) v1.2.3
 - [feature-branch]: 기본값은 현재 체크아웃된 브랜치이며, 반드시 feature/* 패턴을 따라야 합니다.
 
 이 스크립트는 다음을 한 번에 수행합니다.
 1) 테스트/린트/타입 체크
 2) feature/* 브랜치 커밋 및 push
-3) develop 병합
-4) release/* 생성 및 push
-5) main 병합 + 태그 생성/배포
-6) develop 재동기화 및 release/* 정리
+3) main 병합 + 태그 생성/배포
 EOF
   exit 1
 fi
@@ -45,20 +42,9 @@ cd "$REPO_ROOT"
 
 STARTING_BRANCH=$(git symbolic-ref --short HEAD)
 FEATURE_BRANCH=${3:-$STARTING_BRANCH}
-RELEASE_BRANCH="release/$VERSION_TAG"
 
 if [[ "$FEATURE_BRANCH" != feature/* ]]; then
   echo "feature/* 패턴의 브랜치에서만 실행 가능합니다. 현재: $FEATURE_BRANCH" >&2
-  exit 1
-fi
-
-if git show-ref --verify --quiet "refs/heads/$RELEASE_BRANCH"; then
-  echo "로컬에 $RELEASE_BRANCH 브랜치가 이미 존재합니다. 삭제 후 다시 시도하세요." >&2
-  exit 1
-fi
-
-if git ls-remote --exit-code --heads origin "$RELEASE_BRANCH" >/dev/null 2>&1; then
-  echo "원격에 $RELEASE_BRANCH 브랜치가 이미 존재합니다. 다른 버전 태그를 사용하세요." >&2
   exit 1
 fi
 
@@ -111,33 +97,23 @@ else
   git push -u origin "$FEATURE_BRANCH"
 fi
 
-log "develop에 feature 병합"
-git checkout develop
-git pull origin develop --ff-only
-git merge --no-ff "$FEATURE_BRANCH" -m "Merge $FEATURE_BRANCH into develop"
-git push origin develop
+log "main에 병합 및 태그 생성 ($VERSION_TAG)"
+log "⚠️  주의: PR을 통해 main에 병합하는 것을 권장합니다."
+log "   이 스크립트는 직접 병합하지만, 일반적으로는 PR을 생성하여 리뷰 후 병합하세요."
 
-log "release 브랜치 생성 및 push ($RELEASE_BRANCH)"
-git checkout -b "$RELEASE_BRANCH"
-git push -u origin "$RELEASE_BRANCH"
+read -p "main에 직접 병합하시겠습니까? (y/N): " -n 1 -r
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+  log "병합을 취소했습니다. PR을 생성하여 진행하세요."
+  exit 0
+fi
 
-log "main에 release 병합 및 태그 생성 ($VERSION_TAG)"
 git checkout main
 git pull origin main --ff-only
-git merge --no-ff "$RELEASE_BRANCH" -m "Release $VERSION_TAG"
+git merge --no-ff "$FEATURE_BRANCH" -m "Merge $FEATURE_BRANCH into main - $COMMIT_MESSAGE"
 git tag -a "$VERSION_TAG" -m "Release $VERSION_TAG"
 git push origin main
 git push origin "$VERSION_TAG"
 
-log "release 변경 사항 develop에 재병합"
-git checkout develop
-git pull origin develop --ff-only
-git merge --no-ff "$RELEASE_BRANCH" -m "Merge $RELEASE_BRANCH back into develop"
-git push origin develop
-
-log "release 브랜치 정리"
-git branch -d "$RELEASE_BRANCH"
-git push origin --delete "$RELEASE_BRANCH"
-
 log "작업 완료"
-
+log "릴리스 태그 $VERSION_TAG가 생성되었습니다."
