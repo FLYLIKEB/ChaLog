@@ -39,20 +39,17 @@ jobs:
         if: steps.check_lockfile.outputs.exists == 'false'
         working-directory: ./backend
         run: |
-          echo "workspaces=false" > .npmrc
-          echo "legacy-peer-deps=true" >> .npmrc
           echo "⚠️ package-lock.json이 없습니다. 생성 중..."
-          npm install --package-lock-only --legacy-peer-deps
+          npm install --package-lock-only --legacy-peer-deps --no-workspaces
 
       - name: Install dependencies
         working-directory: ./backend
+        env:
+          NPM_CONFIG_WORKSPACES: "false"
+          NPM_CONFIG_LEGACY_PEER_DEPS: "true"
         run: |
-          # workspaces 비활성화를 위한 .npmrc 생성
-          echo "workspaces=false" > .npmrc
-          echo "legacy-peer-deps=true" >> .npmrc
-          
-          echo "📦 npm ci 실행 중..."
-          if ! npm ci --legacy-peer-deps; then
+          echo "📦 npm ci (--no-workspaces) 실행 중..."
+          if ! npm ci --legacy-peer-deps --no-workspaces --include-workspace-root=false; then
             echo "❌ npm ci 실패!"
             echo "package-lock.json과 package.json을 동기화한 뒤 다시 실행하세요."
             exit 1
