@@ -26,9 +26,14 @@ export function TeaDetail() {
 
       try {
         setIsLoading(true);
+        const teaId = parseInt(id, 10);
+        if (isNaN(teaId)) {
+          toast.error('유효하지 않은 차 ID입니다.');
+          return;
+        }
         const [teaData, notesData] = await Promise.all([
-          teasApi.getById(id),
-          notesApi.getAll(undefined, true, id),
+          teasApi.getById(teaId),
+          notesApi.getAll(undefined, true, teaId),
         ]);
 
         setTea(teaData as Tea);

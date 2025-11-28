@@ -1,19 +1,49 @@
 const mysql = require('mysql2/promise');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
+require('dotenv').config();
+
+const parseDatabaseUrl = () => {
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (databaseUrl) {
+    try {
+      const url = new URL(databaseUrl);
+      return {
+        host: url.hostname,
+        port: url.port ? parseInt(url.port, 10) : 3306,
+        user: url.username,
+        password: url.password || undefined,
+        database: url.pathname.slice(1),
+      };
+    } catch (error) {
+      throw new Error(`Invalid DATABASE_URL: ${error.message}`);
+    }
+  }
+  
+  // DATABASE_URL이 없으면 개별 환경 변수 사용
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3307', 10),
+    user: process.env.DB_USER || 'admin',
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME || 'chalog',
+  };
+};
 
 const insertSampleData = async () => {
   let connection;
   
   try {
+    // 데이터베이스 연결 설정 파싱
+    const dbConfig = parseDatabaseUrl();
+    
+    if (!dbConfig.password) {
+      throw new Error('Database password is required. Please set DATABASE_URL or DB_PASSWORD environment variable.');
+    }
+    
     // 데이터베이스 연결
-    connection = await mysql.createConnection({
-      host: 'localhost',
-      port: 3307,
-      user: 'admin',
-      password: 'az980831',
-      database: 'chalog',
-    });
+    connection = await mysql.createConnection(dbConfig);
 
     console.log('✅ 데이터베이스 연결 성공\n');
 

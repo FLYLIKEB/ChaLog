@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 
 interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
 }

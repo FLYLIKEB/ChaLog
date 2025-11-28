@@ -14,7 +14,7 @@ export class NotesService {
     private teasService: TeasService,
   ) {}
 
-  async create(userId: string, createNoteDto: CreateNoteDto): Promise<Note> {
+  async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
     // 차가 존재하는지 확인
     const tea = await this.teasService.findOne(createNoteDto.teaId);
     
@@ -32,7 +32,7 @@ export class NotesService {
     return savedNote;
   }
 
-  async findAll(userId?: string, isPublic?: boolean, teaId?: string): Promise<Note[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number): Promise<Note[]> {
     const queryBuilder = this.notesRepository
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
@@ -64,7 +64,7 @@ export class NotesService {
     return await queryBuilder.getMany();
   }
 
-  async findOne(id: string, userId?: string): Promise<Note> {
+  async findOne(id: number, userId?: number): Promise<Note> {
     const note = await this.notesRepository.findOne({
       where: { id },
       relations: ['user', 'tea'],
@@ -82,7 +82,7 @@ export class NotesService {
     return note;
   }
 
-  async update(id: string, userId: string, updateNoteDto: UpdateNoteDto): Promise<Note> {
+  async update(id: number, userId: number, updateNoteDto: UpdateNoteDto): Promise<Note> {
     const note = await this.findOne(id, userId);
 
     if (note.userId !== userId) {
@@ -98,7 +98,7 @@ export class NotesService {
     return updatedNote;
   }
 
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: number, userId: number): Promise<void> {
     const note = await this.findOne(id, userId);
 
     if (note.userId !== userId) {
@@ -112,7 +112,7 @@ export class NotesService {
     await this.updateTeaRating(teaId);
   }
 
-  private async updateTeaRating(teaId: string): Promise<void> {
+  private async updateTeaRating(teaId: number): Promise<void> {
     const notes = await this.notesRepository.find({
       where: { teaId },
     });

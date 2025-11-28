@@ -7,14 +7,14 @@ const mockDate = new Date('2024-11-10T00:00:00.000Z');
 
 const mockTeas = [
   {
-    id: 'tea-a',
+    id: 1,
     name: '화과향',
     type: '백차',
     averageRating: 4.5,
     reviewCount: 20,
   },
   {
-    id: 'tea-b',
+    id: 2,
     name: '무이암차',
     type: '우롱차',
     averageRating: 4.8,
@@ -24,10 +24,10 @@ const mockTeas = [
 
 const mockNotes = [
   {
-    id: 'note-public',
-    teaId: 'tea-a',
+    id: 1,
+    teaId: 1,
     teaName: '화과향',
-    userId: 'user-1',
+    userId: 1,
     userName: '김차인',
     rating: 4.5,
     ratings: {
@@ -42,10 +42,10 @@ const mockNotes = [
     createdAt: mockDate,
   },
   {
-    id: 'note-private',
-    teaId: 'tea-b',
+    id: 2,
+    teaId: 2,
     teaName: '무이암차',
-    userId: 'user-2',
+    userId: 2,
     userName: '이다원',
     rating: 4.2,
     ratings: {

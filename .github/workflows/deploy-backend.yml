@@ -18,20 +18,62 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check for package-lock.json
+        id: check_lockfile
+        working-directory: ./backend
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache: ${{ steps.check_lockfile.outputs.exists == 'true' && 'npm' || '' }}
+          cache-dependency-path: ${{ steps.check_lockfile.outputs.exists == 'true' && 'backend/package-lock.json' || '' }}
+
+      - name: Ensure package-lock.json exists
+        if: steps.check_lockfile.outputs.exists == 'false'
+        working-directory: ./backend
+        run: |
+          echo "⚠️ package-lock.json이 없습니다. 생성 중..."
+          npm install --package-lock-only --legacy-peer-deps --no-workspaces
 
       - name: Install dependencies
         working-directory: ./backend
-        run: npm ci
+        env:
+          NPM_CONFIG_WORKSPACES: "false"
+          NPM_CONFIG_LEGACY_PEER_DEPS: "true"
+        run: |
+          echo "📦 npm ci (--no-workspaces) 실행 중..."
+          if ! npm ci --legacy-peer-deps --no-workspaces --include-workspace-root=false; then
+            echo "❌ npm ci 실패!"
+            echo "package-lock.json과 package.json을 동기화한 뒤 다시 실행하세요."
+            exit 1
+          fi
+          
+          REQUIRED_PACKAGES=("typeorm" "@nestjs/typeorm" "@nestjs/common" "@nestjs/core" "class-transformer" "class-validator" "rxjs" "mysql2")
+          echo "🔍 필수 패키지 확인 중..."
+          for pkg in "${REQUIRED_PACKAGES[@]}"; do
+            if [ -d "node_modules/$pkg" ]; then
+              echo "✅ $pkg 확인됨"
+            else
+              echo "❌ $pkg 누락됨! package.json을 확인하세요."
+              exit 1
+            fi
+          done
 
       - name: Build application
         working-directory: ./backend
-        run: npm run build
+        run: |
+          if [ ! -d "node_modules/typeorm" ]; then
+            echo "❌ typeorm 누락! package.json을 확인하세요."
+            exit 1
+          fi
+          npm run build
 
       - name: Create deployment package
         working-directory: ./backend
@@ -121,6 +163,10 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DATABASE_URL: ${{ secrets.EC2_DATABASE_URL }}
+          EC2_JWT_SECRET: ${{ secrets.EC2_JWT_SECRET }}
+          EC2_FRONTEND_URL: ${{ secrets.EC2_FRONTEND_URL }}
+          EC2_FRONTEND_URLS: ${{ secrets.EC2_FRONTEND_URLS }}
         run: |
           # 환경 변수 확인
           if [ -z "${EC2_HOST:-}" ] || [ -z "${EC2_USER:-}" ]; then
@@ -155,6 +201,39 @@ jobs:
               -o ConnectTimeout=10 \
               backend/deploy.tar.gz \
               "$EC2_USER@$EC2_HOST:/tmp/"
+
+          # .env 파일 업로드 (GitHub Secrets 사용)
+          echo "📤 .env 파일 생성 중..."
+          
+          # 필수 환경 변수 확인
+          if [ -z "${EC2_DATABASE_URL:-}" ]; then
+            echo "⚠️ EC2_DATABASE_URL이 설정되지 않았습니다. GitHub Secrets에 설정하세요."
+            echo "   기본값을 사용하지 않습니다. 배포를 중단합니다."
+            exit 1
+          fi
+          
+          if [ -z "${EC2_JWT_SECRET:-}" ]; then
+            echo "⚠️ EC2_JWT_SECRET이 설정되지 않았습니다. GitHub Secrets에 설정하세요."
+            echo "   기본값을 사용하지 않습니다. 배포를 중단합니다."
+            exit 1
+          fi
+          
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              "$EC2_USER@$EC2_HOST" \
+              "mkdir -p /home/ubuntu/chalog-backend && \
+               echo 'DATABASE_URL=${EC2_DATABASE_URL}' > /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SYNCHRONIZE=false' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SSL_ENABLED=true' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SSL_REJECT_UNAUTHORIZED=false' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'JWT_SECRET=${EC2_JWT_SECRET}' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'JWT_EXPIRES_IN=7d' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'PORT=3000' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'NODE_ENV=production' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'FRONTEND_URL=${EC2_FRONTEND_URL:-https://cha-log-gilt.vercel.app}' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'FRONTEND_URLS=${EC2_FRONTEND_URLS:-https://cha-log-gilt.vercel.app,http://localhost:5173,http://localhost:5174}' >> /home/ubuntu/chalog-backend/.env && \
+               chmod 600 /home/ubuntu/chalog-backend/.env && \
+               echo '✅ .env 파일 생성 완료'"
 
           # EC2에서 배포 실행
           ssh -i ~/.ssh/deploy_key \
@@ -245,97 +324,28 @@ jobs:
               rm -rf node_modules
             fi
             
-            # package-lock.json 확인 및 동기화
-            if [ -f "package-lock.json" ]; then
-              echo "📦 package-lock.json 발견. 동기화 확인 중..."
-              # npm ci dry-run으로 동기화 확인
-              if $NPM_CMD ci --dry-run --production 2>&1 | grep -qi "missing\|invalid\|error"; then
-                echo "⚠️ package-lock.json이 package.json과 동기화되지 않음"
-                echo "📦 package-lock.json 재생성 중..."
-                rm -f package-lock.json
-                $NPM_CMD install --package-lock-only --legacy-peer-deps --no-audit --no-fund
-              fi
-              
-              # npm ci 시도
-              echo "📦 npm ci 실행 중..."
-              if $NPM_CMD ci --production --legacy-peer-deps 2>&1; then
-                echo "✅ npm ci 성공"
-              else
-                echo "⚠️ npm ci 실패. 상세 오류:"
-                $NPM_CMD ci --production --legacy-peer-deps 2>&1 | tail -30 || true
-                echo "📦 npm install로 대체..."
-                # --production 없이 전체 설치 (peer dependencies 포함)
-                echo "📦 전체 의존성 설치 중..."
-                $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
-                # devDependencies 제거
-                echo "🧹 devDependencies 제거 중..."
-                $NPM_CMD prune --production
-              fi
-            else
-              echo "📦 package-lock.json 없음. 생성 및 설치 중..."
-              # package-lock.json 생성
-              $NPM_CMD install --package-lock-only --legacy-peer-deps --no-audit --no-fund
-              # 전체 설치
-              $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
-              # devDependencies 제거
-              echo "🧹 devDependencies 제거 중..."
-              $NPM_CMD prune --production
+            # package-lock.json 확인
+            if [ ! -f "package-lock.json" ]; then
+              echo "⚠️ package-lock.json이 없습니다. 최신 backend/package-lock.json을 커밋하세요."
+              exit 1
             fi
             
-            # class-transformer 실제 존재 확인
-            echo "🔍 class-transformer 실제 확인 중..."
-            if [ -d "node_modules/class-transformer" ]; then
-              echo "✅ class-transformer 디렉토리 존재"
-              echo "📋 class-transformer 버전: $(cat node_modules/class-transformer/package.json 2>/dev/null | grep '"version"' | head -1 || echo '확인 불가')"
-            else
-              echo "❌ class-transformer가 없습니다! 재설치 중..."
-              $NPM_CMD install class-transformer@^0.5.1 class-validator@^0.14.2 --save --legacy-peer-deps --no-audit --no-fund
+            echo "📦 npm ci 실행 중..."
+            if ! $NPM_CMD ci --legacy-peer-deps --no-audit --no-fund; then
+              echo "❌ npm ci 실패! package-lock.json을 확인하세요."
+              exit 1
             fi
             
-            # 설치 확인 및 누락된 패키지 재설치
-            echo "🔍 설치된 패키지 확인:"
-            if [ -d "node_modules" ]; then
-              echo "✅ node_modules 디렉토리 존재"
-              echo "📊 node_modules 크기: $(du -sh node_modules | cut -f1)"
-              
-              # 필수 패키지 확인
-              MISSING_PACKAGES=()
-              REQUIRED_PACKAGES=("class-transformer" "class-validator" "@nestjs/common" "@nestjs/core" "mysql2")
-              
-              for pkg in "${REQUIRED_PACKAGES[@]}"; do
-                if [ -d "node_modules/$pkg" ]; then
-                  echo "✅ $pkg 설치됨"
-                else
-                  echo "❌ $pkg 누락됨!"
-                  MISSING_PACKAGES+=("$pkg")
-                fi
-              done
-              
-              # 누락된 패키지가 있으면 재설치
-              if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
-                echo "⚠️ 누락된 패키지 발견. 재설치 중..."
-                for pkg in "${MISSING_PACKAGES[@]}"; do
-                  echo "📦 $pkg 설치 중..."
-                  $NPM_CMD install "$pkg" --production --legacy-peer-deps --no-audit --no-fund
-                done
-              fi
-            else
-              echo "❌ node_modules 디렉토리가 없습니다!"
-              echo "전체 재설치 시도..."
-              $NPM_CMD install --production --legacy-peer-deps --no-audit --no-fund
-              if [ ! -d "node_modules" ]; then
-                echo "❌ 의존성 설치 실패!"
-                exit 1
-              fi
-            fi
+            echo "🧹 devDependencies 제거 중..."
+            $NPM_CMD prune --production
             
-            # 최종 확인
-            echo "🔍 최종 패키지 확인:"
+            echo "🔍 필수 패키지 확인 중..."
+            REQUIRED_PACKAGES=("class-transformer" "class-validator" "rxjs" "typeorm" "@nestjs/common" "@nestjs/core" "mysql2")
             for pkg in "${REQUIRED_PACKAGES[@]}"; do
               if [ -d "node_modules/$pkg" ]; then
                 echo "✅ $pkg 확인됨"
               else
-                echo "❌ $pkg 여전히 누락됨!"
+                echo "❌ $pkg 누락됨! package.json을 업데이트한 뒤 다시 배포하세요."
                 exit 1
               fi
             done
