@@ -7,7 +7,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const mockTeas = [
   {
-    id: 'tea-1',
+    id: 1,
     name: '백호은침',
     type: '백차',
     seller: '티하우스',
@@ -15,7 +15,7 @@ const mockTeas = [
     reviewCount: 12,
   },
   {
-    id: 'tea-2',
+    id: 2,
     name: '정산소종',
     type: '홍차',
     seller: '차향',
@@ -29,14 +29,14 @@ vi.mock('../../lib/api', () => ({
     getAll: vi.fn(() => Promise.resolve(mockTeas)),
   },
   notesApi: {
-    create: vi.fn(() => Promise.resolve({ id: 'new-note-id' })),
+    create: vi.fn(() => Promise.resolve({ id: 1 })),
   },
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     isAuthenticated: true,
-    user: { id: 'user-1', name: '테스트 사용자', email: 'test@example.com' },
+    user: { id: 1, name: '테스트 사용자', email: 'test@example.com' },
   }),
 }));
 
@@ -129,7 +129,7 @@ describe('NewNote 페이지', () => {
   });
 
   it('teaId 쿼리로 진입하면 검색 입력이 자동 채워진다', async () => {
-    renderNewNote('/new-note?teaId=tea-1');
+    renderNewNote('/new-note?teaId=1');
 
     expect(await screen.findByDisplayValue('백호은침')).toBeInTheDocument();
   });

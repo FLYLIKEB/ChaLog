@@ -22,7 +22,9 @@ export function NewNote() {
   const preselectedTeaId = searchParams.get('teaId');
 
   const [teas, setTeas] = useState<Tea[]>([]);
-  const [selectedTea, setSelectedTea] = useState(preselectedTeaId || '');
+  const [selectedTea, setSelectedTea] = useState<number | null>(
+    preselectedTeaId ? parseInt(preselectedTeaId, 10) : null
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [ratings, setRatings] = useState({
     richness: RATING_DEFAULT,
@@ -58,8 +60,12 @@ export function NewNote() {
 
   useEffect(() => {
     if (preselectedTeaId) {
-      const tea = teas.find(t => t.id === preselectedTeaId);
-      if (tea) setSearchQuery(tea.name);
+      const teaId = parseInt(preselectedTeaId, 10);
+      const tea = teas.find(t => t.id === teaId);
+      if (tea) {
+        setSelectedTea(teaId);
+        setSearchQuery(tea.name);
+      }
     }
   }, [preselectedTeaId, teas]);
 
@@ -73,7 +79,7 @@ export function NewNote() {
     );
   });
 
-  const selectedTeaData = teas.find(t => t.id === selectedTea);
+  const selectedTeaData = selectedTea ? teas.find(t => t.id === selectedTea) : null;
 
   const handleSave = async () => {
     if (!isAuthenticated) {
@@ -103,6 +109,10 @@ export function NewNote() {
         ratings.complexity
       ) / RATING_FIELDS_COUNT;
 
+      if (!selectedTea) {
+        toast.error('차를 선택해주세요.');
+        return;
+      }
       await notesApi.create({
         teaId: selectedTea,
         rating: averageRating,
@@ -135,7 +145,7 @@ export function NewNote() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setSelectedTea('');
+              setSelectedTea(null);
             }}
           />
           

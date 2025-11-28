@@ -6,7 +6,7 @@ import { renderWithRouter } from '../../test/renderWithRouter';
 
 const mockTeas = [
   {
-    id: 'tea-a',
+    id: 1,
     name: '무이암차',
     type: '우롱차',
     seller: '티하우스',
@@ -14,7 +14,7 @@ const mockTeas = [
     reviewCount: 15,
   },
   {
-    id: 'tea-b',
+    id: 2,
     name: '진행백차',
     type: '백차',
     seller: '차상회',

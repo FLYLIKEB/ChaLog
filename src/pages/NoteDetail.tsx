@@ -39,7 +39,12 @@ export function NoteDetail() {
 
       try {
         setIsLoading(true);
-        const noteData = await notesApi.getById(id);
+        const noteId = parseInt(id, 10);
+        if (isNaN(noteId)) {
+          toast.error('유효하지 않은 노트 ID입니다.');
+          return;
+        }
+        const noteData = await notesApi.getById(noteId);
         // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
         const normalizedNote = noteData as Note;
         setNote(normalizedNote);
@@ -85,7 +90,12 @@ export function NoteDetail() {
 
     try {
       setIsUpdating(true);
-      await notesApi.update(id, { isPublic: !note.isPublic });
+      const noteId = parseInt(id, 10);
+      if (isNaN(noteId)) {
+        toast.error('유효하지 않은 노트 ID입니다.');
+        return;
+      }
+      await notesApi.update(noteId, { isPublic: !note.isPublic });
       setNote({ ...note, isPublic: !note.isPublic });
       toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
     } catch (error) {
@@ -101,7 +111,12 @@ export function NoteDetail() {
 
     try {
       setIsDeleting(true);
-      await notesApi.delete(id);
+      const noteId = parseInt(id, 10);
+      if (isNaN(noteId)) {
+        toast.error('유효하지 않은 노트 ID입니다.');
+        return;
+      }
+      await notesApi.delete(noteId);
       toast.success('노트가 삭제되었습니다.');
       navigate('/my-notes', { replace: true });
     } catch (error) {
