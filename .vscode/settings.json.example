@@ -1,0 +1,20 @@
+{
+  "sqltools.connections": [
+    {
+      "name": "ChaLog Database",
+      "driver": "MySQL",
+      "server": "localhost",
+      "port": 3307,
+      "database": "chalog",
+      "username": "admin",
+      "password": "",
+      "connectionTimeout": 30,
+      "requestTimeout": 60,
+      "previewLimit": 50
+    }
+  ],
+  "github-actions.workflows.pinned.workflows": [
+    ".github/workflows/deploy-backend.yml"
+  ]
+}
+

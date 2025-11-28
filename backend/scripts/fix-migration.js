@@ -46,13 +46,21 @@ const parseDatabaseUrl = () => {
   }
   
   // 기본값: SSH 터널을 통한 연결 (localhost:3307)
-  // create-tables.js와 동일한 연결 정보 사용
-  return {
+  const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3307', 10),
     user: process.env.DB_USER || 'admin',
-    password: process.env.DB_PASSWORD || 'az980831',
     database: process.env.DB_NAME || 'chalog',
+  };
+  
+  const password = process.env.DB_PASSWORD;
+  if (!password) {
+    throw new Error('DB_PASSWORD environment variable is required. Please set DATABASE_URL or DB_PASSWORD.');
+  }
+  
+  return {
+    ...dbConfig,
+    password,
   };
 };
 

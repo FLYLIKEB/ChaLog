@@ -1,5 +1,6 @@
 -- ChaLog 데이터베이스 테이블 생성 스크립트
--- 사용법: mysql -h localhost -P 3307 -u admin -paz980831 chalog < scripts/create-tables.sql
+-- 사용법: mysql -h localhost -P 3307 -u admin -p chalog < scripts/create-tables.sql
+-- 또는 환경 변수 사용: DATABASE_URL=mysql://admin:password@localhost:3307/chalog node scripts/create-tables.js
 
 -- Users 테이블
 CREATE TABLE IF NOT EXISTS `users` (
