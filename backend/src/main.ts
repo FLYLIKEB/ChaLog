@@ -34,6 +34,8 @@ async function bootstrap() {
     });
   }
 
+  const localhostRegex = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+
   app.enableCors({
     origin: (origin, callback) => {
       // origin이 없으면 (같은 origin 요청) 허용
@@ -41,8 +43,8 @@ async function bootstrap() {
         return callback(null, true);
       }
       
-      // 허용된 origin인지 확인
-      if (allowedOrigins.includes(origin)) {
+      // 허용된 origin인지 확인 (localhost:任의포트 허용)
+      if (allowedOrigins.includes(origin) || localhostRegex.test(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

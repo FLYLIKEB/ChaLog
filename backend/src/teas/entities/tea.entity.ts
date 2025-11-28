@@ -3,8 +3,8 @@ import { Note } from '../../notes/entities/note.entity';
 
 @Entity('teas')
 export class Tea {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
   name: string;
@@ -30,10 +30,10 @@ export class Tea {
   @OneToMany(() => Note, (note) => note.tea)
   notes: Note[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ precision: 0 })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ precision: 0 })
   updatedAt: Date;
 }
 

@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -22,7 +23,7 @@ export class NotesController {
   @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Request() req, @Body() createNoteDto: CreateNoteDto) {
-    return this.notesService.create(req.user.userId, createNoteDto);
+    return this.notesService.create(parseInt(req.user.userId, 10), createNoteDto);
   }
 
   @Get()
@@ -32,24 +33,60 @@ export class NotesController {
     @Query('teaId') teaId?: string,
   ) {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
-    return this.notesService.findAll(userId, publicFilter, teaId);
+    const userIdNum = userId ? parseInt(userId, 10) : undefined;
+    const teaIdNum = teaId ? parseInt(teaId, 10) : undefined;
+    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
-    const userId = req.user?.userId;
-    return this.notesService.findOne(id, userId);
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    
+    let userId: number | undefined;
+    if (req.user?.userId) {
+      const parsedUserId = parseInt(req.user.userId, 10);
+      if (Number.isNaN(parsedUserId)) {
+        userId = undefined;
+      } else {
+        userId = parsedUserId;
+      }
+    }
+    
+    return this.notesService.findOne(parsedId, userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(@Param('id') id: string, @Request() req, @Body() updateNoteDto: UpdateNoteDto) {
-    return this.notesService.update(id, req.user.userId, updateNoteDto);
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('Invalid userId');
+    }
+    
+    return this.notesService.update(parsedId, parsedUserId, updateNoteDto);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
-    return this.notesService.remove(id, req.user.userId);
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('Invalid userId');
+    }
+    
+    return this.notesService.remove(parsedId, parsedUserId);
   }
 }

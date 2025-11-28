@@ -29,8 +29,8 @@ class RatingsDto {
 }
 
 export class CreateNoteDto {
-  @IsString()
-  teaId: string;
+  @IsNumber()
+  teaId: number;
 
   @IsNumber()
   @Min(1)

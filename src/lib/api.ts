@@ -52,10 +52,10 @@ function parseDates<T>(obj: T): T {
 }
 
 interface BackendNote {
-  id: string;
-  teaId: string;
+  id: number;
+  teaId: number;
   tea?: { name: string };
-  userId: string;
+  userId: number;
   user?: { name: string };
   rating: number;
   ratings: {
@@ -71,10 +71,10 @@ interface BackendNote {
 }
 
 interface NormalizedNote {
-  id: string;
-  teaId: string;
+  id: number;
+  teaId: number;
   teaName: string;
-  userId: string;
+  userId: number;
   userName: string;
   rating: number;
   ratings: {
@@ -279,7 +279,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   access_token: string;
   user: {
-    id: string;
+    id: number;
     email: string;
     name: string;
   };
@@ -294,7 +294,7 @@ export interface CreateTeaRequest {
 }
 
 export interface CreateNoteRequest {
-  teaId: string;
+  teaId: number;
   rating: number;
   ratings: {
     richness: number;
@@ -321,22 +321,22 @@ export const teasApi = {
     const endpoint = query ? `/teas?q=${encodeURIComponent(query)}` : '/teas';
     return apiClient.get(endpoint);
   },
-  getById: (id: string) => apiClient.get(`/teas/${id}`),
+  getById: (id: number) => apiClient.get(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post('/teas', data),
 };
 
 export const notesApi = {
-  getAll: (userId?: string, isPublic?: boolean, teaId?: string) => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number) => {
     const params = new URLSearchParams();
-    if (userId) params.append('userId', userId);
+    if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
-    if (teaId) params.append('teaId', teaId);
+    if (teaId !== undefined) params.append('teaId', String(teaId));
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
-  getById: (id: string) => apiClient.get(`/notes/${id}`),
+  getById: (id: number) => apiClient.get(`/notes/${id}`),
   create: (data: CreateNoteRequest) => apiClient.post('/notes', data),
-  update: (id: string, data: UpdateNoteRequest) => apiClient.patch(`/notes/${id}`, data),
-  delete: (id: string) => apiClient.delete(`/notes/${id}`),
+  update: (id: number, data: UpdateNoteRequest) => apiClient.patch(`/notes/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/notes/${id}`),
 };
 

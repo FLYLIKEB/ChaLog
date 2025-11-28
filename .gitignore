@@ -25,3 +25,6 @@ deploy-package/
 *.p12
 *.pfx
 your-key.pem
+
+# VSCode settings with sensitive data
+.vscode/settings.json

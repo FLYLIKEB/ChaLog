@@ -1,30 +1,89 @@
 const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
+
+// .env 파일 로드
+const loadEnv = () => {
+  try {
+    const envPath = path.join(__dirname, '..', '.env');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      envContent.split('\n').forEach(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine && !trimmedLine.startsWith('#')) {
+          const [key, ...valueParts] = trimmedLine.split('=');
+          if (key && valueParts.length > 0) {
+            const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+            if (!process.env[key.trim()]) {
+              process.env[key.trim()] = value.trim();
+            }
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.warn('Failed to load .env:', error.message || error);
+  }
+};
+
+const parseDatabaseUrl = () => {
+  loadEnv();
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (databaseUrl) {
+    try {
+      const url = new URL(databaseUrl.replace(/^mysql:\/\//, 'http://'));
+      return {
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.replace(/^\//, ''),
+      };
+    } catch (error) {
+      console.warn('DATABASE_URL 파싱 실패, 기본값 사용');
+    }
+  }
+  
+  const dbConfig = {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER || 'admin',
+    database: process.env.DB_NAME || 'chalog',
+  };
+  
+  const password = process.env.DB_PASSWORD;
+  if (!password) {
+    throw new Error('DB_PASSWORD environment variable is required. Please set DATABASE_URL or DB_PASSWORD.');
+  }
+  
+  return {
+    ...dbConfig,
+    password,
+  };
+};
 
 const createTables = async () => {
   let connection;
   
   try {
+    const config = parseDatabaseUrl();
+    config.multipleStatements = true;
+    
     // 데이터베이스 연결
-    connection = await mysql.createConnection({
-      host: 'localhost',
-      port: 3307,
-      user: 'admin',
-      password: 'az980831',
-      database: 'chalog',
-      multipleStatements: true,
-    });
+    connection = await mysql.createConnection(config);
 
     console.log('✅ 데이터베이스 연결 성공');
 
     // Users 테이블 생성
     await connection.query(`
       CREATE TABLE IF NOT EXISTS \`users\` (
-        \`id\` VARCHAR(36) NOT NULL PRIMARY KEY,
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`email\` VARCHAR(255) NOT NULL UNIQUE,
         \`name\` VARCHAR(255) NOT NULL,
         \`password\` VARCHAR(255) NOT NULL,
-        \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`createdAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX \`IDX_users_email\` (\`email\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
@@ -33,7 +92,7 @@ const createTables = async () => {
     // Teas 테이블 생성
     await connection.query(`
       CREATE TABLE IF NOT EXISTS \`teas\` (
-        \`id\` VARCHAR(36) NOT NULL PRIMARY KEY,
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
         \`name\` VARCHAR(255) NOT NULL,
         \`year\` INT NULL,
         \`type\` VARCHAR(255) NOT NULL,
@@ -41,8 +100,8 @@ const createTables = async () => {
         \`origin\` VARCHAR(255) NULL,
         \`averageRating\` DECIMAL(3,2) NOT NULL DEFAULT 0.00,
         \`reviewCount\` INT NOT NULL DEFAULT 0,
-        \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`createdAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX \`IDX_teas_name\` (\`name\`),
         INDEX \`IDX_teas_type\` (\`type\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -52,15 +111,15 @@ const createTables = async () => {
     // Notes 테이블 생성
     await connection.query(`
       CREATE TABLE IF NOT EXISTS \`notes\` (
-        \`id\` VARCHAR(36) NOT NULL PRIMARY KEY,
-        \`teaId\` VARCHAR(36) NOT NULL,
-        \`userId\` VARCHAR(36) NOT NULL,
+        \`id\` INT AUTO_INCREMENT PRIMARY KEY,
+        \`teaId\` INT NOT NULL,
+        \`userId\` INT NOT NULL,
         \`rating\` DECIMAL(3,2) NOT NULL,
         \`ratings\` JSON NOT NULL,
         \`memo\` TEXT NOT NULL,
         \`isPublic\` BOOLEAN NOT NULL DEFAULT FALSE,
-        \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-        \`updatedAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`createdAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`updatedAt\` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX \`IDX_notes_teaId\` (\`teaId\`),
         INDEX \`IDX_notes_userId\` (\`userId\`),
         INDEX \`IDX_notes_isPublic\` (\`isPublic\`),

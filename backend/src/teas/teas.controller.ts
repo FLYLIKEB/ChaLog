@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TeasService } from './teas.service';
 import { CreateTeaDto } from './dto/create-tea.dto';
@@ -23,6 +23,10 @@ export class TeasController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.teasService.findOne(id);
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.teasService.findOne(parsedId);
   }
 }

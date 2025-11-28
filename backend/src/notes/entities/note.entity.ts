@@ -4,18 +4,18 @@ import { Tea } from '../../teas/entities/tea.entity';
 
 @Entity('notes')
 export class Note {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
-  teaId: string;
+  teaId: number;
 
   @ManyToOne(() => Tea)
   @JoinColumn({ name: 'teaId' })
   tea: Tea;
 
   @Column()
-  userId: string;
+  userId: number;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
@@ -39,10 +39,10 @@ export class Note {
   @Column({ default: false })
   isPublic: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ precision: 0 })
   createdAt: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ precision: 0 })
   updatedAt: Date;
 }
 

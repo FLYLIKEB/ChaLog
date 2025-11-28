@@ -8,9 +8,13 @@
       "database": "chalog",
       "username": "admin",
       "password": "",
-      "connectionTimeout": 10,
-      "requestTimeout": 30
+      "connectionTimeout": 30,
+      "requestTimeout": 60,
+      "previewLimit": 50
     }
+  ],
+  "github-actions.workflows.pinned.workflows": [
+    ".github/workflows/deploy-backend.yml"
   ]
 }
 

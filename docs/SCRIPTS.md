@@ -30,7 +30,7 @@ ChaLog 프로젝트에서 사용하는 스크립트들의 역할과 사용법입
 ./scripts/full-release.sh "Release v1.2.3" "v1.2.3" feature/new-feature
 ```
 
-**동작:** 테스트/린트/타입체크 → feature 커밋 → develop 병합 → release 생성 → main 병합 + 태그 → develop 재동기화
+**동작:** 테스트/린트/타입체크 → feature 커밋 → main 병합 + 태그 생성
 
 **요구사항:** feature 브랜치는 `feature/*` 패턴, 버전 태그는 `v1.2.3` 형식
 
@@ -85,6 +85,42 @@ cd backend
 
 ---
 
+### migrate-uuid-to-int.sh / migrate-uuid-to-int.js
+
+UUID에서 INT AUTO_INCREMENT로 마이그레이션
+
+**⚠️ 중요: 실행 전 반드시 데이터베이스 백업을 수행하세요!**
+
+```bash
+cd backend
+./scripts/migrate-uuid-to-int.sh
+```
+
+또는 Node.js 스크립트 직접 실행:
+
+```bash
+cd backend
+node scripts/migrate-uuid-to-int.js
+```
+
+**환경 변수:**
+- `DATABASE_URL`: `mysql://user:password@host:port/database`
+- 또는 개별 설정: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+
+**동작:**
+1. UUID → INT 매핑 테이블 생성
+2. 기존 데이터 순서 유지하며 새 INT ID 할당
+3. 외래키 관계 유지
+4. 기존 UUID 컬럼 제거 및 새 INT 컬럼으로 교체
+5. 인덱스 및 제약조건 재생성
+
+**주의사항:**
+- 기존 데이터가 있는 경우에만 실행
+- 마이그레이션 중 데이터베이스 접근 불가
+- 트랜잭션으로 안전하게 처리 (실패 시 롤백)
+
+---
+
 ## 빠른 참조
 
 ### 개발 시작 시
@@ -104,6 +140,7 @@ cd backend
 ### 커밋 및 릴리스
 ```bash
 ./scripts/quick-commit.sh feature/my-feature "feat: 기능 추가"
+# PR 생성 후 승인되면:
 ./scripts/full-release.sh "Release v1.0.0" "v1.0.0" feature/my-feature
 ```
 
