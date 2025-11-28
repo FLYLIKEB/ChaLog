@@ -269,54 +269,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 ```
 
-## Supabase · 외부 연동
-- `src/supabase/functions/server`는 Hono 기반 Deno Edge 함수로 CORS/로깅/헬스체크를 제공합니다. 앱 본체에서 아직 호출하지는 않지만, `npm:@supabase/supabase-js`를 이용한 KV 스토리지 CRUD가 준비돼 있습니다.  
-```1:35:src/supabase/functions/server/index.tsx
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { logger } from "hono/logger";
-import * as kv from "./kv_store.tsx";
-
-const app = new Hono();
-app.use('*', logger(console.log));
-app.use(
-  "/*",
-  cors({
-    origin: "*",
-    allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-  }),
-);
-app.get("/make-server-860b2c16/health", (c) => c.json({ status: "ok" }));
-if (typeof Deno !== "undefined") {
-  Deno.serve(app.fetch);
-}
-```
-```28:95:src/supabase/functions/server/kv_store.tsx
-export const set = async (key: string, value: any): Promise<void> => {
-  const supabase = client()
-  const { error } = await supabase.from("kv_store_860b2c16").upsert({
-    key,
-    value
-  });
-  if (error) {
-    throw new Error(error.message);
-  }
-};
-...
-export const getByPrefix = async (prefix: string): Promise<any[]> => {
-  const supabase = client()
-  const { data, error } = await supabase.from("kv_store_860b2c16").select("key, value").like("key", prefix + "%");
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data?.map((d) => d.value) ?? [];
-};
-```
-- `src/utils/supabase/info.tsx`에는 프로젝트 ID와 공개 키가 하드코딩돼 있어 클라이언트 초기화 시 사용할 수 있습니다.
-
 ## 스타일 · 빌드
 - `src/styles/globals.css`와 거대한 `src/index.css`는 Tailwind v4 피처(`@theme inline`, design tokens, 다크 모드 variants`)를 정의해 전역 타이포그래피/컬러 시스템을 통일합니다.  
 ```3:78:src/styles/globals.css
@@ -363,7 +315,7 @@ export const getByPrefix = async (prefix: string): Promise<any[]> => {
 ```
 - `build/`에는 `vite build` 결과물이 들어 있어 배포 시 그대로 활용 가능하며, 루트 `README.md`는 `npm i`, `npm run dev`만 안내합니다.
 
-이 구조를 기반으로 실제 API 연동(예: Supabase)이나 상태 관리, 인증 등을 추가하면 곧바로 프로덕션 수준으로 확장할 수 있습니다.
+이 구조를 기반으로 상태 관리, 인증 등을 추가하면 곧바로 프로덕션 수준으로 확장할 수 있습니다.
 
 > Git 브랜치 운영 전략은 `docs/git-strategy.md` 문서를 참고하세요.
 

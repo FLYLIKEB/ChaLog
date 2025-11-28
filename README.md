@@ -106,7 +106,6 @@ src/
 ├─ utils/                # 유틸리티 함수 (teaTags 등)
 ├─ constants/           # 전역 상수 정의
 ├─ contexts/            # React Context (AuthContext 등)
-├─ supabase/functions/  # Hono Edge 함수 + KV 스토어 래퍼
 └─ styles/              # Tailwind v4 토큰(`globals.css`, `index.css`)
 
 backend/
@@ -241,10 +240,10 @@ cd backend
 ```
 
 ## 향후 작업 아이디어
-- Supabase Auth/DB와의 실시간 연동, RLS 적용
-- 노트 CRUD API와 Edge 함수 연결, optimistic update
 - Playwright/Cypress 기반 E2E 테스트 도입
 - 다국어(i18n)·다크 모드 토글·접근성 개선
+- 실시간 알림 기능 추가
+- 노트 검색 및 필터링 기능 강화
 
 ## Git 브랜치 전략 (GitHub Flow)
 - `main`: 배포 가능한 안정 버전. PR 통과·CI 성공 후에만 병합하고 보호 규칙으로 직접 push를 막습니다.

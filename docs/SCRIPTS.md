@@ -85,22 +85,13 @@ cd backend
 
 ---
 
-### migrate-uuid-to-int.sh / migrate-uuid-to-int.js
+### insert-sample-data.js
 
-UUID에서 INT AUTO_INCREMENT로 마이그레이션
-
-**⚠️ 중요: 실행 전 반드시 데이터베이스 백업을 수행하세요!**
+샘플 데이터 삽입 (개발/테스트용)
 
 ```bash
 cd backend
-./scripts/migrate-uuid-to-int.sh
-```
-
-또는 Node.js 스크립트 직접 실행:
-
-```bash
-cd backend
-node scripts/migrate-uuid-to-int.js
+node scripts/insert-sample-data.js
 ```
 
 **환경 변수:**
@@ -108,16 +99,19 @@ node scripts/migrate-uuid-to-int.js
 - 또는 개별 설정: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
 
 **동작:**
-1. UUID → INT 매핑 테이블 생성
-2. 기존 데이터 순서 유지하며 새 INT ID 할당
-3. 외래키 관계 유지
-4. 기존 UUID 컬럼 제거 및 새 INT 컬럼으로 교체
-5. 인덱스 및 제약조건 재생성
+1. 3명의 샘플 사용자 생성 (비밀번호: `password123`)
+2. 5개의 샘플 차 데이터 생성
+3. 5개의 샘플 노트 데이터 생성 (사용자-차 관계 포함)
 
 **주의사항:**
-- 기존 데이터가 있는 경우에만 실행
-- 마이그레이션 중 데이터베이스 접근 불가
-- 트랜잭션으로 안전하게 처리 (실패 시 롤백)
+- **ID는 자동 생성됩니다**: `users`, `teas`, `notes` 테이블의 `id` 필드는 `INT AUTO_INCREMENT`이므로 스크립트에서 명시하지 않습니다
+- 기존 데이터가 있는 경우 중복 오류가 발생할 수 있습니다
+- 개발/테스트 환경에서만 사용하세요
+
+**생성되는 데이터:**
+- 사용자: 김차인, 이다원, 박녹차
+- 차: 정산소종, 대홍포, 용정, 백호은침, 철관음
+- 노트: 각 차에 대한 평가 및 메모
 
 ---
 
