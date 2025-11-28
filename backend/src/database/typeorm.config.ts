@@ -72,8 +72,9 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
                  configService.get<string>('DB_SYNCHRONIZE') === 'true',
     logging: configService.get<string>('NODE_ENV') === 'development',
     // AWS RDS/Aurora 연결 최적화
+    // t3.small 환경에 맞게 연결 풀 크기 조정 (2GB RAM, 2 vCPU)
     extra: {
-      connectionLimit: 10, // 연결 풀 최대 크기
+      connectionLimit: 8, // 연결 풀 최대 크기 (t3.small 최적화: 5 → 8)
       ...sslConfig,
     },
   };

@@ -16,9 +16,9 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       autorestart: true,
-      max_memory_restart: '500M',
+      max_memory_restart: '600M', // t3.small 최적화: 400M → 600M (2GB RAM 활용)
       watch: false,
-      node_args: '--require=reflect-metadata',
+      node_args: '--require=reflect-metadata --max-old-space-size=500', // Node.js 힙 메모리 제한 (500MB)
     },
   ],
 };
