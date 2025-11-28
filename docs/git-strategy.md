@@ -1,19 +1,16 @@
-## Git 브랜치 운영 전략
+## Git 브랜치 운영 전략 (GitHub Flow)
 
 | 브랜치 | 용도 | 병합 규칙 |
 | --- | --- | --- |
-| `main` | 실제 배포·버전 태깅 전용 | PR + CI 통과만 허용, 보호 규칙으로 직접 push 금지 |
-| `develop` | 다음 배포를 준비하는 통합 브랜치 | `feature/*`·`hotfix/*` PR만 병합 |
-| `feature/*` | 단일 기능/버그 작업 (`feature/note-filter` 등) | 구현·테스트 후 리뷰 → `develop` merge |
-| `release/*` | 릴리스 안정화, 버전 넘버/릴리스 노트 정리 | QA 완료 시 `main`, `develop` 모두에 병합 |
-| `hotfix/*` | 운영 긴급 수정 | `main`에서 분기해 패치 후 동일 커밋을 `main`·`develop`에 반영 |
+| `main` | 배포 가능한 안정 버전 | PR + CI 통과만 허용, 보호 규칙으로 직접 push 금지 |
+| `feature/*` | 단일 기능/버그 작업 (`feature/note-filter` 등) | 구현·테스트 후 리뷰 → `main`에 직접 병합 |
 
 ### 작업 흐름
-1. 새 작업은 `develop`에서 `feature/*`로 분기해 진행합니다.
-2. 기능 구현·테스트 후 PR을 열어 코드 리뷰와 CI를 통과시키고 `develop`에 병합합니다.
-3. 배포가 필요하면 `release/*`를 생성해 QA/버전 태깅/문서화를 마친 뒤 `main`에 병합하고 태그를 남깁니다.
-4. 같은 커밋을 `develop`에도 병합해 이력 차이를 없애고, 릴리스 노트·배포 아티팩트를 보관합니다.
-5. 운영 이슈가 발생하면 `hotfix/*`를 즉시 만들어 패치하고, 완료 즉시 `main`·`develop`에 병합합니다.
+1. 새 작업은 `main`에서 `feature/*`로 분기해 진행합니다.
+2. 기능 구현·테스트 후 PR을 열어 코드 리뷰와 CI를 통과시킵니다.
+3. PR 승인 후 `main`에 병합합니다 (squash merge 권장).
+4. 배포가 필요하면 `main`에 태그를 생성하고 배포합니다.
+5. 긴급 수정도 동일한 프로세스: `feature/hotfix-*` 브랜치 생성 → PR → `main` 병합 → 배포
 
 ### 커밋 메시지 규칙
 - 한글로 작성 (예: `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
@@ -26,7 +23,7 @@
 
 **주요 명령어 요약:**
 - **Quick Commit & Push ("ch")**: 변경사항을 분석하여 기능별로 자동 커밋하고 푸시
-- **Quick Pull ("pl")**: 현재 브랜치와 주요 브랜치(`main`, `develop`)를 최신화
+- **Quick Pull ("pl")**: 현재 브랜치와 `main` 브랜치를 최신화
 - **Merge Main ("mg")**: 모든 로컬 브랜치에 `main`의 변경사항을 자동 머지 및 푸시
 - **Clean Branches ("clean" 또는 "cl")**: 원격에 없는 로컬 브랜치 자동 정리
 - **Create PR ("pr" 또는 "pr생성")**: 현재 브랜치의 PR 자동 생성
@@ -49,10 +46,8 @@ scripts/full-release.sh "feat: 노트 필터 기능 추가" v0.5.0
 **프로세스**:
 1. 테스트/린트/타입 체크 실행
 2. feature 브랜치 커밋 및 푸시
-3. `develop`에 병합
-4. `release/*` 브랜치 생성 및 푸시
-5. `main`에 병합 및 태그 생성
-6. `develop` 재동기화 및 `release/*` 정리
+3. `main`에 병합 및 태그 생성
+4. 태그 푸시
 
 ## 브랜치 관리 팁
 
@@ -85,7 +80,6 @@ git branch -D <branch-name>  # 삭제
 - 브랜치명과 커밋 메시지를 기반으로 PR 제목 및 설명 자동 생성
 
 ### 정책 · 자동화 권장 사항
-- GitHub에서 `main`, `develop` 브랜치 보호 규칙을 설정해 최소 1인 리뷰·CI 통과·squash merge를 요구합니다.
-- CI 파이프라인에 `release/*` 생성 시 버전 검증, `main` 병합 시 태그·배포 스텝을 자동화합니다.
+- GitHub에서 `main` 브랜치 보호 규칙을 설정해 최소 1인 리뷰·CI 통과·squash merge를 요구합니다.
+- CI 파이프라인에 `main` 병합 시 태그·배포 스텝을 자동화합니다.
 - 브랜치 네이밍과 릴리스 절차를 README와 본 문서에 유지해 온보딩 시 공유합니다.
-

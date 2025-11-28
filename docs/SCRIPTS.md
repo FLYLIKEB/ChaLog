@@ -30,7 +30,7 @@ ChaLog 프로젝트에서 사용하는 스크립트들의 역할과 사용법입
 ./scripts/full-release.sh "Release v1.2.3" "v1.2.3" feature/new-feature
 ```
 
-**동작:** 테스트/린트/타입체크 → feature 커밋 → develop 병합 → release 생성 → main 병합 + 태그 → develop 재동기화
+**동작:** 테스트/린트/타입체크 → feature 커밋 → main 병합 + 태그 생성
 
 **요구사항:** feature 브랜치는 `feature/*` 패턴, 버전 태그는 `v1.2.3` 형식
 
@@ -140,6 +140,7 @@ cd backend
 ### 커밋 및 릴리스
 ```bash
 ./scripts/quick-commit.sh feature/my-feature "feat: 기능 추가"
+# PR 생성 후 승인되면:
 ./scripts/full-release.sh "Release v1.0.0" "v1.0.0" feature/my-feature
 ```
 
