@@ -166,29 +166,39 @@ jobs:
           
           # SSH 연결 테스트 (상세 로그)
           echo "🔍 SSH 연결 테스트 중..."
+          echo "테스트 명령어: ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST 'echo 연결 성공'"
+          echo ""
+          
           SSH_TEST_OUTPUT=$(ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
               -o LogLevel=DEBUG \
+              -v \
               "$EC2_USER@$EC2_HOST" \
               "echo 'SSH 연결 성공!'" 2>&1)
           SSH_TEST_EXIT=$?
           
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           if [ $SSH_TEST_EXIT -eq 0 ]; then
             echo "✅ SSH 연결 테스트 성공!"
           else
             echo "⚠️ SSH 연결 테스트 실패 (exit code: $SSH_TEST_EXIT)"
-            echo "오류 상세 (마지막 20줄):"
-            echo "$SSH_TEST_OUTPUT" | tail -20
+            echo ""
+            echo "오류 상세:"
+            echo "$SSH_TEST_OUTPUT"
+            echo ""
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             echo "가능한 원인:"
-            echo "1. EC2_SSH_KEY Secret이 올바르지 않음"
+            echo "1. EC2_SSH_KEY Secret이 올바르지 않음 (키 형식 오류 또는 잘못된 키)"
             echo "2. EC2 인스턴스의 authorized_keys에 해당 공개 키가 없음"
             echo "3. EC2 사용자명(EC2_USER)이 잘못됨"
             echo ""
             echo "⚠️ 이 단계는 계속 진행되지만, 배포 단계에서 실패할 수 있습니다."
           fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Deploy to EC2
         env:
@@ -238,10 +248,17 @@ jobs:
           
           # SSH 키 상세 확인
           echo "🔑 SSH 키 상세 확인:"
-          echo "키 파일 존재: $([ -f ~/.ssh/deploy_key ] && echo '✅ 있음' || echo '❌ 없음')"
-          echo "키 파일 권한: $(ls -l ~/.ssh/deploy_key | awk '{print $1}')"
-          echo "키 파일 첫 50자: $(head -c 50 ~/.ssh/deploy_key)"
-          echo "키 파일 마지막 50자: $(tail -c 50 ~/.ssh/deploy_key)"
+          if [ -f ~/.ssh/deploy_key ]; then
+            echo "✅ 키 파일 존재"
+            echo "키 파일 권한: $(ls -l ~/.ssh/deploy_key | awk '{print $1}')"
+            echo "키 파일 크기: $(wc -c < ~/.ssh/deploy_key) bytes"
+            echo "키 파일 줄 수: $(wc -l < ~/.ssh/deploy_key) 줄"
+            echo "키 첫 줄: $(head -1 ~/.ssh/deploy_key)"
+            echo "키 마지막 줄: $(tail -1 ~/.ssh/deploy_key)"
+          else
+            echo "❌ 키 파일이 없습니다!"
+            exit 1
+          fi
           echo ""
           
           # SSH 키 형식 검증
@@ -260,31 +277,33 @@ jobs:
           echo "✅ SSH 키 형식 검증 통과"
           echo ""
           
-          # SSH 키 상세 확인
-          echo "🔑 SSH 키 상세 확인:"
-          echo "키 파일 존재: $([ -f ~/.ssh/deploy_key ] && echo '✅ 있음' || echo '❌ 없음')"
-          echo "키 파일 권한: $(ls -l ~/.ssh/deploy_key 2>/dev/null | awk '{print $1}' || echo '확인 실패')"
-          echo ""
-          
           # SSH 연결 테스트
           echo "🔍 SSH 연결 테스트 중..."
+          echo "연결 대상: $EC2_USER@$EC2_HOST"
+          echo ""
+          
           SSH_OUTPUT=$(ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
               -o LogLevel=DEBUG \
               -o UserKnownHostsFile=~/.ssh/known_hosts \
+              -v \
               "$EC2_USER@$EC2_HOST" \
               "echo 'SSH 연결 성공!'" 2>&1)
           SSH_EXIT_CODE=$?
           
+          echo ""
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           if [ $SSH_EXIT_CODE -eq 0 ]; then
             echo "✅ SSH 연결 성공!"
           else
             echo "❌ SSH 연결 실패! (exit code: $SSH_EXIT_CODE)"
             echo ""
-            echo "오류 상세 (마지막 30줄):"
-            echo "$SSH_OUTPUT" | tail -30
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "오류 상세 (전체):"
+            echo "$SSH_OUTPUT"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo ""
             echo "가능한 원인:"
             echo "1. EC2_SSH_KEY Secret이 올바르지 않음 (키 형식 오류 또는 잘못된 키)"
@@ -299,12 +318,14 @@ jobs:
             echo "   - 마지막 줄이 '-----END RSA PRIVATE KEY-----' 또는 '-----END OPENSSH PRIVATE KEY-----'로 끝나는지 확인"
             echo "   - 전체 키 내용이 복사되었는지 확인 (줄바꿈 포함)"
             echo ""
-            echo "2. EC2에서 공개 키 확인:"
+            echo "2. EC2에서 공개 키 확인 및 추가:"
             echo "   # 로컬에서 공개 키 추출:"
             echo "   ssh-keygen -y -f ~/.ssh/your-key.pem"
-            echo "   # EC2에서 확인:"
+            echo "   # EC2에 접속하여 authorized_keys 확인:"
             echo "   ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip"
             echo "   cat ~/.ssh/authorized_keys"
+            echo "   # 공개 키가 없으면 추가:"
+            echo "   echo '공개-키-내용' >> ~/.ssh/authorized_keys"
             echo ""
             echo "3. 로컬에서 SSH 연결 테스트:"
             echo "   ssh -i ~/.ssh/your-key.pem $EC2_USER@$EC2_HOST 'echo 연결 성공'"
@@ -312,6 +333,7 @@ jobs:
             echo "자세한 내용: docs/SSH_KEY_TROUBLESHOOTING.md"
             exit 1
           fi
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
           # 배포 파일 전송
           echo "📤 배포 파일 전송 중..."
