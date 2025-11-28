@@ -1,5 +1,4 @@
 const mysql = require('mysql2/promise');
-const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt');
 require('dotenv').config();
 
@@ -53,19 +52,16 @@ const insertSampleData = async () => {
     
     const users = [
       {
-        id: uuidv4(),
         email: 'tea@example.com',
         name: '김차인',
         password: hashedPassword,
       },
       {
-        id: uuidv4(),
         email: 'user2@example.com',
         name: '이다원',
         password: hashedPassword,
       },
       {
-        id: uuidv4(),
         email: 'user3@example.com',
         name: '박녹차',
         password: hashedPassword,
@@ -74,8 +70,8 @@ const insertSampleData = async () => {
 
     for (const user of users) {
       await connection.query(
-        'INSERT INTO users (id, email, name, password) VALUES (?, ?, ?, ?)',
-        [user.id, user.email, user.name, user.password]
+        'INSERT INTO users (email, name, password) VALUES (?, ?, ?)',
+        [user.email, user.name, user.password]
       );
       console.log(`  ✅ 사용자 추가: ${user.name} (${user.email})`);
     }
@@ -84,7 +80,6 @@ const insertSampleData = async () => {
     console.log('\n🍵 차 데이터 추가 중...');
     const teas = [
       {
-        id: uuidv4(),
         name: '정산소종',
         year: 2023,
         type: '홍차',
@@ -94,7 +89,6 @@ const insertSampleData = async () => {
         reviewCount: 2,
       },
       {
-        id: uuidv4(),
         name: '대홍포',
         year: 2022,
         type: '우롱차',
@@ -104,7 +98,6 @@ const insertSampleData = async () => {
         reviewCount: 1,
       },
       {
-        id: uuidv4(),
         name: '용정',
         year: 2024,
         type: '녹차',
@@ -114,7 +107,6 @@ const insertSampleData = async () => {
         reviewCount: 1,
       },
       {
-        id: uuidv4(),
         name: '백호은침',
         year: 2023,
         type: '백차',
@@ -124,7 +116,6 @@ const insertSampleData = async () => {
         reviewCount: 1,
       },
       {
-        id: uuidv4(),
         name: '철관음',
         year: 2023,
         type: '우롱차',
@@ -137,8 +128,8 @@ const insertSampleData = async () => {
 
     for (const tea of teas) {
       await connection.query(
-        'INSERT INTO teas (id, name, year, type, seller, origin, averageRating, reviewCount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.averageRating, tea.reviewCount]
+        'INSERT INTO teas (name, year, type, seller, origin, averageRating, reviewCount) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.averageRating, tea.reviewCount]
       );
       console.log(`  ✅ 차 추가: ${tea.name} (${tea.type})`);
     }
@@ -238,9 +229,8 @@ const insertSampleData = async () => {
       }
 
       await connection.query(
-        'INSERT INTO notes (id, teaId, userId, rating, ratings, memo, isPublic) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO notes (teaId, userId, rating, ratings, memo, isPublic) VALUES (?, ?, ?, ?, ?, ?)',
         [
-          uuidv4(),
           teaId,
           userId,
           note.rating,
