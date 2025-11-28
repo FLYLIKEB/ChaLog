@@ -40,11 +40,20 @@ jobs:
         working-directory: ./backend
         run: |
           echo "⚠️ package-lock.json이 없습니다. 생성 중..."
-          npm install --package-lock-only --legacy-peer-deps
+          npm install --package-lock-only --legacy-peer-deps --no-workspaces
 
       - name: Install dependencies
         working-directory: ./backend
-        run: npm ci
+        run: |
+          # npm ci 시도, 실패하면 package-lock.json 재생성
+          if ! npm ci --legacy-peer-deps --no-workspaces 2>&1; then
+            echo "⚠️ npm ci 실패. package-lock.json이 package.json과 동기화되지 않았습니다."
+            echo "📦 package-lock.json 재생성 중..."
+            rm -f package-lock.json
+            npm install --package-lock-only --legacy-peer-deps --no-workspaces
+            echo "📦 npm install 실행 중..."
+            npm install --legacy-peer-deps --no-workspaces
+          fi
 
       - name: Build application
         working-directory: ./backend
