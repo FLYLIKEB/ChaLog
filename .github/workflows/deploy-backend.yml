@@ -169,36 +169,71 @@ jobs:
           echo "테스트 명령어: ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST 'echo 연결 성공'"
           echo ""
           
-          SSH_TEST_OUTPUT=$(ssh -i ~/.ssh/deploy_key \
+          # SSH 키에서 공개 키 추출 시도 (디버깅용)
+          echo "📋 SSH 키 정보:"
+          echo "   키 파일 크기: $(wc -c < ~/.ssh/deploy_key) bytes"
+          echo "   키 파일 줄 수: $(wc -l < ~/.ssh/deploy_key) lines"
+          echo ""
+          
+          # 공개 키 추출 시도 (실패해도 계속 진행)
+          echo "🔑 공개 키 추출 시도 중..."
+          PUBLIC_KEY=$(ssh-keygen -y -f ~/.ssh/deploy_key 2>&1) || PUBLIC_KEY="공개 키 추출 실패: $PUBLIC_KEY"
+          echo "   공개 키 (처음 100자): ${PUBLIC_KEY:0:100}..."
+          echo ""
+          
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "SSH 연결 테스트 (DEBUG 모드)..."
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          
+          # SSH 연결 테스트 (직접 실행하여 즉시 출력)
+          if ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
-              -o LogLevel=DEBUG \
-              -v \
+              -o LogLevel=DEBUG3 \
+              -vvv \
               "$EC2_USER@$EC2_HOST" \
-              "echo 'SSH 연결 성공!'" 2>&1)
-          SSH_TEST_EXIT=$?
-          
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if [ $SSH_TEST_EXIT -eq 0 ]; then
-            echo "✅ SSH 연결 테스트 성공!"
-          else
-            echo "⚠️ SSH 연결 테스트 실패 (exit code: $SSH_TEST_EXIT)"
-            echo ""
-            echo "오류 상세:"
-            echo "$SSH_TEST_OUTPUT"
+              "echo 'SSH 연결 성공!'" 2>&1; then
             echo ""
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "✅ SSH 연결 테스트 성공!"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          else
+            SSH_EXIT=$?
             echo ""
-            echo "가능한 원인:"
-            echo "1. EC2_SSH_KEY Secret이 올바르지 않음 (키 형식 오류 또는 잘못된 키)"
-            echo "2. EC2 인스턴스의 authorized_keys에 해당 공개 키가 없음"
-            echo "3. EC2 사용자명(EC2_USER)이 잘못됨"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ SSH 연결 테스트 실패 (exit code: $SSH_EXIT)"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo ""
+            echo "🔍 문제 진단:"
+            echo ""
+            echo "1. EC2_SSH_KEY Secret 확인:"
+            echo "   - GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY"
+            echo "   - 첫 줄: '-----BEGIN RSA PRIVATE KEY-----' 또는 '-----BEGIN OPENSSH PRIVATE KEY-----'"
+            echo "   - 마지막 줄: '-----END RSA PRIVATE KEY-----' 또는 '-----END OPENSSH PRIVATE KEY-----'"
+            echo ""
+            echo "2. EC2 인스턴스에 공개 키 추가 필요:"
+            echo "   EC2 키 페어: summy"
+            echo "   Public IP: $EC2_HOST"
+            echo ""
+            echo "   로컬에서 실행:"
+            echo "   # 1. 기존 키로 EC2 접속"
+            echo "   ssh -i ~/.ssh/summy.pem ubuntu@$EC2_HOST"
+            echo ""
+            echo "   # 2. EC2에서 공개 키 확인"
+            echo "   cat ~/.ssh/authorized_keys"
+            echo ""
+            echo "   # 3. GitHub Actions용 공개 키 추가 (로컬에서)"
+            echo "   ssh-keygen -y -f ~/.ssh/deploy_key.pem | ssh -i ~/.ssh/summy.pem ubuntu@$EC2_HOST 'cat >> ~/.ssh/authorized_keys'"
+            echo ""
+            echo "3. EC2 사용자명 확인:"
+            echo "   현재 설정: $EC2_USER"
+            echo "   Ubuntu: ubuntu"
+            echo "   Amazon Linux: ec2-user"
             echo ""
             echo "⚠️ 이 단계는 계속 진행되지만, 배포 단계에서 실패할 수 있습니다."
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
       - name: Deploy to EC2
         env:
