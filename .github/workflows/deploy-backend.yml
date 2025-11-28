@@ -163,6 +163,10 @@ jobs:
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_DATABASE_URL: ${{ secrets.EC2_DATABASE_URL }}
+          EC2_JWT_SECRET: ${{ secrets.EC2_JWT_SECRET }}
+          EC2_FRONTEND_URL: ${{ secrets.EC2_FRONTEND_URL }}
+          EC2_FRONTEND_URLS: ${{ secrets.EC2_FRONTEND_URLS }}
         run: |
           # 환경 변수 확인
           if [ -z "${EC2_HOST:-}" ] || [ -z "${EC2_USER:-}" ]; then
@@ -197,6 +201,39 @@ jobs:
               -o ConnectTimeout=10 \
               backend/deploy.tar.gz \
               "$EC2_USER@$EC2_HOST:/tmp/"
+
+          # .env 파일 업로드 (GitHub Secrets 사용)
+          echo "📤 .env 파일 생성 중..."
+          
+          # 필수 환경 변수 확인
+          if [ -z "${EC2_DATABASE_URL:-}" ]; then
+            echo "⚠️ EC2_DATABASE_URL이 설정되지 않았습니다. GitHub Secrets에 설정하세요."
+            echo "   기본값을 사용하지 않습니다. 배포를 중단합니다."
+            exit 1
+          fi
+          
+          if [ -z "${EC2_JWT_SECRET:-}" ]; then
+            echo "⚠️ EC2_JWT_SECRET이 설정되지 않았습니다. GitHub Secrets에 설정하세요."
+            echo "   기본값을 사용하지 않습니다. 배포를 중단합니다."
+            exit 1
+          fi
+          
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              "$EC2_USER@$EC2_HOST" \
+              "mkdir -p /home/ubuntu/chalog-backend && \
+               echo 'DATABASE_URL=${EC2_DATABASE_URL}' > /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SYNCHRONIZE=false' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SSL_ENABLED=true' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SSL_REJECT_UNAUTHORIZED=false' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'JWT_SECRET=${EC2_JWT_SECRET}' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'JWT_EXPIRES_IN=7d' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'PORT=3000' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'NODE_ENV=production' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'FRONTEND_URL=${EC2_FRONTEND_URL:-https://cha-log-gilt.vercel.app}' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'FRONTEND_URLS=${EC2_FRONTEND_URLS:-https://cha-log-gilt.vercel.app,http://localhost:5173,http://localhost:5174}' >> /home/ubuntu/chalog-backend/.env && \
+               chmod 600 /home/ubuntu/chalog-backend/.env && \
+               echo '✅ .env 파일 생성 완료'"
 
           # EC2에서 배포 실행
           ssh -i ~/.ssh/deploy_key \
