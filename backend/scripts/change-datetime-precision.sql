@@ -1,5 +1,8 @@
 -- DATETIME(6)을 DATETIME으로 변경 (마이크로초 제거)
 -- 초 단위까지만 저장되도록 변경
+-- 모든 ALTER TABLE 문을 단일 트랜잭션으로 래핑하여 원자성 보장
+
+START TRANSACTION;
 
 -- Users 테이블
 ALTER TABLE `users` 
@@ -15,6 +18,8 @@ ALTER TABLE `teas`
 ALTER TABLE `notes` 
   MODIFY COLUMN `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   MODIFY COLUMN `updatedAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+COMMIT;
 
 SELECT '✅ DATETIME precision 변경 완료!' AS status;
 

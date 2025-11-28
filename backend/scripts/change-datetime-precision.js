@@ -1,5 +1,11 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+
+// .env 파일 로드 (에러 발생 시 로깅)
+try {
+  require('dotenv').config();
+} catch (error) {
+  console.warn('Failed to load .env:', error.message || error);
+}
 
 const parseDatabaseUrl = () => {
   const databaseUrl = process.env.DATABASE_URL;

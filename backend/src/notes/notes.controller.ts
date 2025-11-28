@@ -9,6 +9,7 @@ import {
   UseGuards,
   Request,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -39,19 +40,53 @@ export class NotesController {
 
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
-    const userId = req.user?.userId ? parseInt(req.user.userId, 10) : undefined;
-    return this.notesService.findOne(parseInt(id, 10), userId);
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    
+    let userId: number | undefined;
+    if (req.user?.userId) {
+      const parsedUserId = parseInt(req.user.userId, 10);
+      if (Number.isNaN(parsedUserId)) {
+        userId = undefined;
+      } else {
+        userId = parsedUserId;
+      }
+    }
+    
+    return this.notesService.findOne(parsedId, userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(@Param('id') id: string, @Request() req, @Body() updateNoteDto: UpdateNoteDto) {
-    return this.notesService.update(parseInt(id, 10), parseInt(req.user.userId, 10), updateNoteDto);
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('Invalid userId');
+    }
+    
+    return this.notesService.update(parsedId, parsedUserId, updateNoteDto);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
-    return this.notesService.remove(parseInt(id, 10), parseInt(req.user.userId, 10));
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('Invalid userId');
+    }
+    
+    return this.notesService.remove(parsedId, parsedUserId);
   }
 }
