@@ -339,22 +339,25 @@ jobs:
             if [ -f "package-lock.json" ]; then
               echo "📦 package-lock.json 발견. 동기화 확인 중..."
               # npm ci dry-run으로 동기화 확인
-              if $NPM_CMD ci --dry-run --production 2>&1 | grep -qi "missing\|invalid\|error"; then
+              if $NPM_CMD ci --dry-run --legacy-peer-deps 2>&1 | grep -qi "missing\|invalid\|error"; then
                 echo "⚠️ package-lock.json이 package.json과 동기화되지 않음"
                 echo "📦 package-lock.json 재생성 중..."
                 rm -f package-lock.json
                 $NPM_CMD install --package-lock-only --legacy-peer-deps --no-audit --no-fund
               fi
               
-              # npm ci 시도
+              # npm ci 시도 (--production 없이, peer dependencies 포함)
               echo "📦 npm ci 실행 중..."
-              if $NPM_CMD ci --production --legacy-peer-deps 2>&1; then
+              if $NPM_CMD ci --legacy-peer-deps --no-audit --no-fund 2>&1; then
                 echo "✅ npm ci 성공"
+                # devDependencies 제거
+                echo "🧹 devDependencies 제거 중..."
+                $NPM_CMD prune --production
               else
                 echo "⚠️ npm ci 실패. 상세 오류:"
-                $NPM_CMD ci --production --legacy-peer-deps 2>&1 | tail -30 || true
+                $NPM_CMD ci --legacy-peer-deps 2>&1 | tail -30 || true
                 echo "📦 npm install로 대체..."
-                # --production 없이 전체 설치 (peer dependencies 포함)
+                # 전체 설치 (peer dependencies 포함)
                 echo "📦 전체 의존성 설치 중..."
                 $NPM_CMD install --legacy-peer-deps --no-audit --no-fund
                 # devDependencies 제거
@@ -370,6 +373,30 @@ jobs:
               # devDependencies 제거
               echo "🧹 devDependencies 제거 중..."
               $NPM_CMD prune --production
+            fi
+            
+            # 필수 패키지 확인 및 재설치
+            echo "🔍 필수 패키지 확인 중..."
+            MISSING_PACKAGES=()
+            REQUIRED_PACKAGES=("class-transformer" "rxjs" "typeorm" "@nestjs/common" "@nestjs/core")
+            
+            for pkg in "${REQUIRED_PACKAGES[@]}"; do
+              if [ ! -d "node_modules/$pkg" ]; then
+                echo "❌ $pkg가 설치되지 않았습니다!"
+                MISSING_PACKAGES+=("$pkg")
+              else
+                echo "✅ $pkg 확인됨"
+              fi
+            done
+            
+            # 누락된 패키지가 있으면 재설치
+            if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+              echo "⚠️ 누락된 패키지 발견: ${MISSING_PACKAGES[*]}"
+              echo "📦 누락된 패키지 재설치 중..."
+              for pkg in "${MISSING_PACKAGES[@]}"; do
+                echo "📦 $pkg 설치 중..."
+                $NPM_CMD install "$pkg" --legacy-peer-deps --no-audit --no-fund --save
+              done
             fi
             
             # class-transformer 실제 존재 확인
