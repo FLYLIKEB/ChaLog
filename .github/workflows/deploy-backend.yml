@@ -178,19 +178,61 @@ jobs:
           
           echo "🔍 배포 대상: $EC2_USER@$EC2_HOST"
           
+          # 진단 정보 출력
+          echo "🔍 진단 정보:"
+          echo "  - GitHub Actions IP: $(curl -s https://api.ipify.org || echo '확인 실패')"
+          echo "  - EC2 호스트: $EC2_HOST"
+          echo "  - EC2 사용자: $EC2_USER"
+          echo ""
+          
+          # DNS 해석 테스트
+          echo "🔍 DNS 해석 테스트 중..."
+          if nslookup "$EC2_HOST" > /dev/null 2>&1; then
+            echo "✅ DNS 해석 성공"
+          else
+            echo "⚠️ DNS 해석 실패 (계속 진행)"
+          fi
+          echo ""
+          
+          # 포트 연결 테스트
+          echo "🔍 포트 22 연결 테스트 중..."
+          if timeout 5 bash -c "</dev/tcp/$EC2_HOST/22" 2>/dev/null; then
+            echo "✅ 포트 22 열림"
+          else
+            echo "❌ 포트 22 닫힘 또는 타임아웃"
+            echo "⚠️ EC2 보안 그룹에서 SSH(22번 포트)가 GitHub Actions IP에서 접근 가능한지 확인하세요."
+            echo "   자세한 내용: docs/SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md"
+          fi
+          echo ""
+          
           # SSH 연결 테스트
           echo "🔍 SSH 연결 테스트 중..."
-          if ssh -i ~/.ssh/deploy_key \
+          SSH_OUTPUT=$(ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               -o ConnectTimeout=10 \
               -o BatchMode=yes \
+              -o LogLevel=ERROR \
               "$EC2_USER@$EC2_HOST" \
-              "echo 'SSH 연결 성공!'" 2>&1; then
+              "echo 'SSH 연결 성공!'" 2>&1)
+          SSH_EXIT_CODE=$?
+          
+          if [ $SSH_EXIT_CODE -eq 0 ]; then
             echo "✅ SSH 연결 성공!"
           else
             echo "❌ SSH 연결 실패!"
-            echo "EC2_SSH_KEY Secret을 확인하세요."
-            echo "자세한 내용: docs/SSH_KEY_TROUBLESHOOTING.md"
+            echo ""
+            echo "오류 상세:"
+            echo "$SSH_OUTPUT"
+            echo ""
+            echo "가능한 원인:"
+            echo "1. EC2 보안 그룹에서 SSH(22번 포트)가 GitHub Actions IP에서 접근 불가"
+            echo "2. EC2 인스턴스가 실행 중이 아님"
+            echo "3. EC2_HOST Secret 값이 잘못됨"
+            echo "4. 네트워크 ACL 또는 VPC 설정 문제"
+            echo ""
+            echo "해결 방법:"
+            echo "- docs/SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md 참고"
+            echo "- EC2 보안 그룹 → SSH 규칙 → Source를 '0.0.0.0/0'으로 변경 (테스트용)"
             exit 1
           fi
           
