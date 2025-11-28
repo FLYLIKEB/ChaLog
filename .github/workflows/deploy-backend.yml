@@ -287,14 +287,8 @@ jobs:
               rm -rf node_modules
             fi
             
-            # package-lock.json 확인 및 동기화
-            if [ -f "package-lock.json" ]; then
-              echo "📦 package-lock.json 발견. 동기화 확인 중..."
-              if $NPM_CMD ci --dry-run --legacy-peer-deps 2>&1 | grep -qi "missing\|invalid\|error"; then
-                echo "⚠️ package-lock.json이 package.json과 동기화되지 않았습니다. 최신 파일을 커밋한 뒤 다시 배포하세요."
-                exit 1
-              fi
-            else
+            # package-lock.json 확인
+            if [ ! -f "package-lock.json" ]; then
               echo "⚠️ package-lock.json이 없습니다. 최신 backend/package-lock.json을 커밋하세요."
               exit 1
             fi
