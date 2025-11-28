@@ -25,6 +25,7 @@ import { logger } from '../lib/logger';
 export function NoteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const noteId = id ? parseInt(id, 10) : NaN;
   const { user } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
@@ -35,15 +36,13 @@ export function NoteDetail() {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!id) return;
+      if (isNaN(noteId)) {
+        toast.error('유효하지 않은 노트 ID입니다.');
+        return;
+      }
 
       try {
         setIsLoading(true);
-        const noteId = parseInt(id, 10);
-        if (isNaN(noteId)) {
-          toast.error('유효하지 않은 노트 ID입니다.');
-          return;
-        }
         const noteData = await notesApi.getById(noteId);
         // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
         const normalizedNote = noteData as Note;
@@ -67,7 +66,7 @@ export function NoteDetail() {
     };
 
     fetchData();
-  }, [id]);
+  }, [noteId]);
 
   if (isLoading) {
     return (
@@ -86,15 +85,13 @@ export function NoteDetail() {
   const isMyNote = note.userId === user?.id;
 
   const handleTogglePublic = async () => {
-    if (!id) return;
+    if (isNaN(noteId)) {
+      toast.error('유효하지 않은 노트 ID입니다.');
+      return;
+    }
 
     try {
       setIsUpdating(true);
-      const noteId = parseInt(id, 10);
-      if (isNaN(noteId)) {
-        toast.error('유효하지 않은 노트 ID입니다.');
-        return;
-      }
       await notesApi.update(noteId, { isPublic: !note.isPublic });
       setNote({ ...note, isPublic: !note.isPublic });
       toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
@@ -107,15 +104,13 @@ export function NoteDetail() {
   };
 
   const handleDelete = async () => {
-    if (!id) return;
+    if (isNaN(noteId)) {
+      toast.error('유효하지 않은 노트 ID입니다.');
+      return;
+    }
 
     try {
       setIsDeleting(true);
-      const noteId = parseInt(id, 10);
-      if (isNaN(noteId)) {
-        toast.error('유효하지 않은 노트 ID입니다.');
-        return;
-      }
       await notesApi.delete(noteId);
       toast.success('노트가 삭제되었습니다.');
       navigate('/my-notes', { replace: true });

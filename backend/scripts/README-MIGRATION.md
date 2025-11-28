@@ -156,15 +156,15 @@ LIMIT 1;
 
 ### 일반적인 오류
 
-**오류: "Foreign key constraint fails"**
+#### 오류: "Foreign key constraint fails"
 - 외래키 제약조건이 제대로 제거되지 않았을 수 있음
 - 수동으로 외래키 확인 및 제거 필요
 
-**오류: "Duplicate entry"**
+#### 오류: "Duplicate entry"
 - 매핑 테이블에 중복이 있을 수 있음
 - 매핑 테이블 확인 및 정리 필요
 
-**오류: "Table doesn't exist"**
+#### 오류: "Table doesn't exist"
 - 테이블 이름이 다를 수 있음
 - 실제 테이블 이름 확인 필요
 

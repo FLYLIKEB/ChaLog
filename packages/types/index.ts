@@ -1,5 +1,5 @@
 export interface Tea {
-  id: string;
+  id: number;
   name: string;
   year?: number;
   type: string;
@@ -10,10 +10,10 @@ export interface Tea {
 }
 
 export interface Note {
-  id: string;
-  teaId: string;
+  id: number;
+  teaId: number;
   teaName: string;
-  userId: string;
+  userId: number;
   userName: string;
   rating: number;
   ratings: {
@@ -29,7 +29,7 @@ export interface Note {
 }
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
 }

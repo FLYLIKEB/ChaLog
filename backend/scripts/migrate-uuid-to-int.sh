@@ -21,10 +21,15 @@ if [ "$confirm" != "yes" ]; then
     exit 0
 fi
 
+# 스크립트 디렉토리 확인
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.."
+
 # Node.js 스크립트 실행
 if command -v node &> /dev/null; then
     echo -e "${GREEN}🔄 Node.js 마이그레이션 스크립트 실행 중...${NC}"
     node scripts/migrate-uuid-to-int.js
+    echo -e "${GREEN}✅ 마이그레이션이 완료되었습니다.${NC}"
 else
     echo -e "${RED}❌ Node.js가 설치되어 있지 않습니다.${NC}"
     echo -e "${YELLOW}SQL 파일을 직접 실행하세요:${NC}"

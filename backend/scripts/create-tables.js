@@ -1,18 +1,68 @@
 const mysql = require('mysql2/promise');
+const fs = require('fs');
+const path = require('path');
+
+// .env 파일 로드
+const loadEnv = () => {
+  try {
+    const envPath = path.join(__dirname, '..', '.env');
+    if (fs.existsSync(envPath)) {
+      const envContent = fs.readFileSync(envPath, 'utf8');
+      envContent.split('\n').forEach(line => {
+        const trimmedLine = line.trim();
+        if (trimmedLine && !trimmedLine.startsWith('#')) {
+          const [key, ...valueParts] = trimmedLine.split('=');
+          if (key && valueParts.length > 0) {
+            const value = valueParts.join('=').replace(/^["']|["']$/g, '');
+            if (!process.env[key.trim()]) {
+              process.env[key.trim()] = value.trim();
+            }
+          }
+        }
+      });
+    }
+  } catch (error) {
+    // 무시
+  }
+};
+
+const parseDatabaseUrl = () => {
+  loadEnv();
+  const databaseUrl = process.env.DATABASE_URL;
+  
+  if (databaseUrl) {
+    try {
+      const url = new URL(databaseUrl.replace(/^mysql:\/\//, 'http://'));
+      return {
+        host: url.hostname,
+        port: parseInt(url.port) || 3306,
+        user: decodeURIComponent(url.username),
+        password: decodeURIComponent(url.password),
+        database: url.pathname.replace(/^\//, ''),
+      };
+    } catch (error) {
+      console.warn('DATABASE_URL 파싱 실패, 기본값 사용');
+    }
+  }
+  
+  return {
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '3306'),
+    user: process.env.DB_USER || 'admin',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'chalog',
+  };
+};
 
 const createTables = async () => {
   let connection;
   
   try {
+    const config = parseDatabaseUrl();
+    config.multipleStatements = true;
+    
     // 데이터베이스 연결
-    connection = await mysql.createConnection({
-      host: 'localhost',
-      port: 3307,
-      user: 'admin',
-      password: 'az980831',
-      database: 'chalog',
-      multipleStatements: true,
-    });
+    connection = await mysql.createConnection(config);
 
     console.log('✅ 데이터베이스 연결 성공');
 

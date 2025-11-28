@@ -109,10 +109,6 @@ export function NewNote() {
         ratings.complexity
       ) / RATING_FIELDS_COUNT;
 
-      if (!selectedTea) {
-        toast.error('차를 선택해주세요.');
-        return;
-      }
       await notesApi.create({
         teaId: selectedTea,
         rating: averageRating,

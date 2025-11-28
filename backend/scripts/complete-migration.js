@@ -184,7 +184,8 @@ const completeMigration = async () => {
     );
     
     const hasNewId = teaColumns.some(c => c.COLUMN_NAME === 'new_id');
-    const hasOldId = teaColumns.some(c => c.COLUMN_NAME === 'id' && teaColumns.find(col => col.COLUMN_NAME === 'id')?.DATA_TYPE === 'varchar');
+    const oldIdCol = teaColumns.find(c => c.COLUMN_NAME === 'id');
+    const hasOldId = oldIdCol && oldIdCol.DATA_TYPE === 'varchar';
 
     if (hasNewId) {
       await connection.query('ALTER TABLE `teas` DROP PRIMARY KEY');
