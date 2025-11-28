@@ -23,6 +23,6 @@ export class TeasController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.teasService.findOne(id);
+    return this.teasService.findOne(parseInt(id, 10));
   }
 }

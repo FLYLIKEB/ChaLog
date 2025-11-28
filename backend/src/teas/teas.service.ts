@@ -26,7 +26,7 @@ export class TeasService {
     });
   }
 
-  async findOne(id: string): Promise<Tea> {
+  async findOne(id: number): Promise<Tea> {
     const tea = await this.teasRepository.findOne({
       where: { id },
       relations: ['notes'],
@@ -47,7 +47,7 @@ export class TeasService {
       .getMany();
   }
 
-  async updateRating(teaId: string, averageRating: number, reviewCount: number): Promise<void> {
+  async updateRating(teaId: number, averageRating: number, reviewCount: number): Promise<void> {
     await this.teasRepository.update(teaId, {
       averageRating: Number(averageRating.toFixed(2)),
       reviewCount,
