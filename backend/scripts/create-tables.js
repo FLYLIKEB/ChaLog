@@ -22,7 +22,7 @@ const loadEnv = () => {
       });
     }
   } catch (error) {
-    // 무시
+    console.warn('Failed to load .env:', error.message || error);
   }
 };
 
@@ -45,12 +45,21 @@ const parseDatabaseUrl = () => {
     }
   }
   
-  return {
+  const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306'),
     user: process.env.DB_USER || 'admin',
-    password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'chalog',
+  };
+  
+  const password = process.env.DB_PASSWORD;
+  if (!password) {
+    throw new Error('DB_PASSWORD environment variable is required. Please set DATABASE_URL or DB_PASSWORD.');
+  }
+  
+  return {
+    ...dbConfig,
+    password,
   };
 };
 
