@@ -45,15 +45,36 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: |
-          # npm ci 시도, 실패하면 package-lock.json 재생성
-          if ! npm ci --legacy-peer-deps --no-workspaces 2>&1; then
+          # npm ci 시도
+          if npm ci --legacy-peer-deps --no-workspaces; then
+            echo "✅ npm ci 성공"
+          else
             echo "⚠️ npm ci 실패. package-lock.json이 package.json과 동기화되지 않았습니다."
             echo "📦 package-lock.json 재생성 중..."
             rm -f package-lock.json
-            npm install --package-lock-only --legacy-peer-deps --no-workspaces
+            npm install --package-lock-only --legacy-peer-deps --no-workspaces || true
             echo "📦 npm install 실행 중..."
             npm install --legacy-peer-deps --no-workspaces
           fi
+          
+          # 의존성 설치 확인
+          echo "🔍 설치된 의존성 확인 중..."
+          if [ ! -d "node_modules/typeorm" ]; then
+            echo "❌ typeorm이 설치되지 않았습니다. 재설치 중..."
+            npm install typeorm@^0.3.20 --legacy-peer-deps --no-workspaces
+          fi
+          
+          # 필수 패키지 확인
+          set -e
+          REQUIRED_PACKAGES=("typeorm" "@nestjs/typeorm" "@nestjs/common" "@nestjs/core")
+          for pkg in "${REQUIRED_PACKAGES[@]}"; do
+            if [ ! -d "node_modules/$pkg" ]; then
+              echo "❌ $pkg가 설치되지 않았습니다!"
+              exit 1
+            else
+              echo "✅ $pkg 확인됨"
+            fi
+          done
 
       - name: Build application
         working-directory: ./backend
