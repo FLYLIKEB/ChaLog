@@ -5,18 +5,18 @@
 - Pre-commit checks: `npm test`, `npm run lint` (if exists), `tsc --noEmit`
 - Commit messages: Write in Korean (e.g., `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
 
-## PR 리뷰 처리 절차
+## PR Review Process
 
-PR 리뷰 요청이 있을 때 다음 절차를 따라야 합니다:
+When PR review requests are received, follow this procedure:
 
-1. **모든 리뷰 리스트업**: `gh api graphql`로 해결되지 않은 리뷰 스레드 확인
-2. **리뷰 하나씩 반영**: 
-   - 리뷰 내용 확인 및 코드 수정
-   - 변경사항 커밋 (한 리뷰당 하나의 커밋)
-   - GitHub API로 해당 리뷰 스레드 resolve (`gh api graphql` mutation 사용)
-3. **모든 리뷰 반영 완료 후**: 한번에 원격 푸시 (`git push`)
+1. **List all reviews**: Use `gh api graphql` to check unresolved review threads
+2. **Apply reviews one by one**: 
+   - Review the content and modify code accordingly
+   - Commit changes (one commit per review)
+   - Resolve the review thread using GitHub API (`gh api graphql` mutation)
+3. **After all reviews are applied**: Push to remote once (`git push`)
 
-**중요**: 각 리뷰를 반영할 때마다 즉시 커밋하고 resolve하세요. 모든 리뷰가 해결된 후에만 푸시합니다.
+**Important**: Commit and resolve immediately after applying each review. Only push after all reviews are resolved.
 
 ## Documentation Updates
 
@@ -28,12 +28,12 @@ When making code changes, you MUST automatically update relevant markdown files:
 - **Backend README** (`backend/README.md`): Update when modifying backend structure, API endpoints, or setup
 
 **Update triggers:**
-- New features → README.md (주요 기능 섹션), architecture.md (해당 섹션)
-- API changes → README.md (데이터 & 외부 연동), architecture.md (API 섹션)
-- Component changes → architecture.md (컴포넌트 구조)
-- Route/page changes → architecture.md (라우트 섹션), README.md (폴더 구조)
-- Dependency changes → README.md (NPM 스크립트, 환경 변수)
-- File structure changes → README.md (폴더 구조 하이라이트)
+- New features → README.md (main features section), architecture.md (relevant section)
+- API changes → README.md (data & external integrations), architecture.md (API section)
+- Component changes → architecture.md (component structure)
+- Route/page changes → architecture.md (route section), README.md (folder structure)
+- Dependency changes → README.md (NPM scripts, environment variables)
+- File structure changes → README.md (folder structure highlights)
 - Backend module changes → backend/README.md, architecture.md
 
 **Update process:**
