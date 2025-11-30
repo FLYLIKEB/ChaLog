@@ -92,7 +92,7 @@ export default async function handler(req: any, res: any) {
 
     if (fetchResponse.body) {
       const nodeStream = Readable.fromWeb(
-        fetchResponse.body as ReadableStream<Uint8Array>,
+        fetchResponse.body as unknown as ReadableStream<any>,
       );
       nodeStream.pipe(res);
     } else {
