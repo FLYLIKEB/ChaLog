@@ -47,7 +47,7 @@ export function Settings() {
             </div>
             <div>
               <p className="text-xs text-gray-500 mb-1">이메일</p>
-              <p>{user.email}</p>
+              <p>{user.email || '미설정'}</p>
             </div>
           </div>
         </section>

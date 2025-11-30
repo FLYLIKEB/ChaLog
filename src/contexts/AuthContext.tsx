@@ -19,7 +19,7 @@ declare global {
 
 interface User {
   id: number;
-  email: string;
+  email: string | null;
   name: string;
 }
 
