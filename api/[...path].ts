@@ -1,7 +1,9 @@
 // Vercel Serverless Function으로 백엔드 API 프록시
 // 외부 HTTP 엔드포인트를 프록시하기 위해 Serverless Function 사용
 
-const BACKEND_URL = 'http://52.78.150.124:3000';
+import { Readable } from 'node:stream';
+
+const BACKEND_URL = process.env.BACKEND_URL || 'http://52.78.150.124:3000';
 
 export default async function handler(req: any, res: any) {
   const { path } = req.query;
@@ -35,22 +37,24 @@ export default async function handler(req: any, res: any) {
     }
 
     const fetchResponse = await fetch(backendUrl, fetchOptions);
-    const data = await fetchResponse.text();
-    
     // 응답 헤더 복사
     res.status(fetchResponse.status);
     fetchResponse.headers.forEach((value, key) => {
-      if (key !== 'content-encoding' && key !== 'transfer-encoding' && key !== 'content-length') {
+      if (key !== 'content-encoding' && key !== 'transfer-encoding') {
         res.setHeader(key, value);
       }
     });
-
-    // JSON인지 확인하여 파싱
-    try {
-      const jsonData = JSON.parse(data);
+    const contentType = fetchResponse.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const jsonData = await fetchResponse.json();
       res.json(jsonData);
-    } catch {
-      res.send(data);
+      return;
+    }
+    if (fetchResponse.body) {
+      const nodeStream = Readable.fromWeb(fetchResponse.body as ReadableStream);
+      nodeStream.pipe(res);
+    } else {
+      res.end();
     }
   } catch (error) {
     console.error('Proxy error:', error);
