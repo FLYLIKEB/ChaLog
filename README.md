@@ -23,10 +23,31 @@ npm install
 ```
 
 ### 개발 서버
+
+**전체 환경 실행 (권장):**
+SSH 터널, 백엔드, 프론트엔드를 한 번에 실행합니다:
+```bash
+npm run dev:local
+```
+또는
+```bash
+./scripts/start-local.sh
+```
+
+**프론트엔드만 실행:**
 ```bash
 npm run dev
 ```
 Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
+
+**서버 종료:**
+```bash
+npm run dev:stop
+```
+또는
+```bash
+./scripts/stop-local.sh
+```
 
 ### 환경 변수
 
@@ -67,7 +88,9 @@ SSH_TUNNEL_REMOTE_PORT=3306
 ### NPM 스크립트
 | 명령 | 설명 |
 | --- | --- |
-| `npm run dev` | Vite 개발 서버 실행 |
+| `npm run dev` | 프론트엔드만 실행 (Vite 개발 서버) |
+| `npm run dev:local` | 전체 환경 실행 (SSH 터널 + 백엔드 + 프론트엔드) |
+| `npm run dev:stop` | 전체 환경 종료 |
 | `npm run build` | 프로덕션 번들 생성 (`dist/`) |
 | `npm run preview` | 로컬에서 번들 미리보기 |
 | `npm run lint` *(존재 시)* | 린트/타입 검사 |

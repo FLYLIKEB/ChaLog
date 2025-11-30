@@ -69,6 +69,8 @@
       },
       "scripts": {
             "dev": "vite",
+            "dev:local": "./scripts/start-local.sh",
+            "dev:stop": "./scripts/stop-local.sh",
             "build": "vite build",
             "test": "vitest",
             "test:run": "vitest run"
