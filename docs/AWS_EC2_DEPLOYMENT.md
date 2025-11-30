@@ -1,472 +1,320 @@
-# AWS EC2 배포 가이드
+# EC2 배포 구조 및 사용 가이드
 
-ChaLog 백엔드를 AWS EC2에 배포하는 상세 가이드입니다.
+ChaLog 백엔드의 EC2 배포 구조와 사용 방법입니다.
 
-## 왜 EC2를 선택해야 할까요?
+## 현재 인프라 구조
 
-### 장점 ✅
+### 구성 요소
 
-1. **AWS RDS와 같은 인프라**
-   - 이미 RDS를 사용 중이라면 네트워크 연결이 간단함
-   - 보안 그룹으로 쉽게 제어 가능
-   - VPC 내부 통신으로 빠른 속도
+- **EC2 인스턴스**: Ubuntu Server 22.04 LTS (t3.small)
+- **RDS 데이터베이스**: MySQL (AWS RDS)
+- **웹 서버**: Nginx (리버스 프록시)
+- **프로세스 관리**: PM2
+- **배포**: GitHub Actions 자동 배포
 
-2. **비용 효율적**
-   - t2.micro 무료 티어 (1년간)
-   - t3.small: 약 $15/월
-   - 이미 RDS를 사용 중이라면 추가 인프라 비용만
+### 네트워크 구조
 
-3. **완전한 제어권**
-   - 서버 설정 완전 제어
-   - 로그 파일 직접 관리
-   - 커스텀 설정 가능
-
-4. **확장성**
-   - Auto Scaling Group으로 자동 확장
-   - Load Balancer로 로드 분산
-   - 필요시 ECS로 마이그레이션 가능
-
-### 단점 ⚠️
-
-1. **설정 복잡도**
-   - 서버 관리 필요
-   - 보안 설정 직접 관리
-   - SSL 인증서 설정 필요
-
-2. **운영 부담**
-   - 서버 모니터링 필요
-   - 업데이트 및 패치 관리
-   - 백업 관리
-
-## 사전 준비사항
-
-- AWS 계정
-- EC2 인스턴스 (또는 생성할 준비)
-- RDS 인스턴스 (이미 사용 중)
-- 도메인 (선택사항, SSL 인증서용)
-
-## 1단계: EC2 인스턴스 생성
-
-### 1.1 인스턴스 시작
-
-1. AWS 콘솔 → EC2 → Launch Instance
-2. 설정:
-   - **Name**: `chalog-backend`
-   - **AMI**: Ubuntu Server 22.04 LTS (Free tier eligible)
-   - **Instance Type**: t2.micro (Free tier) 또는 t3.small
-   - **Key Pair**: 기존 키 페어 선택 또는 새로 생성
-   - **Network Settings**: 
-     - VPC: RDS와 같은 VPC 선택
-     - Subnet: Public subnet 선택
-     - Auto-assign Public IP: Enable
-     - Security Group: 새로 생성 (아래 참고)
-
-### 1.2 보안 그룹 설정
-
-**인바운드 규칙:**
-- SSH (22) - 내 IP만 허용
-- HTTP (80) - 0.0.0.0/0 (Let's Encrypt용)
-- HTTPS (443) - 0.0.0.0/0
-- Custom TCP (3000) - 선택사항 (직접 접근용)
-
-**아웃바운드 규칙:**
-- All traffic - 0.0.0.0/0
-
-### 1.3 RDS 보안 그룹 수정
-
-RDS 보안 그룹에 EC2 보안 그룹을 추가:
-
-1. AWS 콘솔 → RDS → 데이터베이스 선택
-2. Connectivity & security → VPC security groups
-3. 보안 그룹 편집
-4. EC2 보안 그룹 추가 (MySQL/Aurora 포트 3306)
-
-## 2단계: EC2 접속 방법
-
-### 2.1 방법 1: EC2 Instance Connect (가장 쉬움) ⭐ 권장
-
-AWS 콘솔에서 브라우저로 직접 접속:
-
-1. AWS 콘솔 접속: https://console.aws.amazon.com
-2. EC2 콘솔 이동 → Instances
-3. 인스턴스 선택 → **Connect** 버튼 클릭
-4. **EC2 Instance Connect** 탭 선택 → **Connect** 클릭
-5. 브라우저에서 터미널이 열립니다
-
-**장점:**
-- ✅ AWS 콘솔 로그인만 하면 됩니다
-- ✅ SSH 키 불필요
-- ✅ 사용자명 불필요
-
-### 2.2 방법 2: SSH 클라이언트
-
-로컬 터미널에서:
-
-```bash
-ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip
+```
+인터넷
+  ↓
+EC2 인스턴스 (Public IP)
+  ├── Nginx (포트 80, 443)
+  │   └── 백엔드 서버 (포트 3000)
+  └── RDS (VPC 내부, 포트 3306)
 ```
 
-**사용자명 확인:**
-- Ubuntu: `ubuntu`
-- Amazon Linux: `ec2-user`
+### 디렉토리 구조
 
-## 3단계: EC2 서버 초기 설정
-
-### 3.1 빠른 실행 (권장)
-
-EC2에 접속 후 다음 명령어를 실행:
-
-```bash
-# 저장소 클론 (아직 클론하지 않은 경우)
-git clone https://github.com/FLYLIKEB/ChaLog.git
-cd ChaLog/backend/scripts
-
-# 실행 권한 부여
-chmod +x setup-ec2.sh check-ec2-setup.sh
-
-# 초기 설정 실행
-bash setup-ec2.sh
+```
+/home/ubuntu/chalog-backend/
+├── dist/                    # 빌드된 애플리케이션
+├── node_modules/            # 프로덕션 의존성
+├── package.json
+├── package-lock.json
+├── ecosystem.config.js      # PM2 설정
+├── .env                     # 환경 변수 (gitignore)
+└── logs/                    # PM2 로그
+    ├── err.log
+    └── out.log
 ```
 
-또는 원격에서 직접 실행:
+## 배포 프로세스
+
+### 자동 배포 (GitHub Actions)
+
+**트리거 조건**:
+- `main` 브랜치에 `backend/**` 경로 변경사항 푸시
+- 수동 실행 (GitHub Actions UI)
+
+**배포 단계**:
+1. 코드 체크아웃
+2. Node.js 20 설정
+3. 의존성 설치 (`npm ci`)
+4. 빌드 (`npm run build`)
+5. 배포 패키지 생성
+6. EC2에 SSH 연결
+7. 배포 파일 전송
+8. 환경 변수 설정 (`.env` 파일 생성)
+9. PM2로 애플리케이션 재시작
+10. Health Check 확인
+
+**배포 확인**:
+- GitHub 저장소 → Actions 탭
+- 최근 워크플로우 실행 로그 확인
+
+### 수동 배포
+
+EC2에 SSH 접속하여:
 
 ```bash
-# 스크립트 다운로드 및 실행
-curl -fsSL https://raw.githubusercontent.com/FLYLIKEB/ChaLog/main/backend/scripts/setup-ec2.sh | bash
-```
-
-### 3.2 수동 설정
-
-### 3.2.1 시스템 업데이트
-
-```bash
-sudo apt update && sudo apt upgrade -y
-```
-
-### 3.2.2 Node.js 설치
-
-```bash
-# Node.js 20 설치
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt-get install -y nodejs
-
-# 버전 확인
-node --version  # v20.x.x
-npm --version
-```
-
-### 3.2.3 PM2 설치
-
-```bash
-sudo npm install -g pm2
-
-# PM2 부팅 시 자동 시작 설정
-pm2 startup
-# 출력된 명령어 실행 (sudo 권한 필요)
-```
-
-### 3.2.4 Nginx 설치 (선택사항, 리버스 프록시용)
-
-```bash
-sudo apt-get install nginx -y
-sudo systemctl enable nginx
-sudo systemctl start nginx
-```
-
-### 3.2.5 프로젝트 디렉토리 생성
-
-```bash
-mkdir -p /home/ubuntu/chalog-backend
+# 프로젝트 디렉토리로 이동
 cd /home/ubuntu/chalog-backend
-```
 
-### 3.3 환경 변수 설정
-
-EC2에서 `.env` 파일 생성:
-
-```bash
-nano /home/ubuntu/chalog-backend/.env
-```
-
-실제 RDS 엔드포인트와 비밀번호로 수정:
-
-```env
-DATABASE_URL=mysql://admin:실제비밀번호@실제-rds-endpoint.rds.amazonaws.com:3306/chalog
-JWT_SECRET=실제-프로덕션-시크릿-키
-```
-
-### 3.4 설정 확인
-
-```bash
-bash /home/ubuntu/ChaLog/backend/scripts/check-ec2-setup.sh
-```
-
-## 4단계: 프로젝트 배포
-
-### 4.1 Git 클론 (방법 1: 직접 클론)
-
-```bash
-# GitHub 저장소 클론
-git clone https://github.com/your-username/ChaLog.git
-cd ChaLog/backend
+# Git에서 최신 코드 가져오기 (선택사항)
+# git pull origin main
 
 # 의존성 설치
-npm install --production
-
-# 빌드
-npm run build
-```
-
-### 4.2 배포 스크립트 사용 (방법 2: 권장)
-
-로컬에서 배포 스크립트 실행:
-
-```bash
-cd backend
-chmod +x deploy.sh
-./deploy.sh your-ec2-ip ubuntu ~/.ssh/your-key.pem
-```
-
-### 4.3 PM2로 실행
-
-```bash
-cd /home/ubuntu/chalog-backend
-
-# PM2로 앱 시작
-pm2 start ecosystem.config.js
-
-# 상태 확인
-pm2 status
-
-# 로그 확인
-pm2 logs chalog-backend
-
-# 부팅 시 자동 시작 저장
-pm2 save
-```
-
-## 5단계: Nginx 리버스 프록시 설정 (권장)
-
-### 5.1 Nginx 설정 파일 생성
-
-```bash
-sudo nano /etc/nginx/sites-available/chalog-backend
-```
-
-`backend/nginx.conf.example` 파일 내용 복사하여 수정
-
-### 5.2 도메인 설정
-
-도메인이 있다면:
-- A 레코드: `api.yourdomain.com` → EC2 Public IP
-
-도메인이 없다면:
-- EC2 Public IP로 직접 접근 (SSL 인증서 없이)
-
-### 5.3 SSL 인증서 설정 (Let's Encrypt)
-
-```bash
-# Certbot 설치
-sudo apt-get install certbot python3-certbot-nginx -y
-
-# SSL 인증서 발급 (도메인 필요)
-sudo certbot --nginx -d api.yourdomain.com
-
-# 자동 갱신 테스트
-sudo certbot renew --dry-run
-```
-
-### 5.4 Nginx 활성화 및 재시작
-
-```bash
-# 심볼릭 링크 생성
-sudo ln -s /etc/nginx/sites-available/chalog-backend /etc/nginx/sites-enabled/
-
-# 설정 테스트
-sudo nginx -t
-
-# Nginx 재시작
-sudo systemctl restart nginx
-```
-
-## 6단계: 배포 확인
-
-### 6.1 Health Check
-
-```bash
-# 직접 포트로 확인
-curl http://localhost:3000/health
-
-# Nginx를 통한 확인 (도메인 설정 시)
-curl https://api.yourdomain.com/health
-```
-
-### 6.2 로그 확인
-
-```bash
-# PM2 로그
-pm2 logs chalog-backend
-
-# Nginx 로그
-sudo tail -f /var/log/nginx/chalog-backend-access.log
-sudo tail -f /var/log/nginx/chalog-backend-error.log
-```
-
-### 6.3 프론트엔드 환경 변수 업데이트
-
-Vercel 대시보드에서:
-
-```env
-VITE_API_BASE_URL=https://api.yourdomain.com
-# 또는 IP 사용 시
-VITE_API_BASE_URL=http://your-ec2-ip:3000
-```
-
-## 7단계: 모니터링 및 유지보수
-
-### 7.1 PM2 모니터링
-
-```bash
-# 실시간 모니터링
-pm2 monit
-
-# 메모리 사용량 확인
-pm2 list
-
-# 재시작
-pm2 restart chalog-backend
-
-# 중지
-pm2 stop chalog-backend
-```
-
-### 7.2 로그 로테이션 설정
-
-```bash
-# PM2 모듈 설치
-pm2 install pm2-logrotate
-
-# 설정
-pm2 set pm2-logrotate:max_size 10M
-pm2 set pm2-logrotate:retain 7
-```
-
-### 7.3 자동 백업 (선택사항)
-
-```bash
-# 백업 스크립트 생성
-nano /home/ubuntu/backup.sh
-```
-
-```bash
-#!/bin/bash
-BACKUP_DIR="/home/ubuntu/backups"
-DATE=$(date +%Y%m%d-%H%M%S)
-
-mkdir -p $BACKUP_DIR
-tar -czf $BACKUP_DIR/chalog-backend-$DATE.tar.gz /home/ubuntu/chalog-backend
-
-# 7일 이상 된 백업 삭제
-find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
-```
-
-```bash
-chmod +x /home/ubuntu/backup.sh
-
-# Crontab에 추가 (매일 새벽 2시)
-crontab -e
-# 추가: 0 2 * * * /home/ubuntu/backup.sh
-```
-
-## 업데이트 배포
-
-### 방법 1: 배포 스크립트 사용
-
-```bash
-cd backend
-./deploy.sh your-ec2-ip ubuntu ~/.ssh/your-key.pem
-```
-
-### 방법 2: 수동 배포
-
-```bash
-# EC2에 SSH 접속
-ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip
-
-# 프로젝트 업데이트
-cd /home/ubuntu/chalog-backend
-git pull origin main
-
-# 의존성 업데이트
-npm install --production
+npm ci --legacy-peer-deps --production
 
 # 빌드
 npm run build
 
 # PM2 재시작
 pm2 restart chalog-backend
+
+# 상태 확인
+pm2 status
+pm2 logs chalog-backend --lines 50
 ```
 
-## 비용 예상
+## PM2 관리
 
-### t2.micro (Free Tier)
-- **1년간 무료** (월 750시간)
-- 이후: 약 $8-10/월
+### 현재 설정
 
-### t3.small
-- **약 $15/월** (2 vCPU, 2GB RAM)
-- 더 나은 성능
+- **앱 이름**: `chalog-backend`
+- **스크립트**: `./dist/src/main.js`
+- **인스턴스**: 1개 (fork 모드)
+- **메모리 제한**: 600MB
+- **자동 재시작**: 활성화
 
-### 추가 비용
-- 데이터 전송: 첫 1GB 무료, 이후 $0.09/GB
-- EBS 스토리지: $0.10/GB/월 (기본 8GB 포함)
+### 기본 명령어
 
-## 보안 체크리스트
-
-- [ ] SSH 키 페어 보안 관리
-- [ ] 보안 그룹 최소 권한 원칙 적용
-- [ ] SSL 인증서 설정 (HTTPS)
-- [ ] 환경 변수 안전하게 관리
-- [ ] 정기적인 시스템 업데이트
-- [ ] PM2 로그 모니터링
-- [ ] 방화벽 설정 확인
-- [ ] RDS 보안 그룹 제한
-
-## 문제 해결
-
-### 연결 실패
 ```bash
-# PM2 상태 확인
+# 상태 확인
 pm2 status
 
 # 로그 확인
+pm2 logs chalog-backend
+
+# 최근 50줄 로그
 pm2 logs chalog-backend --lines 50
+
+# 재시작
+pm2 restart chalog-backend
+
+# 중지
+pm2 stop chalog-backend
+
+# 시작
+pm2 start chalog-backend
+
+# 삭제
+pm2 delete chalog-backend
+
+# 모니터링
+pm2 monit
+
+# 메모리 사용량 확인
+pm2 list
+```
+
+### 로그 관리
+
+```bash
+# 로그 파일 위치
+cat /home/ubuntu/chalog-backend/logs/out.log
+cat /home/ubuntu/chalog-backend/logs/err.log
+
+# 실시간 로그
+pm2 logs chalog-backend --lines 0
+```
+
+## 환경 변수
+
+### 현재 설정 위치
+
+- 파일: `/home/ubuntu/chalog-backend/.env`
+- 관리: GitHub Secrets를 통해 자동 생성
+
+### 환경 변수 목록
+
+```env
+DATABASE_URL=mysql://admin:password@rds-endpoint:3306/chalog
+DB_SYNCHRONIZE=false
+DB_SSL_ENABLED=true
+DB_SSL_REJECT_UNAUTHORIZED=false
+JWT_SECRET=your-secret-key
+JWT_EXPIRES_IN=7d
+PORT=3000
+NODE_ENV=production
+FRONTEND_URL=https://cha-log-gilt.vercel.app
+FRONTEND_URLS=https://cha-log-gilt.vercel.app,http://localhost:5173
+```
+
+### 환경 변수 수정
+
+**방법 1: GitHub Secrets 수정** (권장)
+- GitHub 저장소 → Settings → Secrets and variables → Actions
+- Secret 수정 후 재배포
+
+**방법 2: EC2에서 직접 수정**
+```bash
+# .env 파일 편집
+nano /home/ubuntu/chalog-backend/.env
+
+# PM2 재시작
+pm2 restart chalog-backend
+```
+
+## 모니터링
+
+### Health Check
+
+```bash
+# 로컬 Health Check
+curl http://localhost:3000/health
+
+# 외부 Health Check (HTTPS)
+curl https://api.yourdomain.com/health
+```
+
+### 리소스 모니터링
+
+```bash
+# CPU 및 메모리 사용량
+top
+htop  # 설치 필요: sudo apt install htop
+
+# 메모리 사용량
+free -h
+
+# 디스크 사용량
+df -h
+
+# PM2 모니터링
+pm2 monit
+```
+
+### 로그 모니터링
+
+```bash
+# PM2 로그
+pm2 logs chalog-backend --lines 100
+
+# Nginx 로그
+sudo tail -f /var/log/nginx/chalog-backend-access.log
+sudo tail -f /var/log/nginx/chalog-backend-error.log
+
+# 시스템 로그
+sudo journalctl -u nginx -f
+```
+
+## EC2 접속
+
+### 방법 1: EC2 Instance Connect (권장)
+
+1. AWS 콘솔 → EC2 → Instances
+2. 인스턴스 선택 → **Connect** 버튼
+3. **EC2 Instance Connect** 탭 → **Connect**
+
+**장점**: SSH 키 불필요, 브라우저에서 바로 접속
+
+### 방법 2: SSH 클라이언트
+
+```bash
+ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+```
+
+## 문제 해결
+
+### 배포 실패
+
+**확인 사항**:
+1. GitHub Actions 로그 확인
+2. EC2에서 수동 빌드 테스트:
+   ```bash
+   cd /home/ubuntu/chalog-backend
+   npm ci --legacy-peer-deps
+   npm run build
+   ```
+
+### 백엔드 서버가 시작되지 않음
+
+**확인**:
+```bash
+# PM2 상태
+pm2 status
+
+# 로그 확인
+pm2 logs chalog-backend --lines 100
+
+# 환경 변수 확인
+cat /home/ubuntu/chalog-backend/.env
 
 # 포트 확인
 sudo netstat -tlnp | grep 3000
 ```
 
-### RDS 연결 실패
-- RDS 보안 그룹에 EC2 보안 그룹 추가 확인
-- `DATABASE_URL` 형식 확인
-- SSL 설정 확인
+### 데이터베이스 연결 실패
 
-### Nginx 502 Bad Gateway
-- 백엔드가 실행 중인지 확인: `pm2 status`
-- 포트 확인: `curl http://localhost:3000/health`
-- Nginx 설정 확인: `sudo nginx -t`
+**확인**:
+```bash
+# RDS 보안 그룹 확인
+# AWS 콘솔 → RDS → 데이터베이스 → Connectivity & security
 
-## 다음 단계
+# 연결 테스트
+mysql -h rds-endpoint -u admin -p
+```
 
-1. **Auto Scaling Group 설정** (트래픽 증가 시)
-2. **Application Load Balancer 추가** (고가용성)
-3. **CloudWatch 모니터링 설정**
-4. **CI/CD 파이프라인 구축** (GitHub Actions 등)
+### 메모리 부족
 
-## 참고 자료
+**확인**:
+```bash
+# 메모리 사용량
+free -h
+pm2 list
 
-- [AWS EC2 문서](https://docs.aws.amazon.com/ec2/)
-- [PM2 문서](https://pm2.keymetrics.io/)
-- [Nginx 문서](https://nginx.org/en/docs/)
-- [Let's Encrypt 문서](https://letsencrypt.org/docs/)
+# PM2 메모리 제한 확인
+cat /home/ubuntu/chalog-backend/ecosystem.config.js
+```
 
+## 백업
+
+### 자동 백업 (배포 시)
+
+배포 시 자동으로 백업 생성:
+- 위치: `/home/ubuntu/backups/`
+- 형식: `backup-YYYYMMDD-HHMMSS.tar.gz`
+
+### 수동 백업
+
+```bash
+# 백업 디렉토리 생성
+mkdir -p /home/ubuntu/backups
+
+# 백업 생성
+tar -czf /home/ubuntu/backups/backup-$(date +%Y%m%d-%H%M%S).tar.gz \
+    /home/ubuntu/chalog-backend/dist \
+    /home/ubuntu/chalog-backend/package.json \
+    /home/ubuntu/chalog-backend/ecosystem.config.js
+
+# 오래된 백업 삭제 (7일 이상)
+find /home/ubuntu/backups -name "*.tar.gz" -mtime +7 -delete
+```
+
+## 관련 문서
+
+- [`docs/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
+- [`docs/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - HTTPS 사용 가이드
+- [`docs/ENVIRONMENT_VARIABLES.md`](./ENVIRONMENT_VARIABLES.md) - 환경 변수 가이드
+- [`backend/ecosystem.config.js`](../backend/ecosystem.config.js) - PM2 설정 파일

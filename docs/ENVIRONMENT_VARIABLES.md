@@ -58,28 +58,27 @@ ChaLog/
 
 > **Vercel 설정:** Settings → Environment Variables에서 `BACKEND_URL`, `BACKEND_TIMEOUT_MS(옵션)`을 설정하세요.
 
-### 설정 방법
+### 사용 방법
 
 #### 로컬 개발 환경
 
-```bash
-# 1. 템플릿 파일 복사
-cp .env.example .env
+현재 개발 환경에서는 Vite 프록시를 사용하므로 `.env` 파일에서 `VITE_API_BASE_URL`을 주석 처리합니다:
 
-# 2. .env 파일 편집
-# VITE_API_BASE_URL=http://localhost:3000
+```bash
+# .env 파일
+# VITE_API_BASE_URL=http://localhost:3000  # Vite 프록시 사용으로 주석 처리
+VITE_KAKAO_APP_KEY=your-kakao-app-key
 ```
+
+프록시 설정은 `vite.config.ts`에 정의되어 있습니다:
+- `/api` 요청이 `http://localhost:3000`으로 프록시됨
 
 #### 프로덕션 (Vercel)
 
-1. Vercel 대시보드 → 프로젝트 선택
-2. Settings → Environment Variables
-3. 다음 환경 변수 추가:
-   - **Key**: `VITE_API_BASE_URL`
-     - **Value**: 백엔드 API 서버 URL (예: `http://your-ec2-ip:3000`)
-   - **Key**: `VITE_KAKAO_APP_KEY`
-     - **Value**: 카카오 JavaScript SDK 앱 키 (카카오 개발자 콘솔에서 발급)
-   - **Environment**: Production, Preview, Development 모두 선택
+Vercel 대시보드에서 환경 변수 설정:
+- 위치: Settings → Environment Variables
+- `VITE_API_BASE_URL`: 백엔드 HTTPS URL (예: `https://api.yourdomain.com`)
+- `VITE_KAKAO_APP_KEY`: 카카오 JavaScript SDK 앱 키
 
 ## 백엔드 환경 변수
 
@@ -130,24 +129,42 @@ cp .env.example .env
 | `SSH_TUNNEL_REMOTE_HOST` | RDS 엔드포인트 | `your-rds-endpoint.rds.amazonaws.com` |
 | `SSH_TUNNEL_REMOTE_PORT` | RDS 포트 | `3306` |
 
-### 설정 방법
+### 사용 방법
 
 #### 로컬 개발 환경
 
 ```bash
-# 1. 템플릿 파일 복사
+# 템플릿 파일 복사
 cd backend
 cp .env.example .env
 
-# 2. .env 파일 편집하여 실제 값으로 변경
+# .env 파일 편집하여 실제 값으로 변경
 nano .env
 ```
 
+**주요 설정**:
+- `DATABASE_URL`: SSH 터널을 통한 RDS 연결 (포트 3307)
+- `DB_SYNCHRONIZE`: `false` (프로덕션과 동일)
+- `NODE_ENV`: `development`
+
 #### 프로덕션 (EC2)
 
-EC2 서버의 `/home/ubuntu/chalog-backend/.env` 파일에 설정합니다.
+**현재 구조**:
+- 파일 위치: `/home/ubuntu/chalog-backend/.env`
+- 관리 방법: GitHub Secrets를 통해 자동 생성
+- 배포 시: GitHub Actions가 `.env` 파일을 자동 생성
 
-GitHub Actions를 통한 자동 배포 시, GitHub Secrets를 통해 환경 변수가 자동으로 설정됩니다.
+**수동 수정** (필요 시):
+```bash
+# EC2에 SSH 접속
+ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+
+# .env 파일 편집
+nano /home/ubuntu/chalog-backend/.env
+
+# PM2 재시작
+pm2 restart chalog-backend
+```
 
 ## 배포 환경별 설정
 
@@ -214,19 +231,32 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ## GitHub Secrets (CI/CD)
 
-GitHub Actions를 통한 자동 배포를 위해 다음 Secrets를 설정해야 합니다:
+GitHub Actions 자동 배포를 위해 사용되는 Secrets입니다.
 
-| Secret 이름 | 설명 | 설정 위치 |
-|------------|------|-----------|
-| `EC2_SSH_KEY` | EC2 SSH 개인 키 | GitHub → Settings → Secrets → Actions |
-| `EC2_HOST` | EC2 Public IP | GitHub → Settings → Secrets → Actions |
-| `EC2_USER` | EC2 사용자명 (보통 `ubuntu`) | GitHub → Settings → Secrets → Actions |
-| `EC2_DATABASE_URL` | 프로덕션 데이터베이스 URL | GitHub → Settings → Secrets → Actions |
-| `EC2_JWT_SECRET` | 프로덕션 JWT 시크릿 | GitHub → Settings → Secrets → Actions |
-| `EC2_FRONTEND_URL` | 프론트엔드 URL | GitHub → Settings → Secrets → Actions |
-| `EC2_FRONTEND_URLS` | 프론트엔드 URL 목록 | GitHub → Settings → Secrets → Actions |
+### 현재 설정된 Secrets
 
-자세한 내용은 [`docs/GITHUB_SECRETS_CHECKLIST.md`](./GITHUB_SECRETS_CHECKLIST.md)를 참고하세요.
+GitHub 저장소 → Settings → Secrets and variables → Actions
+
+| Secret 이름 | 용도 | 자동 배포 시 사용 |
+|------------|------|------------------|
+| `EC2_SSH_KEY` | EC2 SSH 접속 | ✅ |
+| `EC2_HOST` | EC2 호스트 주소 | ✅ |
+| `EC2_USER` | EC2 사용자명 | ✅ |
+| `EC2_DATABASE_URL` | `.env` 파일 생성 | ✅ |
+| `EC2_JWT_SECRET` | `.env` 파일 생성 | ✅ |
+| `EC2_FRONTEND_URL` | `.env` 파일 생성 (선택) | ✅ |
+| `EC2_FRONTEND_URLS` | `.env` 파일 생성 (선택) | ✅ |
+
+### Secrets 확인 및 수정
+
+1. GitHub 저장소 → Settings → Secrets and variables → Actions
+2. Secret 목록 확인
+3. 수정: Secret 클릭 → Update
+4. 삭제: Secret 클릭 → Delete
+
+**주의**: Secret 수정 후 다음 배포부터 적용됩니다.
+
+자세한 내용은 [`docs/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md)를 참고하세요.
 
 ## 문제 해결
 
@@ -251,8 +281,8 @@ GitHub Actions를 통한 자동 배포를 위해 다음 Secrets를 설정해야 
 
 ## 관련 문서
 
-- [`docs/DATABASE.md`](./DATABASE.md) - 데이터베이스 설정 가이드
-- [`docs/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 가이드
-- [`docs/GITHUB_SECRETS_CHECKLIST.md`](./GITHUB_SECRETS_CHECKLIST.md) - GitHub Secrets 설정 가이드
+- [`docs/DATABASE.md`](./DATABASE.md) - 데이터베이스 구조 및 사용 가이드
+- [`docs/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
+- [`docs/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
 - [`docs/SECURITY.md`](./SECURITY.md) - 보안 가이드
 
