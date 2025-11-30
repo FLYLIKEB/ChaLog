@@ -21,7 +21,6 @@ export enum AuthProvider {
 @Entity('user_authentications')
 @Unique(['provider', 'providerId'])
 @Index(['userId'])
-@Index(['provider', 'providerId'])
 export class UserAuthentication {
   @PrimaryGeneratedColumn()
   id: number;
