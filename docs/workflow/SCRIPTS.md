@@ -184,4 +184,5 @@ chmod +x scripts/*.sh backend/scripts/*.sh
 
 - [`docs/infrastructure/DATABASE.md`](../infrastructure/DATABASE.md) - 데이터베이스 구조 및 사용 가이드
 - [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드
-- [`.cursor/rules/02-workflow.md`](../../.cursor/rules/02-workflow.md) - Git 전략 및 워크플로우
+- [`.cursor/rules/workflow/git.md`](../../.cursor/rules/workflow/git.md) - Git 전략 및 워크플로우
+- [`.cursor/rules/workflow/pr.md`](../../.cursor/rules/workflow/pr.md) - PR 워크플로우

@@ -216,5 +216,6 @@ fix: [PR #<번호> 리뷰 반영] <주요 변경사항>
 ## 관련 문서
 
 - [`.cursor/rules`](../.cursor/rules) - Cursor AI 워크플로우 규칙
-- Git 브랜치 전략: `.cursor/rules/02-workflow.md` 참고
-- 코드 스타일 가이드: `.cursor/rules/03-code-style.md` 참고
+- Git 브랜치 전략: `.cursor/rules/workflow/git.md` 참고
+- PR 워크플로우: `.cursor/rules/workflow/pr.md` 참고
+- 코드 스타일 가이드: `.cursor/rules/development/code-style.md` 참고

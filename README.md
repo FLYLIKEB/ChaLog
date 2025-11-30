@@ -163,7 +163,7 @@ backend/
 
 - **Cursor AI 개발 룰**: `.cursor/rules` - 코드 스타일, 컴포넌트 가이드라인, 타입 정의, 테스팅, 에러 처리, 성능 최적화 등
 - **아키텍처 가이드**: `docs/architecture/Architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
-- **Git 전략**: `.cursor/rules/02-workflow.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
+- **Git 전략**: `.cursor/rules/workflow/git.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
 
 ## Cursor AI 명령어
 
@@ -277,10 +277,19 @@ cd backend
 > - 자세한 내용은 [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./docs/deployment/AWS_EC2_DEPLOYMENT.md) 참고
 
 ## 향후 작업 아이디어
-- Playwright/Cypress 기반 E2E 테스트 도입
-- 다국어(i18n)·다크 모드 토글·접근성 개선
-- 실시간 알림 기능 추가
-- 노트 검색 및 필터링 기능 강화
+
+작업 아이디어와 개선 사항은 GitHub Issues로 관리합니다.
+
+**작업 등록 방법:**
+- 새로운 기능: [Feature Request 템플릿](https://github.com/FLYLIKEB/ChaLog/issues/new?template=feature.md) 사용
+- 버그 리포트: [Bug Report 템플릿](https://github.com/FLYLIKEB/ChaLog/issues/new?template=bug.md) 사용
+- 일반 작업: [Task 템플릿](https://github.com/FLYLIKEB/ChaLog/issues/new?template=task.md) 사용
+
+**현재 제안된 작업들:**
+- [Issues 목록](https://github.com/FLYLIKEB/ChaLog/issues)에서 확인 가능
+- 라벨별 필터링: `enhancement`, `bug`, `task` 등
+
+> **참고**: 작업 아이디어는 MD 파일이 아닌 GitHub Issue로 관리합니다.
 
 ## Git 브랜치 전략 (GitHub Flow)
 - `main`: 배포 가능한 안정 버전. PR 통과·CI 성공 후에만 병합하고 보호 규칙으로 직접 push를 막습니다.
@@ -295,7 +304,7 @@ cd backend
 ### 권장 설정
 - GitHub 브랜치 보호 규칙: `main` 브랜치에 최소 1인 리뷰와 CI 통과를 요구하고 squash merge를 권장합니다.
 - 자동화: `main` 병합 시 태그·배포 스크립트를 실행하도록 CI를 구성합니다.
-- 문서화: 브랜치 명명 규칙·릴리스 절차를 `.cursor/rules/02-workflow.md`와 이 README에 유지해 팀 합의를 공유합니다.
+- 문서화: 브랜치 명명 규칙·릴리스 절차를 `.cursor/rules/workflow/git.md`와 이 README에 유지해 팀 합의를 공유합니다.
 
 ## 추가 참고 문서
 
