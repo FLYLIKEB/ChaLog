@@ -6,6 +6,12 @@
   - Create issues using templates: `.github/ISSUE_TEMPLATE/`
   - Available templates: `feature.md`, `bug.md`, `task.md`
   - Link issues in PRs and commits when relevant
+- **Rules Management**: `.cursor/rules/` files are organized by category in subfolders
+  - `development/`: Code style, debugging, error handling
+  - `workflow/`: Git, PR, development server, scripts, file management
+  - Use specific, descriptive filenames (e.g., `git.md` instead of `workflow.md`)
+  - Keep rules concise - remove unnecessary explanations, focus on core principles
+  - When updating rules, update all references in docs and other rules
 - Documentation: Reference `docs/` files for detailed information
   - Use relative paths: `docs/CATEGORY/FILENAME.md` or `../docs/CATEGORY/FILENAME.md` depending on context
   - Available docs by category:
