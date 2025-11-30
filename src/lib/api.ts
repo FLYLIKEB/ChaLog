@@ -3,14 +3,14 @@ import { API_TIMEOUT } from '../constants';
 // API Base URL 설정
 // 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)
 // 개발 환경: localhost:3000 직접 사용
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
-  // 프로덕션 환경에서 Vercel 배포인 경우
+const API_BASE_URL = (() => {
+  // 프로덕션 환경에서 Vercel 배포인 경우 항상 /api 사용
   if (import.meta.env.PROD && window.location.hostname.includes('vercel.app')) {
     // Vercel rewrites를 통해 /api로 프록시됨
     return '/api';
   }
-  // 개발 환경 또는 다른 프로덕션 환경
-  return 'http://localhost:3000';
+  // 환경 변수가 설정되어 있으면 사용, 없으면 localhost
+  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 })();
 
 export interface ApiError {
