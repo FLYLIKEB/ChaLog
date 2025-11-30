@@ -26,10 +26,13 @@ Vercel의 `routes`(구 rewrite) 기능을 사용하여:
 {
   "builds": [
     { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } },
-    { "src": "api/[...path].ts", "use": "@vercel/node" }
+    { "src": "api/**/*.ts", "use": "@vercel/node" }
   ],
+  "functions": {
+    "api/**/*.ts": { "runtime": "nodejs20.x" }
+  },
   "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/api/(.*)", "dest": "/api/proxy?path=$1" },
     { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
@@ -37,7 +40,7 @@ Vercel의 `routes`(구 rewrite) 기능을 사용하여:
 
 ### 2단계: Serverless Function API 프록시 생성
 
-`api/[...path].ts` 파일을 생성하여 모든 `/api/*` 요청을 백엔드로 프록시합니다. `BACKEND_URL` 환경 변수로 대상 백엔드 URL을 관리합니다.
+`api/proxy.ts` Serverless Function을 생성하여 모든 `/api/*` 요청을 백엔드로 프록시합니다. `routes` 설정이 `/api/(.*)` 요청을 `/api/proxy?path=$1`로 전달합니다.
 
 ### 3단계: API 클라이언트 수정
 
