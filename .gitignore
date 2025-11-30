@@ -1,5 +1,9 @@
 node_modules
 docs/memo.md
+docs/TESTING_*.md
+docs/*_SETUP.md
+docs/*_GUIDE.md
+docs/USER_TABLE_*.md
 .env
 .env.local
 .env.*.local

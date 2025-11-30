@@ -1,374 +1,83 @@
-# ChaLog 프로젝트 룰
+## Core Workflow
 
-## 로컬 개발 서버 실행
+### Local Development Server
 
-로컬 개발 환경(SSH 터널, 백엔드, 프론트엔드)을 한 번에 실행하려면:
-- `npm run dev:local` 실행 (권장)
-- 또는 `./scripts/start-local.sh` 실행
+To run the local development environment (SSH tunnel, backend, frontend) all at once:
+- Run `npm run dev:local` (recommended)
+- Or run `./scripts/start-local.sh`
 
-로컬 개발 환경을 종료하려면:
-- `npm run dev:stop` 실행 (권장)
-- 또는 `./scripts/stop-local.sh` 실행
+To stop the local development environment:
+- Run `npm run dev:stop` (recommended)
+- Or run `./scripts/stop-local.sh`
 
-## 기존 룰
-- 'run' 명령어 입력시 다음 실행 : 'pkill -f "next dev" || true && npm run dev'
-  - 참고: 이 프로젝트는 Vite를 사용하므로 위 명령어는 프론트엔드만 실행합니다.
-  - 전체 환경(SSH 터널+백엔드+프론트엔드)을 실행하려면 `npm run dev:local` 사용
+Note: The 'run' command executes 'pkill -f "next dev" || true && npm run dev'
+- Note: This project uses Vite, so the above command only runs the frontend
+- To run the full environment (SSH tunnel+backend+frontend), use `npm run dev:local`
 
-## Git Workflow
+### Git Operations
+- Commit messages: Korean format `<type>: <description>` (e.g., `feat: 노트 필터 기능 추가`)
+- Pre-commit: Run `npm run lint` (if exists), `tsc --noEmit`, `npm run test:run` (if exists)
+  - If validation fails: Show errors, don't commit, suggest fixes
+- Branch naming: Use `feature/*` pattern based on changed files
+- Documentation: Auto-update README.md, docs/architecture.md when code changes
+  - Triggers: New features, API changes, component changes, route/page changes, dependency changes
 
-- Before commit/push: Check `docs/git-strategy.md` (branch naming, merge procedures)
-- When modifying screens/routes: Check `docs/architecture.md` and update if needed
-- Pre-commit checks: `npm test`, `npm run lint` (if exists), `tsc --noEmit`
-- Commit messages: Write in Korean (e.g., `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
+### PR Review Process
+- Input: PR URL or PR number
+- Process: Automatically fetch all review threads, apply fixes, commit changes, push to remote, and resolve all review threads
+- Output: All review feedback implemented and review threads resolved
 
-## Documentation Updates
+Workflow:
+1. Parse PR number from URL or use provided number
+2. Fetch all unresolved review threads using GitHub GraphQL API
+3. Analyze and apply review feedback to code
+4. Commit all changes with review reference
+5. Push all commits to remote in one batch
+6. Automatically resolve all review threads via GitHub API
 
-When making code changes, you MUST automatically update relevant markdown files:
+Detailed Guide: docs/PR_REVIEW_PROCESS.md
 
-- **README.md**: Update when adding new features, changing project structure, updating dependencies, or modifying setup instructions
-- **docs/architecture.md**: Update when modifying routes/pages, component structure, data flow, or architectural patterns
-- **docs/git-strategy.md**: Update when changing Git workflow or branch strategy
-- **Backend README** (`backend/README.md`): Update when modifying backend structure, API endpoints, or setup
+### PR Creation
+- Check branch is `feature/*` and pushed to remote
+- Generate title from branch name, description from commits
+- Use `gh pr create` if available, otherwise provide GitHub URL
 
-**Update triggers:**
-- New features → README.md (주요 기능 섹션), architecture.md (해당 섹션)
-- API changes → README.md (데이터 & 외부 연동), architecture.md (API 섹션)
-- Component changes → architecture.md (컴포넌트 구조)
-- Route/page changes → architecture.md (라우트 섹션), README.md (폴더 구조)
-- Dependency changes → README.md (NPM 스크립트, 환경 변수)
-- File structure changes → README.md (폴더 구조 하이라이트)
-- Backend module changes → backend/README.md, architecture.md
-
-**Update process:**
-1. Analyze code changes to identify what documentation needs updating
-2. Check relevant markdown files for sections that need updates
-3. Update documentation to reflect code changes accurately
-4. Ensure documentation examples match current code structure
-5. Include code changes in the same commit when possible
-
-## Release Automation
-
-- Full release: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature/branch]`
-  - Example: `scripts/full-release.sh "feat: add note filters" v0.5.0`
-  - Process: test/lint → feature push → main merge+tag
-  - **Before execution**: Check if script exists at `scripts/full-release.sh`, if not, provide manual steps
-
-## Utility Scripts
-
-### Git Workflow Scripts
-
-- **Quick commit**: `scripts/quick-commit.sh [branch] [message]`
-  - Auto-commit and push changes
-  - Example: `scripts/quick-commit.sh feature/new-feature "feat: 새로운 기능 추가"`
-  - **Before execution**: Check if script exists, if not, execute manual git commands
-  - See `docs/SCRIPTS.md` for details
-
-- **Full release**: `scripts/full-release.sh "<commit-msg>" "<version-tag>" [feature-branch]`
-  - Complete release automation (test → merge → tag → deploy)
-  - Example: `scripts/full-release.sh "Release v1.2.3" "v1.2.3" feature/new-feature`
-  - **Before execution**: Check if script exists, verify feature branch follows `feature/*` pattern
-  - See `docs/SCRIPTS.md` for details
-
-### Database Management Scripts
-
-- **Start SSH tunnel**: `cd backend && ./scripts/start-ssh-tunnel.sh`
-  - Start SSH tunnel for RDS connection via EC2
-  - Requires `.env` file with SSH configuration
-  - **Before execution**: Check if script exists, verify `.env` file exists
-  - See `docs/DATABASE.md` and `docs/SCRIPTS.md` for details
-
-- **Stop SSH tunnel**: `cd backend && ./scripts/stop-ssh-tunnel.sh`
-  - Stop running SSH tunnel
-  - **Before execution**: Check if SSH tunnel process is running
-
-- **Check database**: `cd backend && ./scripts/check-database.sh`
-  - Verify database connection and create database if needed
-  - Requires SSH tunnel to be running
-  - **Before execution**: Verify SSH tunnel is active
-
-**Script usage workflow:**
-1. Before development: `cd backend && ./scripts/start-ssh-tunnel.sh`
-2. Verify connection: `cd backend && ./scripts/check-database.sh`
-3. Start backend: `cd backend && npm run start:dev`
-4. After development: `cd backend && ./scripts/stop-ssh-tunnel.sh`
-
-For detailed script documentation, see `docs/SCRIPTS.md`
-
-## Quick Commit & Push
-
-When user requests to commit changes, push changes, or says "커밋해줘", "커밋하고 푸시해줘", execute the following:
-
-**Prerequisites:**
-1. Check current branch: `git branch --show-current`
-2. Check for uncommitted changes: `git status --porcelain`
-3. If no changes exist, inform user and stop
-
-**Execution steps:**
-1. **Branch management**: 
-   - If current branch is `main`, analyze changes to determine feature name
-   - Create `feature/*` branch based on changed files (e.g., `feature/auth-login`, `feature/note-filter`)
-   - Branch naming: Use changed directory names or file prefixes (auth, notes, teas, components, config, etc.)
-   
-2. **Change analysis**: 
-   - Run `git status` to get all changed files
-   - Group changes by feature/module:
-     - `src/auth/`, `backend/src/auth/` → auth
-     - `src/pages/Note*`, `src/components/Note*` → notes
-     - `src/pages/Tea*`, `src/components/Tea*` → teas
-     - `src/components/` → components
-     - `package.json`, `vite.config.ts`, etc. → config
-     - `docs/` → docs
-   
-3. **Documentation check**: 
-   - Analyze changes → identify which markdown files need updates (README.md, docs/architecture.md, etc.)
-   - Update documentation files if needed before committing
-   
-4. **Pre-commit validation** (MUST execute before any commit):
-   - Check if `npm run lint` exists in package.json → run if exists, skip if not
-   - Run `tsc --noEmit` (TypeScript project)
-   - Check if `npm run test:run` exists → run if exists, skip if not
-   - If any check fails, STOP and show error message to user
-   - Only proceed if all checks pass
-   
-5. **Feature-based commits**: 
-   - For each group: stage files → auto-generate Korean commit message
-   - Commit message format: `<type>: <description>` (e.g., `feat: 인증 로그인 기능 추가`, `fix: 노트 필터 버그 수정`)
-   - Commit types: `feat:`, `fix:`, `refactor:`, `docs:`, `test:`, `chore:`, `style:`
-   - Commit each group separately
-   
-6. **Push & summary**: 
-   - After all commits, push current branch: `git push origin <branch-name>`
-   - If branch doesn't exist on remote, use: `git push -u origin <branch-name>`
-   - Provide summary: branch name, commit count, commit messages
-
-**Alternative:** If `scripts/quick-commit.sh` exists, you can suggest using it:
-```bash
-./scripts/quick-commit.sh [branch] [message]
-```
-
-## Quick Pull
-
-When user requests to pull updates, sync branches, or says "풀 받아줘", "업데이트해줘", execute the following:
-
-**Prerequisites:**
-1. Check current branch: `git branch --show-current`
-2. Check for uncommitted changes: `git status --porcelain`
-3. If uncommitted changes exist, warn user and ask for confirmation
-
-**Execution steps:**
-1. **Remote update**: `git fetch --all --prune`
-2. **Current branch pull**: 
-   - `git pull origin <current-branch>`
-   - If conflicts occur, STOP and inform user
-3. **Main branch pull**: 
-   - Save current branch name
-   - `git checkout main`
-   - `git pull origin main`
-   - Return to original branch: `git checkout <saved-branch>`
-4. **Summary**: Provide updated branches and changes summary
-
-## Merge Main to All Branches
-
-When user requests to merge main to branches, sync branches, or says "메인 머지해줘", execute the following:
-
-**Prerequisites:**
-1. Check current branch: `git branch --show-current`
-2. Ensure `main` branch is up to date: `git checkout main && git pull origin main`
-3. Get list of local branches: `git branch --list | grep -v main | xargs`
-
-**Execution steps:**
-1. **Save current branch**: Store current branch name
-2. **Update main**: `git checkout main && git pull origin main`
-3. **Get all local branches**: `git branch --list | grep -v "main\|^\*" | sed 's/^[ ]*//'`
-4. **For each branch**:
-   - `git checkout <branch-name>`
-   - `git merge main --no-edit`
-   - If conflicts occur: Skip this branch, log conflict, continue to next
-   - If merge succeeds: Push to remote
-     - Check if branch diverged: `git status` → if diverged, use `git push --force-with-lease origin <branch-name>`
-     - Otherwise: `git push origin <branch-name>`
-5. **Return to original branch**: `git checkout <saved-branch>`
-6. **Summary**: Provide list of successfully merged branches and any conflicts
-
-## Clean Remote Branches
-
-When user requests to clean branches, remove old branches, or says "브랜치 정리해줘", execute the following:
-
-**Prerequisites:**
-1. Fetch latest remote state: `git fetch --all --prune`
-
-**Execution steps:**
-1. **Fetch and prune**: `git fetch --all --prune`
-2. **Find gone branches**: 
-   - List local branches tracking remote branches that no longer exist
-   - Command: `git branch -vv | grep ': gone]' | awk '{print $1}'`
-3. **Show list to user**: Display branches that will be deleted
-4. **Delete branches**: 
-   - For each branch: `git branch -D <branch-name>`
-   - If deletion fails (e.g., unmerged changes), skip and inform user
-5. **Summary**: Provide list of deleted branches
-
-## Pre-commit Validation
-
-**MANDATORY**: Before executing ANY commit command, you MUST run these checks:
-
-1. **Check for uncommitted changes**: `git status --porcelain` → if empty, stop
-2. **Lint check**: 
-   - Check if `npm run lint` exists in root `package.json`
-   - If exists: Run `npm run lint`
-   - If fails: STOP, show errors, do NOT commit
-3. **Type check**: 
-   - Run `tsc --noEmit` (TypeScript project)
-   - If fails: STOP, show errors, do NOT commit
-4. **Test run**: 
-   - Check if `npm run test:run` exists in root `package.json`
-   - If exists: Run `npm run test:run`
-   - If fails: STOP, show errors, do NOT commit
-5. **Only proceed with commit if all checks pass**
-
-**Error handling:**
-- If any check fails, show specific error messages
-- Do NOT proceed with commit
-- Suggest fixes to user
-- Allow user to skip validation only if explicitly requested
-
-**Note:** The `scripts/quick-commit.sh` script includes pre-commit validation automatically if it exists.
-
-## Create Pull Request
-
-When user requests to create PR, open PR, or says "PR 생성해줘", "풀리퀘스트 만들어줘", execute the following:
-
-**Prerequisites:**
-1. Check current branch: `git branch --show-current`
-2. Verify branch follows `feature/*` pattern
-3. If not a feature branch, inform user and stop
-
-**Execution steps:**
-1. **Check current branch**: 
-   - Must be a feature branch (`feature/*`)
-   - If not, inform user and stop
-   
-2. **Ensure branch is pushed**: 
-   - Check if branch exists on remote: `git ls-remote --heads origin <branch-name>`
-   - If not pushed: `git push -u origin <branch-name>`
-   - If already pushed but has local commits: `git push origin <branch-name>`
-   
-3. **Generate PR title**: 
-   - Based on branch name (remove `feature/` prefix)
-   - Capitalize and format: e.g., `feature/note-filter` → "Note Filter 기능 추가"
-   
-4. **Generate PR description**: 
-   - Get recent commits: `git log main..HEAD --oneline`
-   - Summarize commits, changed files, and affected modules
-   - Format as markdown
-   
-5. **Create PR**: 
-   - Check if GitHub CLI (`gh`) is available: `gh --version`
-   - If available: `gh pr create --title "<title>" --body "<description>"`
-   - If not available: Provide manual instructions with GitHub URL
-   - URL format: `https://github.com/<owner>/<repo>/compare/main...<branch-name>?expand=1`
-   
-6. **Summary**: Provide PR URL and details
-
-## Error Handling & Edge Cases
-
-### Git Conflicts
-- **During merge**: Stop execution, show conflict files, ask user to resolve
-- **During pull**: Stop execution, show conflict files, ask user to resolve
-- **Never force merge or pull** without user confirmation
-
-### Validation Failures
-- **Lint errors**: Show specific file and line errors, suggest fixes
-- **Type errors**: Show TypeScript errors, suggest fixes
-- **Test failures**: Show failing tests, suggest fixes
-- **Never skip validation** unless user explicitly requests
-
-### Missing Scripts
-- **Script not found**: Check if script exists before execution
-- **If missing**: Provide manual alternative steps
-- **Never assume scripts exist**
-
-### Branch Issues
-- **Branch doesn't exist**: Create it before operations
-- **Branch diverged**: Use `--force-with-lease` only after user confirmation
-- **Cannot delete branch**: Inform user why (unmerged changes, current branch, etc.)
-
-### Network Issues
-- **Push fails**: Retry once, if fails inform user
-- **Pull fails**: Check network, inform user
-- **Remote not found**: Inform user to check remote configuration
-
-## Code Style & Patterns
+## Code Style
 
 ### Frontend (React + TypeScript)
-- Use functional components with hooks, avoid class components
-- Use `cn()` utility from `components/ui/utils.ts` for className merging
-- Follow shadcn/ui component patterns: use Radix UI primitives + CVA for variants
-- Import paths: Use `@/` alias for `src/` directory (e.g., `@/components/Button`)
-- Component structure: Props interface → component → export default
-- Use TypeScript strict types, avoid `any` unless necessary
-- Prefer named exports for utilities, default exports for components
+- Functional components with hooks, `cn()` utility, shadcn/ui patterns
+- Import alias: `@/` for `src/`, TypeScript strict types
+- Components: `src/components/`, Pages: `src/pages/`
 
 ### Backend (NestJS)
-- Use dependency injection with `@Injectable()` decorator
-- Follow NestJS module pattern: Controller → Service → Entity
-- Use DTOs for request/response validation
-- Error handling: Use NestJS built-in exceptions (`NotFoundException`, `ForbiddenException`, etc.)
-- Service methods should be async and return Promises
-- Use TypeORM repositories with `@InjectRepository()` decorator
+- DI with `@Injectable()`, Controller → Service → Entity pattern
+- DTOs for validation, NestJS exceptions for errors
+- Modules: `backend/src/{module}/`
 
-### File Structure
-- Components: `src/components/` (UI components in `components/ui/`)
-- Pages: `src/pages/` (route components)
-- Backend modules: `backend/src/{module}/` (controller, service, entities, dto)
-- Shared types: `packages/types/` (use in both frontend and backend)
-- Utils: `src/lib/` (frontend), `backend/src/common/` (backend)
+### Testing
+- Frontend: Vitest + Testing Library (`*.test.tsx` in `__tests__/`)
+- Backend: Jest (`*.spec.ts` alongside source)
+- Pattern: Arrange → Act → Assert
 
-## Component Guidelines
+## Scripts Reference
 
-- UI components: Use shadcn/ui components from `components/ui/` as base
-- Custom components: Create in `components/` with descriptive names (PascalCase)
-- Props: Define TypeScript interfaces above component
-- Styling: Use Tailwind CSS classes, prefer utility classes over custom CSS
-- Accessibility: Include proper ARIA labels and keyboard navigation
-- Icons: Use `lucide-react` icons, import individually
+- Quick commit: `scripts/quick-commit.sh [branch] [message]`
+- Full release: `scripts/full-release.sh "<msg>" "<tag>" [branch]`
+- Database: `backend/scripts/start-ssh-tunnel.sh`, `check-database.sh`
+- See `docs/SCRIPTS.md` for details
 
-## Type Definitions
+## File Management
 
-- Shared types: Define in `packages/types/index.ts` for frontend/backend sharing
-- Component props: Define inline or in same file
-- API types: Match backend DTOs in `packages/types/`
-- Use TypeScript utility types (`Pick`, `Omit`, `Partial`) when appropriate
-
-## Testing
-
-- Frontend: Use Vitest + Testing Library, tests in `__tests__/` directories
-- Backend: Use Jest, tests alongside source files (`.spec.ts`)
-- Test naming: `*.test.tsx` (frontend), `*.spec.ts` (backend)
-- Mock data: Use `src/lib/mockData.ts` for frontend tests (if exists)
-- Test structure: Arrange → Act → Assert pattern
+- Migration scripts: Delete after successful execution
+- Temporary docs: Already in `.gitignore`, delete when no longer needed
+- Documentation: Reference `docs/` files for detailed information
+  - Use relative paths: `docs/FILENAME.md` or `../docs/FILENAME.md` depending on context
+  - Available docs: git-strategy.md, architecture.md, DATABASE.md, SECURITY.md, CODE_STYLE.md, TROUBLESHOOTING.md, PR_REVIEW_PROCESS.md, ENVIRONMENT_VARIABLES.md, AWS_EC2_DEPLOYMENT.md
+  - When referencing docs in rules: Use format `docs/FILENAME.md` (relative to project root)
 
 ## Error Handling
 
-- Frontend: Use try-catch blocks, show user-friendly error messages with `sonner` toast
-- Backend: Throw appropriate NestJS exceptions, let exception filters handle responses
-- API errors: Return consistent error format from backend
-- Validation: Use DTOs with class-validator decorators (backend)
-
-## Performance
-
-- React: Use `React.memo()` for expensive components, `useMemo()`/`useCallback()` when needed
-- Code splitting: Lazy load routes with `React.lazy()` if needed
-- Images: Use proper sizing and lazy loading
-- Avoid unnecessary re-renders: Check dependencies in hooks
-
-## Documentation References
-
-- **Branch strategy**: `docs/git-strategy.md` - Git workflow and branch naming
-- **Scripts guide**: `docs/SCRIPTS.md` - All utility scripts usage and examples
-- **Database setup**: `docs/DATABASE.md` - Database configuration and connection guide
-- **Security guide**: `docs/SECURITY.md` - Security best practices and SSH key management
-- **Architecture**: `docs/architecture.md` - Project structure and design patterns
-
-When suggesting script usage or database operations, reference the appropriate documentation file.
+- Git conflicts: Stop, show files, ask user (never force merge/pull)
+- Validation failures: Show errors, don't commit, suggest fixes
+- Missing scripts: Check existence, provide manual alternatives
+- Never force operations without user confirmation

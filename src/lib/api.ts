@@ -1,6 +1,17 @@
 import { API_TIMEOUT } from '../constants';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// API Base URL 설정
+// 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)
+// 개발 환경: localhost:3000 직접 사용
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
+  // 프로덕션 환경에서 Vercel 배포인 경우
+  if (import.meta.env.PROD && window.location.hostname.includes('vercel.app')) {
+    // Vercel rewrites를 통해 /api로 프록시됨
+    return '/api';
+  }
+  // 개발 환경 또는 다른 프로덕션 환경
+  return 'http://localhost:3000';
+})();
 
 export interface ApiError {
   message: string;
@@ -366,11 +377,15 @@ export interface RegisterRequest {
   password: string;
 }
 
+export interface KakaoLoginRequest {
+  accessToken: string;
+}
+
 export interface AuthResponse {
   access_token: string;
   user: {
     id: number;
-    email: string;
+    email: string | null;
     name: string;
   };
 }
@@ -403,6 +418,7 @@ export interface UpdateNoteRequest extends Partial<CreateNoteRequest> {}
 export const authApi = {
   login: (data: LoginRequest) => apiClient.post<AuthResponse>('/auth/login', data),
   register: (data: RegisterRequest) => apiClient.post<AuthResponse>('/auth/register', data),
+  loginWithKakao: (data: KakaoLoginRequest) => apiClient.post<AuthResponse>('/auth/kakao', data),
   getProfile: () => apiClient.post('/auth/profile'),
 };
 

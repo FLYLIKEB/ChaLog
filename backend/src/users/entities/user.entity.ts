@@ -1,18 +1,23 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
+import { UserAuthentication } from './user-authentication.entity';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  email: string;
-
   @Column()
   name: string;
 
-  @Column()
-  password: string;
+  @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
+  authentications: UserAuthentication[];
 
   @CreateDateColumn({ precision: 0 })
   createdAt: Date;
