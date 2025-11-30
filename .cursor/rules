@@ -9,10 +9,17 @@
   - Triggers: New features, API changes, component changes, route/page changes, dependency changes
 
 ### PR Review Process
-1. Review Check: Check and analyze all review threads in the PR
-2. Code Implementation: Apply review feedback to code (Fix → Commit → Push)
-3. Thread Resolution: Automatically resolve resolved review threads using GitHub API
-4. Completion Verification: Verify all reviews are implemented and resolved
+- Input: PR URL or PR number
+- Process: Automatically fetch all review threads, apply fixes, commit changes, push to remote, and resolve all review threads
+- Output: All review feedback implemented and review threads resolved
+
+Workflow:
+1. Parse PR number from URL or use provided number
+2. Fetch all unresolved review threads using GitHub GraphQL API
+3. Analyze and apply review feedback to code
+4. Commit all changes with review reference
+5. Push all commits to remote in one batch
+6. Automatically resolve all review threads via GitHub API
 
 Detailed Guide: docs/PR_REVIEW_PROCESS.md
 
