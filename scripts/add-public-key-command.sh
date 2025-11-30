@@ -2,10 +2,20 @@
 
 # EC2에 공개 키를 추가하는 원라인 명령어 생성 스크립트
 
-PUBLIC_KEY=$(ssh-keygen -y -f ~/.ssh/ec2_deploy_key)
-EC2_HOST="52.78.150.124"
-EC2_USER="ubuntu"
-EXISTING_KEY="$HOME/.ssh/summy.pem"
+# 환경 변수 또는 인자로 받기
+EC2_HOST="${EC2_HOST:-your-ec2-ip}"
+EC2_USER="${EC2_USER:-ubuntu}"
+EXISTING_KEY="${EXISTING_KEY:-$HOME/.ssh/your-key.pem}"
+DEPLOY_KEY="${DEPLOY_KEY:-$HOME/.ssh/ec2_deploy_key}"
+
+# 공개 키 추출
+if [ ! -f "$DEPLOY_KEY" ]; then
+  echo "❌ 배포 키를 찾을 수 없습니다: $DEPLOY_KEY"
+  echo "사용법: EC2_HOST=your-ec2-ip EC2_USER=ubuntu EXISTING_KEY=~/.ssh/your-key.pem DEPLOY_KEY=~/.ssh/ec2_deploy_key $0"
+  exit 1
+fi
+
+PUBLIC_KEY=$(ssh-keygen -y -f "$DEPLOY_KEY")
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "EC2에 공개 키 추가 명령어"

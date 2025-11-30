@@ -4,7 +4,7 @@ ChaLog 프로젝트의 데이터베이스 연결 문제를 진단하고 해결�
 
 ## 현재 상태
 
-- **RDS 엔드포인트**: `database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com`
+- **RDS 엔드포인트**: `your-rds-endpoint.rds.amazonaws.com`
 - **포트**: `3306`
 - **사용자명**: `admin`
 - **비밀번호**: `.env` 파일의 `DATABASE_URL`에서 확인
@@ -42,14 +42,14 @@ mysql -h localhost -P 3307 -u admin -p
 ### 4. EC2에서 직접 연결 테스트
 
 ```bash
-ssh -i ~/.ssh/summy.pem ubuntu@52.78.150.124
-mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p
+ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip
+mysql -h your-rds-endpoint.rds.amazonaws.com -P 3306 -u admin -p
 ```
 
 ### 5. 직접 RDS 연결 테스트 (보안 그룹 설정 후)
 
 ```bash
-mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p
+mysql -h your-rds-endpoint.rds.amazonaws.com -P 3306 -u admin -p
 ```
 
 ## 일반적인 문제와 해결 방법
@@ -77,8 +77,8 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 
 3. **EC2에서 직접 연결 테스트**
    ```bash
-   ssh -i ~/.ssh/summy.pem ubuntu@52.78.150.124 \
-     "mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p"
+   ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip \
+     "mysql -h your-rds-endpoint.rds.amazonaws.com -P 3306 -u admin -p"
    ```
    
    EC2에서 연결이 성공하면 비밀번호는 맞는 것입니다.
@@ -104,14 +104,14 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 2. **RDS 퍼블릭 액세스 확인**
    ```bash
    aws rds describe-db-instances \
-     --query "DBInstances[?Endpoint.Address=='database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com'].PubliclyAccessible" \
+     --query "DBInstances[?Endpoint.Address=='your-rds-endpoint.rds.amazonaws.com'].PubliclyAccessible" \
      --output text \
      --region ap-northeast-2
    ```
 
 3. **포트 연결 테스트**
    ```bash
-   nc -zv -w 5 database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com 3306
+   nc -zv -w 5 your-rds-endpoint.rds.amazonaws.com 3306
    ```
 
 ### 문제 3: SSH 터널이 자동으로 종료됨
@@ -170,7 +170,7 @@ cd backend
 ./scripts/add-rds-security-group-rule.sh sg-01a53d9929d464083
 
 # 직접 연결
-mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p
+mysql -h your-rds-endpoint.rds.amazonaws.com -P 3306 -u admin -p
 ```
 
 ## SQLTools 연결 설정
@@ -188,7 +188,7 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 
 | 항목 | 값 |
 |------|-----|
-| **Server** | `database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com` |
+| **Server** | `your-rds-endpoint.rds.amazonaws.com` |
 | **Port** | `3306` |
 | **Username** | `admin` |
 | **Password** | `.env` 파일의 `DATABASE_URL`에서 확인 |

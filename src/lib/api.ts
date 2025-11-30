@@ -1,6 +1,17 @@
 import { API_TIMEOUT } from '../constants';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+// 프로덕션 환경에서 localhost 사용 시 경고
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
+  if (import.meta.env.PROD && window.location.hostname !== 'localhost') {
+    console.error(
+      '⚠️ VITE_API_BASE_URL 환경 변수가 설정되지 않았습니다!\n' +
+      'Vercel 대시보드 → Settings → Environment Variables에서 설정하세요.\n' +
+      'Key: VITE_API_BASE_URL\n' +
+      'Value: 백엔드 API 서버 URL (예: http://your-ec2-ip:3000)'
+    );
+  }
+  return 'http://localhost:3000';
+})();
 
 export interface ApiError {
   message: string;

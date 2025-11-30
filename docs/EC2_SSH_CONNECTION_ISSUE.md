@@ -4,11 +4,13 @@
 
 ## 현재 상황
 
-- **EC2 인스턴스**: `i-048c3090835a4de5b`
-- **Public IP**: `52.78.150.124`
+- **EC2 인스턴스**: `i-xxxxxxxxxxxxxxxxx` (AWS 콘솔에서 확인)
+- **Public IP**: `your-ec2-ip` (AWS 콘솔에서 확인)
 - **상태**: running ✅
 - **포트 22**: 열려있음 ✅ (nc 테스트 성공)
 - **SSH 연결**: banner exchange 타임아웃 ❌
+
+> **참고**: 실제 인스턴스 ID와 IP는 AWS 콘솔에서 확인하세요.
 
 ## 문제 원인
 
@@ -26,7 +28,7 @@ AWS 콘솔에서 직접 EC2에 접속하여 공개 키를 추가할 수 있습�
 
 1. **AWS 콘솔 접속**
    - AWS 콘솔 → EC2 → Instances
-   - 인스턴스 `i-048c3090835a4de5b` 선택
+   - 해당 인스턴스 선택 (인스턴스 ID 확인)
 
 2. **EC2 Instance Connect 사용**
    - "Connect" 버튼 클릭
@@ -35,8 +37,12 @@ AWS 콘솔에서 직접 EC2에 접속하여 공개 키를 추가할 수 있습�
 
 3. **공개 키 추가**
    ```bash
-   # 공개 키 추가
-   echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDJyXXQSyKGppsMDl3sJQ5h0RBB95xuDKgfXMhAnKZnfhOFJUHAd11uutOqeJNoJnoklX6ZrW/WFsKydCUuSXhwInn29OIp1fq5yPRBsbqMT/eVxlYPFD+ZzLMreakefcT3uW45GQw6QbuAY0egg8Qi0W3QMlhwwwLWlAIigFa5UcAmYnNJDG2se+j5tp+8rqkS/sG4lo/O8+PhTg1650id7GBuHGTfer8DwBCCDlOJOpU3CA6PtQWIbVswKhyZzYstf572b6K0BMcbbclb9PYSnWjemJwAP649cpt7MV1+LqOkUiGq4E4+E0EpV+dwzuDukrlE6Zka2qND50kmE3KWY7E8nQwhTTYXA05q1mYuxGN58LKvqmCFrpgLS4XeMZrSRLZkYe7GzwxKTaZRE3wHpfpq60IY6ZX2+e/3orWbVSAjSGYGhCUfpZVgWepIa3dn79BSYKiJQ57VDPvH30mlefkrVduXJR3ixr6D73YbIredBMfBDVSVD/bNbMdvekdhCoQWWkX5FuyBIWMnDiFPFLJg5XNBIyf8xuY8JIjMFPSD2XLgO68VUi6leyWt921p6/Chqn7zEAvcKJRin541Y+S7rZRoa5E9RKaZEZ3EyeoDwwoiWMdQSeHDfh2cekzq47I3GEu5mdNdVjxX0RjEc4C6vrdpfHahbzrOPgFENw== deploy@github-actions' >> ~/.ssh/authorized_keys
+   # 로컬에서 공개 키 추출
+   ssh-keygen -y -f ~/.ssh/your-deploy-key.pem
+   
+   # EC2 Instance Connect에서 공개 키 추가
+   # (위 명령어로 추출한 공개 키를 복사하여 사용)
+   echo 'YOUR_PUBLIC_KEY_HERE' >> ~/.ssh/authorized_keys
    
    # 권한 설정
    chmod 600 ~/.ssh/authorized_keys
@@ -44,6 +50,8 @@ AWS 콘솔에서 직접 EC2에 접속하여 공개 키를 추가할 수 있습�
    # 확인
    cat ~/.ssh/authorized_keys
    ```
+   
+   > **주의**: `YOUR_PUBLIC_KEY_HERE`를 실제 공개 키로 교체하세요.
 
 ### 방법 2: 다른 네트워크에서 시도
 
@@ -81,10 +89,12 @@ sudo service ssh restart
 ssh-keygen -y -f ~/.ssh/ec2_deploy_key
 ```
 
-출력:
+출력 예시:
 ```
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDJyXXQSyKGppsMDl3sJQ5h0RBB95xuDKgfXMhAnKZnfhOFJUHAd11uutOqeJNoJnoklX6ZrW/WFsKydCUuSXhwInn29OIp1fq5yPRBsbqMT/eVxlYPFD+ZzLMreakefcT3uW45GQw6QbuAY0egg8Qi0W3QMlhwwwLWlAIigFa5UcAmYnNJDG2se+j5tp+8rqkS/sG4lo/O8+PhTg1650id7GBuHGTfer8DwBCCDlOJOpU3CA6PtQWIbVswKhyZzYstf572b6K0BMcbbclb9PYSnWjemJwAP649cpt7MV1+LqOkUiGq4E4+E0EpV+dwzuDukrlE6Zka2qND50kmE3KWY7E8nQwhTTYXA05q1mYuxGN58LKvqmCFrpgLS4XeMZrSRLZkYe7GzwxKTaZRE3wHpfpq60IY6ZX2+e/3orWbVSAjSGYGhCUfpZVgWepIa3dn79BSYKiJQ57VDPvH30mlefkrVduXJR3ixr6D73YbIredBMfBDVSVD/bNbMdvekdhCoQWWkX5FuyBIWMnDiFPFLJg5XNBIyf8xuY8JIjMFPSD2XLgO68VUi6leyWt921p6/Chqn7zEAvcKJRin541Y+S7rZRoa5E9RKaZEZ3EyeoDwwoiWMdQSeHDfh2cekzq47I3GEu5mdNdVjxX0RjEc4C6vrdpfHahbzrOPgFENw== deploy@github-actions
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQ... (공개 키 내용) ... deploy@github-actions
 ```
+
+> **주의**: 실제 공개 키는 위 명령어를 실행하여 확인하세요.
 
 ## 다음 단계
 

@@ -30,39 +30,25 @@ Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
 
 ### 환경 변수
 
-**프론트엔드:**
-프로젝트 루트에 `.env` 파일을 생성하고 다음을 설정하세요:
+**중앙 집중식 관리**: 모든 환경 변수는 `.env.example` 파일에 정의되어 있으며, 실제 값은 `.env` 파일에서 관리합니다.
+
+**빠른 설정:**
+
 ```bash
-VITE_API_BASE_URL=http://localhost:3000
+# 프론트엔드
+cp .env.example .env
+
+# 백엔드
+cd backend
+cp .env.example .env
 ```
 
-**백엔드:**
-`backend/.env` 파일에 다음을 설정하세요:
-```bash
-# 데이터베이스 연결 (SSH 터널을 통한 RDS 연결)
-DATABASE_URL=mysql://admin:password@localhost:3307/chalog
-DB_SYNCHRONIZE=false
-DB_SSL_ENABLED=false
+**환경 변수 목록:**
 
-# JWT 설정
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
+- **프론트엔드**: `VITE_API_BASE_URL` (백엔드 API URL)
+- **백엔드**: 데이터베이스, JWT, 서버 설정 등
 
-# 서버 설정
-PORT=3000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:5173
-
-# SSH 터널 설정 (RDS 연결용)
-SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=your-ec2-host
-EC2_USER=ubuntu
-SSH_TUNNEL_LOCAL_PORT=3307
-SSH_TUNNEL_REMOTE_HOST=your-rds-endpoint.rds.amazonaws.com
-SSH_TUNNEL_REMOTE_PORT=3306
-```
-
-자세한 설정은 [`docs/DATABASE.md`](./docs/DATABASE.md)를 참고하세요.
+자세한 내용은 [`docs/ENVIRONMENT_VARIABLES.md`](./docs/ENVIRONMENT_VARIABLES.md)를 참고하세요.
 
 ### NPM 스크립트
 | 명령 | 설명 |
@@ -239,6 +225,31 @@ cd backend
 ./deploy.sh your-ec2-ip ubuntu ~/.ssh/your-key.pem
 ```
 
+## 프론트엔드 배포
+
+프론트엔드는 Vercel에 배포됩니다.
+
+### Vercel 환경 변수 설정
+
+프로덕션 환경에서 백엔드 API와 통신하기 위해 다음 환경 변수를 설정해야 합니다:
+
+1. **Vercel 대시보드 접속**
+   - 프로젝트 → Settings → Environment Variables
+
+2. **환경 변수 추가**
+   - Key: `VITE_API_BASE_URL`
+   - Value: 백엔드 API 서버 URL (예: `http://your-ec2-ip:3000` 또는 `https://api.yourdomain.com`)
+   - Environment: Production, Preview, Development 모두 선택
+
+3. **재배포**
+   - 환경 변수 저장 후 자동으로 재배포됩니다
+   - 또는 수동으로 "Redeploy" 클릭
+
+> **주의**: 
+> - IP 주소나 민감한 정보는 코드에 하드코딩하지 마세요
+> - 환경 변수를 통해 관리하세요
+> - 자세한 내용은 [`docs/AWS_EC2_DEPLOYMENT.md`](./docs/AWS_EC2_DEPLOYMENT.md) 참고
+
 ## 향후 작업 아이디어
 - Playwright/Cypress 기반 E2E 테스트 도입
 - 다국어(i18n)·다크 모드 토글·접근성 개선
@@ -261,6 +272,7 @@ cd backend
 - 문서화: 브랜치 명명 규칙·릴리스 절차를 `docs/git-strategy.md`와 이 README에 유지해 팀 합의를 공유합니다.
 
 ## 추가 참고 문서
+- **환경 변수 관리**: [`docs/ENVIRONMENT_VARIABLES.md`](./docs/ENVIRONMENT_VARIABLES.md) - 모든 환경 변수와 민감 정보 관리 가이드 ⭐
 - **스크립트 사용법**: [`docs/SCRIPTS.md`](./docs/SCRIPTS.md) - 모든 유틸리티 스크립트의 역할과 사용법
 - **아키텍처**: [`docs/architecture.md`](./docs/architecture.md) - 프로젝트 구조, 라우팅, 데이터 흐름
 - **데이터베이스**: [`docs/DATABASE.md`](./docs/DATABASE.md) - 데이터베이스 설정 및 연결 가이드
