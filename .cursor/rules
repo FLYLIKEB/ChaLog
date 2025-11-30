@@ -9,9 +9,12 @@
   - Triggers: New features, API changes, component changes, route/page changes, dependency changes
 
 ### PR Review Process
-1. List unresolved reviews: `gh api graphql` to get review threads
-2. Apply one by one: Fix → Commit → Resolve thread via GitHub API
-3. Push once after all reviews resolved
+1. **리뷰 확인**: PR의 모든 리뷰 스레드 확인 및 분석
+2. **코드 반영**: 리뷰 내용을 코드에 반영 (Fix → Commit → Push)
+3. **스레드 Resolve**: GitHub API를 사용하여 해결된 리뷰 스레드 자동 resolve 처리
+4. **완료 확인**: 모든 리뷰가 반영되고 resolve 처리되었는지 확인
+
+**상세 가이드**: [`docs/PR_REVIEW_PROCESS.md`](../docs/PR_REVIEW_PROCESS.md)
 
 ### PR Creation
 - Check branch is `feature/*` and pushed to remote
@@ -46,7 +49,7 @@
 
 - Migration scripts: Delete after successful execution
 - Temporary docs: Already in `.gitignore`, delete when no longer needed
-- Documentation: Reference `docs/` files (git-strategy.md, architecture.md, DATABASE.md, SECURITY.md, CODE_STYLE.md, TROUBLESHOOTING.md)
+- Documentation: Reference `docs/` files (git-strategy.md, architecture.md, DATABASE.md, SECURITY.md, CODE_STYLE.md, TROUBLESHOOTING.md, PR_REVIEW_PROCESS.md)
 
 ## Error Handling
 
