@@ -5,6 +5,19 @@
 - Pre-commit checks: `npm test`, `npm run lint` (if exists), `tsc --noEmit`
 - Commit messages: Write in Korean (e.g., `feat: 노트 필터 기능 추가`, `fix: 인증 버그 수정`)
 
+## PR 리뷰 처리 절차
+
+PR 리뷰 요청이 있을 때 다음 절차를 따라야 합니다:
+
+1. **모든 리뷰 리스트업**: `gh api graphql`로 해결되지 않은 리뷰 스레드 확인
+2. **리뷰 하나씩 반영**: 
+   - 리뷰 내용 확인 및 코드 수정
+   - 변경사항 커밋 (한 리뷰당 하나의 커밋)
+   - GitHub API로 해당 리뷰 스레드 resolve (`gh api graphql` mutation 사용)
+3. **모든 리뷰 반영 완료 후**: 한번에 원격 푸시 (`git push`)
+
+**중요**: 각 리뷰를 반영할 때마다 즉시 커밋하고 resolve하세요. 모든 리뷰가 해결된 후에만 푸시합니다.
+
 ## Documentation Updates
 
 When making code changes, you MUST automatically update relevant markdown files:
