@@ -2,15 +2,22 @@ import { API_TIMEOUT } from '../constants';
 
 // API Base URL 설정
 // 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)
-// 개발 환경: localhost:3000 직접 사용
+// 개발 환경: Vite 프록시를 통해 /api 사용 (CORS 문제 방지)
 const API_BASE_URL = (() => {
   // 프로덕션 환경에서 Vercel 배포인 경우 항상 /api 사용
   if (import.meta.env.PROD && window.location.hostname.includes('vercel.app')) {
     // Vercel rewrites를 통해 /api로 프록시됨
     return '/api';
   }
-  // 환경 변수가 설정되어 있으면 사용, 없으면 localhost
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+  // 개발 환경: Vite 프록시를 사용하여 같은 origin으로 요청 (CORS 문제 방지)
+  // 환경 변수가 명시적으로 설정되어 있으면 사용, 없으면 /api 프록시 사용
+  const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
+  // 개발 환경에서만 로그 출력
+  if (import.meta.env.DEV) {
+    console.log('[API Config] VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
+    console.log('[API Config] Final API_BASE_URL:', baseURL);
+  }
+  return baseURL;
 })();
 
 export interface ApiError {
@@ -128,18 +135,29 @@ function normalizeNotes<T extends BackendNote | BackendNote[]>(data: T): T exten
 }
 
 /**
- * URL이 로컬 네트워크 요청인지 확인
- * Chrome의 로컬 네트워크 요청 정책에 대응하기 위함
+ * URL이 loopback 주소 공간인지 확인 (localhost, 127.0.0.1 등)
+ * Chrome의 Private Network Access 정책에 대응하기 위함
  */
-function isLocalNetworkRequest(url: string): boolean {
+function isLoopbackRequest(url: string): boolean {
   try {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname.toLowerCase();
     
-    // localhost 또는 127.0.0.1
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
-      return true;
-    }
+    // localhost 또는 127.0.0.1, IPv6 loopback
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * URL이 private IP 주소 공간인지 확인
+ * Chrome의 Private Network Access 정책에 대응하기 위함
+ */
+function isPrivateNetworkRequest(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
     
     // .local 도메인
     if (hostname.endsWith('.local')) {
@@ -151,7 +169,7 @@ function isLocalNetworkRequest(url: string): boolean {
     const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
     const match = hostname.match(ipv4Regex);
     if (match) {
-      const [, a, b, c, d] = match.map(Number);
+      const [, a, b] = match.map(Number);
       if (a === 10) return true; // 10.0.0.0/8
       if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
       if (a === 192 && b === 168) return true; // 192.168.0.0/16
@@ -164,44 +182,36 @@ function isLocalNetworkRequest(url: string): boolean {
 }
 
 /**
+ * URL이 로컬 네트워크 요청인지 확인 (loopback 또는 private)
+ * Chrome의 로컬 네트워크 요청 정책에 대응하기 위함
+ */
+function isLocalNetworkRequest(url: string): boolean {
+  return isLoopbackRequest(url) || isPrivateNetworkRequest(url);
+}
+
+/**
  * targetAddressSpace 옵션 지원 여부 확인
  * Chrome 124+에서만 지원되므로 런타임에서 기능 감지 필요
  * 
  * 참고: targetAddressSpace는 WICG 초안 사양이며 아직 표준화되지 않았습니다.
  * Chrome 124+, Edge 124+에서만 지원되며, Firefox와 Safari는 지원하지 않습니다.
+ * 
+ * 지원하지 않는 브라우저에서는 옵션이 무시되므로 안전하게 항상 시도합니다.
  */
 function supportsTargetAddressSpace(): boolean {
-  // User-Agent 기반 간단한 체크 (Chrome/Chromium 계열 확인)
-  // 더 정확한 방법은 실제 fetch 시도이지만, 성능상 User-Agent 체크가 더 효율적
-  if (typeof navigator === 'undefined') {
+  // 브라우저 환경인지 확인
+  if (typeof navigator === 'undefined' || typeof window === 'undefined') {
     return false; // 서버 사이드 렌더링 환경
   }
   
+  // Chrome/Chromium 계열 브라우저 확인
   const userAgent = navigator.userAgent.toLowerCase();
   const isChrome = userAgent.includes('chrome') && !userAgent.includes('edge');
   const isEdge = userAgent.includes('edg');
   
-  // Chrome 또는 Edge인 경우에만 지원 가능성 있음
-  if (!isChrome && !isEdge) {
-    return false;
-  }
-  
-  // 실제 버전 확인은 복잡하므로, Chrome/Edge 계열이면 시도
-  // 지원하지 않는 브라우저에서는 옵션이 무시되므로 안전함
-  try {
-    // Request 생성자를 통해 옵션 수용 여부 확인
-    // 지원하지 않는 브라우저에서는 옵션이 무시되지만 에러는 발생하지 않음
-    // targetAddressSpace는 표준이 아니므로 TypeScript 타입에 없음
-    const testRequest = new Request('http://localhost', {
-      targetAddressSpace: 'private',
-    } as RequestInit & { targetAddressSpace?: 'private' | 'local' });
-    
-    // Request 객체가 정상적으로 생성되면 옵션을 수용하는 것으로 간주
-    return testRequest !== null;
-  } catch {
-    // 생성 실패 시 지원하지 않는 것으로 간주
-    return false;
-  }
+  // Chrome 또는 Edge 계열이면 targetAddressSpace 지원 가능
+  // 지원하지 않는 브라우저에서는 옵션이 무시되므로 안전하게 true 반환
+  return isChrome || isEdge;
 }
 
 class ApiClient {
@@ -209,6 +219,10 @@ class ApiClient {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
+    // 개발 환경에서만 로그 출력
+    if (import.meta.env.DEV) {
+      console.log('[ApiClient] Base URL:', this.baseURL);
+    }
   }
 
   private async request<T>(
@@ -232,18 +246,18 @@ class ApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     
-    // Chrome의 로컬 네트워크 요청 정책 대응
-    // 로컬 네트워크 요청이고 브라우저가 지원하는 경우에만 targetAddressSpace 옵션 추가
-    const fetchInit: RequestInit = {
+    // Chrome의 Private Network Access 정책 대응
+    // targetAddressSpace 옵션을 fetch 옵션에 직접 포함
+    const fetchOptionsWithAddressSpace: RequestInit & { targetAddressSpace?: 'private' | 'local' } = {
       ...fetchOptions,
       headers,
     };
     
-    // 로컬 네트워크 요청이고 브라우저가 targetAddressSpace를 지원하는 경우에만 설정
+    // 로컬 네트워크 요청이고 브라우저가 targetAddressSpace를 지원하는 경우 설정
     if (isLocalNetworkRequest(url) && supportsTargetAddressSpace()) {
-      // TypeScript 타입 확장을 위한 타입 단언
-      // targetAddressSpace는 Chrome 124+에서만 지원되므로 런타임에서만 설정
-      (fetchInit as RequestInit & { targetAddressSpace?: 'private' | 'local' }).targetAddressSpace = 'private';
+      // localhost(loopback)는 'local', private IP는 'private' 사용
+      const addressSpace: 'local' | 'private' = isLoopbackRequest(url) ? 'local' : 'private';
+      fetchOptionsWithAddressSpace.targetAddressSpace = addressSpace;
     }
     
     // AbortController를 사용한 타임아웃 설정
@@ -254,7 +268,7 @@ class ApiClient {
     
     try {
       const response = await fetch(url, {
-        ...fetchInit,
+        ...fetchOptionsWithAddressSpace,
         signal: controller.signal,
       });
 
