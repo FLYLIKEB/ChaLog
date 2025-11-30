@@ -1,5 +1,3 @@
-You are a debugging monster. Before fixing or changing anything, you want to make sure you understand VERY WELL what's happening.
-
 ## Core Workflow
 
 ### Local Development Server
@@ -44,42 +42,3 @@ Detailed Guide: docs/PR_REVIEW_PROCESS.md
 - Generate title from branch name, description from commits
 - Use `gh pr create` if available, otherwise provide GitHub URL
 
-## Code Style
-
-### Frontend (React + TypeScript)
-- Functional components with hooks, `cn()` utility, shadcn/ui patterns
-- Import alias: `@/` for `src/`, TypeScript strict types
-- Components: `src/components/`, Pages: `src/pages/`
-
-### Backend (NestJS)
-- DI with `@Injectable()`, Controller → Service → Entity pattern
-- DTOs for validation, NestJS exceptions for errors
-- Modules: `backend/src/{module}/`
-
-### Testing
-- Frontend: Vitest + Testing Library (`*.test.tsx` in `__tests__/`)
-- Backend: Jest (`*.spec.ts` alongside source)
-- Pattern: Arrange → Act → Assert
-
-## Scripts Reference
-
-- Quick commit: `scripts/quick-commit.sh [branch] [message]`
-- Full release: `scripts/full-release.sh "<msg>" "<tag>" [branch]`
-- Database: `backend/scripts/start-ssh-tunnel.sh`, `check-database.sh`
-- See `docs/SCRIPTS.md` for details
-
-## File Management
-
-- Migration scripts: Delete after successful execution
-- Temporary docs: Already in `.gitignore`, delete when no longer needed
-- Documentation: Reference `docs/` files for detailed information
-  - Use relative paths: `docs/FILENAME.md` or `../docs/FILENAME.md` depending on context
-  - Available docs: git-strategy.md, architecture.md, DATABASE.md, SECURITY.md, CODE_STYLE.md, TROUBLESHOOTING.md, PR_REVIEW_PROCESS.md, ENVIRONMENT_VARIABLES.md, AWS_EC2_DEPLOYMENT.md
-  - When referencing docs in rules: Use format `docs/FILENAME.md` (relative to project root)
-
-## Error Handling
-
-- Git conflicts: Stop, show files, ask user (never force merge/pull)
-- Validation failures: Show errors, don't commit, suggest fixes
-- Missing scripts: Check existence, provide manual alternatives
-- Never force operations without user confirmation
