@@ -2,13 +2,15 @@
 
 ChaLog 프로젝트의 데이터베이스 연결 문제를 진단하고 해결하는 방법입니다.
 
+> **참고**: 이 문서의 예시에서 사용되는 값들(`<RDS_ENDPOINT>`, `<EC2_IP>`, `<SECURITY_GROUP_ID>`, `<SSH_KEY_NAME>` 등)은 플레이스홀더입니다. 실제 값은 `.env` 파일이나 프로젝트 설정에서 확인하세요.
+
 ## 현재 상태
 
-- **RDS 엔드포인트**: `database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com`
+- **RDS 엔드포인트**: `<RDS_ENDPOINT>` (예: `your-db.region.rds.amazonaws.com`)
 - **포트**: `3306`
-- **사용자명**: `admin`
+- **사용자명**: `.env` 파일의 `DATABASE_URL`에서 확인
 - **비밀번호**: `.env` 파일의 `DATABASE_URL`에서 확인
-- **SSH 터널**: 로컬 포트 `3307`
+- **SSH 터널**: 로컬 포트 `<SSH_TUNNEL_LOCAL_PORT>` (기본값: `3307`)
 
 ## 문제 진단
 
@@ -16,7 +18,7 @@ ChaLog 프로젝트의 데이터베이스 연결 문제를 진단하고 해결�
 
 ```bash
 cd backend
-ps aux | grep "ssh.*3307"
+ps aux | grep "ssh.*<SSH_TUNNEL_LOCAL_PORT>"
 ```
 
 터널이 없으면:
@@ -27,7 +29,7 @@ ps aux | grep "ssh.*3307"
 ### 2. 포트 확인
 
 ```bash
-lsof -i :3307
+lsof -i :<SSH_TUNNEL_LOCAL_PORT>
 ```
 
 포트가 열려있어야 합니다.
@@ -35,21 +37,21 @@ lsof -i :3307
 ### 3. SSH 터널을 통한 연결 테스트
 
 ```bash
-mysql -h localhost -P 3307 -u admin -p
+mysql -h localhost -P <SSH_TUNNEL_LOCAL_PORT> -u <DB_USERNAME> -p
 # 비밀번호 입력 (DATABASE_URL에서 확인)
 ```
 
 ### 4. EC2에서 직접 연결 테스트
 
 ```bash
-ssh -i ~/.ssh/summy.pem ubuntu@52.78.150.124
-mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p
+ssh -i ~/.ssh/<SSH_KEY_NAME> <EC2_USER>@<EC2_IP>
+mysql -h <RDS_ENDPOINT> -P 3306 -u <DB_USERNAME> -p
 ```
 
 ### 5. 직접 RDS 연결 테스트 (보안 그룹 설정 후)
 
 ```bash
-mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p
+mysql -h <RDS_ENDPOINT> -P 3306 -u <DB_USERNAME> -p
 ```
 
 ## 일반적인 문제와 해결 방법
@@ -77,8 +79,8 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 
 3. **EC2에서 직접 연결 테스트**
    ```bash
-   ssh -i ~/.ssh/summy.pem ubuntu@52.78.150.124 \
-     "mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p"
+   ssh -i ~/.ssh/<SSH_KEY_NAME> <EC2_USER>@<EC2_IP> \
+     "mysql -h <RDS_ENDPOINT> -P 3306 -u <DB_USERNAME> -p"
    ```
    
    EC2에서 연결이 성공하면 비밀번호는 맞는 것입니다.
@@ -95,23 +97,23 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 1. **보안 그룹 확인**
    ```bash
    aws ec2 describe-security-groups \
-     --group-ids sg-01a53d9929d464083 \
+     --group-ids <SECURITY_GROUP_ID> \
      --query "SecurityGroups[0].IpPermissions[?FromPort==\`3306\`]" \
      --output json \
-     --region ap-northeast-2
+     --region <AWS_REGION>
    ```
 
 2. **RDS 퍼블릭 액세스 확인**
    ```bash
    aws rds describe-db-instances \
-     --query "DBInstances[?Endpoint.Address=='database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com'].PubliclyAccessible" \
+     --query "DBInstances[?Endpoint.Address=='<RDS_ENDPOINT>'].PubliclyAccessible" \
      --output text \
-     --region ap-northeast-2
+     --region <AWS_REGION>
    ```
 
 3. **포트 연결 테스트**
    ```bash
-   nc -zv -w 5 database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com 3306
+   nc -zv -w 5 <RDS_ENDPOINT> 3306
    ```
 
 ### 문제 3: SSH 터널이 자동으로 종료됨
@@ -131,7 +133,7 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 
 2. **터널 상태 모니터링**
    ```bash
-   watch -n 5 'ps aux | grep "ssh.*3307" | grep -v grep'
+   watch -n 5 'ps aux | grep "ssh.*<SSH_TUNNEL_LOCAL_PORT>" | grep -v grep'
    ```
 
 ## 권장 연결 방법
@@ -150,7 +152,7 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 ```bash
 cd backend
 ./scripts/start-ssh-tunnel.sh
-mysql -h localhost -P 3307 -u admin -p
+mysql -h localhost -P <SSH_TUNNEL_LOCAL_PORT> -u <DB_USERNAME> -p
 ```
 
 ### 방법 2: 직접 RDS 연결 (보안 그룹 설정 필요)
@@ -165,13 +167,15 @@ mysql -h localhost -P 3307 -u admin -p
 
 **사용법:**
 ```bash
-# 보안 그룹에 IP 추가
+# 보안 그룹에 IP 추가 (스크립트가 있는 경우)
 cd backend
-./scripts/add-rds-security-group-rule.sh sg-01a53d9929d464083
+# ./scripts/add-rds-security-group-rule.sh <SECURITY_GROUP_ID>
 
 # 직접 연결
-mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u admin -p
+mysql -h <RDS_ENDPOINT> -P 3306 -u <DB_USERNAME> -p
 ```
+
+> **참고**: 실제 값들은 `.env` 파일이나 AWS 콘솔에서 확인하세요. 보안 그룹 설정 스크립트는 프로젝트에서 제거되었으므로 AWS 콘솔에서 수동으로 설정해야 합니다.
 
 ## SQLTools 연결 설정
 
@@ -180,22 +184,34 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com -P 3306 -u adm
 | 항목 | 값 |
 |------|-----|
 | **Server** | `localhost` |
-| **Port** | `3307` |
-| **Username** | `admin` |
+| **Port** | `<SSH_TUNNEL_LOCAL_PORT>` (기본값: `3307`) |
+| **Username** | `.env` 파일의 `DATABASE_URL`에서 확인 |
 | **Password** | `.env` 파일의 `DATABASE_URL`에서 확인 |
 
 ### 직접 RDS 연결 시
 
 | 항목 | 값 |
 |------|-----|
-| **Server** | `database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com` |
+| **Server** | `<RDS_ENDPOINT>` |
 | **Port** | `3306` |
-| **Username** | `admin` |
+| **Username** | `.env` 파일의 `DATABASE_URL`에서 확인 |
 | **Password** | `.env` 파일의 `DATABASE_URL`에서 확인 |
+
+> **참고**: 실제 값들은 `.env` 파일의 `DATABASE_URL`을 파싱하거나 AWS 콘솔에서 확인하세요.
+
+## 환경 변수 설정
+
+실제 값들은 `.env` 파일에 설정되어 있습니다. `.env` 파일은 버전 관리에서 제외되므로, 프로젝트 루트의 `.env.example` 파일을 참고하거나 팀원에게 문의하세요.
+
+**주요 환경 변수:**
+- `DATABASE_URL`: MySQL 연결 URL (예: `mysql://username:password@host:port/database`)
+- `SSH_TUNNEL_LOCAL_PORT`: SSH 터널 로컬 포트 (기본값: `3307`)
+- `SSH_TUNNEL_HOST`: EC2 호스트 IP
+- `SSH_TUNNEL_USER`: EC2 사용자명 (기본값: `ubuntu`)
+- `SSH_TUNNEL_KEY`: SSH 키 파일 경로
 
 ## 추가 리소스
 
 - [데이터베이스 설정 가이드](./DATABASE.md)
-- [SQLTools 설정 가이드](./SQLTOOLS_SETUP.md)
-- [RDS 보안 그룹 설정](./RDS_SECURITY_GROUP_SETUP.md)
+- [보안 가이드](./SECURITY.md)
 

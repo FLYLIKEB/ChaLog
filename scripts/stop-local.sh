@@ -15,6 +15,16 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
+# .env 파일 로드 (SSH 터널 포트 확인용)
+if [ -f "$BACKEND_DIR/.env" ]; then
+    set -a
+    source "$BACKEND_DIR/.env"
+    set +a
+fi
+
+# SSH 터널 로컬 포트 (기본값: 3307)
+SSH_TUNNEL_LOCAL_PORT="${SSH_TUNNEL_LOCAL_PORT:-3307}"
+
 echo -e "${BLUE}🛑 로컬 개발 환경 종료 중...${NC}"
 echo ""
 
@@ -52,14 +62,14 @@ echo ""
 
 # 4. 최종 확인
 sleep 1
-REMAINING=$(ps aux | grep -E "nest start|vite|ssh.*3307" | grep -v grep | wc -l | tr -d ' ')
+REMAINING=$(ps aux | grep -E "nest start|vite|ssh.*${SSH_TUNNEL_LOCAL_PORT}" | grep -v grep | wc -l | tr -d ' ')
 if [ "$REMAINING" -eq 0 ]; then
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${GREEN}✅ 모든 서버가 종료되었습니다${NC}"
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 else
     echo -e "${YELLOW}⚠️  일부 프로세스가 아직 실행 중일 수 있습니다${NC}"
-    echo -e "${YELLOW}   남은 프로세스 확인: ps aux | grep -E 'nest|vite|ssh.*3307'${NC}"
+    echo -e "${YELLOW}   남은 프로세스 확인: ps aux | grep -E 'nest|vite|ssh.*${SSH_TUNNEL_LOCAL_PORT}'${NC}"
 fi
 echo ""
 

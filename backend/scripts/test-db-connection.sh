@@ -93,11 +93,13 @@ fi
 # 연결 테스트
 echo ""
 echo "🔌 연결 테스트 중..."
-if mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -e "SELECT 1 as test;" "$DB_NAME" 2>&1 | grep -q "test"; then
+# 비밀번호를 환경 변수로 전달하여 ps 출력에 노출되지 않도록 함
+export MYSQL_PWD="$DB_PASS"
+if mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -e "SELECT 1 as test;" "$DB_NAME" 2>&1 | grep -q "test"; then
     echo "✅ 데이터베이스 연결 성공!"
     echo ""
     echo "📋 데이터베이스 정보:"
-    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASS" -e "SELECT USER(), DATABASE();" "$DB_NAME" 2>/dev/null
+    mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -e "SELECT USER(), DATABASE();" "$DB_NAME" 2>/dev/null
 else
     echo "❌ 데이터베이스 연결 실패"
     echo ""
@@ -108,4 +110,5 @@ else
     echo "4. 네트워크 연결 문제"
     exit 1
 fi
+unset MYSQL_PWD
 
