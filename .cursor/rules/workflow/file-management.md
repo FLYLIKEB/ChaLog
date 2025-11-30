@@ -10,7 +10,7 @@
   - If temporary markdown files are created, delete them immediately after creating the issue
 - Rules Management: `.cursor/rules/` files are organized by category in subfolders
   - `development/`: Code style, debugging, error handling
-  - `workflow/`: Git, PR, development server, scripts, file management
+  - `workflow/`: Git, PR, development server, scripts, file management, documentation
   - Use specific, descriptive filenames (e.g., `git.md` instead of `workflow.md`)
   - Keep rules concise - remove unnecessary explanations, focus on core principles
   - When updating rules, update all references in docs and other rules

@@ -283,10 +283,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // 6. 카카오 로그인 실행
-      logger.info('[6/7] 카카오 로그인 요청 시작', {
+      const loginRequestInfo = {
         origin: window.location.origin,
         url: window.location.href,
         userAgent: navigator.userAgent.substring(0, 50),
+        appKey: `${kakaoAppKey.substring(0, 8)}...`,
+        timestamp: new Date().toISOString(),
+      };
+      
+      logger.info('[6/7] 카카오 로그인 요청 시작', loginRequestInfo);
+      logger.info('[6/7] ⚠️ 중요: 카카오 개발자 콘솔에서 다음을 확인하세요:', {
+        '1. 앱 상태': '앱 설정 → 앱 상태가 "서비스 중" 또는 "개발 중"인지 확인',
+        '2. 웹 플랫폼': `앱 설정 → 플랫폼 → Web 플랫폼에 "${window.location.origin}" 등록되어 있는지 확인`,
+        '3. 카카오 로그인 활성화': '제품 설정 → 카카오 로그인 → 활성화 설정이 "활성화"인지 확인',
+        '4. Redirect URI': `제품 설정 → 카카오 로그인 → Redirect URI에 "${window.location.origin}" 등록되어 있는지 확인`,
+        '5. 설정 반영 시간': '설정 저장 후 5-10분 대기 필요',
       });
 
       await new Promise<void>((resolve, reject) => {
@@ -299,7 +310,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             resolve();
           },
           fail: (err) => {
-            logger.error('[6/7] 카카오 로그인 실패:', {
+            // 401 Unauthorized 오류 상세 분석
+            const errorDetails = {
               error: err,
               errorCode: err?.error,
               errorDescription: err?.error_description,
@@ -307,7 +319,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               fullError: JSON.stringify(err, null, 2),
               origin: window.location.origin,
               url: window.location.href,
-            });
+              appKey: `${kakaoAppKey.substring(0, 8)}...`,
+            };
+
+            // 401 오류인 경우 추가 정보 제공
+            if (err?.error === 'KOE009' || err?.error_description?.includes('401') || err?.error_description?.includes('Unauthorized')) {
+              logger.error('[6/7] ❌ 401 Unauthorized / KOE009 오류 발생:', errorDetails);
+              logger.error('[6/7] 🔧 해결 방법:', {
+                '1단계': '카카오 개발자 콘솔(https://developers.kakao.com/) 접속',
+                '2단계': '내 애플리케이션 → 해당 앱 선택',
+                '3단계': '앱 설정 → 앱 상태 → "서비스 시작" 클릭 (가장 중요!)',
+                '4단계': `앱 설정 → 플랫폼 → Web 플랫폼에 "${window.location.origin}" 등록`,
+                '5단계': '제품 설정 → 카카오 로그인 → 활성화 설정 → "활성화" 확인',
+                '6단계': `제품 설정 → 카카오 로그인 → Redirect URI에 "${window.location.origin}" 등록`,
+                '7단계': '모든 설정 저장 후 5-10분 대기',
+                '8단계': '브라우저 캐시 삭제 후 재시도',
+              });
+            } else {
+              logger.error('[6/7] 카카오 로그인 실패:', errorDetails);
+            }
             
             let errorMessage = '카카오 로그인에 실패했습니다.';
             
