@@ -23,7 +23,16 @@ export class NotesController {
   @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Request() req, @Body() createNoteDto: CreateNoteDto) {
-    return this.notesService.create(parseInt(req.user.userId, 10), createNoteDto);
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    const parsedUserId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('Invalid userId');
+    }
+    
+    return this.notesService.create(parsedUserId, createNoteDto);
   }
 
   @Get()
