@@ -314,7 +314,7 @@ find /home/ubuntu/backups -name "*.tar.gz" -mtime +7 -delete
 
 ## 관련 문서
 
-- [`docs/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
-- [`docs/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - HTTPS 사용 가이드
-- [`docs/ENVIRONMENT_VARIABLES.md`](./ENVIRONMENT_VARIABLES.md) - 환경 변수 가이드
+- [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
+- [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - HTTPS 사용 가이드
+- [`docs/configuration/ENVIRONMENT_VARIABLES.md`](../configuration/ENVIRONMENT_VARIABLES.md) - 환경 변수 가이드
 - [`backend/ecosystem.config.js`](../backend/ecosystem.config.js) - PM2 설정 파일

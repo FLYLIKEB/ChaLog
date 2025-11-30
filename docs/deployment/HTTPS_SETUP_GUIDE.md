@@ -229,6 +229,6 @@ sudo nginx -T 2>&1 | grep error
 
 ## 관련 문서
 
-- [`docs/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조
 - [`backend/nginx.conf.example`](../backend/nginx.conf.example) - Nginx 설정 예시
 - [`backend/scripts/setup-https.sh`](../backend/scripts/setup-https.sh) - HTTPS 설정 스크립트

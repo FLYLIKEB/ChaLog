@@ -241,6 +241,6 @@ on:
 
 ## 관련 문서
 
-- [`docs/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조
-- [`docs/ENVIRONMENT_VARIABLES.md`](./ENVIRONMENT_VARIABLES.md) - 환경 변수 가이드
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조
+- [`docs/configuration/ENVIRONMENT_VARIABLES.md`](../configuration/ENVIRONMENT_VARIABLES.md) - 환경 변수 가이드
 - [`.github/workflows/deploy-backend.yml`](../.github/workflows/deploy-backend.yml) - 워크플로우 파일

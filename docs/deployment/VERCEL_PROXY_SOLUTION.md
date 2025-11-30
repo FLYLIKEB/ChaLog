@@ -192,6 +192,6 @@ allowedOrigins: [
 
 ## 관련 문서
 
-- [`docs/VERCEL_ENV_SETUP.md`](./VERCEL_ENV_SETUP.md) - Vercel 환경 변수 설정
-- [`docs/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - 도메인 + SSL 설정 (대안)
+- [`docs/deployment/VERCEL_ENV_SETUP.md`](./VERCEL_ENV_SETUP.md) - Vercel 환경 변수 설정
+- [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - 도메인 + SSL 설정 (대안)
 

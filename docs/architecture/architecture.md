@@ -317,7 +317,7 @@ export function cn(...inputs: ClassValue[]) {
 
 이 구조를 기반으로 상태 관리, 인증 등을 추가하면 곧바로 프로덕션 수준으로 확장할 수 있습니다.
 
-> Git 브랜치 운영 전략은 `docs/git-strategy.md` 문서를 참고하세요.
+> Git 브랜치 운영 전략은 `.cursor/rules/02-workflow.md` 문서를 참고하세요.
 
 ## 실행 방법
 

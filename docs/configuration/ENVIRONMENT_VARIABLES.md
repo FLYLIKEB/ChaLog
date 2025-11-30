@@ -256,7 +256,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 
 **주의**: Secret 수정 후 다음 배포부터 적용됩니다.
 
-자세한 내용은 [`docs/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md)를 참고하세요.
+자세한 내용은 [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](../deployment/GITHUB_ACTIONS_SETUP.md)를 참고하세요.
 
 ## 문제 해결
 
@@ -281,8 +281,8 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 
 ## 관련 문서
 
-- [`docs/DATABASE.md`](./DATABASE.md) - 데이터베이스 구조 및 사용 가이드
-- [`docs/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
-- [`docs/GITHUB_ACTIONS_SETUP.md`](./GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
-- [`docs/SECURITY.md`](./SECURITY.md) - 보안 가이드
+- [`docs/infrastructure/DATABASE.md`](../infrastructure/DATABASE.md) - 데이터베이스 구조 및 사용 가이드
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
+- [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](../deployment/GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
+- [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드
 

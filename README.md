@@ -52,7 +52,7 @@ npm run dev:stop
 **Windows 사용자:**
 - Git Bash 또는 WSL(Windows Subsystem for Linux)에서 위 명령어를 실행하세요.
 - PowerShell에서는 `npm run dev:local`과 `npm run dev:stop`을 사용하세요 (스크립트 파일은 Git Bash/WSL 필요).
-- 자세한 내용은 [`docs/SCRIPTS.md`](./docs/SCRIPTS.md)를 참고하세요.
+- 자세한 내용은 [`docs/workflow/SCRIPTS.md`](./docs/workflow/SCRIPTS.md)를 참고하세요.
 
 ### 환경 변수
 
@@ -74,7 +74,7 @@ cp .env.example .env
 - **프론트엔드**: `VITE_API_BASE_URL` (백엔드 API URL)
 - **백엔드**: 데이터베이스, JWT, 서버 설정 등
 
-자세한 내용은 [`docs/ENVIRONMENT_VARIABLES.md`](./docs/ENVIRONMENT_VARIABLES.md)를 참고하세요.
+자세한 내용은 [`docs/configuration/ENVIRONMENT_VARIABLES.md`](./docs/configuration/ENVIRONMENT_VARIABLES.md)를 참고하세요.
 
 ### NPM 스크립트
 | 명령 | 설명 |
@@ -102,7 +102,7 @@ cp .env.example .env
 - `backend/scripts/create-tables.sql` - 테이블 생성 (SQL 스크립트)
 - `backend/scripts/insert-sample-data.js` - 샘플 데이터 삽입
 
-자세한 사용법은 [`docs/SCRIPTS.md`](./docs/SCRIPTS.md)를 참고하세요.
+자세한 사용법은 [`docs/workflow/SCRIPTS.md`](./docs/workflow/SCRIPTS.md)를 참고하세요.
 
 ## 폴더 구조 하이라이트
 ```
@@ -162,8 +162,8 @@ backend/
 프로젝트의 코딩 스타일, 컴포넌트 패턴, 테스팅 전략 등 상세한 개발 가이드라인은 다음 문서들을 참고하세요:
 
 - **Cursor AI 개발 룰**: `.cursor/rules` - 코드 스타일, 컴포넌트 가이드라인, 타입 정의, 테스팅, 에러 처리, 성능 최적화 등
-- **아키텍처 가이드**: `docs/architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
-- **Git 전략**: `docs/git-strategy.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
+- **아키텍처 가이드**: `docs/architecture/architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
+- **Git 전략**: `.cursor/rules/02-workflow.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
 
 ## Cursor AI 명령어
 
@@ -241,8 +241,8 @@ npm run start:dev
 `main` 브랜치의 `backend/` 디렉토리에 변경사항을 푸시하면 자동으로 배포됩니다.
 
 **초기 설정:**
-1. GitHub Secrets 설정: [`docs/GITHUB_ACTIONS_SETUP.md`](./docs/GITHUB_ACTIONS_SETUP.md) 참고
-2. EC2 초기 설정: [`docs/AWS_EC2_DEPLOYMENT.md`](./docs/AWS_EC2_DEPLOYMENT.md) 참고
+1. GitHub Secrets 설정: [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](./docs/deployment/GITHUB_ACTIONS_SETUP.md) 참고
+2. EC2 초기 설정: [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./docs/deployment/AWS_EC2_DEPLOYMENT.md) 참고
 
 ### 수동 배포
 
@@ -274,7 +274,7 @@ cd backend
 > **주의**: 
 > - IP 주소나 민감한 정보는 코드에 하드코딩하지 마세요
 > - 환경 변수를 통해 관리하세요
-> - 자세한 내용은 [`docs/AWS_EC2_DEPLOYMENT.md`](./docs/AWS_EC2_DEPLOYMENT.md) 참고
+> - 자세한 내용은 [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./docs/deployment/AWS_EC2_DEPLOYMENT.md) 참고
 
 ## 향후 작업 아이디어
 - Playwright/Cypress 기반 E2E 테스트 도입
@@ -295,16 +295,33 @@ cd backend
 ### 권장 설정
 - GitHub 브랜치 보호 규칙: `main` 브랜치에 최소 1인 리뷰와 CI 통과를 요구하고 squash merge를 권장합니다.
 - 자동화: `main` 병합 시 태그·배포 스크립트를 실행하도록 CI를 구성합니다.
-- 문서화: 브랜치 명명 규칙·릴리스 절차를 `docs/git-strategy.md`와 이 README에 유지해 팀 합의를 공유합니다.
+- 문서화: 브랜치 명명 규칙·릴리스 절차를 `.cursor/rules/02-workflow.md`와 이 README에 유지해 팀 합의를 공유합니다.
 
 ## 추가 참고 문서
-- **환경 변수 관리**: [`docs/ENVIRONMENT_VARIABLES.md`](./docs/ENVIRONMENT_VARIABLES.md) - 모든 환경 변수와 민감 정보 관리 가이드 ⭐
-- **스크립트 사용법**: [`docs/SCRIPTS.md`](./docs/SCRIPTS.md) - 모든 유틸리티 스크립트의 역할과 사용법
-- **아키텍처**: [`docs/architecture.md`](./docs/architecture.md) - 프로젝트 구조, 라우팅, 데이터 흐름
-- **데이터베이스**: [`docs/DATABASE.md`](./docs/DATABASE.md) - 데이터베이스 설정 및 연결 가이드
-- **보안**: [`docs/SECURITY.md`](./docs/SECURITY.md) - 보안 가이드 및 모범 사례
-- **Git 전략**: [`docs/git-strategy.md`](./docs/git-strategy.md) - 브랜치 전략, 커밋 규칙, 릴리스 프로세스
-- **Cursor AI 룰**: [`.cursor/rules`](./.cursor/rules) - 개발 환경 설정 및 코딩 가이드라인
+
+### 배포
+- **EC2 배포**: [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./docs/deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
+- **GitHub Actions**: [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](./docs/deployment/GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
+- **HTTPS 설정**: [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./docs/deployment/HTTPS_SETUP_GUIDE.md) - HTTPS 사용 가이드
+- **Vercel 설정**: [`docs/deployment/VERCEL_ENV_SETUP.md`](./docs/deployment/VERCEL_ENV_SETUP.md) - Vercel 환경 변수 설정
+
+### 인프라
+- **데이터베이스**: [`docs/infrastructure/DATABASE.md`](./docs/infrastructure/DATABASE.md) - 데이터베이스 구조 및 사용 가이드
+- **RDS 설정**: [`docs/infrastructure/aws-rds-setup.md`](./docs/infrastructure/aws-rds-setup.md) - AWS RDS 설정 가이드
+
+### 개발 환경
+- **Node.js 버전**: [`docs/development/NODE_VERSION_SETUP.md`](./docs/development/NODE_VERSION_SETUP.md) - Node.js 버전 설정
+- **카카오 로그인**: [`docs/development/KAKAO_DEVELOPER_SETUP.md`](./docs/development/KAKAO_DEVELOPER_SETUP.md) - 카카오 개발자 설정
+
+### 워크플로우
+- **스크립트 사용법**: [`docs/workflow/SCRIPTS.md`](./docs/workflow/SCRIPTS.md) - 모든 유틸리티 스크립트의 역할과 사용법
+- **PR 리뷰 프로세스**: [`docs/workflow/PR_REVIEW_PROCESS.md`](./docs/workflow/PR_REVIEW_PROCESS.md) - PR 리뷰 처리 프로세스
+
+### 기타
+- **환경 변수 관리**: [`docs/configuration/ENVIRONMENT_VARIABLES.md`](./docs/configuration/ENVIRONMENT_VARIABLES.md) - 모든 환경 변수와 민감 정보 관리 가이드 ⭐
+- **아키텍처**: [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) - 프로젝트 구조, 라우팅, 데이터 흐름
+- **보안**: [`docs/security/SECURITY.md`](./docs/security/SECURITY.md) - 보안 가이드 및 모범 사례
+- **Cursor AI 룰**: [`.cursor/rules`](./.cursor/rules) - 개발 환경 설정 및 코딩 가이드라인 (코드 스타일, Git 전략 포함)
 
 필요한 정보가 README에 없다면 이 문서를 업데이트하거나 `src/guidelines/Guidelines.md`를 참고해 주세요.
 
