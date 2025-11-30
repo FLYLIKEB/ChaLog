@@ -4,6 +4,7 @@
 import { Readable } from 'node:stream';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://52.78.150.124:3000';
+const LOG_PROXY_REQUESTS = (process.env.LOG_PROXY_REQUESTS ?? 'true').toLowerCase() !== 'false';
 
 export default async function handler(req: any, res: any) {
   const { path } = req.query;
@@ -16,6 +17,12 @@ export default async function handler(req: any, res: any) {
     : `${BACKEND_URL}${queryString ? `?${queryString}` : ''}`;
 
   try {
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const startedAt = Date.now();
+    if (LOG_PROXY_REQUESTS) {
+      console.info('[Proxy] ▶', { requestId, method: req.method, path: pathString || '/', backendUrl });
+    }
+
     const controller = new AbortController();
     const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -43,6 +50,10 @@ export default async function handler(req: any, res: any) {
 
     const fetchResponse = await fetch(backendUrl, fetchOptions);
     clearTimeout(timeoutId);
+
+    if (LOG_PROXY_REQUESTS) {
+      console.info('[Proxy] ◀', { requestId, status: fetchResponse.status, durationMs: Date.now() - startedAt });
+    }
     // 응답 헤더 복사
     res.status(fetchResponse.status);
     fetchResponse.headers.forEach((value, key) => {
@@ -64,12 +75,13 @@ export default async function handler(req: any, res: any) {
     }
   } catch (error) {
     const isAbortError = (error as Error).name === 'AbortError';
-    console.error('Proxy error:', {
+    console.error('[Proxy] ❌', {
       backendUrl,
       method: req.method,
       message: (error as Error).message,
       stack: (error as Error).stack,
       timeoutMs,
+      aborted: isAbortError,
     });
     if (isAbortError) {
       res.status(504).json({

@@ -54,6 +54,7 @@ ChaLog/
 |--------|------|-----------|----------|
 | `BACKEND_URL` | Serverless Function이 프록시할 실제 백엔드 URL | `http://localhost:3000` | `http://52.78.150.124:3000` (Vercel 환경 변수에서 설정) |
 | `BACKEND_TIMEOUT_MS` | 백엔드 요청 타임아웃(밀리초) | `10000` | 선택적으로 조정 |
+| `LOG_PROXY_REQUESTS` | 프록시 요청/응답 로깅 여부 | `true` | 필요 시 `false`로 비활성화 |
 
 > **Vercel 설정:** Settings → Environment Variables에서 `BACKEND_URL`, `BACKEND_TIMEOUT_MS(옵션)`을 설정하세요.
 

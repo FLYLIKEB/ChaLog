@@ -62,6 +62,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
 - Vercel 대시보드 → Settings → Environment Variables
   - `BACKEND_URL` = `http://52.78.150.124:3000`
   - `BACKEND_TIMEOUT_MS` (선택, 기본 10000)
+  - `LOG_PROXY_REQUESTS` (선택, 기본 true)
 
 ### 5단계: 배포
 
