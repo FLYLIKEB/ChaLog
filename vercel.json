@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
+  "framework": "vite",
   "functions": {
     "api/**/*.ts": {
       "runtime": "nodejs20.x"
@@ -9,10 +10,7 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" },
-    { 
-      "source": "/((?!api|assets|_next|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)", 
-      "destination": "/index.html" 
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
 
