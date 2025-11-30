@@ -48,6 +48,15 @@ ChaLog/
 | `VITE_API_BASE_URL` | 백엔드 API 서버 URL | `http://localhost:3000` | Vercel 환경 변수에서 설정 |
 | `VITE_KAKAO_APP_KEY` | 카카오 JavaScript SDK 앱 키 | 카카오 개발자 콘솔에서 발급 | Vercel 환경 변수에서 설정 |
 
+### Serverless Proxy (Vercel API 프록시)
+
+| 변수명 | 설명 | 개발 환경 | 프로덕션 |
+|--------|------|-----------|----------|
+| `BACKEND_URL` | Serverless Function이 프록시할 실제 백엔드 URL | `http://localhost:3000` | `http://52.78.150.124:3000` (Vercel 환경 변수에서 설정) |
+| `BACKEND_TIMEOUT_MS` | 백엔드 요청 타임아웃(밀리초) | `10000` | 선택적으로 조정 |
+
+> **Vercel 설정:** Settings → Environment Variables에서 `BACKEND_URL`, `BACKEND_TIMEOUT_MS(옵션)`을 설정하세요.
+
 ### 설정 방법
 
 #### 로컬 개발 환경

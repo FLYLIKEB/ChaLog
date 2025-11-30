@@ -37,7 +37,11 @@ Vercel의 `rewrites` 기능을 사용하여:
 }
 ```
 
-### 2단계: API 클라이언트 수정
+### 2단계: Serverless Function API 프록시 생성
+
+`api/[...path].ts` 파일을 생성하여 모든 `/api/*` 요청을 백엔드로 프록시합니다. `BACKEND_URL` 환경 변수로 대상 백엔드 URL을 관리합니다.
+
+### 3단계: API 클라이언트 수정
 
 `src/lib/api.ts`에서 프로덕션 환경일 때 `/api` 사용:
 
@@ -52,7 +56,14 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
 })();
 ```
 
-### 3단계: 배포
+### 4단계: 환경 변수 설정
+
+- `.env.example` → `BACKEND_URL`, `BACKEND_TIMEOUT_MS` 추가
+- Vercel 대시보드 → Settings → Environment Variables
+  - `BACKEND_URL` = `http://52.78.150.124:3000`
+  - `BACKEND_TIMEOUT_MS` (선택, 기본 10000)
+
+### 5단계: 배포
 
 변경사항 커밋 및 푸시:
 
