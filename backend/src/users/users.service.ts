@@ -152,6 +152,14 @@ export class UsersService {
 
       // 이메일 인증 정보 추가 (있는 경우)
       if (email) {
+        // 이미 다른 사용자가 해당 이메일을 사용 중인지 확인
+        const existingEmailAuth = await manager.findOne(UserAuthentication, {
+          where: { provider: AuthProvider.EMAIL, providerId: email },
+        });
+        if (existingEmailAuth) {
+          // 이미 다른 사용자가 해당 이메일을 사용 중이면 이메일 연결 건너뛰기
+          return savedUser;
+        }
         const emailAuth = manager.create(UserAuthentication, {
           userId: savedUser.id,
           provider: AuthProvider.EMAIL,
@@ -169,19 +177,28 @@ export class UsersService {
     userId: number,
     email: string,
   ): Promise<void> {
+    // 해당 이메일이 어떤 사용자에게든 이미 등록되어 있는지 확인
     const existingEmailAuth = await this.authRepository.findOne({
-      where: { userId, provider: AuthProvider.EMAIL, providerId: email },
+      where: { provider: AuthProvider.EMAIL, providerId: email },
     });
 
-    if (!existingEmailAuth) {
-      const emailAuth = this.authRepository.create({
-        userId,
-        provider: AuthProvider.EMAIL,
-        providerId: email,
-        credential: null,
-      });
-      await this.authRepository.save(emailAuth);
+    if (existingEmailAuth) {
+      // 이미 다른 사용자가 해당 이메일을 사용 중이면 건너뛰기
+      if (existingEmailAuth.userId !== userId) {
+        return;
+      }
+      // 같은 사용자에게 이미 등록되어 있으면 건너뛰기
+      return;
     }
+
+    // 이메일이 등록되어 있지 않으면 추가
+    const emailAuth = this.authRepository.create({
+      userId,
+      provider: AuthProvider.EMAIL,
+      providerId: email,
+      credential: null,
+    });
+    await this.authRepository.save(emailAuth);
   }
 
   async getUserEmail(userId: number): Promise<string | null> {
