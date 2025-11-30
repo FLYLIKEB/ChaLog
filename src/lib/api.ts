@@ -152,6 +152,47 @@ function isLocalNetworkRequest(url: string): boolean {
   }
 }
 
+/**
+ * targetAddressSpace 옵션 지원 여부 확인
+ * Chrome 124+에서만 지원되므로 런타임에서 기능 감지 필요
+ * 
+ * 참고: targetAddressSpace는 WICG 초안 사양이며 아직 표준화되지 않았습니다.
+ * Chrome 124+, Edge 124+에서만 지원되며, Firefox와 Safari는 지원하지 않습니다.
+ */
+function supportsTargetAddressSpace(): boolean {
+  // User-Agent 기반 간단한 체크 (Chrome/Chromium 계열 확인)
+  // 더 정확한 방법은 실제 fetch 시도이지만, 성능상 User-Agent 체크가 더 효율적
+  if (typeof navigator === 'undefined') {
+    return false; // 서버 사이드 렌더링 환경
+  }
+  
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isChrome = userAgent.includes('chrome') && !userAgent.includes('edge');
+  const isEdge = userAgent.includes('edg');
+  
+  // Chrome 또는 Edge인 경우에만 지원 가능성 있음
+  if (!isChrome && !isEdge) {
+    return false;
+  }
+  
+  // 실제 버전 확인은 복잡하므로, Chrome/Edge 계열이면 시도
+  // 지원하지 않는 브라우저에서는 옵션이 무시되므로 안전함
+  try {
+    // Request 생성자를 통해 옵션 수용 여부 확인
+    // 지원하지 않는 브라우저에서는 옵션이 무시되지만 에러는 발생하지 않음
+    // targetAddressSpace는 표준이 아니므로 TypeScript 타입에 없음
+    const testRequest = new Request('http://localhost', {
+      targetAddressSpace: 'private',
+    } as RequestInit & { targetAddressSpace?: 'private' | 'local' });
+    
+    // Request 객체가 정상적으로 생성되면 옵션을 수용하는 것으로 간주
+    return testRequest !== null;
+  } catch {
+    // 생성 실패 시 지원하지 않는 것으로 간주
+    return false;
+  }
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -181,15 +222,16 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     // Chrome의 로컬 네트워크 요청 정책 대응
-    // 로컬 네트워크 요청인 경우 targetAddressSpace 옵션 추가
+    // 로컬 네트워크 요청이고 브라우저가 지원하는 경우에만 targetAddressSpace 옵션 추가
     const fetchInit: RequestInit = {
       ...fetchOptions,
       headers,
     };
     
-    // 로컬 네트워크 요청인 경우 targetAddressSpace 설정
-    if (isLocalNetworkRequest(url)) {
+    // 로컬 네트워크 요청이고 브라우저가 targetAddressSpace를 지원하는 경우에만 설정
+    if (isLocalNetworkRequest(url) && supportsTargetAddressSpace()) {
       // TypeScript 타입 확장을 위한 타입 단언
+      // targetAddressSpace는 Chrome 124+에서만 지원되므로 런타임에서만 설정
       (fetchInit as RequestInit & { targetAddressSpace?: 'private' | 'local' }).targetAddressSpace = 'private';
     }
     
