@@ -23,10 +23,11 @@ echo ""
 
 # 회원가입 테스트
 echo "2️⃣ 회원가입 테스트..."
+TIMESTAMP=$(date +%s)
 REGISTER_RESPONSE=$(curl -s -X POST "$API_URL/auth/register" \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test_'$(date +%s)'@example.com",
+    "email": "test_'"$TIMESTAMP"'@example.com",
     "name": "테스트 사용자",
     "password": "password123"
   }')
