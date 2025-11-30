@@ -2,11 +2,13 @@
 
 - Migration scripts: Delete after successful execution
 - Temporary docs: Already in `.gitignore`, delete when no longer needed
-- **Task Management**: Use GitHub Issues instead of markdown files in `docs/` for tracking tasks, features, bugs, and improvements
+- Task Management: Use GitHub Issues instead of markdown files in `docs/` for tracking tasks, features, bugs, and improvements
   - Create issues using templates: `.github/ISSUE_TEMPLATE/`
   - Available templates: `feature.md`, `bug.md`, `task.md`
   - Link issues in PRs and commits when relevant
-- **Rules Management**: `.cursor/rules/` files are organized by category in subfolders
+  - Do not create temporary markdown files for issue preparation - create issues directly using `gh issue create` or GitHub web interface
+  - If temporary markdown files are created, delete them immediately after creating the issue
+- Rules Management: `.cursor/rules/` files are organized by category in subfolders
   - `development/`: Code style, debugging, error handling
   - `workflow/`: Git, PR, development server, scripts, file management
   - Use specific, descriptive filenames (e.g., `git.md` instead of `workflow.md`)

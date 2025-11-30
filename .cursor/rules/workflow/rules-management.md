@@ -6,13 +6,14 @@
   - `workflow/`: Workflow processes (git, pr, development-server, scripts, file-management)
 
 ### Naming Convention
-- Use **specific, descriptive names** (e.g., `git.md`, `pr.md` instead of generic `workflow.md`)
+- Use specific, descriptive names (e.g., `git.md`, `pr.md` instead of generic `workflow.md`)
 - Avoid numbered prefixes (e.g., `01-debugging.md` → `debugging.md`)
 
 ### Writing Rules
-- **Keep it concise** - Remove unnecessary explanations, focus on core principles
+- Keep it concise - Remove unnecessary explanations, focus on core principles
 - Use bullet points and clear sections
 - Avoid redundancy and verbose descriptions
+- Do not use bold markdown (`**text**`) - use plain text only
 
 ### Documentation Alignment
 - When adding or editing rules, confirm every statement against the actual code or configuration files (never trust outdated docs)

@@ -12,4 +12,6 @@
 - Task tracking: Use GitHub Issues instead of markdown files for tasks, features, and improvements
   - Link issues in PRs: Use `Closes #123` or `Fixes #123` in PR description to auto-close issues
   - Reference issues in commits: Use `#123` format to link commits to issues
+  - Do not create temporary markdown files for issue preparation - create issues directly
+  - If temporary markdown files are created, delete them immediately after creating the issue
 
