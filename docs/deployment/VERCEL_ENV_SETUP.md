@@ -222,5 +222,5 @@ console.log(import.meta.env.VITE_API_BASE_URL);
 
 - [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - 백엔드 HTTPS 설정 상세 가이드 ⭐
 - [`docs/configuration/ENVIRONMENT_VARIABLES.md`](../configuration/ENVIRONMENT_VARIABLES.md) - 환경 변수 관리 가이드
-- [`docs/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - 백엔드 배포 가이드
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - 백엔드 배포 가이드
 

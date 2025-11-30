@@ -50,7 +50,7 @@ npm run start:dev
 
 RDS 인스턴스 생성 및 기본 설정은 이미 완료되었습니다. 
 
-**새로운 RDS 인스턴스를 생성해야 하는 경우:** [`aws-rds-setup.md`](./aws-rds-setup.md) 참고
+**새로운 RDS 인스턴스를 생성해야 하는 경우:** [`AWS_RDS_SETUP.md`](./AWS_RDS_SETUP.md) 참고
 
 ## EC2를 통한 연결 (SSH 터널)
 
@@ -190,5 +190,5 @@ AWS RDS의 마스터 비밀번호는 **보안상의 이유로 생성 후에는 �
 ## 추가 리소스
 
 - [AWS RDS 공식 문서](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/)
-- [보안 가이드](./SECURITY.md)
+- [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드
 

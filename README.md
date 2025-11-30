@@ -14,8 +14,8 @@
 
 ## 빠른 시작
 ### 요구 사항
-- Node.js 18 이상
-- npm 9 이상 (또는 pnpm/yarn 사용 가능)
+- Node.js 20 이상 (권장: 20.x LTS)
+- npm 10 이상 (또는 pnpm/yarn 사용 가능)
 
 ### 설치
 ```bash
@@ -162,7 +162,7 @@ backend/
 프로젝트의 코딩 스타일, 컴포넌트 패턴, 테스팅 전략 등 상세한 개발 가이드라인은 다음 문서들을 참고하세요:
 
 - **Cursor AI 개발 룰**: `.cursor/rules` - 코드 스타일, 컴포넌트 가이드라인, 타입 정의, 테스팅, 에러 처리, 성능 최적화 등
-- **아키텍처 가이드**: `docs/architecture/architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
+- **아키텍처 가이드**: `docs/architecture/Architecture.md` - 프로젝트 구조, 라우팅, 데이터 흐름 등
 - **Git 전략**: `.cursor/rules/02-workflow.md` - 브랜치 전략, 커밋 규칙, 릴리스 프로세스 등
 
 ## Cursor AI 명령어
@@ -319,7 +319,7 @@ cd backend
 
 ### 기타
 - **환경 변수 관리**: [`docs/configuration/ENVIRONMENT_VARIABLES.md`](./docs/configuration/ENVIRONMENT_VARIABLES.md) - 모든 환경 변수와 민감 정보 관리 가이드 ⭐
-- **아키텍처**: [`docs/architecture/architecture.md`](./docs/architecture/architecture.md) - 프로젝트 구조, 라우팅, 데이터 흐름
+- **아키텍처**: [`docs/architecture/Architecture.md`](./docs/architecture/Architecture.md) - 프로젝트 구조, 라우팅, 데이터 흐름
 - **보안**: [`docs/security/SECURITY.md`](./docs/security/SECURITY.md) - 보안 가이드 및 모범 사례
 - **Cursor AI 룰**: [`.cursor/rules`](./.cursor/rules) - 개발 환경 설정 및 코딩 가이드라인 (코드 스타일, Git 전략 포함)
 

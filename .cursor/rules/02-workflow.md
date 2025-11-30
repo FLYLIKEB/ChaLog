@@ -19,7 +19,7 @@ Note: The 'run' command executes 'pkill -f "next dev" || true && npm run dev'
 - Pre-commit: Run `npm run lint` (if exists), `tsc --noEmit`, `npm run test:run` (if exists)
   - If validation fails: Show errors, don't commit, suggest fixes
 - Branch naming: Use `feature/*` pattern based on changed files
-- Documentation: Auto-update README.md, docs/architecture/architecture.md when code changes
+- Documentation: Auto-update README.md, docs/architecture/Architecture.md when code changes
   - Triggers: New features, API changes, component changes, route/page changes, dependency changes
 
 ### PR Review Process
