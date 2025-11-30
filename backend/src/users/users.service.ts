@@ -23,29 +23,32 @@ export class UsersService {
   ) {}
 
   async create(email: string, name: string, password: string): Promise<User> {
-    // 이메일로 이미 인증 정보가 있는지 확인
-    const existingAuth = await this.authRepository.findOne({
-      where: { provider: AuthProvider.EMAIL, providerId: email },
+    // 트랜잭션으로 사용자와 인증 정보를 원자적으로 생성
+    return await this.dataSource.transaction(async (manager) => {
+      // 이메일로 이미 인증 정보가 있는지 확인
+      const existingAuth = await manager.findOne(UserAuthentication, {
+        where: { provider: AuthProvider.EMAIL, providerId: email },
+      });
+      if (existingAuth) {
+        throw new ConflictException('이미 존재하는 이메일입니다.');
+      }
+
+      // 사용자 생성
+      const user = manager.create(User, { name });
+      const savedUser = await manager.save(User, user);
+
+      // 인증 정보 생성
+      const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
+      const auth = manager.create(UserAuthentication, {
+        userId: savedUser.id,
+        provider: AuthProvider.EMAIL,
+        providerId: email,
+        credential: hashedPassword,
+      });
+      await manager.save(UserAuthentication, auth);
+
+      return savedUser;
     });
-    if (existingAuth) {
-      throw new ConflictException('이미 존재하는 이메일입니다.');
-    }
-
-    // 사용자 생성
-    const user = this.usersRepository.create({ name });
-    const savedUser = await this.usersRepository.save(user);
-
-    // 인증 정보 생성
-    const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
-    const auth = this.authRepository.create({
-      userId: savedUser.id,
-      provider: AuthProvider.EMAIL,
-      providerId: email,
-      credential: hashedPassword,
-    });
-    await this.authRepository.save(auth);
-
-    return savedUser;
   }
 
   async findOne(id: number): Promise<User> {

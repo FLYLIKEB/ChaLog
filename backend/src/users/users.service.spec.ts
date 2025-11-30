@@ -88,20 +88,26 @@ describe('UsersService', () => {
 
     it('이메일과 비밀번호로 새 사용자를 생성해야 함', async () => {
       const mockUser = createMockUser({ name });
-      mockAuthRepository.findOne.mockResolvedValue(null);
-      mockUserRepository.create.mockReturnValue(mockUser);
-      mockUserRepository.save.mockResolvedValue(mockUser);
-      mockAuthRepository.create.mockReturnValue({});
-      mockAuthRepository.save.mockResolvedValue({});
+      const mockManager = {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn(),
+        save: jest.fn(),
+      };
+      mockManager.create.mockReturnValue(mockUser);
+      mockManager.save.mockResolvedValue(mockUser);
+      mockDataSource.transaction.mockImplementation(async (callback) => {
+        return await callback(mockManager);
+      });
 
       const result = await service.create(email, name, password);
 
-      expect(mockAuthRepository.findOne).toHaveBeenCalledWith({
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockManager.findOne).toHaveBeenCalledWith(UserAuthentication, {
         where: { provider: AuthProvider.EMAIL, providerId: email },
       });
-      expect(mockUserRepository.create).toHaveBeenCalledWith({ name });
+      expect(mockManager.create).toHaveBeenCalledWith(User, { name });
       expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
-      expect(mockAuthRepository.create).toHaveBeenCalledWith({
+      expect(mockManager.create).toHaveBeenCalledWith(UserAuthentication, {
         userId: mockUser.id,
         provider: AuthProvider.EMAIL,
         providerId: email,
@@ -111,12 +117,20 @@ describe('UsersService', () => {
     });
 
     it('이미 존재하는 이메일이면 ConflictException을 던져야 함', async () => {
-      mockAuthRepository.findOne.mockResolvedValue(createMockAuth());
+      const mockManager = {
+        findOne: jest.fn().mockResolvedValue(createMockAuth()),
+      };
+      mockDataSource.transaction.mockImplementation(async (callback) => {
+        return await callback(mockManager);
+      });
 
       await expect(service.create(email, name, password)).rejects.toThrow(
         ConflictException,
       );
-      expect(mockUserRepository.create).not.toHaveBeenCalled();
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+      expect(mockManager.findOne).toHaveBeenCalledWith(UserAuthentication, {
+        where: { provider: AuthProvider.EMAIL, providerId: email },
+      });
     });
   });
 

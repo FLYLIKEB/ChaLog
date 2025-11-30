@@ -151,8 +151,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('user');
     
     // 카카오 로그아웃 (선택사항)
-    if (typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth.getAccessToken()) {
-      window.Kakao.Auth.logout();
+    try {
+      if (typeof window !== 'undefined' && window.Kakao?.Auth?.getAccessToken?.()) {
+        window.Kakao.Auth.logout();
+      }
+    } catch (error) {
+      logger.error('Kakao logout failed', error);
     }
     
     toast.success('로그아웃되었습니다.');
