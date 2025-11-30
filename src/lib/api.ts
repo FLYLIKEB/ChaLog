@@ -116,6 +116,42 @@ function normalizeNotes<T extends BackendNote | BackendNote[]>(data: T): T exten
   return normalizeNote(data as BackendNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
 }
 
+/**
+ * URL이 로컬 네트워크 요청인지 확인
+ * Chrome의 로컬 네트워크 요청 정책에 대응하기 위함
+ */
+function isLocalNetworkRequest(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // localhost 또는 127.0.0.1
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+      return true;
+    }
+    
+    // .local 도메인
+    if (hostname.endsWith('.local')) {
+      return true;
+    }
+    
+    // Private IP 주소 범위 확인
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    const match = hostname.match(ipv4Regex);
+    if (match) {
+      const [, a, b, c, d] = match.map(Number);
+      if (a === 10) return true; // 10.0.0.0/8
+      if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+      if (a === 192 && b === 168) return true; // 192.168.0.0/16
+    }
+    
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -144,6 +180,19 @@ class ApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     
+    // Chrome의 로컬 네트워크 요청 정책 대응
+    // 로컬 네트워크 요청인 경우 targetAddressSpace 옵션 추가
+    const fetchInit: RequestInit = {
+      ...fetchOptions,
+      headers,
+    };
+    
+    // 로컬 네트워크 요청인 경우 targetAddressSpace 설정
+    if (isLocalNetworkRequest(url)) {
+      // TypeScript 타입 확장을 위한 타입 단언
+      (fetchInit as RequestInit & { targetAddressSpace?: 'private' | 'local' }).targetAddressSpace = 'private';
+    }
+    
     // AbortController를 사용한 타임아웃 설정
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -152,8 +201,7 @@ class ApiClient {
     
     try {
       const response = await fetch(url, {
-        ...fetchOptions,
-        headers,
+        ...fetchInit,
         signal: controller.signal,
       });
 
