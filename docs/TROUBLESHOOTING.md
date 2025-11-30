@@ -65,10 +65,9 @@ This document provides detailed error handling scenarios and troubleshooting ste
 - Suggest fixes based on error messages
 - Allow user to skip validation only if explicitly requested
 
-**Common fixes:**
-- Run `npm run lint --fix` for auto-fixable issues
-- Manually fix remaining errors
-- Re-run validation before committing
+**Note:** `npm run lint` is not currently configured in package.json
+- Lint check is optional in pre-commit validation
+- Consider adding ESLint configuration if needed
 
 ### Type Errors
 

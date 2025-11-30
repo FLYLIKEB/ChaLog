@@ -11,14 +11,16 @@ This document provides detailed code style guidelines for the ChaLog project.
 - Follow shadcn/ui component patterns: use Radix UI primitives + CVA for variants
 
 ### Import Paths
-- Use `@/` alias for `src/` directory (e.g., `@/components/Button`)
+- Use relative paths (e.g., `../components/Header`, `../components/ui/button`)
+- `@/` alias is configured in vite.config.ts but currently using relative paths
 - Prefer named exports for utilities, default exports for components
 - Import icons individually from `lucide-react`
 
 ### TypeScript
-- Use TypeScript strict types, avoid `any` unless necessary
+- TypeScript strict mode is currently disabled (`strict: false` in tsconfig.json)
 - Define component props as TypeScript interfaces above component
 - Use TypeScript utility types (`Pick`, `Omit`, `Partial`) when appropriate
+- Avoid `any` when possible, but not strictly enforced
 
 ### Styling
 - Use Tailwind CSS classes, prefer utility classes over custom CSS
@@ -48,7 +50,7 @@ This document provides detailed code style guidelines for the ChaLog project.
 ### File Organization
 - Backend modules: `backend/src/{module}/` (controller, service, entities, dto)
 - Shared types: `packages/types/` (use in both frontend and backend)
-- Utils: `backend/src/common/` (backend utilities)
+- Utils: Create in module-specific directories or `src/lib/` as needed
 
 ## Type Definitions
 
@@ -60,9 +62,9 @@ This document provides detailed code style guidelines for the ChaLog project.
 
 ### Frontend
 - Use Vitest + Testing Library
-- Tests in `__tests__/` directories
+- Tests in `__tests__/` directories (e.g., `src/components/__tests__/`)
 - Test naming: `*.test.tsx`
-- Mock data: Use `src/lib/mockData.ts` for frontend tests (if exists)
+- Test setup: `src/test/setup.ts` (jsdom environment)
 
 ### Backend
 - Use Jest
