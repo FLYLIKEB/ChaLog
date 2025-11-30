@@ -76,6 +76,22 @@ When making code changes, you MUST automatically update relevant markdown files:
 3. Start backend: `cd backend && npm run start:dev`
 4. After development: `cd backend && ./scripts/stop-ssh-tunnel.sh`
 
+**Migration Scripts:**
+- **One-time migration scripts**: Scripts that perform database schema migrations
+- **After successful execution**: MUST delete the migration script file
+- **Rationale**: Migration scripts are one-time operations, keeping them can cause confusion and accidental re-execution
+- **Example**: After running `migrate-to-auth-separation.js` successfully, delete the file immediately
+
+**Temporary Documentation Files:**
+- **Test guides and setup guides**: Documentation files created for temporary reference (e.g., `TESTING_*.md`, `*_SETUP.md`, `*_GUIDE.md`)
+- **After implementation**: MUST delete or add to `.gitignore` before committing
+- **Rationale**: These are temporary reference documents for implementation, not permanent project documentation
+- **Examples**: 
+  - `docs/TESTING_KAKAO_LOGIN.md` - Delete after testing is complete
+  - `docs/KAKAO_DEVELOPER_SETUP.md` - Delete after setup is complete
+  - `docs/USER_TABLE_DESIGN_PATTERNS.md` - Can be kept if it's permanent reference, otherwise delete
+- **Before commit**: Check for temporary documentation files and remove them
+
 For detailed script documentation, see `docs/SCRIPTS.md`
 
 ## Quick Commit & Push
