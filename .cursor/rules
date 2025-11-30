@@ -84,13 +84,12 @@ When making code changes, you MUST automatically update relevant markdown files:
 
 **Temporary Documentation Files:**
 - **Test guides and setup guides**: Documentation files created for temporary reference (e.g., `TESTING_*.md`, `*_SETUP.md`, `*_GUIDE.md`)
-- **After implementation**: MUST delete or add to `.gitignore` before committing
+- **Workflow**: These files are already ignored by `.gitignore` (lines 3-6) and won't be committed. Delete them when no longer needed.
 - **Rationale**: These are temporary reference documents for implementation, not permanent project documentation
 - **Examples**: 
   - `docs/TESTING_KAKAO_LOGIN.md` - Delete after testing is complete
   - `docs/KAKAO_DEVELOPER_SETUP.md` - Delete after setup is complete
   - `docs/USER_TABLE_DESIGN_PATTERNS.md` - Can be kept if it's permanent reference, otherwise delete
-- **Before commit**: Check for temporary documentation files and remove them
 
 For detailed script documentation, see `docs/SCRIPTS.md`
 
