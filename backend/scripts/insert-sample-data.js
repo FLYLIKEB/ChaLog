@@ -69,10 +69,19 @@ const insertSampleData = async () => {
     ];
 
     for (const user of users) {
-      await connection.query(
-        'INSERT INTO users (email, name, password) VALUES (?, ?, ?)',
-        [user.email, user.name, user.password]
+      // users 테이블에 name만 삽입
+      const [result] = await connection.query(
+        'INSERT INTO users (name) VALUES (?)',
+        [user.name]
       );
+      const userId = result.insertId;
+      
+      // user_authentications 테이블에 인증 정보 삽입
+      await connection.query(
+        'INSERT INTO user_authentications (userId, provider, providerId, credential) VALUES (?, ?, ?, ?)',
+        [userId, 'email', user.email, user.password]
+      );
+      
       console.log(`  ✅ 사용자 추가: ${user.name} (${user.email})`);
     }
 
