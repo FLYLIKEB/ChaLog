@@ -24,6 +24,10 @@ Vercel의 `routes`(구 rewrite) 기능을 사용하여:
 
 ```json
 {
+  "builds": [
+    { "src": "package.json", "use": "@vercel/static-build", "config": { "distDir": "dist" } },
+    { "src": "api/[...path].ts", "use": "@vercel/node" }
+  ],
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
