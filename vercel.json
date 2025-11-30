@@ -2,6 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
+  "installCommand": "npm install",
   "functions": {
     "api/**/*.ts": {
       "runtime": "nodejs20.x"
@@ -10,6 +11,17 @@
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" },
     { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/assets/(.*\\.js)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/javascript"
+        }
+      ]
+    }
   ]
 }
 
