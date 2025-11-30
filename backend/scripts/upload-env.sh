@@ -177,4 +177,3 @@ echo "다음 단계:"
 echo "  1. PM2 재시작: ssh -i $SSH_KEY_PATH $EC2_USER@$EC2_HOST 'pm2 restart chalog-backend'"
 echo "  2. 로그 확인: ssh -i $SSH_KEY_PATH $EC2_USER@$EC2_HOST 'pm2 logs chalog-backend'"
 echo "  3. 백업 파일 확인: ssh -i $SSH_KEY_PATH $EC2_USER@$EC2_HOST 'ls -la /home/$EC2_USER/chalog-backend/env-backup/'"
-
