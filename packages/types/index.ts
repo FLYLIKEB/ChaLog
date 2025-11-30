@@ -31,6 +31,6 @@ export interface Note {
 export interface User {
   id: number;
   name: string;
-  email: string;
+  email: string | null; // 인증 정보 분리 패턴으로 email은 UserAuthentication에서 관리
 }
 
