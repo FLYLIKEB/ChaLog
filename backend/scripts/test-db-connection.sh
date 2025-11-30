@@ -20,12 +20,55 @@ if [ -z "$DATABASE_URL" ]; then
     exit 1
 fi
 
-# URL 파싱 (간단한 방법)
-DB_USER=$(echo $DATABASE_URL | sed -n 's|mysql://\([^:]*\):.*|\1|p')
-DB_PASS=$(echo $DATABASE_URL | sed -n 's|mysql://[^:]*:\([^@]*\)@.*|\1|p')
-DB_HOST=$(echo $DATABASE_URL | sed -n 's|mysql://[^@]*@\([^:]*\):.*|\1|p')
-DB_PORT=$(echo $DATABASE_URL | sed -n 's|mysql://[^@]*@[^:]*:\([^/]*\)/.*|\1|p')
-DB_NAME=$(echo $DATABASE_URL | sed -n 's|mysql://[^@]*@[^:]*:[^/]*/\([^?]*\).*|\1|p')
+# Node.js를 사용하여 DATABASE_URL 파싱 (특수 문자, IPv6, 쿼리 파라미터 지원)
+# URL 클래스를 사용하여 견고하게 파싱
+PARSED=$(node -e "
+try {
+  const url = new URL(process.env.DATABASE_URL);
+  if (url.protocol !== 'mysql:') {
+    throw new Error('Invalid protocol');
+  }
+  const hostname = url.hostname || '';
+  const port = url.port || '3306';
+  const username = url.username || '';
+  const password = url.password || '';
+  const database = url.pathname.slice(1).split('?')[0] || '';
+  
+  // URL 디코딩
+  const decodedPassword = decodeURIComponent(password);
+  const decodedDatabase = decodeURIComponent(database);
+  
+  console.log('HOST=' + hostname);
+  console.log('PORT=' + port);
+  console.log('USER=' + username);
+  console.log('PASSWORD=' + decodedPassword);
+  console.log('DATABASE=' + decodedDatabase);
+} catch (error) {
+  console.error('DATABASE_URL 파싱 실패:', error.message);
+  process.exit(1);
+}
+")
+
+if [ $? -ne 0 ]; then
+    echo "❌ DATABASE_URL 파싱 실패"
+    exit 1
+fi
+
+# 파싱된 값을 환경 변수로 설정
+eval "$PARSED"
+
+# 필수 값 검증
+if [ -z "$HOST" ] || [ -z "$USER" ] || [ -z "$DATABASE" ]; then
+    echo "❌ DATABASE_URL에 필수 정보가 누락되었습니다."
+    exit 1
+fi
+
+# 변수명 통일 (기존 코드와 호환)
+DB_HOST="$HOST"
+DB_PORT="$PORT"
+DB_USER="$USER"
+DB_PASS="$PASSWORD"
+DB_NAME="$DATABASE"
 
 echo "📊 연결 정보:"
 echo "   호스트: $DB_HOST"

@@ -49,6 +49,11 @@ npm run dev:stop
 ./scripts/stop-local.sh
 ```
 
+**Windows 사용자:**
+- Git Bash 또는 WSL(Windows Subsystem for Linux)에서 위 명령어를 실행하세요.
+- PowerShell에서는 `npm run dev:local`과 `npm run dev:stop`을 사용하세요 (스크립트 파일은 Git Bash/WSL 필요).
+- 자세한 내용은 [`docs/SCRIPTS.md`](./docs/SCRIPTS.md)를 참고하세요.
+
 ### 환경 변수
 
 **프론트엔드:**
