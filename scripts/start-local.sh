@@ -16,6 +16,14 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
+# 필수 도구 확인
+if ! command -v curl > /dev/null 2>&1; then
+    echo -e "${RED}❌ curl이 설치되어 있지 않습니다.${NC}"
+    echo "   macOS: curl은 기본 설치되어 있습니다."
+    echo "   Linux: sudo apt-get install curl 또는 sudo yum install curl"
+    exit 1
+fi
+
 echo -e "${BLUE}🚀 로컬 개발 환경 시작 중...${NC}"
 echo ""
 
@@ -28,11 +36,21 @@ if [ -f "$BACKEND_DIR/scripts/stop-ssh-tunnel.sh" ]; then
     bash scripts/stop-ssh-tunnel.sh > /dev/null 2>&1 || true
 fi
 
-# 백엔드 프로세스 종료
-pkill -f "nest start" > /dev/null 2>&1 || true
+# 백엔드 프로세스 종료 (포트 3000 기반)
+if command -v lsof > /dev/null 2>&1; then
+    lsof -ti:3000 | xargs kill -9 > /dev/null 2>&1 || true
+else
+    # lsof가 없는 경우 프로젝트 디렉토리 기반으로 매칭
+    pkill -f "cd.*$BACKEND_DIR.*nest start" > /dev/null 2>&1 || true
+fi
 
-# 프론트엔드 프로세스 종료
-pkill -f "vite" > /dev/null 2>&1 || true
+# 프론트엔드 프로세스 종료 (포트 5173 기반)
+if command -v lsof > /dev/null 2>&1; then
+    lsof -ti:5173 | xargs kill -9 > /dev/null 2>&1 || true
+else
+    # lsof가 없는 경우 프로젝트 디렉토리 기반으로 매칭
+    pkill -f "cd.*$PROJECT_ROOT.*vite" > /dev/null 2>&1 || true
+fi
 
 sleep 2
 echo -e "${GREEN}✅ 기존 프로세스 정리 완료${NC}"

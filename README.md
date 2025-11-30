@@ -92,8 +92,6 @@ SSH_TUNNEL_REMOTE_PORT=3306
 | `npm run dev:local` | 전체 환경 실행 (SSH 터널 + 백엔드 + 프론트엔드) |
 | `npm run dev:stop` | 전체 환경 종료 |
 | `npm run build` | 프로덕션 번들 생성 (`dist/`) |
-| `npm run preview` | 로컬에서 번들 미리보기 |
-| `npm run lint` *(존재 시)* | 린트/타입 검사 |
 | `npm run test` | Vitest + Testing Library 기반 단위/통합 테스트 실행 |
 | `npm run test:run` | 워치 없이 일회성 테스트 실행 |
 
