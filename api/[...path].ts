@@ -16,11 +16,16 @@ export default async function handler(req: any, res: any) {
     : `${BACKEND_URL}${queryString ? `?${queryString}` : ''}`;
 
   try {
+    const controller = new AbortController();
+    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
     const fetchOptions: RequestInit = {
       method: req.method,
       headers: {
         'Content-Type': req.headers['content-type'] || 'application/json',
       },
+      signal: controller.signal,
     };
 
     // Authorization 헤더 복사
@@ -37,6 +42,7 @@ export default async function handler(req: any, res: any) {
     }
 
     const fetchResponse = await fetch(backendUrl, fetchOptions);
+    clearTimeout(timeoutId);
     // 응답 헤더 복사
     res.status(fetchResponse.status);
     fetchResponse.headers.forEach((value, key) => {
@@ -57,11 +63,25 @@ export default async function handler(req: any, res: any) {
       res.end();
     }
   } catch (error) {
-    console.error('Proxy error:', error);
-    res.status(502).json({
-      error: 'Bad Gateway',
-      message: 'Failed to connect to backend server',
+    const isAbortError = (error as Error).name === 'AbortError';
+    console.error('Proxy error:', {
+      backendUrl,
+      method: req.method,
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+      timeoutMs,
     });
+    if (isAbortError) {
+      res.status(504).json({
+        error: 'Gateway Timeout',
+        message: `Backend request timed out after ${timeoutMs}ms`,
+      });
+    } else {
+      res.status(502).json({
+        error: 'Bad Gateway',
+        message: 'Failed to connect to backend server',
+      });
+    }
   }
 }
 
