@@ -9,7 +9,10 @@
   },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { 
+      "source": "/((?!assets|api|_next|favicon.ico|robots.txt|sitemap.xml).*)", 
+      "destination": "/index.html" 
+    }
   ],
   "headers": [
     {
