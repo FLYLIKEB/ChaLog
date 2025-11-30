@@ -8,11 +8,11 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" }
-  ],
-  "routes": [
-    { "src": "/assets/(.*)", "dest": "/assets/$1" },
-    { "src": "/(.*)", "dest": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" },
+    { 
+      "source": "/((?!api|assets|_next|favicon\\.ico|robots\\.txt|sitemap\\.xml).*)", 
+      "destination": "/index.html" 
+    }
   ]
 }
 
