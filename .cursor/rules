@@ -1,3 +1,20 @@
+# ChaLog 프로젝트 룰
+
+## 로컬 개발 서버 실행
+
+로컬 개발 환경(SSH 터널, 백엔드, 프론트엔드)을 한 번에 실행하려면:
+- `npm run dev:local` 실행 (권장)
+- 또는 `./scripts/start-local.sh` 실행
+
+로컬 개발 환경을 종료하려면:
+- `npm run dev:stop` 실행 (권장)
+- 또는 `./scripts/stop-local.sh` 실행
+
+## 기존 룰
+- 'run' 명령어 입력시 다음 실행 : 'pkill -f "next dev" || true && npm run dev'
+  - 참고: 이 프로젝트는 Vite를 사용하므로 위 명령어는 프론트엔드만 실행합니다.
+  - 전체 환경(SSH 터널+백엔드+프론트엔드)을 실행하려면 `npm run dev:local` 사용
+
 ## Git Workflow
 
 - Before commit/push: Check `docs/git-strategy.md` (branch naming, merge procedures)
