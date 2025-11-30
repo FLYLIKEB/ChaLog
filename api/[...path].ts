@@ -9,7 +9,9 @@ export default async function handler(req: any, res: any) {
   
   // 쿼리 문자열 포함 전체 URL 구성
   const queryString = req.url?.includes('?') ? req.url.split('?')[1] : '';
-  const backendUrl = `${BACKEND_URL}/${pathString}${queryString ? `?${queryString}` : ''}`;
+  const backendUrl = pathString 
+    ? `${BACKEND_URL}/${pathString}${queryString ? `?${queryString}` : ''}`
+    : `${BACKEND_URL}${queryString ? `?${queryString}` : ''}`;
 
   try {
     const fetchOptions: RequestInit = {
