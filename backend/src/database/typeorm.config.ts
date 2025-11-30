@@ -75,6 +75,15 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     // t3.small 환경에 맞게 연결 풀 크기 조정 (2GB RAM, 2 vCPU)
     extra: {
       connectionLimit: 8, // 연결 풀 최대 크기 (t3.small 최적화: 5 → 8)
+      // 연결 타임아웃 설정 (밀리초)
+      connectTimeout: 60000, // 60초 - 연결 시도 타임아웃
+      acquireTimeout: 60000, // 60초 - 연결 풀에서 연결 획득 타임아웃
+      timeout: 60000, // 60초 - 쿼리 실행 타임아웃
+      // 연결 유지 설정 (네트워크 불안정 시 연결 중단 방지)
+      enableKeepAlive: true, // Keep-alive 활성화
+      keepAliveInitialDelay: 0, // Keep-alive 초기 지연 시간 (0 = 즉시 시작)
+      // 연결 재사용 최적화
+      reconnect: true, // 자동 재연결 활성화
       ...sslConfig,
     },
   };
