@@ -46,7 +46,7 @@
 
 - Migration scripts: Delete after successful execution
 - Temporary docs: Already in `.gitignore`, delete when no longer needed
-- Documentation: Reference `docs/` files (git-strategy.md, architecture.md, DATABASE.md, SECURITY.md)
+- Documentation: Reference `docs/` files (git-strategy.md, architecture.md, DATABASE.md, SECURITY.md, CODE_STYLE.md, TROUBLESHOOTING.md)
 
 ## Error Handling
 
