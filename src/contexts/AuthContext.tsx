@@ -12,6 +12,7 @@ declare global {
       Auth: {
         login: (options: { success: (authObj: any) => void; fail: (err: any) => void }) => void;
         getAccessToken: () => string | null;
+        logout?: () => void;
       };
     };
   }
@@ -153,7 +154,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 카카오 로그아웃 (선택사항)
     try {
       if (typeof window !== 'undefined' && window.Kakao?.Auth?.getAccessToken?.()) {
-        window.Kakao.Auth.logout();
+        // 카카오 SDK의 logout 메서드가 있는 경우에만 호출
+        if (window.Kakao.Auth.logout) {
+          window.Kakao.Auth.logout();
+        }
       }
     } catch (error) {
       logger.error('Kakao logout failed', error);
