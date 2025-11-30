@@ -14,38 +14,129 @@ GitHub 저장소에서 다음 Secrets를 설정해야 합니다:
 
 ### Settings → Secrets and variables → Actions → New repository secret
 
-#### 필수 Secrets
+### 필수 Secrets 체크리스트
 
-1. **EC2_SSH_KEY** ⚠️ 중요
-   - EC2 인스턴스 접속용 SSH 개인 키
-   - **전체 내용을 정확히 복사** (`-----BEGIN RSA PRIVATE KEY-----` 부터 `-----END RSA PRIVATE KEY-----` 까지)
-   - **줄바꿈 포함하여 전체 복사** (마지막 줄바꿈도 포함)
-   - 예: `~/.ssh/your-key.pem` 파일 내용
-   - **확인 방법**: Secret 저장 후 다시 열어서 첫 줄이 `-----BEGIN`로 시작하는지 확인
+#### 1. EC2_SSH_KEY ⚠️ 가장 중요
 
-2. **EC2_HOST**
-   - EC2 인스턴스의 Public IP 또는 도메인
-   - 예: `54.123.45.67` 또는 `api.yourdomain.com`
+**설정 방법:**
+1. 로컬에서 SSH 키 파일 열기:
+   ```bash
+   cat ~/.ssh/your-key.pem
+   ```
 
-3. **EC2_USER**
-   - EC2 인스턴스의 사용자명
-   - Ubuntu: `ubuntu`
-   - Amazon Linux: `ec2-user`
+2. **전체 내용 복사** (줄바꿈 포함):
+   - `-----BEGIN RSA PRIVATE KEY-----` 부터 시작
+   - `-----END RSA PRIVATE KEY-----` 까지 끝
+   - 중간의 모든 줄 포함
 
-#### 선택적 Secrets (환경 변수 관리용)
+3. GitHub 저장소 → Settings → Secrets and variables → Actions
+4. New repository secret 클릭
+5. Name: `EC2_SSH_KEY`
+6. Secret: 복사한 전체 키 내용 붙여넣기
+7. Add secret 클릭
+
+**확인 방법:**
+- Secret 저장 후 다시 열어서 첫 줄이 `-----BEGIN`로 시작하는지 확인
+- 마지막 줄이 `-----END`로 끝나는지 확인
+
+#### 2. EC2_HOST
+
+**설정 방법:**
+1. AWS 콘솔 → EC2 → Instances
+2. 인스턴스 선택 → Public IPv4 address 복사
+3. GitHub Secrets에 추가:
+   - Name: `EC2_HOST`
+   - Secret: 예) `54.123.45.67` 또는 `api.yourdomain.com`
+
+#### 3. EC2_USER ⚠️ 중요
+
+**설정 방법:**
+1. GitHub Secrets에 추가:
+   - Name: `EC2_USER` (정확히 이 이름으로)
+   - Secret: `ubuntu` (Ubuntu 인스턴스인 경우)
+   - 또는 `ec2-user` (Amazon Linux인 경우)
+
+**주의사항:**
+- Secret 값에 공백이나 줄바꿈이 없어야 합니다
+- 정확히 `ubuntu` 또는 `ec2-user`만 입력하세요
+
+### 선택적 Secrets (환경 변수 관리용)
 
 환경 변수를 GitHub Secrets로 관리하려면:
 
-4. **EC2_DATABASE_URL** (선택사항)
-   - 프로덕션 데이터베이스 URL
-   - 예: `mysql://admin:password@rds-endpoint:3306/chalog`
+#### 4. EC2_DATABASE_URL (선택사항) 🔴
 
-5. **EC2_JWT_SECRET** (선택사항)
-   - JWT 시크릿 키
+**설명**: 프로덕션 RDS 데이터베이스 연결 URL
 
-6. **EC2_FRONTEND_URL** (선택사항)
-   - 프론트엔드 URL
-   - 예: `https://cha-log-gilt.vercel.app`
+**형식**:
+```
+mysql://<사용자명>:<비밀번호>@<RDS엔드포인트>:3306/chalog
+```
+
+**예시**:
+```
+mysql://admin:MySecurePassword123@chalog-db.xxxxx.ap-northeast-2.rds.amazonaws.com:3306/chalog
+```
+
+**주의사항:**
+- 비밀번호에 특수문자가 포함된 경우 URL 인코딩 필요 (`@` → `%40`, `#` → `%23` 등)
+- 실제 프로덕션 비밀번호 사용 (예시 값 사용 금지)
+
+#### 5. EC2_JWT_SECRET (선택사항) 🔴
+
+**설명**: JWT 토큰 서명용 비밀키
+
+**형식**: 강력한 랜덤 문자열 (최소 32자 이상 권장)
+
+**생성 방법**:
+```bash
+# OpenSSL 사용 (권장)
+openssl rand -base64 32
+
+# Node.js 사용
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+```
+
+**주의사항:**
+- 프로덕션 환경에서는 반드시 강력한 랜덤 값 사용
+- 예시 값 사용 금지
+- 한 번 설정하면 변경하지 않는 것이 좋음 (기존 토큰이 무효화됨)
+
+#### 6. EC2_FRONTEND_URL (선택사항) 🟡
+
+**설명**: 메인 프론트엔드 URL (CORS 허용용)
+
+**형식**: 프론트엔드 도메인 URL
+
+**예시**:
+```
+https://cha-log-gilt.vercel.app
+```
+
+#### 7. EC2_FRONTEND_URLS (선택사항) 🟡
+
+**설명**: 허용할 프론트엔드 URL 목록 (CORS 허용용, 쉼표로 구분)
+
+**형식**: 여러 URL을 쉼표로 구분
+
+**예시**:
+```
+https://cha-log-gilt.vercel.app,http://localhost:5173,http://localhost:5174
+```
+
+**주의사항:**
+- 각 URL 사이에 공백 없이 쉼표(`,`)로만 구분
+- 설정하지 않으면 기본값 사용
+
+### 설정 확인
+
+모든 Secrets를 설정한 후:
+
+1. GitHub 저장소 → Actions 탭
+2. "Deploy Backend to EC2" 워크플로우 클릭
+3. "Run workflow" 클릭하여 수동 실행
+4. 로그에서 "환경 변수 확인" 단계 확인:
+   - 모든 변수가 "설정됨"으로 표시되어야 함
 
 > **참고**: 환경 변수는 EC2에 직접 `.env` 파일로 설정하는 것을 권장합니다. (더 안전함)
 

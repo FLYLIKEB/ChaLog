@@ -81,21 +81,69 @@ RDS 보안 그룹에 EC2 보안 그룹을 추가:
 3. 보안 그룹 편집
 4. EC2 보안 그룹 추가 (MySQL/Aurora 포트 3306)
 
-## 2단계: EC2 서버 초기 설정
+## 2단계: EC2 접속 방법
 
-### 2.1 SSH 접속
+### 2.1 방법 1: EC2 Instance Connect (가장 쉬움) ⭐ 권장
+
+AWS 콘솔에서 브라우저로 직접 접속:
+
+1. AWS 콘솔 접속: https://console.aws.amazon.com
+2. EC2 콘솔 이동 → Instances
+3. 인스턴스 선택 → **Connect** 버튼 클릭
+4. **EC2 Instance Connect** 탭 선택 → **Connect** 클릭
+5. 브라우저에서 터미널이 열립니다
+
+**장점:**
+- ✅ AWS 콘솔 로그인만 하면 됩니다
+- ✅ SSH 키 불필요
+- ✅ 사용자명 불필요
+
+### 2.2 방법 2: SSH 클라이언트
+
+로컬 터미널에서:
 
 ```bash
 ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip
 ```
 
-### 2.2 시스템 업데이트
+**사용자명 확인:**
+- Ubuntu: `ubuntu`
+- Amazon Linux: `ec2-user`
+
+## 3단계: EC2 서버 초기 설정
+
+### 3.1 빠른 실행 (권장)
+
+EC2에 접속 후 다음 명령어를 실행:
+
+```bash
+# 저장소 클론 (아직 클론하지 않은 경우)
+git clone https://github.com/FLYLIKEB/ChaLog.git
+cd ChaLog/backend/scripts
+
+# 실행 권한 부여
+chmod +x setup-ec2.sh check-ec2-setup.sh
+
+# 초기 설정 실행
+bash setup-ec2.sh
+```
+
+또는 원격에서 직접 실행:
+
+```bash
+# 스크립트 다운로드 및 실행
+curl -fsSL https://raw.githubusercontent.com/FLYLIKEB/ChaLog/main/backend/scripts/setup-ec2.sh | bash
+```
+
+### 3.2 수동 설정
+
+### 3.2.1 시스템 업데이트
 
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
-### 2.3 Node.js 설치
+### 3.2.2 Node.js 설치
 
 ```bash
 # Node.js 20 설치
@@ -107,7 +155,7 @@ node --version  # v20.x.x
 npm --version
 ```
 
-### 2.4 PM2 설치
+### 3.2.3 PM2 설치
 
 ```bash
 sudo npm install -g pm2
@@ -117,7 +165,7 @@ pm2 startup
 # 출력된 명령어 실행 (sudo 권한 필요)
 ```
 
-### 2.5 Nginx 설치 (선택사항, 리버스 프록시용)
+### 3.2.4 Nginx 설치 (선택사항, 리버스 프록시용)
 
 ```bash
 sudo apt-get install nginx -y
@@ -125,16 +173,37 @@ sudo systemctl enable nginx
 sudo systemctl start nginx
 ```
 
-### 2.6 프로젝트 디렉토리 생성
+### 3.2.5 프로젝트 디렉토리 생성
 
 ```bash
 mkdir -p /home/ubuntu/chalog-backend
 cd /home/ubuntu/chalog-backend
 ```
 
-## 3단계: 프로젝트 배포
+### 3.3 환경 변수 설정
 
-### 3.1 Git 클론 (방법 1: 직접 클론)
+EC2에서 `.env` 파일 생성:
+
+```bash
+nano /home/ubuntu/chalog-backend/.env
+```
+
+실제 RDS 엔드포인트와 비밀번호로 수정:
+
+```env
+DATABASE_URL=mysql://admin:실제비밀번호@실제-rds-endpoint.rds.amazonaws.com:3306/chalog
+JWT_SECRET=실제-프로덕션-시크릿-키
+```
+
+### 3.4 설정 확인
+
+```bash
+bash /home/ubuntu/ChaLog/backend/scripts/check-ec2-setup.sh
+```
+
+## 4단계: 프로젝트 배포
+
+### 4.1 Git 클론 (방법 1: 직접 클론)
 
 ```bash
 # GitHub 저장소 클론
@@ -148,7 +217,7 @@ npm install --production
 npm run build
 ```
 
-### 3.2 배포 스크립트 사용 (방법 2: 권장)
+### 4.2 배포 스크립트 사용 (방법 2: 권장)
 
 로컬에서 배포 스크립트 실행:
 
@@ -158,35 +227,7 @@ chmod +x deploy.sh
 ./deploy.sh your-ec2-ip ubuntu ~/.ssh/your-key.pem
 ```
 
-### 3.3 환경 변수 설정
-
-EC2에서 `.env` 파일 생성:
-
-```bash
-nano /home/ubuntu/chalog-backend/.env
-```
-
-```env
-# 데이터베이스 (RDS 직접 연결, SSH 터널 불필요)
-DATABASE_URL=mysql://admin:password@your-rds-endpoint.rds.amazonaws.com:3306/chalog
-DB_SYNCHRONIZE=false
-DB_SSL_ENABLED=true
-DB_SSL_REJECT_UNAUTHORIZED=false
-
-# JWT
-JWT_SECRET=your-production-secret-key-change-this
-JWT_EXPIRES_IN=7d
-
-# 서버 설정
-PORT=3000
-NODE_ENV=production
-
-# 프론트엔드 URL
-FRONTEND_URL=https://cha-log-gilt.vercel.app
-FRONTEND_URLS=https://cha-log-gilt.vercel.app,http://localhost:5173
-```
-
-### 3.4 PM2로 실행
+### 4.3 PM2로 실행
 
 ```bash
 cd /home/ubuntu/chalog-backend
@@ -204,9 +245,9 @@ pm2 logs chalog-backend
 pm2 save
 ```
 
-## 4단계: Nginx 리버스 프록시 설정 (권장)
+## 5단계: Nginx 리버스 프록시 설정 (권장)
 
-### 4.1 Nginx 설정 파일 생성
+### 5.1 Nginx 설정 파일 생성
 
 ```bash
 sudo nano /etc/nginx/sites-available/chalog-backend
@@ -214,7 +255,7 @@ sudo nano /etc/nginx/sites-available/chalog-backend
 
 `backend/nginx.conf.example` 파일 내용 복사하여 수정
 
-### 4.2 도메인 설정
+### 5.2 도메인 설정
 
 도메인이 있다면:
 - A 레코드: `api.yourdomain.com` → EC2 Public IP
@@ -222,7 +263,7 @@ sudo nano /etc/nginx/sites-available/chalog-backend
 도메인이 없다면:
 - EC2 Public IP로 직접 접근 (SSL 인증서 없이)
 
-### 4.3 SSL 인증서 설정 (Let's Encrypt)
+### 5.3 SSL 인증서 설정 (Let's Encrypt)
 
 ```bash
 # Certbot 설치
@@ -235,7 +276,7 @@ sudo certbot --nginx -d api.yourdomain.com
 sudo certbot renew --dry-run
 ```
 
-### 4.4 Nginx 활성화 및 재시작
+### 5.4 Nginx 활성화 및 재시작
 
 ```bash
 # 심볼릭 링크 생성
@@ -248,9 +289,9 @@ sudo nginx -t
 sudo systemctl restart nginx
 ```
 
-## 5단계: 배포 확인
+## 6단계: 배포 확인
 
-### 5.1 Health Check
+### 6.1 Health Check
 
 ```bash
 # 직접 포트로 확인
@@ -260,7 +301,7 @@ curl http://localhost:3000/health
 curl https://api.yourdomain.com/health
 ```
 
-### 5.2 로그 확인
+### 6.2 로그 확인
 
 ```bash
 # PM2 로그
@@ -271,7 +312,7 @@ sudo tail -f /var/log/nginx/chalog-backend-access.log
 sudo tail -f /var/log/nginx/chalog-backend-error.log
 ```
 
-### 5.3 프론트엔드 환경 변수 업데이트
+### 6.3 프론트엔드 환경 변수 업데이트
 
 Vercel 대시보드에서:
 
@@ -281,9 +322,9 @@ VITE_API_BASE_URL=https://api.yourdomain.com
 VITE_API_BASE_URL=http://your-ec2-ip:3000
 ```
 
-## 6단계: 모니터링 및 유지보수
+## 7단계: 모니터링 및 유지보수
 
-### 6.1 PM2 모니터링
+### 7.1 PM2 모니터링
 
 ```bash
 # 실시간 모니터링
@@ -299,7 +340,7 @@ pm2 restart chalog-backend
 pm2 stop chalog-backend
 ```
 
-### 6.2 로그 로테이션 설정
+### 7.2 로그 로테이션 설정
 
 ```bash
 # PM2 모듈 설치
@@ -310,7 +351,7 @@ pm2 set pm2-logrotate:max_size 10M
 pm2 set pm2-logrotate:retain 7
 ```
 
-### 6.3 자동 백업 (선택사항)
+### 7.3 자동 백업 (선택사항)
 
 ```bash
 # 백업 스크립트 생성
