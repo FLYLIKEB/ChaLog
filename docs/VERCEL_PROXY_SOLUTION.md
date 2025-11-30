@@ -4,7 +4,7 @@
 
 ## 🎯 해결 방법
 
-Vercel의 `rewrites` 기능을 사용하여:
+Vercel의 `routes`(구 rewrite) 기능을 사용하여:
 - 프론트엔드: `https://cha-log-gilt.vercel.app`
 - API 요청: `https://cha-log-gilt.vercel.app/api/*` → Vercel이 자동으로 EC2로 프록시
 - **같은 도메인**이므로 Mixed Content 오류 없음!
@@ -20,19 +20,13 @@ Vercel의 `rewrites` 기능을 사용하여:
 
 ### 1단계: vercel.json 수정
 
-`vercel.json`에 API 프록시 규칙 추가:
+`vercel.json`에 API 프록시를 위한 routes를 추가:
 
 ```json
 {
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "http://52.78.150.124:3000/:path*"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/index.html" }
   ]
 }
 ```
