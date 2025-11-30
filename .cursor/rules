@@ -1,10 +1,10 @@
 ## Core Workflow
 
 ### Git Operations
-- **Commit messages**: Korean format `<type>: <description>` (e.g., `feat: 노트 필터 기능 추가`)
-- **Pre-commit**: Run `npm run lint` (if exists), `tsc --noEmit`, `npm run test:run` (if exists)
-- **Branch naming**: Use `feature/*` pattern based on changed files
-- **Documentation**: Auto-update README.md, docs/architecture.md when code changes
+- Commit messages: Korean format `<type>: <description>` (e.g., `feat: 노트 필터 기능 추가`)
+- Pre-commit: Run `npm run lint` (if exists), `tsc --noEmit`, `npm run test:run` (if exists)
+- Branch naming: Use `feature/*` pattern based on changed files
+- Documentation: Auto-update README.md, docs/architecture.md when code changes
 
 ### PR Review Process
 1. List unresolved reviews: `gh api graphql` to get review threads
@@ -30,20 +30,20 @@
 
 ## Scripts Reference
 
-- **Quick commit**: `scripts/quick-commit.sh [branch] [message]`
-- **Full release**: `scripts/full-release.sh "<msg>" "<tag>" [branch]`
-- **Database**: `backend/scripts/start-ssh-tunnel.sh`, `check-database.sh`
+- Quick commit: `scripts/quick-commit.sh [branch] [message]`
+- Full release: `scripts/full-release.sh "<msg>" "<tag>" [branch]`
+- Database: `backend/scripts/start-ssh-tunnel.sh`, `check-database.sh`
 - See `docs/SCRIPTS.md` for details
 
 ## File Management
 
-- **Migration scripts**: Delete after successful execution
-- **Temporary docs**: Already in `.gitignore`, delete when no longer needed
-- **Documentation**: Reference `docs/` files (git-strategy.md, architecture.md, DATABASE.md, SECURITY.md)
+- Migration scripts: Delete after successful execution
+- Temporary docs: Already in `.gitignore`, delete when no longer needed
+- Documentation: Reference `docs/` files (git-strategy.md, architecture.md, DATABASE.md, SECURITY.md)
 
 ## Error Handling
 
-- **Git conflicts**: Stop, show files, ask user
-- **Validation failures**: Show errors, don't commit, suggest fixes
-- **Missing scripts**: Check existence, provide manual alternatives
-- **Never force operations** without user confirmation
+- Git conflicts: Stop, show files, ask user
+- Validation failures: Show errors, don't commit, suggest fixes
+- Missing scripts: Check existence, provide manual alternatives
+- Never force operations without user confirmation
