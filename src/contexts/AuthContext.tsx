@@ -59,13 +59,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false);
 
-    // 카카오 SDK 초기화
-    const kakaoAppKey = import.meta.env.VITE_KAKAO_APP_KEY;
-    if (kakaoAppKey && typeof window !== 'undefined' && window.Kakao) {
-      if (!window.Kakao.isInitialized()) {
-        window.Kakao.init(kakaoAppKey);
+    // 카카오 SDK 초기화 (스크립트 로드 대기)
+    const initKakaoSDK = () => {
+      const kakaoAppKey = import.meta.env.VITE_KAKAO_APP_KEY;
+      if (!kakaoAppKey || typeof window === 'undefined') {
+        return;
       }
-    }
+
+      // 카카오 SDK가 이미 로드된 경우
+      if (window.Kakao && window.Kakao.isInitialized) {
+        if (!window.Kakao.isInitialized()) {
+          window.Kakao.init(kakaoAppKey);
+        }
+        return;
+      }
+
+      // 카카오 SDK 로드 대기 (최대 5초)
+      let attempts = 0;
+      const maxAttempts = 50; // 5초 (100ms * 50)
+      const checkInterval = setInterval(() => {
+        attempts++;
+        if (window.Kakao && window.Kakao.isInitialized) {
+          clearInterval(checkInterval);
+          if (!window.Kakao.isInitialized()) {
+            window.Kakao.init(kakaoAppKey);
+          }
+        } else if (attempts >= maxAttempts) {
+          clearInterval(checkInterval);
+          logger.warn('카카오 SDK 로드 시간 초과');
+        }
+      }, 100);
+    };
+
+    initKakaoSDK();
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -98,9 +124,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithKakao = async () => {
     try {
-      if (typeof window === 'undefined' || !window.Kakao) {
-        toast.error('카카오 SDK를 불러올 수 없습니다. 페이지를 새로고침해주세요.');
+      if (typeof window === 'undefined') {
+        toast.error('브라우저 환경에서만 사용할 수 있습니다.');
         return;
+      }
+
+      // 카카오 SDK 로드 확인 및 대기
+      if (!window.Kakao) {
+        // SDK가 아직 로드되지 않은 경우 잠시 대기
+        await new Promise<void>((resolve, reject) => {
+          let attempts = 0;
+          const maxAttempts = 50; // 5초
+          const checkInterval = setInterval(() => {
+            attempts++;
+            if (window.Kakao) {
+              clearInterval(checkInterval);
+              resolve();
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              reject(new Error('카카오 SDK를 불러올 수 없습니다. 페이지를 새로고침해주세요.'));
+            }
+          }, 100);
+        });
       }
 
       const kakaoAppKey = import.meta.env.VITE_KAKAO_APP_KEY;
@@ -121,7 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             resolve();
           },
           fail: (err) => {
-            reject(new Error('카카오 로그인에 실패했습니다.'));
+            const errorMessage = err?.error_description || err?.error || '카카오 로그인에 실패했습니다.';
+            reject(new Error(errorMessage));
           },
         });
       });
