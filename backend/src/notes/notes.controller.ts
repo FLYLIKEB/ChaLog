@@ -23,7 +23,16 @@ export class NotesController {
   @UseGuards(AuthGuard('jwt'))
   @Post()
   create(@Request() req, @Body() createNoteDto: CreateNoteDto) {
-    return this.notesService.create(parseInt(req.user.userId, 10), createNoteDto);
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    const parsedUserId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    return this.notesService.create(parsedUserId, createNoteDto);
   }
 
   @Get()
@@ -61,6 +70,10 @@ export class NotesController {
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
   update(@Param('id') id: string, @Request() req, @Body() updateNoteDto: UpdateNoteDto) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
     const parsedId = parseInt(id, 10);
     const parsedUserId = parseInt(req.user.userId, 10);
     
@@ -68,7 +81,7 @@ export class NotesController {
       throw new BadRequestException('Invalid id');
     }
     if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('Invalid userId');
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     }
     
     return this.notesService.update(parsedId, parsedUserId, updateNoteDto);
@@ -77,6 +90,10 @@ export class NotesController {
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
     const parsedId = parseInt(id, 10);
     const parsedUserId = parseInt(req.user.userId, 10);
     
@@ -84,7 +101,7 @@ export class NotesController {
       throw new BadRequestException('Invalid id');
     }
     if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('Invalid userId');
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     }
     
     return this.notesService.remove(parsedId, parsedUserId);

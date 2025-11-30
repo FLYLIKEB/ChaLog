@@ -32,3 +32,6 @@ your-key.pem
 
 # VSCode settings with sensitive data
 .vscode/settings.json
+
+# SQL Tools session files
+*.session.sql

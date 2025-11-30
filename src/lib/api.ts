@@ -127,6 +127,83 @@ function normalizeNotes<T extends BackendNote | BackendNote[]>(data: T): T exten
   return normalizeNote(data as BackendNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
 }
 
+/**
+ * URL이 로컬 네트워크 요청인지 확인
+ * Chrome의 로컬 네트워크 요청 정책에 대응하기 위함
+ */
+function isLocalNetworkRequest(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.toLowerCase();
+    
+    // localhost 또는 127.0.0.1
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]') {
+      return true;
+    }
+    
+    // .local 도메인
+    if (hostname.endsWith('.local')) {
+      return true;
+    }
+    
+    // Private IP 주소 범위 확인
+    // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
+    const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+    const match = hostname.match(ipv4Regex);
+    if (match) {
+      const [, a, b, c, d] = match.map(Number);
+      if (a === 10) return true; // 10.0.0.0/8
+      if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+      if (a === 192 && b === 168) return true; // 192.168.0.0/16
+    }
+    
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * targetAddressSpace 옵션 지원 여부 확인
+ * Chrome 124+에서만 지원되므로 런타임에서 기능 감지 필요
+ * 
+ * 참고: targetAddressSpace는 WICG 초안 사양이며 아직 표준화되지 않았습니다.
+ * Chrome 124+, Edge 124+에서만 지원되며, Firefox와 Safari는 지원하지 않습니다.
+ */
+function supportsTargetAddressSpace(): boolean {
+  // User-Agent 기반 간단한 체크 (Chrome/Chromium 계열 확인)
+  // 더 정확한 방법은 실제 fetch 시도이지만, 성능상 User-Agent 체크가 더 효율적
+  if (typeof navigator === 'undefined') {
+    return false; // 서버 사이드 렌더링 환경
+  }
+  
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isChrome = userAgent.includes('chrome') && !userAgent.includes('edge');
+  const isEdge = userAgent.includes('edg');
+  
+  // Chrome 또는 Edge인 경우에만 지원 가능성 있음
+  if (!isChrome && !isEdge) {
+    return false;
+  }
+  
+  // 실제 버전 확인은 복잡하므로, Chrome/Edge 계열이면 시도
+  // 지원하지 않는 브라우저에서는 옵션이 무시되므로 안전함
+  try {
+    // Request 생성자를 통해 옵션 수용 여부 확인
+    // 지원하지 않는 브라우저에서는 옵션이 무시되지만 에러는 발생하지 않음
+    // targetAddressSpace는 표준이 아니므로 TypeScript 타입에 없음
+    const testRequest = new Request('http://localhost', {
+      targetAddressSpace: 'private',
+    } as RequestInit & { targetAddressSpace?: 'private' | 'local' });
+    
+    // Request 객체가 정상적으로 생성되면 옵션을 수용하는 것으로 간주
+    return testRequest !== null;
+  } catch {
+    // 생성 실패 시 지원하지 않는 것으로 간주
+    return false;
+  }
+}
+
 class ApiClient {
   private baseURL: string;
 
@@ -155,6 +232,20 @@ class ApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     
+    // Chrome의 로컬 네트워크 요청 정책 대응
+    // 로컬 네트워크 요청이고 브라우저가 지원하는 경우에만 targetAddressSpace 옵션 추가
+    const fetchInit: RequestInit = {
+      ...fetchOptions,
+      headers,
+    };
+    
+    // 로컬 네트워크 요청이고 브라우저가 targetAddressSpace를 지원하는 경우에만 설정
+    if (isLocalNetworkRequest(url) && supportsTargetAddressSpace()) {
+      // TypeScript 타입 확장을 위한 타입 단언
+      // targetAddressSpace는 Chrome 124+에서만 지원되므로 런타임에서만 설정
+      (fetchInit as RequestInit & { targetAddressSpace?: 'private' | 'local' }).targetAddressSpace = 'private';
+    }
+    
     // AbortController를 사용한 타임아웃 설정
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -163,8 +254,7 @@ class ApiClient {
     
     try {
       const response = await fetch(url, {
-        ...fetchOptions,
-        headers,
+        ...fetchInit,
         signal: controller.signal,
       });
 

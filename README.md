@@ -23,10 +23,36 @@ npm install
 ```
 
 ### 개발 서버
+
+**전체 환경 실행 (권장):**
+SSH 터널, 백엔드, 프론트엔드를 한 번에 실행합니다:
+```bash
+npm run dev:local
+```
+또는
+```bash
+./scripts/start-local.sh
+```
+
+**프론트엔드만 실행:**
 ```bash
 npm run dev
 ```
 Vite 기본 포트(`http://localhost:5173`)에서 SPA가 실행됩니다.
+
+**서버 종료:**
+```bash
+npm run dev:stop
+```
+또는
+```bash
+./scripts/stop-local.sh
+```
+
+**Windows 사용자:**
+- Git Bash 또는 WSL(Windows Subsystem for Linux)에서 위 명령어를 실행하세요.
+- PowerShell에서는 `npm run dev:local`과 `npm run dev:stop`을 사용하세요 (스크립트 파일은 Git Bash/WSL 필요).
+- 자세한 내용은 [`docs/SCRIPTS.md`](./docs/SCRIPTS.md)를 참고하세요.
 
 ### 환경 변수
 
@@ -53,10 +79,10 @@ cp .env.example .env
 ### NPM 스크립트
 | 명령 | 설명 |
 | --- | --- |
-| `npm run dev` | Vite 개발 서버 실행 |
+| `npm run dev` | 프론트엔드만 실행 (Vite 개발 서버) |
+| `npm run dev:local` | 전체 환경 실행 (SSH 터널 + 백엔드 + 프론트엔드) |
+| `npm run dev:stop` | 전체 환경 종료 |
 | `npm run build` | 프로덕션 번들 생성 (`dist/`) |
-| `npm run preview` | 로컬에서 번들 미리보기 |
-| `npm run lint` *(존재 시)* | 린트/타입 검사 |
 | `npm run test` | Vitest + Testing Library 기반 단위/통합 테스트 실행 |
 | `npm run test:run` | 워치 없이 일회성 테스트 실행 |
 

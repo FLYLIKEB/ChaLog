@@ -2,6 +2,29 @@
 
 ChaLog 프로젝트에서 사용하는 스크립트들의 역할과 사용법입니다.
 
+## 크로스 플랫폼 지원
+
+### Windows 사용자
+
+Windows에서 스크립트를 실행하려면 다음 중 하나의 방법을 사용하세요:
+
+**방법 1: Git Bash 사용 (권장)**
+- Git for Windows와 함께 설치되는 Git Bash를 사용하세요.
+- Git Bash에서 위의 모든 스크립트 명령어를 그대로 사용할 수 있습니다.
+
+**방법 2: WSL (Windows Subsystem for Linux) 사용**
+- WSL을 설치하고 Linux 환경에서 스크립트를 실행하세요.
+- WSL에서는 모든 스크립트가 정상적으로 작동합니다.
+
+**방법 3: npm 스크립트 사용**
+- PowerShell이나 cmd에서는 `npm run dev:local`과 `npm run dev:stop`을 사용하세요.
+- 이 명령어들은 Git Bash/WSL 없이도 작동합니다.
+- 단, SSH 터널 관련 스크립트는 Git Bash 또는 WSL이 필요합니다.
+
+**주의사항:**
+- `.sh` 파일은 Git Bash 또는 WSL에서만 실행 가능합니다.
+- PowerShell이나 cmd에서는 직접 실행할 수 없으므로 `npm run` 명령어를 사용하세요.
+
 ## Git 워크플로우
 
 ### quick-commit.sh
