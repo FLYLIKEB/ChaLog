@@ -8,8 +8,9 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+    { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" }
+  ],
+  "cleanUrls": false,
+  "trailingSlash": false
 }
 
