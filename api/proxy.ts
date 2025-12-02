@@ -101,24 +101,67 @@ export default async function handler(req: any, res: any) {
     }
   } catch (error) {
     const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
-    const isAbortError = (error as Error).name === 'AbortError';
-    console.error('[Proxy] ❌', {
+    const errorObj = error as Error;
+    const isAbortError = errorObj.name === 'AbortError';
+    const isNetworkError = 
+      errorObj.message.includes('fetch failed') ||
+      errorObj.message.includes('ECONNREFUSED') ||
+      errorObj.message.includes('ENOTFOUND') ||
+      errorObj.message.includes('ETIMEDOUT');
+    
+    // 상세한 에러 로깅 (Vercel 로그에 표시됨)
+    console.error('[Proxy] ❌ Error Details:', {
+      requestId,
       backendUrl,
       method: req.method,
-      message: (error as Error).message,
-      stack: (error as Error).stack,
+      path: pathString,
+      errorName: errorObj.name,
+      errorMessage: errorObj.message,
+      errorStack: errorObj.stack,
       timeoutMs,
-      aborted: isAbortError,
+      isAbortError,
+      isNetworkError,
+      durationMs: Date.now() - startedAt,
     });
+
+    // 클라이언트에게 반환할 에러 응답
+    const isDevelopment = process.env.NODE_ENV === 'development' || 
+                         process.env.VERCEL_ENV === 'development';
+    
     if (isAbortError) {
       res.status(504).json({
         error: 'Gateway Timeout',
-        message: `Backend request timed out after ${timeoutMs}ms`,
+        message: `백엔드 서버 응답 시간 초과 (${timeoutMs}ms)`,
+        details: isDevelopment ? {
+          backendUrl,
+          timeoutMs,
+          requestId,
+        } : undefined,
       });
-    } else {
+    } else if (isNetworkError) {
       res.status(502).json({
         error: 'Bad Gateway',
-        message: 'Failed to connect to backend server',
+        message: '백엔드 서버에 연결할 수 없습니다',
+        details: isDevelopment ? {
+          backendUrl,
+          errorMessage: errorObj.message,
+          requestId,
+        } : {
+          backendUrl: backendUrl.replace(/\/\/.*@/, '//***@'), // 비밀번호 숨김
+        },
+      });
+    } else {
+      res.status(500).json({
+        error: 'Internal Server Error',
+        message: '프록시 서버에서 오류가 발생했습니다',
+        details: isDevelopment ? {
+          errorName: errorObj.name,
+          errorMessage: errorObj.message,
+          backendUrl,
+          requestId,
+        } : {
+          requestId,
+        },
       });
     }
   }
