@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import type { ReadableStream as NodeReadableStream } from 'node:stream/web';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://52.78.150.124:3000';
 const LOG_PROXY_REQUESTS =
@@ -92,7 +93,7 @@ export default async function handler(req: any, res: any) {
 
     if (fetchResponse.body) {
       const nodeStream = Readable.fromWeb(
-        fetchResponse.body as unknown as ReadableStream<any>,
+        fetchResponse.body as unknown as NodeReadableStream<any>,
       );
       nodeStream.pipe(res);
     } else {
