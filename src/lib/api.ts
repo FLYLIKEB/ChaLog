@@ -279,7 +279,15 @@ class ApiClient {
         }));
         
         // 에러 메시지를 한글로 변환
-        let errorMessage = error.message || `HTTP error! status: ${response.status}`;
+        // error.message가 문자열이 아닐 수 있으므로 항상 문자열로 변환
+        let errorMessage: string;
+        if (typeof error.message === 'string') {
+          errorMessage = error.message;
+        } else if (error.message) {
+          errorMessage = String(error.message);
+        } else {
+          errorMessage = `HTTP error! status: ${response.status}`;
+        }
         
         // 백엔드에서 이미 한글 메시지를 보내지만, 혹시 모를 영어 메시지에 대비
         if (response.status === 401) {
