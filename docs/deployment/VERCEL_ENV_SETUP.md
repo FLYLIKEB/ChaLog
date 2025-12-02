@@ -119,14 +119,19 @@ This request has been blocked; the content must be served over HTTPS.
 
 **중요:** JavaScript 키를 사용해야 합니다 (REST API 키가 아님!)
 
-1. **Add New** 클릭
-2. 다음 정보 입력:
+1. **카카오 개발자 콘솔에서 JavaScript 키 확인**
+   - https://developers.kakao.com/ 접속
+   - 내 애플리케이션 → 앱 설정 → 앱 키
+   - **JavaScript 키** 복사 (REST API 키가 아님!)
+
+2. **Add New** 클릭
+3. 다음 정보 입력:
    ```
    Key: VITE_KAKAO_APP_KEY
-   Value: a5654b03ecef8d26990a2f1fcb26fc05  (JavaScript 키)
+   Value: [카카오 개발자 콘솔에서 복사한 JavaScript 키]
    Environment: Production, Preview, Development 모두 선택 ✅
    ```
-3. **Save** 클릭
+4. **Save** 클릭
 
 > **참고:** 카카오 개발자 콘솔에서 **앱 키** → **JavaScript 키**를 확인하세요. REST API 키를 사용하면 카카오 SDK 초기화가 실패합니다.
 

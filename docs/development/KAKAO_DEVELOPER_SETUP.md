@@ -14,8 +14,7 @@
 
 **중요:** 프론트엔드에서 카카오 SDK를 사용할 때는 **JavaScript 키**를 사용해야 합니다!
 
-- **앱 키** 섹션에서 **JavaScript 키** 확인
-- 현재 사용 중인 JavaScript 키: `a5654b03ecef8d26990a2f1fcb26fc05`
+- **앱 키** 섹션에서 **JavaScript 키** 확인 및 복사
 - **REST API 키**는 백엔드 서버에서만 사용 (프론트엔드에서는 사용하지 않음)
 
 **키 종류 설명:**
@@ -144,12 +143,14 @@ async handleKakaoWebhook(@Body() webhookData: any) {
 프론트엔드 `.env` 파일 확인:
 ```env
 # JavaScript 키 사용 (REST API 키가 아님!)
-VITE_KAKAO_APP_KEY=a5654b03ecef8d26990a2f1fcb26fc05
+# 카카오 개발자 콘솔(https://developers.kakao.com/)에서 JavaScript 키 발급 후 설정
+VITE_KAKAO_APP_KEY=your-kakao-javascript-key
 ```
 
 **주의:** 
 - `VITE_KAKAO_APP_KEY`에는 **JavaScript 키**를 사용해야 합니다
 - REST API 키를 사용하면 카카오 SDK 초기화가 실패할 수 있습니다
+- 카카오 개발자 콘솔 → 앱 설정 → 앱 키 → JavaScript 키에서 발급받으세요
 
 ### 테스트 방법
 
@@ -236,7 +237,7 @@ console.log(window.Kakao.isInitialized());
 
 1. **Vercel 환경 변수 설정**:
    - Vercel 대시보드 → Settings → Environment Variables
-   - `VITE_KAKAO_APP_KEY=a5654b03ecef8d26990a2f1fcb26fc05` 추가 (JavaScript 키 사용!)
+   - `VITE_KAKAO_APP_KEY`에 카카오 개발자 콘솔에서 발급받은 JavaScript 키 추가
    - Environment: Production, Preview, Development 모두 선택
    - 자세한 내용: [`docs/deployment/VERCEL_ENV_SETUP.md`](../deployment/VERCEL_ENV_SETUP.md)
 

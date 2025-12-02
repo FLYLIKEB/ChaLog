@@ -174,7 +174,8 @@ pm2 restart chalog-backend
 ```env
 VITE_API_BASE_URL=http://localhost:3000
 # JavaScript 키 사용 (REST API 키가 아님!)
-VITE_KAKAO_APP_KEY=a5654b03ecef8d26990a2f1fcb26fc05
+# 카카오 개발자 콘솔(https://developers.kakao.com/)에서 JavaScript 키 발급 후 설정
+VITE_KAKAO_APP_KEY=your-kakao-javascript-key
 ```
 
 **백엔드:**
@@ -286,4 +287,3 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 - [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
 - [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](../deployment/GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
 - [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드
-
