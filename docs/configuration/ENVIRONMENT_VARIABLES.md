@@ -173,7 +173,8 @@ pm2 restart chalog-backend
 **프론트엔드:**
 ```env
 VITE_API_BASE_URL=http://localhost:3000
-VITE_KAKAO_APP_KEY=your-kakao-app-key
+# JavaScript 키 사용 (REST API 키가 아님!)
+VITE_KAKAO_APP_KEY=a5654b03ecef8d26990a2f1fcb26fc05
 ```
 
 **백엔드:**

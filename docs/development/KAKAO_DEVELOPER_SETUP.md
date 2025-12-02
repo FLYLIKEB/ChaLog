@@ -11,8 +11,16 @@
 - 로그인 후 내 애플리케이션 선택
 
 #### 2. 앱 키 확인
-- **앱 키** 섹션에서 **REST API 키** 확인
-- 현재 사용 중인 키: `4b8291c637c5ad9b0a502eee797ca890`
+
+**중요:** 프론트엔드에서 카카오 SDK를 사용할 때는 **JavaScript 키**를 사용해야 합니다!
+
+- **앱 키** 섹션에서 **JavaScript 키** 확인
+- 현재 사용 중인 JavaScript 키: `a5654b03ecef8d26990a2f1fcb26fc05`
+- **REST API 키**는 백엔드 서버에서만 사용 (프론트엔드에서는 사용하지 않음)
+
+**키 종류 설명:**
+- **JavaScript 키**: 프론트엔드에서 카카오 SDK 초기화 시 사용 (공개되어도 안전)
+- **REST API 키**: 백엔드 서버에서 카카오 API 호출 시 사용 (서버에만 보관)
 
 #### 3. 플랫폼 설정 (필수)
 
@@ -68,6 +76,55 @@
 2. 필요한 약관에 동의
 3. **저장** 클릭
 
+#### 8. 웹훅 설정 (필수 - 개인정보 보호)
+
+**중요:** 가입한 회원의 개인정보 관리를 위해 웹훅(계정 상태 변경 웹훅)을 설정해야 합니다. 미설정 시, 서비스 외부에서의 회원 탈퇴 정보를 전달받을 수 없어 개인정보 처리가 누락될 수 있습니다.
+
+**웹훅이란?**
+- 카카오 로그인 사용자의 계정 상태 변경(연결 해제, 탈퇴 등)을 서버에 자동으로 알려주는 기능
+- 사용자가 카카오에서 서비스 연결을 해제하거나 탈퇴할 때 백엔드 서버로 알림을 전송
+
+**설정 방법:**
+
+1. **제품 설정** → **카카오 로그인** → **웹훅** 메뉴 이동
+
+2. **계정 상태 변경 웹훅** 등록:
+   - **웹훅 URL** 입력:
+     - 개발 환경: `http://localhost:3000/auth/kakao/webhook` (로컬 테스트용)
+     - 프로덕션 환경: `https://your-backend-domain.com/auth/kakao/webhook`
+   - **웹훅 테스트** 버튼으로 연결 확인 (선택사항)
+
+3. **저장** 클릭
+
+**백엔드 웹훅 엔드포인트 구현 필요:**
+
+웹훅을 받기 위해 백엔드에 다음 엔드포인트를 구현해야 합니다:
+
+```typescript
+// backend/src/auth/auth.controller.ts
+@Post('kakao/webhook')
+async handleKakaoWebhook(@Body() webhookData: any) {
+  // webhookData 예시:
+  // {
+  //   "event": "user.unlink",  // 연결 해제
+  //   "user_id": "123456789"   // 카카오 사용자 ID
+  // }
+  
+  // 카카오 사용자 ID로 사용자 찾기
+  // UserAuthentication에서 provider='kakao', providerId=user_id인 레코드 찾기
+  // 해당 사용자의 카카오 인증 정보 삭제 또는 사용자 계정 비활성화
+}
+```
+
+**웹훅 이벤트 타입:**
+- `user.unlink`: 사용자가 카카오에서 서비스 연결 해제
+- 기타 계정 상태 변경 이벤트
+
+**주의사항:**
+- 웹훅 URL은 HTTPS를 사용해야 합니다 (프로덕션 환경)
+- 개발 환경에서는 로컬 터널링 도구(ngrok 등)를 사용하여 테스트할 수 있습니다
+- 웹훅 요청은 카카오 서버에서 직접 전송되므로, IP 화이트리스트 설정이 필요할 수 있습니다
+
 ### 체크리스트
 
 다음 항목들을 모두 확인하세요:
@@ -78,14 +135,21 @@
 - [ ] 동의항목 설정 완료 (닉네임 필수)
 - [ ] 앱 상태가 "서비스 중" 또는 "개발 중"
 - [ ] 서비스 약관 동의 완료
+- [ ] 웹훅 등록됨 (계정 상태 변경 웹훅) - 개인정보 보호 필수
+- [ ] 백엔드 웹훅 엔드포인트 구현 완료
 - [ ] Vercel 환경 변수 설정됨 (`VITE_KAKAO_APP_KEY`)
 
 ### 환경 변수 확인
 
 프론트엔드 `.env` 파일 확인:
 ```env
-VITE_KAKAO_APP_KEY=4b8291c637c5ad9b0a502eee797ca890
+# JavaScript 키 사용 (REST API 키가 아님!)
+VITE_KAKAO_APP_KEY=a5654b03ecef8d26990a2f1fcb26fc05
 ```
+
+**주의:** 
+- `VITE_KAKAO_APP_KEY`에는 **JavaScript 키**를 사용해야 합니다
+- REST API 키를 사용하면 카카오 SDK 초기화가 실패할 수 있습니다
 
 ### 테스트 방법
 
@@ -139,8 +203,9 @@ VITE_KAKAO_APP_KEY=4b8291c637c5ad9b0a502eee797ca890
    - 페이지 새로고침 후 다시 시도
 
 5. **카카오 앱 키 확인**:
-   - **앱 키** 섹션에서 **REST API 키** 확인
-   - `.env` 파일의 `VITE_KAKAO_APP_KEY`와 일치하는지 확인
+   - **앱 키** 섹션에서 **JavaScript 키** 확인 (REST API 키가 아님!)
+   - `.env` 파일의 `VITE_KAKAO_APP_KEY`에 JavaScript 키가 설정되어 있는지 확인
+   - JavaScript 키는 프론트엔드에서만 사용하며, REST API 키와는 다릅니다
 
 6. **네트워크 요청 확인**:
    - 브라우저 개발자 도구 → Network 탭
@@ -171,7 +236,7 @@ console.log(window.Kakao.isInitialized());
 
 1. **Vercel 환경 변수 설정**:
    - Vercel 대시보드 → Settings → Environment Variables
-   - `VITE_KAKAO_APP_KEY=4b8291c637c5ad9b0a502eee797ca890` 추가
+   - `VITE_KAKAO_APP_KEY=a5654b03ecef8d26990a2f1fcb26fc05` 추가 (JavaScript 키 사용!)
    - Environment: Production, Preview, Development 모두 선택
    - 자세한 내용: [`docs/deployment/VERCEL_ENV_SETUP.md`](../deployment/VERCEL_ENV_SETUP.md)
 
@@ -183,4 +248,5 @@ console.log(window.Kakao.isInitialized());
 
 - [카카오 개발자 문서 - 카카오 로그인](https://developers.kakao.com/docs/latest/ko/kakaologin/rest-api)
 - [카카오 개발자 문서 - 플랫폼 설정](https://developers.kakao.com/docs/latest/ko/getting-started/app-key)
+- [카카오 개발자 문서 - 웹훅](https://developers.kakao.com/docs/latest/ko/kakaologin/webhook)
 
