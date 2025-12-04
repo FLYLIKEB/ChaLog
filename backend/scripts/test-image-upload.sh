@@ -10,8 +10,7 @@ echo ""
 
 # Health Check
 echo "1️⃣ Health Check..."
-HEALTH=$(curl -s "$API_URL/health")
-if [ $? -eq 0 ]; then
+if curl -s "$API_URL/health" > /dev/null; then
   echo "✅ 백엔드 서버 연결 성공"
 else
   echo "❌ 백엔드 서버에 연결할 수 없습니다"
