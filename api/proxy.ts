@@ -35,7 +35,11 @@ export default async function handler(req: any, res: any) {
     
     if (!rawPath && req.url) {
       try {
-        const urlObj = new URL(req.url, 'http://localhost');
+        // WHATWG URL API 사용 (url.parse() 대신)
+        const baseUrl = req.headers.host 
+          ? `https://${req.headers.host}` 
+          : 'http://localhost';
+        const urlObj = new URL(req.url, baseUrl);
         rawPath = urlObj.searchParams.get('path') || '';
       } catch (e) {
         console.error('[Proxy] Failed to parse URL:', e);
@@ -119,7 +123,18 @@ export default async function handler(req: any, res: any) {
     // 백엔드로 요청 전송
     let fetchResponse: Response;
     try {
-      fetchResponse = await fetch(backendUrl, fetchOptions);
+      // URL 유효성 검사
+      try {
+        new URL(backendUrl);
+      } catch (urlError) {
+        throw new Error(`Invalid backend URL: ${backendUrl}`);
+      }
+      
+      fetchResponse = await fetch(backendUrl, {
+        ...fetchOptions,
+        // Vercel 환경에서 네트워크 에러 방지를 위한 추가 옵션
+        keepalive: false,
+      });
       clearTimeout(timeoutId);
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
