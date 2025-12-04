@@ -629,5 +629,6 @@ export const notesApi = {
   update: (id: number, data: UpdateNoteRequest) => apiClient.patch(`/notes/${id}`, data),
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
+  toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
 };
 

@@ -5,6 +5,7 @@ import { Note } from './entities/note.entity';
 import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
 import { NoteLike } from './entities/note-like.entity';
+import { NoteBookmark } from './entities/note-bookmark.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
@@ -23,6 +24,8 @@ export class NotesService {
     private noteTagsRepository: Repository<NoteTag>,
     @InjectRepository(NoteLike)
     private noteLikesRepository: Repository<NoteLike>,
+    @InjectRepository(NoteBookmark)
+    private noteBookmarksRepository: Repository<NoteBookmark>,
     private teasService: TeasService,
     private s3Service: S3Service,
   ) {}
@@ -87,8 +90,8 @@ export class NotesService {
 
     const notes = await queryBuilder.getMany();
     
-    // 좋아요 정보 추가
-    return await this.enrichNotesWithLikes(notes, currentUserId);
+    // 좋아요 및 북마크 정보 추가
+    return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
   }
 
   async findOne(id: number, userId?: number): Promise<any> {
@@ -106,8 +109,8 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
     }
 
-    // 좋아요 정보 추가
-    const enrichedNotes = await this.enrichNotesWithLikes([note], userId);
+    // 좋아요 및 북마크 정보 추가
+    const enrichedNotes = await this.enrichNotesWithLikesAndBookmarks([note], userId);
     return enrichedNotes[0];
   }
 
@@ -307,7 +310,41 @@ export class NotesService {
     return !!like;
   }
 
-  private async enrichNotesWithLikes(notes: Note[], currentUserId?: number): Promise<any[]> {
+  async toggleBookmark(noteId: number, userId: number): Promise<{ bookmarked: boolean }> {
+    // 노트 존재 확인
+    const note = await this.notesRepository.findOne({ where: { id: noteId } });
+    if (!note) {
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
+    }
+
+    // 이미 북마크를 했는지 확인
+    const existingBookmark = await this.noteBookmarksRepository.findOne({
+      where: { noteId, userId },
+    });
+
+    if (existingBookmark) {
+      // 북마크 해제
+      await this.noteBookmarksRepository.remove(existingBookmark);
+      return { bookmarked: false };
+    } else {
+      // 북마크 추가
+      const newBookmark = this.noteBookmarksRepository.create({ noteId, userId });
+      await this.noteBookmarksRepository.save(newBookmark);
+      return { bookmarked: true };
+    }
+  }
+
+  async isBookmarkedByUser(noteId: number, userId?: number): Promise<boolean> {
+    if (!userId) {
+      return false;
+    }
+    const bookmark = await this.noteBookmarksRepository.findOne({
+      where: { noteId, userId },
+    });
+    return !!bookmark;
+  }
+
+  private async enrichNotesWithLikesAndBookmarks(notes: Note[], currentUserId?: number): Promise<any[]> {
     if (notes.length === 0) {
       return [];
     }
@@ -337,11 +374,21 @@ export class NotesService {
     }
     const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
 
-    // 노트에 좋아요 정보 추가
+    // 현재 사용자의 북마크 여부 조회
+    let userBookmarks: NoteBookmark[] = [];
+    if (currentUserId && noteIds.length > 0) {
+      userBookmarks = await this.noteBookmarksRepository.find({
+        where: { noteId: In(noteIds), userId: currentUserId },
+      });
+    }
+    const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
+
+    // 노트에 좋아요 및 북마크 정보 추가
     return notes.map((note) => {
       const noteObj = note as any;
       noteObj.likeCount = likeCountMap.get(note.id) || 0;
       noteObj.isLiked = userLikedNoteIds.has(note.id);
+      noteObj.isBookmarked = userBookmarkedNoteIds.has(note.id);
       return noteObj;
     });
   }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock, Loader2, Heart } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
@@ -38,6 +38,8 @@ export function NoteDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
 
   useEffect(() => {
     // 삭제된 노트는 API 호출하지 않음
@@ -59,6 +61,7 @@ export function NoteDetail() {
         setNote(normalizedNote);
         setIsLiked(normalizedNote.isLiked ?? false);
         setLikeCount(normalizedNote.likeCount ?? 0);
+        setIsBookmarked(normalizedNote.isBookmarked ?? false);
 
         // 차 정보 가져오기
         if (normalizedNote.teaId) {
@@ -170,6 +173,26 @@ export function NoteDetail() {
     }
   };
 
+  const handleBookmarkClick = async () => {
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isTogglingBookmark || isNaN(noteId)) return;
+
+    try {
+      setIsTogglingBookmark(true);
+      const result = await notesApi.toggleBookmark(noteId);
+      setIsBookmarked(result.bookmarked);
+    } catch (error: any) {
+      logger.error('Failed to toggle bookmark:', error);
+      toast.error('북마크 처리에 실패했습니다.');
+    } finally {
+      setIsTogglingBookmark(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
       <Header showBack title="노트 상세" />
@@ -209,16 +232,27 @@ export function NoteDetail() {
               </Badge>
             </div>
             {user && (
-              <button
-                onClick={handleLikeClick}
-                disabled={isTogglingLike}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
-              >
-                <Heart
-                  className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
-                />
-                {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleLikeClick}
+                  disabled={isTogglingLike}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                >
+                  <Heart
+                    className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
+                  />
+                  {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
+                </button>
+                <button
+                  onClick={handleBookmarkClick}
+                  disabled={isTogglingBookmark}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                >
+                  <Bookmark
+                    className={`w-5 h-5 ${isBookmarked ? 'fill-blue-500 text-blue-500' : ''}`}
+                  />
+                </button>
+              </div>
             )}
           </div>
           

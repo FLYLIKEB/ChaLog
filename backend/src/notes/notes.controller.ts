@@ -203,4 +203,24 @@ export class NotesController {
     
     return this.notesService.toggleLike(parsedId, parsedUserId);
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/bookmark')
+  toggleBookmark(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    return this.notesService.toggleBookmark(parsedId, parsedUserId);
+  }
 }

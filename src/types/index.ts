@@ -30,6 +30,7 @@ export interface Note {
   createdAt: Date;
   likeCount?: number;
   isLiked?: boolean;
+  isBookmarked?: boolean;
 }
 
 export interface User {
