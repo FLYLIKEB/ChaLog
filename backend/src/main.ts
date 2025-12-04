@@ -53,6 +53,7 @@ async function bootstrap() {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Type'],
   });
 
   // 전역 ValidationPipe 설정
@@ -63,6 +64,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
 
   const port = parseInt((configService.get('PORT') as string) || '3000', 10);
   await app.listen(port);
