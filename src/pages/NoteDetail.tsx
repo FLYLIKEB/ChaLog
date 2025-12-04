@@ -34,8 +34,14 @@ export function NoteDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
 
   useEffect(() => {
+    // 삭제된 노트는 API 호출하지 않음
+    if (isDeleted) {
+      return;
+    }
+
     const fetchData = async () => {
       if (isNaN(noteId)) {
         toast.error('유효하지 않은 노트 ID입니다.');
@@ -75,7 +81,7 @@ export function NoteDetail() {
     };
 
     fetchData();
-  }, [noteId]);
+  }, [noteId, isDeleted]);
 
   if (isLoading) {
     return (
@@ -126,8 +132,10 @@ export function NoteDetail() {
     try {
       setIsDeleting(true);
       await notesApi.delete(noteId);
+      setIsDeleted(true); // 삭제 상태 설정하여 API 재호출 방지
       toast.success('노트가 삭제되었습니다.');
-      navigate('/my-notes', { replace: true });
+      // 이전 화면으로 돌아가기
+      navigate(-1);
     } catch (error) {
       logger.error('Failed to delete note:', error);
       toast.error('삭제에 실패했습니다.');
