@@ -85,8 +85,9 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
       console.log('북마크 API 호출 시작', note.id);
       setIsTogglingBookmark(true);
       const result = await notesApi.toggleBookmark(note.id);
-      console.log('북마크 API 호출 성공', result);
+      console.log('북마크 API 호출 성공', result, 'bookmarked:', result.bookmarked);
       setIsBookmarked(result.bookmarked);
+      console.log('북마크 상태 업데이트:', result.bookmarked);
     } catch (error: any) {
       console.error('북마크 API 호출 실패', error);
       logger.error('Failed to toggle bookmark:', error);
@@ -185,13 +186,15 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                       ? 'text-blue-500 hover:text-blue-600' 
                       : 'text-gray-500 hover:text-blue-500'
                   }`}
+                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
                 >
                   <Bookmark
                     className={`w-4 h-4 transition-all ${
                       isBookmarked 
-                        ? 'fill-blue-500 text-blue-500' 
-                        : 'fill-none text-gray-500'
+                        ? 'fill-blue-500 text-blue-500 stroke-blue-500' 
+                        : 'fill-none text-gray-500 stroke-gray-500'
                     }`}
+                    style={isBookmarked ? { fill: 'rgb(59, 130, 246)', color: 'rgb(59, 130, 246)' } : {}}
                   />
                 </button>
               </>

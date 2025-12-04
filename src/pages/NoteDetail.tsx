@@ -190,8 +190,9 @@ export function NoteDetail() {
       console.log('북마크 API 호출 시작 (Detail)', noteId);
       setIsTogglingBookmark(true);
       const result = await notesApi.toggleBookmark(noteId);
-      console.log('북마크 API 호출 성공 (Detail)', result);
+      console.log('북마크 API 호출 성공 (Detail)', result, 'bookmarked:', result.bookmarked);
       setIsBookmarked(result.bookmarked);
+      console.log('북마크 상태 업데이트 (Detail):', result.bookmarked);
     } catch (error: any) {
       console.error('북마크 API 호출 실패 (Detail)', error);
       logger.error('Failed to toggle bookmark:', error);
@@ -261,13 +262,15 @@ export function NoteDetail() {
                       ? 'text-blue-600 hover:bg-blue-50' 
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
+                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
                 >
                   <Bookmark
                     className={`w-5 h-5 transition-all ${
                       isBookmarked 
-                        ? 'fill-blue-500 text-blue-500' 
-                        : 'fill-none text-gray-600'
+                        ? 'fill-blue-500 text-blue-500 stroke-blue-500' 
+                        : 'fill-none text-gray-600 stroke-gray-600'
                     }`}
+                    style={isBookmarked ? { fill: 'rgb(59, 130, 246)', color: 'rgb(59, 130, 246)' } : {}}
                   />
                 </button>
               </div>
