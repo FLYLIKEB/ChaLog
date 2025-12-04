@@ -13,6 +13,7 @@ import {
   InternalServerErrorException,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -185,6 +186,7 @@ export class NotesController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @HttpCode(201)
   @Post(':id/like')
   toggleLike(@Param('id') id: string, @Request() req) {
     if (!req.user || !req.user.userId) {
@@ -205,6 +207,7 @@ export class NotesController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @HttpCode(201)
   @Post(':id/bookmark')
   toggleBookmark(@Param('id') id: string, @Request() req) {
     if (!req.user || !req.user.userId) {

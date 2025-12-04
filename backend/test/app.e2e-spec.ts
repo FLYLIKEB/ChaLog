@@ -161,10 +161,12 @@ describe('AppController (e2e)', () => {
 
   describe('/teas - 차 API', () => {
     let authToken: string;
+    let userId: number;
+    let uniqueEmail: string;
 
     beforeAll(async () => {
       // 테스트용 사용자 등록 및 로그인
-      const uniqueEmail = `teatest-${Date.now()}@example.com`;
+      uniqueEmail = `teatest-${Date.now()}@example.com`;
       await request(app.getHttpServer())
         .post('/auth/register')
         .send({
@@ -181,6 +183,13 @@ describe('AppController (e2e)', () => {
         });
 
       authToken = loginResponse.body.access_token;
+
+      // userId 얻기
+      const profileResponse = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(201);
+      userId = profileResponse.body.userId;
     });
 
     beforeEach(async () => {
@@ -188,6 +197,17 @@ describe('AppController (e2e)', () => {
       // 외래키 제약으로 인해 notes를 먼저 삭제
       await dataSource.query('DELETE FROM notes');
       await dataSource.query('DELETE FROM teas');
+    });
+
+    afterAll(async () => {
+      // 테스트 종료 후 생성한 사용자 데이터 정리
+      try {
+        if (userId) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId]);
+        }
+      } catch (error) {
+        console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+      }
     });
 
     it('GET /teas - 초기에는 빈 배열을 반환해야 함', async () => {
@@ -314,6 +334,26 @@ describe('AppController (e2e)', () => {
     beforeEach(async () => {
       // 테스트 격리를 위해 각 테스트 전에 좋아요 데이터만 정리
       await dataSource.query('DELETE FROM note_likes');
+    });
+
+    afterAll(async () => {
+      // 테스트 종료 후 생성한 데이터 정리 (CASCADE로 관련 데이터도 자동 삭제)
+      try {
+        if (noteId) {
+          await dataSource.query('DELETE FROM notes WHERE id = ?', [noteId]);
+        }
+        if (teaId) {
+          await dataSource.query('DELETE FROM teas WHERE id = ?', [teaId]);
+        }
+        if (userId1) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId1]);
+        }
+        if (userId2) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId2]);
+        }
+      } catch (error) {
+        console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+      }
     });
 
     it('POST /notes/:id/like - 좋아요 추가 성공', async () => {
@@ -608,6 +648,26 @@ describe('AppController (e2e)', () => {
     beforeEach(async () => {
       // 테스트 격리를 위해 각 테스트 전에 북마크 데이터만 정리
       await dataSource.query('DELETE FROM note_bookmarks');
+    });
+
+    afterAll(async () => {
+      // 테스트 종료 후 생성한 데이터 정리 (CASCADE로 관련 데이터도 자동 삭제)
+      try {
+        if (noteId) {
+          await dataSource.query('DELETE FROM notes WHERE id = ?', [noteId]);
+        }
+        if (teaId) {
+          await dataSource.query('DELETE FROM teas WHERE id = ?', [teaId]);
+        }
+        if (userId1) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId1]);
+        }
+        if (userId2) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId2]);
+        }
+      } catch (error) {
+        console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+      }
     });
 
     it('POST /notes/:id/bookmark - 북마크 추가 성공', async () => {
