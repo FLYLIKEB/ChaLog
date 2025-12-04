@@ -6,43 +6,58 @@ const LOG_PROXY_REQUESTS =
   (process.env.LOG_PROXY_REQUESTS ?? 'true').toLowerCase() !== 'false';
 
 export default async function handler(req: any, res: any) {
-  // Vercel Serverless Function에서 query는 자동으로 파싱됨
-  const rawPath = req.query?.path;
-  const pathString = Array.isArray(rawPath)
-    ? rawPath.join('/')
-    : rawPath || '';
-
-  if (!pathString) {
-    res.status(400).json({
-      error: 'Bad Request',
-      message: 'Missing path parameter',
-    });
-    return;
-  }
-
-  // req.query에서 path를 제외한 나머지 쿼리 파라미터 추출
-  const queryParams = new URLSearchParams();
-  if (req.query) {
-    Object.keys(req.query).forEach(key => {
-      if (key !== 'path') {
-        const value = req.query[key];
-        if (Array.isArray(value)) {
-          value.forEach(v => queryParams.append(key, v));
-        } else {
-          queryParams.append(key, value);
-        }
-      }
-    });
-  }
+  // 변수들을 함수 상단에서 선언 (스코프 문제 해결)
+  let requestId: string = '';
+  let backendUrl: string = '';
+  let pathString: string = '';
+  let startedAt: number = Date.now();
   
-  const backendUrl = `${BACKEND_URL}/${pathString}${
-    queryParams.toString() ? `?${queryParams.toString()}` : ''
-  }`;
-
-  const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const startedAt = Date.now();
-
   try {
+    // 디버깅: 요청 정보 로깅
+    console.log('[Proxy] Request received:', {
+      method: req.method,
+      url: req.url,
+      query: req.query,
+      headers: req.headers ? Object.keys(req.headers) : 'no headers',
+    });
+
+    // Vercel Serverless Function에서 query는 자동으로 파싱됨
+    const rawPath = req.query?.path;
+    pathString = Array.isArray(rawPath)
+      ? rawPath.join('/')
+      : rawPath || '';
+
+    if (!pathString) {
+      console.error('[Proxy] Missing path parameter:', { query: req.query });
+      res.status(400).json({
+        error: 'Bad Request',
+        message: 'Missing path parameter',
+        debug: process.env.VERCEL_ENV === 'development' ? { query: req.query } : undefined,
+      });
+      return;
+    }
+
+    // req.query에서 path를 제외한 나머지 쿼리 파라미터 추출
+    const queryParams = new URLSearchParams();
+    if (req.query) {
+      Object.keys(req.query).forEach(key => {
+        if (key !== 'path') {
+          const value = req.query[key];
+          if (Array.isArray(value)) {
+            value.forEach(v => queryParams.append(key, v));
+          } else {
+            queryParams.append(key, value);
+          }
+        }
+      });
+    }
+    
+    backendUrl = `${BACKEND_URL}/${pathString}${
+      queryParams.toString() ? `?${queryParams.toString()}` : ''
+    }`;
+
+    requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    startedAt = Date.now();
     if (LOG_PROXY_REQUESTS) {
       console.info('[Proxy] ▶', {
         requestId,
@@ -125,10 +140,10 @@ export default async function handler(req: any, res: any) {
     
     // 상세한 에러 로깅 (Vercel 로그에 표시됨)
     console.error('[Proxy] ❌ Error Details:', {
-      requestId,
-      backendUrl,
-      method: req.method,
-      path: pathString,
+      requestId: requestId || 'unknown',
+      backendUrl: backendUrl || BACKEND_URL,
+      method: req?.method || 'unknown',
+      path: pathString || 'unknown',
       errorName: errorObj.name,
       errorMessage: errorObj.message,
       errorStack: errorObj.stack,
@@ -147,9 +162,9 @@ export default async function handler(req: any, res: any) {
         error: 'Gateway Timeout',
         message: `백엔드 서버 응답 시간 초과 (${timeoutMs}ms)`,
         details: isDevelopment ? {
-          backendUrl,
+          backendUrl: backendUrl || BACKEND_URL,
           timeoutMs,
-          requestId,
+          requestId: requestId || 'unknown',
         } : undefined,
       });
     } else if (isNetworkError) {
@@ -157,11 +172,11 @@ export default async function handler(req: any, res: any) {
         error: 'Bad Gateway',
         message: '백엔드 서버에 연결할 수 없습니다',
         details: isDevelopment ? {
-          backendUrl,
+          backendUrl: backendUrl || BACKEND_URL,
           errorMessage: errorObj.message,
-          requestId,
+          requestId: requestId || 'unknown',
         } : {
-          backendUrl: backendUrl.replace(/\/\/.*@/, '//***@'), // 비밀번호 숨김
+          backendUrl: (backendUrl || BACKEND_URL).replace(/\/\/.*@/, '//***@'), // 비밀번호 숨김
         },
       });
     } else {
@@ -171,10 +186,10 @@ export default async function handler(req: any, res: any) {
         details: isDevelopment ? {
           errorName: errorObj.name,
           errorMessage: errorObj.message,
-          backendUrl,
-          requestId,
+          backendUrl: backendUrl || BACKEND_URL,
+          requestId: requestId || 'unknown',
         } : {
-          requestId,
+          requestId: requestId || 'unknown',
         },
       });
     }
