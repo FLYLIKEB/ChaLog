@@ -170,10 +170,20 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   type="button"
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
-                  className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
+                  className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                    isLiked 
+                      ? 'text-[#030213] hover:text-[#030213]/80' 
+                      : 'text-gray-500 hover:text-[#030213]'
+                  }`}
+                  title={isLiked ? '좋아요 취소' : '좋아요'}
                 >
                   <Heart
-                    className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
+                    className={`w-4 h-4 transition-all ${
+                      isLiked 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
+                        : 'fill-none text-gray-500 stroke-gray-500'
+                    }`}
+                    style={isLiked ? { fill: '#030213', color: '#030213' } : {}}
                   />
                   {likeCount > 0 && <span className="text-sm">{likeCount}</span>}
                 </button>

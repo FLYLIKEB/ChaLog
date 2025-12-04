@@ -246,10 +246,20 @@ export function NoteDetail() {
                   type="button"
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                    isLiked 
+                      ? 'text-[#030213] hover:bg-[#030213]/10' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title={isLiked ? '좋아요 취소' : '좋아요'}
                 >
                   <Heart
-                    className={`w-5 h-5 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
+                    className={`w-5 h-5 transition-all ${
+                      isLiked 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
+                        : 'fill-none text-gray-600 stroke-gray-600'
+                    }`}
+                    style={isLiked ? { fill: '#030213', color: '#030213' } : {}}
                   />
                   {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
                 </button>

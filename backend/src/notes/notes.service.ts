@@ -275,10 +275,15 @@ export class NotesService {
   async toggleLike(noteId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
     // 트랜잭션으로 race condition 방지
     return await this.dataSource.transaction(async (manager) => {
-      // 노트 존재 확인
+      // 노트 존재 확인 및 권한 확인
       const note = await manager.findOne(Note, { where: { id: noteId } });
       if (!note) {
         throw new NotFoundException('노트를 찾을 수 없습니다.');
+      }
+
+      // 비공개 노트는 작성자만 좋아요 가능
+      if (!note.isPublic && note.userId !== userId) {
+        throw new ForbiddenException('이 노트에 좋아요할 권한이 없습니다.');
       }
 
       // 이미 좋아요를 눌렀는지 확인 (트랜잭션 내에서)
@@ -330,10 +335,15 @@ export class NotesService {
   async toggleBookmark(noteId: number, userId: number): Promise<{ bookmarked: boolean }> {
     // 트랜잭션으로 race condition 방지
     return await this.dataSource.transaction(async (manager) => {
-      // 노트 존재 확인
+      // 노트 존재 확인 및 권한 확인
       const note = await manager.findOne(Note, { where: { id: noteId } });
       if (!note) {
         throw new NotFoundException('노트를 찾을 수 없습니다.');
+      }
+
+      // 비공개 노트는 작성자만 북마크 가능
+      if (!note.isPublic && note.userId !== userId) {
+        throw new ForbiddenException('이 노트를 북마크할 권한이 없습니다.');
       }
 
       // 이미 북마크를 했는지 확인 (트랜잭션 내에서)
