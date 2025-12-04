@@ -122,21 +122,30 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       {/* 이미지 미리보기 그리드 */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
-          {images.map((url) => (
+          {images.map((url, index) => (
             <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
               <img
                 src={url}
-                alt="업로드된 이미지"
+                alt={`업로드된 이미지 ${index + 1}`}
                 className="w-full h-full object-cover"
               />
+              {/* 삭제 버튼 - 호버 시 더 명확하게 표시 */}
               <button
                 type="button"
-                onClick={() => onChange(images.filter(img => img !== url))}
-                className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onChange(images.filter(img => img !== url));
+                }}
+                className="absolute top-1.5 right-1.5 p-1.5 bg-red-500 hover:bg-red-600 rounded-full shadow-lg opacity-90 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
                 aria-label="이미지 삭제"
+                title="삭제"
               >
-                <X className="w-3 h-3 text-white" />
+                <X className="w-4 h-4 text-white" />
               </button>
+              {/* 이미지 번호 표시 */}
+              <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-black/60 rounded text-xs text-white font-medium">
+                {index + 1}
+              </div>
             </div>
           ))}
         </div>
