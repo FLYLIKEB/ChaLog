@@ -121,14 +121,14 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
 
       {/* 이미지 미리보기 그리드 */}
       {images.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-3 gap-3">
           {images.map((url, index) => (
-            <div key={`image-${index}-${url}`} className="space-y-1">
-              <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
+            <div key={`image-${index}-${url}`} className="space-y-2">
+              <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
                 <img
                   src={url}
                   alt={`업로드된 이미지 ${index + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full h-full object-cover"
                 />
               </div>
               {/* 삭제 버튼 - 이미지 밑에 빨간색으로 배치 */}
@@ -139,12 +139,15 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                   e.preventDefault();
                   onChange(images.filter((_, i) => i !== index));
                 }}
-                className="w-full py-1.5 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg text-white text-xs font-medium transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-1"
+                className="w-full py-2 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg text-white text-sm font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-1.5"
+                style={{
+                  backgroundColor: '#ef4444',
+                }}
                 aria-label={`이미지 ${index + 1} 삭제`}
                 title="삭제"
               >
-                <X className="w-3.5 h-3.5" strokeWidth={2.5} />
-                삭제
+                <X className="w-4 h-4" strokeWidth={3} />
+                <span>삭제</span>
               </button>
             </div>
           ))}
