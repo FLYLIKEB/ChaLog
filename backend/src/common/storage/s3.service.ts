@@ -72,10 +72,50 @@ export class S3Service {
     await this.s3Client.send(command);
   }
 
-  generateKey(prefix: string, filename: string): string {
+  /**
+   * MIME 타입을 확장자로 변환하는 맵
+   */
+  private readonly mimeToExtension: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/gif': 'gif',
+    'image/bmp': 'bmp',
+    'image/svg+xml': 'svg',
+  };
+
+  /**
+   * 파일명과 MIME 타입에서 확장자를 추출
+   * 파일명에 확장자가 없으면 MIME 타입에서 추출
+   */
+  private getExtension(filename: string, mimeType?: string): string {
+    // 파일명에서 확장자 추출 시도
+    const parts = filename.split('.');
+    if (parts.length > 1) {
+      const ext = parts.pop()?.toLowerCase();
+      // 확장자가 유효한지 확인 (빈 문자열이 아니고, 파일명 전체가 아닌 경우)
+      if (ext && ext.length > 0 && ext.length < filename.length) {
+        return ext;
+      }
+    }
+
+    // 파일명에서 확장자를 추출할 수 없으면 MIME 타입에서 추출
+    if (mimeType) {
+      const ext = this.mimeToExtension[mimeType.toLowerCase()];
+      if (ext) {
+        return ext;
+      }
+    }
+
+    // 기본값: jpg (가장 일반적인 이미지 형식)
+    return 'jpg';
+  }
+
+  generateKey(prefix: string, filename: string, mimeType?: string): string {
     const timestamp = Date.now();
     const randomString = Math.random().toString(36).substring(2, 15);
-    const extension = filename.split('.').pop();
+    const extension = this.getExtension(filename, mimeType);
     return `${prefix}/${timestamp}-${randomString}.${extension}`;
   }
 }

@@ -67,7 +67,7 @@ export class NotesController {
       );
 
       // S3에 업로드
-      const key = this.s3Service.generateKey('notes', file.originalname);
+      const key = this.s3Service.generateKey('notes', file.originalname, file.mimetype);
       const url = await this.s3Service.uploadFile(key, processedBuffer, file.mimetype);
 
       return { url };
