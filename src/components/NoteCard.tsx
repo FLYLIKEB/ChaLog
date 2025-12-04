@@ -52,6 +52,23 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
             {note.memo && (
               <p className="text-sm text-gray-600 line-clamp-2">{note.memo}</p>
             )}
+            {note.tags && note.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {note.tags.slice(0, 3).map((tag, index) => (
+                  <span
+                    key={index}
+                    className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {note.tags.length > 3 && (
+                  <span className="text-xs px-2 py-0.5 text-gray-500">
+                    +{note.tags.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-xs text-gray-500">{note.userName}</span>
               <span className="text-xs text-gray-400">·</span>

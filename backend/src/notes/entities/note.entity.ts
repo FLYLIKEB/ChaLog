@@ -1,6 +1,7 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Tea } from '../../teas/entities/tea.entity';
+import { NoteTag } from './note-tag.entity';
 
 @Entity('notes')
 export class Note {
@@ -41,6 +42,9 @@ export class Note {
 
   @Column({ default: false })
   isPublic: boolean;
+
+  @OneToMany(() => NoteTag, (noteTag) => noteTag.note, { cascade: true })
+  noteTags: NoteTag[];
 
   @CreateDateColumn({ precision: 0 })
   createdAt: Date;

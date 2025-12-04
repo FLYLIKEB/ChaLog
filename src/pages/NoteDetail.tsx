@@ -207,6 +207,20 @@ export function NoteDetail() {
           </section>
         )}
 
+        {/* 태그 */}
+        {note.tags && note.tags.length > 0 && (
+          <section className="bg-white rounded-lg p-4">
+            <h3 className="mb-3">태그</h3>
+            <div className="flex flex-wrap gap-2">
+              {note.tags.map((tag, index) => (
+                <Badge key={index} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* 메모 */}
         {note.memo && (
           <section className="bg-white rounded-lg p-4">

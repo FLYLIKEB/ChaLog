@@ -2,6 +2,8 @@ import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nest
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Note } from './entities/note.entity';
+import { Tag } from './entities/tag.entity';
+import { NoteTag } from './entities/note-tag.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
@@ -14,6 +16,10 @@ export class NotesService {
   constructor(
     @InjectRepository(Note)
     private notesRepository: Repository<Note>,
+    @InjectRepository(Tag)
+    private tagsRepository: Repository<Tag>,
+    @InjectRepository(NoteTag)
+    private noteTagsRepository: Repository<NoteTag>,
     private teasService: TeasService,
     private s3Service: S3Service,
   ) {}
@@ -22,18 +28,27 @@ export class NotesService {
     // 차가 존재하는지 확인
     const tea = await this.teasService.findOne(createNoteDto.teaId);
     
+    // tags 필드를 분리
+    const { tags, ...noteData } = createNoteDto;
+    
     const note = this.notesRepository.create({
-      ...createNoteDto,
+      ...noteData,
       userId,
       teaId: tea.id,
     });
 
     const savedNote = await this.notesRepository.save(note);
     
+    // 태그 처리
+    if (tags && tags.length > 0) {
+      await this.setNoteTags(savedNote.id, tags);
+    }
+    
     // 차의 평균 평점 업데이트
     await this.updateTeaRating(tea.id);
 
-    return savedNote;
+    // 태그를 포함한 노트 반환
+    return this.findOne(savedNote.id, userId);
   }
 
   async findAll(userId?: number, isPublic?: boolean, teaId?: number): Promise<Note[]> {
@@ -41,6 +56,8 @@ export class NotesService {
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
       .leftJoinAndSelect('note.tea', 'tea')
+      .leftJoinAndSelect('note.noteTags', 'noteTags')
+      .leftJoinAndSelect('noteTags.tag', 'tag')
       .orderBy('note.createdAt', 'DESC');
 
     const conditions: string[] = [];
@@ -71,7 +88,7 @@ export class NotesService {
   async findOne(id: number, userId?: number): Promise<Note> {
     const note = await this.notesRepository.findOne({
       where: { id },
-      relations: ['user', 'tea'],
+      relations: ['user', 'tea', 'noteTags', 'noteTags.tag'],
     });
 
     if (!note) {
@@ -93,17 +110,33 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
 
-    Object.assign(note, updateNoteDto);
+    // tags 필드를 분리
+    const { tags, ...noteData } = updateNoteDto;
+
+    Object.assign(note, noteData);
     const updatedNote = await this.notesRepository.save(note);
+
+    // 태그 업데이트 (tags가 제공된 경우에만)
+    if (tags !== undefined) {
+      await this.setNoteTags(id, tags || []);
+    }
 
     // 차의 평균 평점 업데이트
     await this.updateTeaRating(note.teaId);
 
-    return updatedNote;
+    // 태그를 포함한 업데이트된 노트 반환
+    return this.findOne(id, userId);
   }
 
   async remove(id: number, userId: number): Promise<void> {
-    const note = await this.findOne(id, userId);
+    // 삭제를 위해서는 relations 없이도 조회 가능해야 함
+    const note = await this.notesRepository.findOne({
+      where: { id },
+    });
+
+    if (!note) {
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
+    }
 
     if (note.userId !== userId) {
       throw new ForbiddenException('이 노트를 삭제할 권한이 없습니다.');
@@ -180,6 +213,50 @@ export class NotesService {
       this.logger.warn(`URL 파싱 실패 (${url}): ${error instanceof Error ? error.message : String(error)}`);
       return null;
     }
+  }
+
+  /**
+   * 노트의 태그를 설정합니다.
+   * 기존 태그를 삭제하고 새로운 태그를 추가합니다.
+   */
+  private async setNoteTags(noteId: number, tagNames: string[]): Promise<void> {
+    // 기존 태그 연결 삭제
+    await this.noteTagsRepository.delete({ noteId });
+
+    if (tagNames.length === 0) {
+      return;
+    }
+
+    // 태그 이름을 정규화 (공백 제거, 중복 제거)
+    const normalizedTagNames = Array.from(
+      new Set(tagNames.map(name => name.trim()).filter(name => name.length > 0))
+    );
+
+    // 태그 생성 또는 조회
+    const tags: Tag[] = [];
+    for (const tagName of normalizedTagNames) {
+      let tag = await this.tagsRepository.findOne({
+        where: { name: tagName },
+      });
+
+      if (!tag) {
+        // 태그가 없으면 생성
+        tag = this.tagsRepository.create({ name: tagName });
+        tag = await this.tagsRepository.save(tag);
+      }
+
+      tags.push(tag);
+    }
+
+    // NoteTag 연결 생성
+    const noteTags = tags.map(tag =>
+      this.noteTagsRepository.create({
+        noteId,
+        tagId: tag.id,
+      })
+    );
+
+    await this.noteTagsRepository.save(noteTags);
   }
 
   private async updateTeaRating(teaId: number): Promise<void> {

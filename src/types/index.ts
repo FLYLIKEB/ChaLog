@@ -25,6 +25,7 @@ export interface Note {
   };
   memo: string | null;
   images?: string[] | null;
+  tags?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
 }

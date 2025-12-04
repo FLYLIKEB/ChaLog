@@ -86,6 +86,8 @@ interface BackendNote {
   };
   memo: string | null;
   images?: string[] | null;
+  noteTags?: Array<{ tag: { name: string } }>;
+  tags?: string[] | null; // 레거시 지원 (직접 tags 필드가 있는 경우)
   isPublic: boolean;
   createdAt: Date | string;
 }
@@ -106,6 +108,7 @@ interface NormalizedNote {
   };
   memo: string;
   images?: string[];
+  tags?: string[];
   isPublic: boolean;
   createdAt: Date;
 }
@@ -120,6 +123,15 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     throw new Error('Note data is required');
   }
   
+  // noteTags 관계에서 tags 배열 추출
+  let tags: string[] | undefined;
+  if (note.noteTags && note.noteTags.length > 0) {
+    tags = note.noteTags.map(nt => nt.tag.name);
+  } else if (note.tags && note.tags.length > 0) {
+    // 레거시 지원: 직접 tags 필드가 있는 경우
+    tags = note.tags;
+  }
+
   return {
     ...note,
     teaName: note.tea?.name || '',
@@ -128,6 +140,8 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     memo: note.memo ?? '',
     // images가 null이면 undefined로 변환, 빈 배열이면 undefined로 변환
     images: note.images && note.images.length > 0 ? note.images : undefined,
+    // tags 추출: noteTags 관계에서 추출하거나 직접 tags 필드 사용
+    tags: tags && tags.length > 0 ? tags : undefined,
     createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
   };
 }
@@ -577,6 +591,7 @@ export interface CreateNoteRequest {
   };
   memo?: string;
   images?: string[];
+  tags?: string[];
   isPublic: boolean;
 }
 
