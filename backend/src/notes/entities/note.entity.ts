@@ -33,8 +33,11 @@ export class Note {
     complexity: number;
   };
 
-  @Column({ type: 'text' })
-  memo: string;
+  @Column({ type: 'text', nullable: true })
+  memo: string | null;
+
+  @Column({ type: 'json', nullable: true })
+  images: string[] | null;
 
   @Column({ default: false })
   isPublic: boolean;

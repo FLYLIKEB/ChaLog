@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, IsObject, ValidateNested } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, IsObject, ValidateNested, IsOptional, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class RatingsDto {
@@ -42,8 +42,14 @@ export class CreateNoteDto {
   @Type(() => RatingsDto)
   ratings: RatingsDto;
 
+  @IsOptional()
   @IsString()
-  memo: string;
+  memo?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  images?: string[];
 
   @IsBoolean()
   isPublic: boolean;
