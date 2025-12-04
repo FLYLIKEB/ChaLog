@@ -176,9 +176,9 @@ describe('NewNote 페이지', () => {
     const newTeaButton = screen.getByRole('button', { name: /새 차로 등록하기/ });
     await user.click(newTeaButton);
 
-    expect(getNavigateSpy()).toHaveBeenCalledWith(
-      '/tea/new?returnTo=/note/new&searchQuery=새로운%20차'
-    );
+    // encodeURIComponent가 한글을 UTF-8로 인코딩하므로 실제 인코딩된 값을 사용
+    const expectedUrl = `/tea/new?returnTo=/note/new&searchQuery=${encodeURIComponent('새로운 차')}`;
+    expect(getNavigateSpy()).toHaveBeenCalledWith(expectedUrl);
   });
 
   it('teaId로 새로 등록한 차를 가져와서 자동 선택한다', async () => {

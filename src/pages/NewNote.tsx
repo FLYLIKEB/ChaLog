@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -22,6 +22,7 @@ export function NewNote() {
   const preselectedTeaId = searchParams.get('teaId');
 
   const [teas, setTeas] = useState<Tea[]>([]);
+  const teasRef = useRef<Tea[]>([]);
   const [selectedTea, setSelectedTea] = useState<number | null>(
     preselectedTeaId ? parseInt(preselectedTeaId, 10) : null
   );
@@ -50,7 +51,9 @@ export function NewNote() {
     const fetchTeas = async () => {
       try {
         const data = await teasApi.getAll();
-        setTeas(Array.isArray(data) ? data : []);
+        const teasArray = Array.isArray(data) ? data : [];
+        setTeas(teasArray);
+        teasRef.current = teasArray;
       } catch (error) {
         logger.error('Failed to fetch teas:', error);
       }
@@ -63,7 +66,8 @@ export function NewNote() {
       const teaId = parseInt(preselectedTeaId, 10);
       if (isNaN(teaId)) return;
 
-      const tea = teas.find(t => t.id === teaId);
+      // useRef를 사용하여 최신 teas 배열 참조 (의존성 배열에 포함하지 않아도 됨)
+      const tea = teasRef.current.find(t => t.id === teaId);
       if (tea) {
         setSelectedTea(teaId);
         setSearchQuery(tea.name);
@@ -73,7 +77,11 @@ export function NewNote() {
           try {
             const teaData = await teasApi.getById(teaId);
             if (teaData) {
-              setTeas(prev => [...prev, teaData as Tea]);
+              setTeas(prev => {
+                const updated = [...prev, teaData as Tea];
+                teasRef.current = updated;
+                return updated;
+              });
               setSelectedTea(teaId);
               setSearchQuery((teaData as Tea).name);
             }
@@ -84,7 +92,7 @@ export function NewNote() {
         fetchTea();
       }
     }
-  }, [preselectedTeaId, teas]);
+  }, [preselectedTeaId]);
 
   // 검색 필터링
   const filteredTeas = teas.filter(tea => {
