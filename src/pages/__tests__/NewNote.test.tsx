@@ -27,6 +27,10 @@ const mockTeas = [
 vi.mock('../../lib/api', () => ({
   teasApi: {
     getAll: vi.fn(() => Promise.resolve(mockTeas)),
+    getById: vi.fn((id: number) => {
+      const tea = mockTeas.find(t => t.id === id);
+      return Promise.resolve(tea || null);
+    }),
   },
   notesApi: {
     create: vi.fn(() => Promise.resolve({ id: 1 })),
@@ -75,6 +79,8 @@ const renderNewNote = (initialEntry = '/new-note') =>
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/new-note" element={<NewNote />} />
+        <Route path="/note/new" element={<NewNote />} />
+        <Route path="/tea/new" element={<div data-testid="new-tea-page">새 차 등록</div>} />
         <Route path="/my-notes" element={<div data-testid="my-notes-page">내 노트 목록</div>} />
       </Routes>
     </MemoryRouter>,
@@ -132,6 +138,74 @@ describe('NewNote 페이지', () => {
     renderNewNote('/new-note?teaId=1');
 
     expect(await screen.findByDisplayValue('백호은침')).toBeInTheDocument();
+  });
+
+  it('검색 결과가 없을 때 새 차로 등록하기 버튼을 표시한다', async () => {
+    const user = userEvent.setup();
+    const { teasApi } = await import('../../lib/api');
+    
+    // 검색 결과가 없도록 mock 수정
+    vi.mocked(teasApi.getAll).mockResolvedValueOnce([]);
+
+    renderNewNote('/note/new');
+
+    const teaInput = screen.getByPlaceholderText('차 이름으로 검색...');
+    await user.type(teaInput, '존재하지 않는 차');
+
+    await waitFor(() => {
+      expect(screen.getByText(/검색 결과가 없습니다/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /새 차로 등록하기/ })).toBeInTheDocument();
+    });
+  });
+
+  it('새 차로 등록하기 버튼 클릭 시 새 차 등록 페이지로 이동한다', async () => {
+    const user = userEvent.setup();
+    const { teasApi } = await import('../../lib/api');
+    
+    vi.mocked(teasApi.getAll).mockResolvedValueOnce([]);
+
+    renderNewNote('/note/new');
+
+    const teaInput = screen.getByPlaceholderText('차 이름으로 검색...');
+    await user.type(teaInput, '새로운 차');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /새 차로 등록하기/ })).toBeInTheDocument();
+    });
+
+    const newTeaButton = screen.getByRole('button', { name: /새 차로 등록하기/ });
+    await user.click(newTeaButton);
+
+    expect(getNavigateSpy()).toHaveBeenCalledWith(
+      '/tea/new?returnTo=/note/new&searchQuery=새로운%20차'
+    );
+  });
+
+  it('teaId로 새로 등록한 차를 가져와서 자동 선택한다', async () => {
+    const { teasApi } = await import('../../lib/api');
+    const newTea = {
+      id: 3,
+      name: '새로 등록한 차',
+      type: '녹차',
+      seller: '새 찻집',
+      averageRating: 0,
+      reviewCount: 0,
+    };
+
+    // getAll은 빈 배열 반환 (아직 목록에 없음)
+    vi.mocked(teasApi.getAll).mockResolvedValueOnce([]);
+    // getById는 새로 등록한 차 반환
+    vi.mocked(teasApi.getById).mockResolvedValueOnce(newTea);
+
+    renderNewNote('/note/new?teaId=3');
+
+    await waitFor(() => {
+      expect(teasApi.getById).toHaveBeenCalledWith(3);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('새로 등록한 차')).toBeInTheDocument();
+    }, { timeout: 2000 });
   });
 });
 

@@ -21,3 +21,8 @@ export const MIN_REVIEWS_FOR_TAGS = 3;
 // 기본 태그
 export const DEFAULT_TEA_TAGS = ['깨끗함', '부드러움', '복합적'] as const;
 
+// 차 종류
+export const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'] as const;
+
+export type TeaType = typeof TEA_TYPES[number];
+

@@ -6,6 +6,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { Home } from './pages/Home';
 import { Search } from './pages/Search';
 import { TeaDetail } from './pages/TeaDetail';
+import { NewTea } from './pages/NewTea';
 import { NewNote } from './pages/NewNote';
 import { NoteDetail } from './pages/NoteDetail';
 import { MyNotes } from './pages/MyNotes';
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
             <Route path="/search" element={<Search />} />
+            <Route path="/tea/new" element={<NewTea />} />
             <Route path="/tea/:id" element={<TeaDetail />} />
             <Route path="/note/new" element={<NewNote />} />
             <Route path="/note/:id" element={<NoteDetail />} />
