@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { RatingSlider } from '../components/RatingSlider';
+import { ImageUploader } from '../components/ImageUploader';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
@@ -35,6 +36,7 @@ export function NewNote() {
     complexity: RATING_DEFAULT,
   });
   const [memo, setMemo] = useState('');
+  const [images, setImages] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -117,10 +119,6 @@ export function NewNote() {
       toast.error('차를 선택해주세요.');
       return;
     }
-    if (!memo.trim()) {
-      toast.error('메모를 작성해주세요.');
-      return;
-    }
 
     try {
       setIsSaving(true);
@@ -138,7 +136,8 @@ export function NewNote() {
         teaId: selectedTea,
         rating: averageRating,
         ratings,
-        memo: memo.trim(),
+        memo: memo.trim() || undefined,
+        images: images.length > 0 ? images : undefined,
         isPublic,
       });
 
@@ -239,6 +238,15 @@ export function NewNote() {
               />
             </React.Fragment>
           ))}
+        </section>
+
+        {/* 사진 업로드 */}
+        <section className="bg-white rounded-lg p-4">
+          <ImageUploader
+            images={images}
+            onChange={setImages}
+            maxImages={5}
+          />
         </section>
 
         {/* 메모 입력 */}

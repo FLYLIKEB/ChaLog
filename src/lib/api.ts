@@ -84,7 +84,8 @@ interface BackendNote {
     clarity: number;
     complexity: number;
   };
-  memo: string;
+  memo: string | null;
+  images?: string[] | null;
   isPublic: boolean;
   createdAt: Date | string;
 }
@@ -104,6 +105,7 @@ interface NormalizedNote {
     complexity: number;
   };
   memo: string;
+  images?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
 }
@@ -121,6 +123,7 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     userName: note.user?.name || '',
+    images: note.images || null,
     createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
   };
 }
@@ -420,6 +423,104 @@ class ApiClient {
   async delete(endpoint: string): Promise<void> {
     await this.request<void>(endpoint, { method: 'DELETE' });
   }
+
+  async uploadFile<T>(endpoint: string, file: File): Promise<T> {
+    const token = localStorage.getItem('access_token');
+    const timeout = API_TIMEOUT;
+    
+    if (!token) {
+      throw {
+        message: '로그인이 필요합니다.',
+        statusCode: 401,
+      } as ApiError;
+    }
+    
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${token}`,
+    };
+
+    const url = `${this.baseURL}${endpoint}`;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        let error: any;
+        const contentType = response.headers.get('content-type') || '';
+        
+        try {
+          if (contentType.includes('application/json')) {
+            error = await response.json();
+          } else {
+            const text = await response.text();
+            try {
+              error = JSON.parse(text);
+            } catch {
+              error = { message: text || response.statusText };
+            }
+          }
+        } catch (parseError) {
+          error = {
+            message: response.statusText || `HTTP error! status: ${response.status}`,
+            statusCode: response.status,
+          };
+        }
+        
+        let errorMessage: string = 
+          error.message || 
+          error.error || 
+          error.details?.message ||
+          response.statusText || 
+          `HTTP error! status: ${response.status}`;
+        
+        if (typeof errorMessage !== 'string') {
+          errorMessage = String(errorMessage);
+        }
+        
+        // 401 에러인 경우 명확한 메시지 표시
+        if (response.status === 401) {
+          if (!errorMessage.match(/[가-힣]/)) {
+            errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+          }
+        }
+        
+        const apiError: ApiError = {
+          message: errorMessage,
+          statusCode: response.status,
+        };
+        
+        throw apiError;
+      }
+
+      return await response.json();
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw {
+          message: '요청 시간이 초과되었습니다.',
+          statusCode: 408,
+        } as ApiError;
+      }
+      
+      throw error;
+    }
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
@@ -468,6 +569,7 @@ export interface CreateNoteRequest {
     complexity: number;
   };
   memo: string;
+  images?: string[];
   isPublic: boolean;
 }
 
@@ -500,6 +602,7 @@ export const notesApi = {
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
   getById: (id: number) => apiClient.get(`/notes/${id}`),
+  uploadImage: (file: File) => apiClient.uploadFile<{ url: string }>('/notes/images', file),
   create: (data: CreateNoteRequest) => apiClient.post('/notes', data),
   update: (id: number, data: UpdateNoteRequest) => apiClient.patch(`/notes/${id}`, data),
   delete: (id: number) => apiClient.delete(`/notes/${id}`),

@@ -23,7 +23,8 @@ export interface Note {
     clarity: number;
     complexity: number;
   };
-  memo: string;
+  memo: string | null;
+  images?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
 }
