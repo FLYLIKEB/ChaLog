@@ -123,13 +123,15 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {images.map((url, index) => (
-            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
-              <img
-                src={url}
-                alt={`업로드된 이미지 ${index + 1}`}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              {/* 삭제 버튼 - 애플 스타일 */}
+            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-xl bg-gray-100 group" style={{ zIndex: 1 }}>
+              <div className="absolute inset-0 rounded-xl overflow-hidden">
+                <img
+                  src={url}
+                  alt={`업로드된 이미지 ${index + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              {/* 삭제 버튼 - 애플 스타일, 이미지 밖에 배치 */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -137,14 +139,15 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                   e.preventDefault();
                   onChange(images.filter((_, i) => i !== index));
                 }}
-                className="absolute top-2 right-2 w-9 h-9 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:bg-black/80 hover:scale-110 active:scale-95"
+                className="absolute -top-1 -right-1 w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-xl border-2 border-white transition-all duration-200 hover:scale-110 active:scale-95"
                 style={{ 
-                  zIndex: 9999,
+                  zIndex: 10000,
+                  pointerEvents: 'auto',
                 }}
                 aria-label={`이미지 ${index + 1} 삭제`}
                 title="삭제"
               >
-                <X className="w-4 h-4 text-white" strokeWidth={2.5} />
+                <X className="w-5 h-5 text-white" strokeWidth={3} />
               </button>
             </div>
           ))}
