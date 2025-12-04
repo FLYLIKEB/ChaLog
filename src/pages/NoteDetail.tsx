@@ -256,10 +256,18 @@ export function NoteDetail() {
                   type="button"
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                    isBookmarked 
+                      ? 'text-blue-600 hover:bg-blue-50' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
                 >
                   <Bookmark
-                    className={`w-5 h-5 ${isBookmarked ? 'fill-blue-500 text-blue-500' : ''}`}
+                    className={`w-5 h-5 transition-all ${
+                      isBookmarked 
+                        ? 'fill-blue-500 text-blue-500' 
+                        : 'fill-none text-gray-600'
+                    }`}
                   />
                 </button>
               </div>

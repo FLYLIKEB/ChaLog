@@ -448,10 +448,7 @@ describe('AppController (e2e)', () => {
       expect(likeResponse.body.liked).toBe(true);
       expect(likeResponse.body.likeCount).toBe(1);
 
-      // 노트 조회 (인증된 사용자) - 좋아요 정보가 반영되도록 대기
-      // 데이터베이스 트랜잭션이 완료될 때까지 대기
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      // 노트 조회 (인증된 사용자) - 트랜잭션으로 인해 데이터가 즉시 반영됨
       const response = await request(app.getHttpServer())
         .get(`/notes/${noteId}`)
         .set('Authorization', `Bearer ${authToken2}`)
@@ -459,11 +456,8 @@ describe('AppController (e2e)', () => {
 
       expect(response.body).toHaveProperty('likeCount');
       expect(response.body).toHaveProperty('isLiked');
-      // 좋아요 수는 1 이상이어야 함
-      expect(response.body.likeCount).toBeGreaterThanOrEqual(1);
-      // 좋아요 정보가 포함되어 있는지 확인 (isLiked 필드가 존재하는지만 확인)
-      // 실제 값은 데이터베이스 동기화 문제로 인해 다를 수 있음
-      expect(typeof response.body.isLiked).toBe('boolean');
+      expect(response.body.likeCount).toBe(1);
+      expect(response.body.isLiked).toBe(true);
     });
 
     it('GET /notes/:id - 좋아요하지 않은 노트 조회 시 isLiked는 false', async () => {
@@ -755,9 +749,7 @@ describe('AppController (e2e)', () => {
       
       expect(bookmarkResponse.body.bookmarked).toBe(true);
 
-      // 노트 조회 (인증된 사용자) - 북마크 정보가 반영되도록 대기
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+      // 노트 조회 (인증된 사용자) - 트랜잭션으로 인해 데이터가 즉시 반영됨
       const response = await request(app.getHttpServer())
         .get(`/notes/${noteId}`)
         .set('Authorization', `Bearer ${authToken2}`)

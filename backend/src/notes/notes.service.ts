@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, In, DataSource, QueryFailedError } from 'typeorm';
 import { Note } from './entities/note.entity';
 import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
@@ -26,6 +26,8 @@ export class NotesService {
     private noteLikesRepository: Repository<NoteLike>,
     @InjectRepository(NoteBookmark)
     private noteBookmarksRepository: Repository<NoteBookmark>,
+    @InjectDataSource()
+    private dataSource: DataSource,
     private teasService: TeasService,
     private s3Service: S3Service,
   ) {}
@@ -271,29 +273,44 @@ export class NotesService {
   }
 
   async toggleLike(noteId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
-    // 노트 존재 확인
-    const note = await this.notesRepository.findOne({ where: { id: noteId } });
-    if (!note) {
-      throw new NotFoundException('노트를 찾을 수 없습니다.');
-    }
+    // 트랜잭션으로 race condition 방지
+    return await this.dataSource.transaction(async (manager) => {
+      // 노트 존재 확인
+      const note = await manager.findOne(Note, { where: { id: noteId } });
+      if (!note) {
+        throw new NotFoundException('노트를 찾을 수 없습니다.');
+      }
 
-    // 이미 좋아요를 눌렀는지 확인
-    const existingLike = await this.noteLikesRepository.findOne({
-      where: { noteId, userId },
+      // 이미 좋아요를 눌렀는지 확인 (트랜잭션 내에서)
+      const existingLike = await manager.findOne(NoteLike, {
+        where: { noteId, userId },
+      });
+
+      if (existingLike) {
+        // 좋아요 취소
+        await manager.remove(NoteLike, existingLike);
+        const likeCount = await manager.count(NoteLike, { where: { noteId } });
+        return { liked: false, likeCount };
+      } else {
+        // 좋아요 추가 - unique constraint 에러 처리
+        try {
+          const newLike = manager.create(NoteLike, { noteId, userId });
+          await manager.save(NoteLike, newLike);
+        } catch (error) {
+          // 동시 요청으로 인한 unique constraint 에러 처리
+          if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
+            // 이미 좋아요가 추가된 상태로 처리
+            this.logger.warn(`Duplicate like detected for noteId: ${noteId}, userId: ${userId}`);
+          } else {
+            throw error;
+          }
+        }
+        
+        // 트랜잭션 내에서 최신 likeCount 조회
+        const likeCount = await manager.count(NoteLike, { where: { noteId } });
+        return { liked: true, likeCount };
+      }
     });
-
-    if (existingLike) {
-      // 좋아요 취소
-      await this.noteLikesRepository.remove(existingLike);
-      const likeCount = await this.noteLikesRepository.count({ where: { noteId } });
-      return { liked: false, likeCount };
-    } else {
-      // 좋아요 추가
-      const newLike = this.noteLikesRepository.create({ noteId, userId });
-      await this.noteLikesRepository.save(newLike);
-      const likeCount = await this.noteLikesRepository.count({ where: { noteId } });
-      return { liked: true, likeCount };
-    }
   }
 
   async getLikeCount(noteId: number): Promise<number> {
@@ -311,27 +328,41 @@ export class NotesService {
   }
 
   async toggleBookmark(noteId: number, userId: number): Promise<{ bookmarked: boolean }> {
-    // 노트 존재 확인
-    const note = await this.notesRepository.findOne({ where: { id: noteId } });
-    if (!note) {
-      throw new NotFoundException('노트를 찾을 수 없습니다.');
-    }
+    // 트랜잭션으로 race condition 방지
+    return await this.dataSource.transaction(async (manager) => {
+      // 노트 존재 확인
+      const note = await manager.findOne(Note, { where: { id: noteId } });
+      if (!note) {
+        throw new NotFoundException('노트를 찾을 수 없습니다.');
+      }
 
-    // 이미 북마크를 했는지 확인
-    const existingBookmark = await this.noteBookmarksRepository.findOne({
-      where: { noteId, userId },
+      // 이미 북마크를 했는지 확인 (트랜잭션 내에서)
+      const existingBookmark = await manager.findOne(NoteBookmark, {
+        where: { noteId, userId },
+      });
+
+      if (existingBookmark) {
+        // 북마크 해제
+        await manager.remove(NoteBookmark, existingBookmark);
+        return { bookmarked: false };
+      } else {
+        // 북마크 추가 - unique constraint 에러 처리
+        try {
+          const newBookmark = manager.create(NoteBookmark, { noteId, userId });
+          await manager.save(NoteBookmark, newBookmark);
+        } catch (error) {
+          // 동시 요청으로 인한 unique constraint 에러 처리
+          if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
+            // 이미 북마크가 추가된 상태로 처리
+            this.logger.warn(`Duplicate bookmark detected for noteId: ${noteId}, userId: ${userId}`);
+          } else {
+            throw error;
+          }
+        }
+        
+        return { bookmarked: true };
+      }
     });
-
-    if (existingBookmark) {
-      // 북마크 해제
-      await this.noteBookmarksRepository.remove(existingBookmark);
-      return { bookmarked: false };
-    } else {
-      // 북마크 추가
-      const newBookmark = this.noteBookmarksRepository.create({ noteId, userId });
-      await this.noteBookmarksRepository.save(newBookmark);
-      return { bookmarked: true };
-    }
   }
 
   async isBookmarkedByUser(noteId: number, userId?: number): Promise<boolean> {

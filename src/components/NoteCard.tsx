@@ -180,10 +180,18 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   type="button"
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
-                  className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50"
+                  className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                    isBookmarked 
+                      ? 'text-blue-500 hover:text-blue-600' 
+                      : 'text-gray-500 hover:text-blue-500'
+                  }`}
                 >
                   <Bookmark
-                    className={`w-4 h-4 ${isBookmarked ? 'fill-blue-500 text-blue-500' : ''}`}
+                    className={`w-4 h-4 transition-all ${
+                      isBookmarked 
+                        ? 'fill-blue-500 text-blue-500' 
+                        : 'fill-none text-gray-500'
+                    }`}
                   />
                 </button>
               </>
