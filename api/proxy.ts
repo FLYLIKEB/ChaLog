@@ -13,44 +13,35 @@ export default async function handler(req: any, res: any) {
     res.status(200).end();
     return;
   }
-  // 변수들을 함수 상단에서 선언 (스코프 문제 해결)
-  let requestId: string = '';
-  let backendUrl: string = '';
-  let pathString: string = '';
-  let startedAt: number = Date.now();
-  
-  // 기본 에러 핸들러
-  const sendError = (status: number, message: string, details?: any) => {
-    try {
-      if (res && typeof res.status === 'function') {
-        res.status(status).json({ error: message, ...details });
-      }
-    } catch (e) {
-      console.error('[Proxy] Failed to send error response:', e);
-    }
-  };
+
+  let requestId = '';
+  let backendUrl = '';
+  let pathString = '';
+  let startedAt = Date.now();
   
   try {
     // req와 res 유효성 검사
     if (!req || !res) {
-      console.error('[Proxy] Invalid req or res:', { req: !!req, res: !!res });
-      return sendError(500, 'Invalid request/response objects');
+      console.error('[Proxy] Invalid req or res');
+      res.status(500).json({ 
+        error: 'Invalid request/response objects',
+        message: '프록시 서버 설정 오류',
+        statusCode: 500
+      });
+      return;
     }
 
     // 디버깅: 요청 정보 로깅
-    console.log('[Proxy] Request received:', {
+    console.log('[Proxy] Request:', {
       method: req.method,
       url: req.url,
       query: req.query,
-      hasHeaders: !!req.headers,
     });
 
-    // Vercel Serverless Function에서 query는 자동으로 파싱됨
-    // req.query가 없으면 req.url에서 직접 파싱 시도
+    // path 파라미터 추출
     let rawPath: string | string[] | undefined = req.query?.path;
     
     if (!rawPath && req.url) {
-      // req.query가 없으면 URL에서 직접 파싱
       try {
         const urlObj = new URL(req.url, 'http://localhost');
         rawPath = urlObj.searchParams.get('path') || '';
@@ -64,20 +55,20 @@ export default async function handler(req: any, res: any) {
       : rawPath || '';
 
     if (!pathString) {
-      console.error('[Proxy] Missing path parameter:', { 
-        query: req.query, 
-        url: req.url,
-        hasQuery: !!req.query 
-      });
-      return sendError(400, 'Missing path parameter', {
+      console.error('[Proxy] Missing path parameter');
+      res.status(400).json({
+        error: 'Bad Request',
+        message: 'Missing path parameter',
+        statusCode: 400,
         debug: process.env.VERCEL_ENV === 'development' ? { 
           query: req.query,
           url: req.url 
         } : undefined
       });
+      return;
     }
 
-    // req.query에서 path를 제외한 나머지 쿼리 파라미터 추출
+    // 쿼리 파라미터 추출
     const queryParams = new URLSearchParams();
     if (req.query) {
       Object.keys(req.query).forEach(key => {
@@ -98,6 +89,7 @@ export default async function handler(req: any, res: any) {
 
     requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     startedAt = Date.now();
+    
     if (LOG_PROXY_REQUESTS) {
       console.info('[Proxy] ▶', {
         requestId,
@@ -107,6 +99,7 @@ export default async function handler(req: any, res: any) {
       });
     }
 
+    // fetch 옵션 설정
     const controller = new AbortController();
     const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
@@ -126,15 +119,13 @@ export default async function handler(req: any, res: any) {
       };
     }
 
-    // POST, PUT, PATCH 등의 경우 body 처리
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      if (req.body) {
-        // 이미 문자열이면 그대로 사용, 객체면 JSON 문자열로 변환
-        fetchOptions.body =
-          typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-      }
+    // body 처리
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+      fetchOptions.body =
+        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
     }
 
+    // 백엔드로 요청 전송
     const fetchResponse = await fetch(backendUrl, fetchOptions);
     clearTimeout(timeoutId);
 
@@ -149,48 +140,44 @@ export default async function handler(req: any, res: any) {
     // 상태 코드 설정
     res.status(fetchResponse.status);
 
-    // 헤더 복사 (CORS 헤더 포함)
+    // 헤더 복사
     fetchResponse.headers.forEach((value, key) => {
-      // content-encoding과 transfer-encoding은 제외 (Vercel이 자동 처리)
       if (key !== 'content-encoding' && key !== 'transfer-encoding') {
         res.setHeader(key, value);
       }
     });
 
-    // CORS 헤더 명시적 설정 (에러 응답에도 필요)
-    if (!res.getHeader('access-control-allow-origin')) {
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    }
+    // CORS 헤더 재설정 (덮어쓰기 방지)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-    const contentType = fetchResponse.headers.get('content-type') || '';
-    
     // 응답 본문 읽기
+    const contentType = fetchResponse.headers.get('content-type') || '';
     let responseBody: any;
+    
     try {
       if (contentType.includes('application/json')) {
         responseBody = await fetchResponse.json();
-        // 에러 응답인 경우에도 메시지가 포함되도록 보장
+        // 에러 응답인 경우 메시지 보장
         if (!fetchResponse.ok && !responseBody.message && !responseBody.error) {
-          responseBody.message = responseBody.message || `서버 오류 (${fetchResponse.status})`;
+          responseBody.message = `서버 오류 (${fetchResponse.status})`;
         }
       } else {
-        // 비JSON 응답은 텍스트로 읽기
         const textData = await fetchResponse.text();
         if (textData) {
           try {
-            // JSON일 수도 있으므로 파싱 시도
             responseBody = JSON.parse(textData);
           } catch {
-            // JSON이 아니면 텍스트로 처리
             responseBody = { message: textData };
           }
         } else {
-            responseBody = { message: fetchResponse.statusText || `서버 응답 (${fetchResponse.status})` };
+          responseBody = { 
+            message: fetchResponse.statusText || `서버 응답 (${fetchResponse.status})` 
+          };
         }
       }
-    } catch (readError) {
+    } catch (readError: any) {
       console.error('[Proxy] Failed to read response:', readError);
       responseBody = {
         error: 'Failed to read response',
@@ -201,94 +188,61 @@ export default async function handler(req: any, res: any) {
 
     // JSON으로 응답 전송
     res.json(responseBody);
-  } catch (error) {
-    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
-    const errorObj = error as Error;
-    const isAbortError = errorObj.name === 'AbortError';
-    const isNetworkError = 
-      errorObj.message.includes('fetch failed') ||
-      errorObj.message.includes('ECONNREFUSED') ||
-      errorObj.message.includes('ENOTFOUND') ||
-      errorObj.message.includes('ETIMEDOUT') ||
-      errorObj.message.includes('ECONNRESET');
     
-    // 상세한 에러 로깅 (Vercel 로그에 표시됨)
-    console.error('[Proxy] ❌ Error Details:', {
+  } catch (error: any) {
+    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
+    const isAbortError = error?.name === 'AbortError';
+    const isNetworkError = 
+      error?.message?.includes('fetch failed') ||
+      error?.message?.includes('ECONNREFUSED') ||
+      error?.message?.includes('ENOTFOUND') ||
+      error?.message?.includes('ETIMEDOUT') ||
+      error?.message?.includes('ECONNRESET');
+    
+    console.error('[Proxy] ❌ Error:', {
       requestId: requestId || 'unknown',
       backendUrl: backendUrl || BACKEND_URL,
       method: req?.method || 'unknown',
       path: pathString || 'unknown',
-      errorName: errorObj.name,
-      errorMessage: errorObj.message,
-      errorStack: errorObj.stack,
-      timeoutMs,
+      errorName: error?.name,
+      errorMessage: error?.message,
       isAbortError,
       isNetworkError,
-      durationMs: Date.now() - startedAt,
     });
 
-    // CORS 헤더 설정 (에러 응답에도 필요)
-    try {
-      if (!res.headersSent) {
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-      }
-    } catch (headerError) {
-      console.error('[Proxy] Failed to set error headers:', headerError);
+    // CORS 헤더 설정
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
 
-    // 클라이언트에게 반환할 에러 응답
-    const isDevelopment = process.env.NODE_ENV === 'development' || 
-                         process.env.VERCEL_ENV === 'development';
-    
     try {
       if (isAbortError) {
         res.status(504).json({
           error: 'Gateway Timeout',
           message: `백엔드 서버 응답 시간 초과 (${timeoutMs}ms)`,
           statusCode: 504,
-          details: isDevelopment ? {
-            backendUrl: backendUrl || BACKEND_URL,
-            timeoutMs,
-            requestId: requestId || 'unknown',
-          } : undefined,
         });
       } else if (isNetworkError) {
         res.status(502).json({
           error: 'Bad Gateway',
           message: '백엔드 서버에 연결할 수 없습니다',
           statusCode: 502,
-          details: isDevelopment ? {
-            backendUrl: backendUrl || BACKEND_URL,
-            errorMessage: errorObj.message,
-            requestId: requestId || 'unknown',
-          } : {
-            backendUrl: (backendUrl || BACKEND_URL).replace(/\/\/.*@/, '//***@'), // 비밀번호 숨김
-            requestId: requestId || 'unknown',
+          details: {
+            errorMessage: error?.message || '알 수 없는 네트워크 오류',
           },
         });
       } else {
         res.status(500).json({
           error: 'Internal Server Error',
-          message: errorObj.message || '프록시 서버에서 오류가 발생했습니다',
+          message: error?.message || '프록시 서버에서 오류가 발생했습니다',
           statusCode: 500,
-          details: isDevelopment ? {
-            errorName: errorObj.name,
-            errorMessage: errorObj.message,
-            backendUrl: backendUrl || BACKEND_URL,
-            requestId: requestId || 'unknown',
-          } : {
-            requestId: requestId || 'unknown',
-          },
         });
       }
     } catch (responseError) {
-      // 응답 전송 실패 시 로그만 남김
       console.error('[Proxy] Failed to send error response:', responseError);
     }
   }
 }
-
-
