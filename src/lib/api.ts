@@ -104,7 +104,7 @@ interface NormalizedNote {
     clarity: number;
     complexity: number;
   };
-  memo: string;
+  memo: string | null;
   images?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
@@ -568,7 +568,7 @@ export interface CreateNoteRequest {
     clarity: number;
     complexity: number;
   };
-  memo: string;
+  memo?: string;
   images?: string[];
   isPublic: boolean;
 }
