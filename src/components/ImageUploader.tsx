@@ -129,21 +129,23 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                 alt={`업로드된 이미지 ${index + 1}`}
                 className="w-full h-full object-cover"
               />
-              {/* 삭제 버튼 - 호버 시 더 명확하게 표시 */}
+              {/* 삭제 버튼 - 항상 보이도록 수정 */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   onChange(images.filter(img => img !== url));
                 }}
-                className="absolute top-1.5 right-1.5 p-1.5 bg-red-500 hover:bg-red-600 rounded-full shadow-lg opacity-90 group-hover:opacity-100 transition-all duration-200 hover:scale-110"
+                className="absolute top-1.5 right-1.5 z-10 p-1.5 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                style={{ opacity: 1 }}
                 aria-label="이미지 삭제"
                 title="삭제"
               >
-                <X className="w-4 h-4 text-white" />
+                <X className="w-4 h-4 text-white" strokeWidth={2.5} />
               </button>
               {/* 이미지 번호 표시 */}
-              <div className="absolute bottom-1.5 left-1.5 px-1.5 py-0.5 bg-black/60 rounded text-xs text-white font-medium">
+              <div className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 bg-black/60 rounded text-xs text-white font-medium">
                 {index + 1}
               </div>
             </div>
