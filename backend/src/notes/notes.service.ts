@@ -1,17 +1,21 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Note } from './entities/note.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
+import { S3Service } from '../common/storage/s3.service';
 
 @Injectable()
 export class NotesService {
+  private readonly logger = new Logger(NotesService.name);
+
   constructor(
     @InjectRepository(Note)
     private notesRepository: Repository<Note>,
     private teasService: TeasService,
+    private s3Service: S3Service,
   ) {}
 
   async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
@@ -105,11 +109,77 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 삭제할 권한이 없습니다.');
     }
 
+    // S3에 저장된 이미지 파일들 삭제
+    if (note.images && note.images.length > 0) {
+      await this.deleteNoteImages(note.images);
+    }
+
     const teaId = note.teaId;
     await this.notesRepository.remove(note);
 
     // 차의 평균 평점 업데이트
     await this.updateTeaRating(teaId);
+  }
+
+  /**
+   * 노트의 이미지 URL들에서 S3 key를 추출하여 삭제
+   */
+  private async deleteNoteImages(imageUrls: string[]): Promise<void> {
+    if (!imageUrls || imageUrls.length === 0) {
+      return;
+    }
+
+    const deletePromises = imageUrls.map(async (url) => {
+      try {
+        const key = this.extractS3KeyFromUrl(url);
+        if (key) {
+          await this.s3Service.deleteFile(key);
+          this.logger.log(`S3 이미지 삭제 성공: ${key}`);
+        }
+      } catch (error) {
+        // 이미지 삭제 실패해도 노트 삭제는 계속 진행
+        // (이미지가 이미 삭제되었거나 존재하지 않을 수 있음)
+        this.logger.warn(`S3 이미지 삭제 실패 (URL: ${url}): ${error instanceof Error ? error.message : String(error)}`);
+      }
+    });
+
+    await Promise.allSettled(deletePromises);
+  }
+
+  /**
+   * S3 URL에서 key 추출
+   * 지원 형식:
+   * - https://bucket-name.s3.region.amazonaws.com/key
+   * - http://endpoint/bucket-name/key (커스텀 엔드포인트)
+   */
+  private extractS3KeyFromUrl(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      
+      // 커스텀 엔드포인트 형식: http://endpoint/bucket-name/key
+      // pathParts[0] = bucket-name, pathParts[1...] = key
+      if (pathParts.length >= 2) {
+        // bucket-name을 제외한 나머지가 key
+        return pathParts.slice(1).join('/');
+      }
+      
+      // 표준 S3 URL 형식: https://bucket-name.s3.region.amazonaws.com/key
+      // pathname이 /key 형식 (pathParts[0] = key)
+      if (pathParts.length === 1) {
+        return pathParts[0];
+      }
+      
+      // 빈 경로인 경우
+      if (pathParts.length === 0) {
+        return null;
+      }
+      
+      return null;
+    } catch (error) {
+      this.logger.warn(`URL 파싱 실패 (${url}): ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    }
   }
 
   private async updateTeaRating(teaId: number): Promise<void> {

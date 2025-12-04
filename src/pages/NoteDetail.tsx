@@ -4,6 +4,7 @@ import { Star, Trash2, Globe, Lock, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
+import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import {
@@ -33,8 +34,14 @@ export function NoteDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
 
   useEffect(() => {
+    // 삭제된 노트는 API 호출하지 않음
+    if (isDeleted) {
+      return;
+    }
+
     const fetchData = async () => {
       if (isNaN(noteId)) {
         toast.error('유효하지 않은 노트 ID입니다.');
@@ -57,16 +64,24 @@ export function NoteDetail() {
             logger.error('Failed to fetch tea:', error);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         logger.error('Failed to fetch note:', error);
-        toast.error('노트를 불러오는데 실패했습니다.');
+        
+        // 403 에러인 경우 권한 없음 메시지 표시
+        if (error?.statusCode === 403) {
+          toast.error('이 노트를 볼 권한이 없습니다.');
+        } else if (error?.statusCode === 404) {
+          toast.error('노트를 찾을 수 없습니다.');
+        } else {
+          toast.error('노트를 불러오는데 실패했습니다.');
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, [noteId]);
+  }, [noteId, isDeleted]);
 
   if (isLoading) {
     return (
@@ -79,7 +94,12 @@ export function NoteDetail() {
   }
 
   if (!note) {
-    return <DetailFallback title="노트 상세" message="노트를 찾을 수 없습니다." />;
+    return (
+      <DetailFallback 
+        title="노트 상세" 
+        message="노트를 찾을 수 없거나 볼 권한이 없습니다." 
+      />
+    );
   }
 
   const isMyNote = note.userId === user?.id;
@@ -112,8 +132,10 @@ export function NoteDetail() {
     try {
       setIsDeleting(true);
       await notesApi.delete(noteId);
+      setIsDeleted(true); // 삭제 상태 설정하여 API 재호출 방지
       toast.success('노트가 삭제되었습니다.');
-      navigate('/my-notes', { replace: true });
+      // 이전 화면으로 돌아가기
+      navigate(-1);
     } catch (error) {
       logger.error('Failed to delete note:', error);
       toast.error('삭제에 실패했습니다.');
@@ -167,11 +189,31 @@ export function NoteDetail() {
           <RatingVisualization ratings={note.ratings} />
         </section>
 
+        {/* 이미지 갤러리 */}
+        {note.images && note.images.length > 0 && (
+          <section className="bg-white rounded-lg p-4">
+            <h3 className="mb-3">사진</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {note.images.map((imageUrl, index) => (
+                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                  <ImageWithFallback
+                    src={imageUrl}
+                    alt={`Note image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* 메모 */}
-        <section className="bg-white rounded-lg p-4">
-          <h3 className="mb-3">메모</h3>
-          <p className="text-gray-700 whitespace-pre-wrap">{note.memo}</p>
-        </section>
+        {note.memo && (
+          <section className="bg-white rounded-lg p-4">
+            <h3 className="mb-3">메모</h3>
+            <p className="text-gray-700 whitespace-pre-wrap">{note.memo}</p>
+          </section>
+        )}
 
         {/* 내 노트일 때만 노출되는 액션 */}
         {isMyNote && (

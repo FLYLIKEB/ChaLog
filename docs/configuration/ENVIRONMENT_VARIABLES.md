@@ -118,6 +118,16 @@ Vercel 대시보드에서 환경 변수 설정:
 | `FRONTEND_URL` | 프론트엔드 URL (단일) | `https://cha-log-gilt.vercel.app` |
 | `FRONTEND_URLS` | 프론트엔드 URL 목록 (쉼표 구분) | `https://cha-log-gilt.vercel.app,http://localhost:5173` |
 
+#### AWS S3 설정 (이미지 저장)
+
+| 변수명 | 설명 | 예시 |
+|--------|------|------|
+| `AWS_REGION` | AWS 리전 | `ap-northeast-2` |
+| `AWS_S3_BUCKET_NAME` | S3 버킷 이름 | `chalog-images` |
+| `AWS_ACCESS_KEY_ID` | AWS 액세스 키 ID | `AKIAIOSFODNN7EXAMPLE` |
+| `AWS_SECRET_ACCESS_KEY` | AWS 시크릿 액세스 키 | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
+| `AWS_S3_ENDPOINT` | S3 엔드포인트 (선택사항, 로컬 개발용) | `http://localhost:9000` |
+
 #### SSH 터널 설정 (로컬 개발용)
 
 | 변수명 | 설명 | 예시 |
@@ -284,6 +294,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 ## 관련 문서
 
 - [`docs/infrastructure/DATABASE.md`](../infrastructure/DATABASE.md) - 데이터베이스 구조 및 사용 가이드
+- [`docs/infrastructure/AWS_S3_SETUP.md`](../infrastructure/AWS_S3_SETUP.md) - AWS S3 이미지 저장소 설정 가이드
 - [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
 - [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](../deployment/GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
 - [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드

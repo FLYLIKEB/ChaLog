@@ -84,7 +84,8 @@ interface BackendNote {
     clarity: number;
     complexity: number;
   };
-  memo: string;
+  memo: string | null;
+  images?: string[] | null;
   isPublic: boolean;
   createdAt: Date | string;
 }
@@ -104,6 +105,7 @@ interface NormalizedNote {
     complexity: number;
   };
   memo: string;
+  images?: string[];
   isPublic: boolean;
   createdAt: Date;
 }
@@ -111,6 +113,7 @@ interface NormalizedNote {
 /**
  * Note 응답을 프론트엔드 타입으로 정규화
  * 백엔드의 tea/user 객체에서 teaName/userName을 추출
+ * null 값들을 안전한 기본값으로 변환
  */
 function normalizeNote(note: BackendNote): NormalizedNote {
   if (!note) {
@@ -121,6 +124,10 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     userName: note.user?.name || '',
+    // memo가 null이면 빈 문자열로 변환하여 항상 string 보장
+    memo: note.memo ?? '',
+    // images가 null이면 undefined로 변환, 빈 배열이면 undefined로 변환
+    images: note.images && note.images.length > 0 ? note.images : undefined,
     createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
   };
 }
@@ -300,15 +307,17 @@ class ApiClient {
         }
         
         // 에러 메시지 추출 (여러 필드 확인)
-        let errorMessage: string = 
+        let errorMessage: string | string[] = 
           error.message || 
           error.error || 
           error.details?.message ||
           response.statusText || 
           `HTTP error! status: ${response.status}`;
         
-        // 문자열이 아닌 경우 변환
-        if (typeof errorMessage !== 'string') {
+        // 배열인 경우 첫 번째 요소 사용, 아니면 문자열로 변환
+        if (Array.isArray(errorMessage)) {
+          errorMessage = errorMessage.length > 0 ? errorMessage[0] : '알 수 없는 오류가 발생했습니다.';
+        } else if (typeof errorMessage !== 'string') {
           errorMessage = String(errorMessage);
         }
         
@@ -420,6 +429,105 @@ class ApiClient {
   async delete(endpoint: string): Promise<void> {
     await this.request<void>(endpoint, { method: 'DELETE' });
   }
+
+  async uploadFile<T>(endpoint: string, file: File): Promise<T> {
+    const token = localStorage.getItem('access_token');
+    const timeout = API_TIMEOUT;
+    
+    if (!token) {
+      throw {
+        message: '로그인이 필요합니다.',
+        statusCode: 401,
+      } as ApiError;
+    }
+    
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${token}`,
+    };
+
+    const url = `${this.baseURL}${endpoint}`;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeout);
+    
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: formData,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        let error: any;
+        const contentType = response.headers.get('content-type') || '';
+        
+        try {
+          if (contentType.includes('application/json')) {
+            error = await response.json();
+          } else {
+            const text = await response.text();
+            try {
+              error = JSON.parse(text);
+            } catch {
+              error = { message: text || response.statusText };
+            }
+          }
+        } catch (parseError) {
+          error = {
+            message: response.statusText || `HTTP error! status: ${response.status}`,
+            statusCode: response.status,
+          };
+        }
+        
+        let errorMessage: string | string[] = 
+          error.message || 
+          error.error || 
+          error.details?.message ||
+          response.statusText || 
+          `HTTP error! status: ${response.status}`;
+        
+        // 배열인 경우 첫 번째 요소 사용, 아니면 문자열로 변환
+        if (Array.isArray(errorMessage)) {
+          errorMessage = errorMessage.length > 0 ? errorMessage[0] : '알 수 없는 오류가 발생했습니다.';
+        } else if (typeof errorMessage !== 'string') {
+          errorMessage = String(errorMessage);
+        }
+        
+        // 401 에러인 경우 명확한 메시지 표시
+        if (response.status === 401) {
+          if (!errorMessage.match(/[가-힣]/)) {
+            errorMessage = '로그인이 필요합니다. 다시 로그인해주세요.';
+          }
+        }
+        
+        const apiError: ApiError = {
+          message: errorMessage,
+          statusCode: response.status,
+        };
+        
+        throw apiError;
+      }
+
+      return await response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw {
+          message: '요청 시간이 초과되었습니다.',
+          statusCode: 408,
+        } as ApiError;
+      }
+      
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
@@ -467,7 +575,8 @@ export interface CreateNoteRequest {
     clarity: number;
     complexity: number;
   };
-  memo: string;
+  memo?: string;
+  images?: string[];
   isPublic: boolean;
 }
 
@@ -500,6 +609,7 @@ export const notesApi = {
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
   getById: (id: number) => apiClient.get(`/notes/${id}`),
+  uploadImage: (file: File) => apiClient.uploadFile<{ url: string }>('/notes/images', file),
   create: (data: CreateNoteRequest) => apiClient.post('/notes', data),
   update: (id: number, data: UpdateNoteRequest) => apiClient.patch(`/notes/${id}`, data),
   delete: (id: number) => apiClient.delete(`/notes/${id}`),

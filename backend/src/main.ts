@@ -64,6 +64,7 @@ async function bootstrap() {
     }),
   );
 
+
   const port = parseInt((configService.get('PORT') as string) || '3000', 10);
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);

@@ -142,6 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           error,
           errorMessage: error instanceof Error ? error.message : String(error),
         });
+        // 카카오 SDK 초기화 실패해도 앱은 정상 작동해야 함
       });
     };
 
@@ -432,19 +433,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast.success('로그아웃되었습니다.');
   };
 
+  // 항상 Provider를 렌더링하도록 보장
+  const contextValue: AuthContextType = {
+    user,
+    token,
+    isLoading,
+    login,
+    register,
+    loginWithKakao,
+    logout,
+    isAuthenticated: !!token && !!user,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isLoading,
-        login,
-        register,
-        loginWithKakao,
-        logout,
-        isAuthenticated: !!token && !!user,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
