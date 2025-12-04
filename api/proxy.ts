@@ -17,7 +17,6 @@ export default async function handler(req: any, res: any) {
   let requestId = '';
   let backendUrl = '';
   let pathString = '';
-  let startedAt = Date.now();
   
   try {
     // req와 res 유효성 검사
@@ -30,13 +29,6 @@ export default async function handler(req: any, res: any) {
       });
       return;
     }
-
-    // 디버깅: 요청 정보 로깅
-    console.log('[Proxy] Request:', {
-      method: req.method,
-      url: req.url,
-      query: req.query,
-    });
 
     // path 파라미터 추출
     let rawPath: string | string[] | undefined = req.query?.path;
@@ -88,7 +80,6 @@ export default async function handler(req: any, res: any) {
     }`;
 
     requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    startedAt = Date.now();
     
     if (LOG_PROXY_REQUESTS) {
       console.info('[Proxy] ▶', {
@@ -101,21 +92,15 @@ export default async function handler(req: any, res: any) {
 
     // fetch 옵션 설정
     const controller = new AbortController();
-    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 30000); // 30초로 증가
-    const timeoutId = setTimeout(() => {
-      console.warn('[Proxy] ⏱️ Timeout triggered after', timeoutMs, 'ms');
-      controller.abort();
-    }, timeoutMs);
+    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 30000);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     const fetchOptions: RequestInit = {
       method: req.method,
       headers: {
         'Content-Type': req.headers['content-type'] || 'application/json',
-        'User-Agent': 'Vercel-Proxy/1.0',
       },
       signal: controller.signal,
-      // Keep-alive 및 연결 재사용 설정
-      keepalive: true,
     };
 
     if (req.headers.authorization) {
@@ -132,62 +117,20 @@ export default async function handler(req: any, res: any) {
     }
 
     // 백엔드로 요청 전송
-    const fetchStartTime = Date.now();
     let fetchResponse: Response;
     try {
-      // 연결 테스트를 위한 추가 정보 로깅
-      if (LOG_PROXY_REQUESTS) {
-        console.info('[Proxy] 🔗 Attempting connection:', {
-          requestId,
-          backendUrl,
-          method: req.method,
-          headers: Object.keys(fetchOptions.headers || {}),
-        });
-      }
-      
       fetchResponse = await fetch(backendUrl, fetchOptions);
       clearTimeout(timeoutId);
-      const fetchDuration = Date.now() - fetchStartTime;
-      if (LOG_PROXY_REQUESTS) {
-        console.info('[Proxy] ✅ Fetch completed:', {
-          requestId,
-          durationMs: fetchDuration,
-          status: fetchResponse.status,
-        });
-      }
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      const fetchDuration = Date.now() - fetchStartTime;
-      
-      // 더 자세한 에러 정보 수집
-      const errorDetails: any = {
-        requestId,
-        backendUrl,
-        durationMs: fetchDuration,
-        errorName: fetchError?.name,
-        errorMessage: fetchError?.message,
-        errorCode: fetchError?.code,
-        errorCause: fetchError?.cause,
-      };
-      
-      // 스택 트레이스가 있으면 추가
-      if (fetchError?.stack) {
-        errorDetails.errorStack = fetchError.stack;
+      if (LOG_PROXY_REQUESTS) {
+        console.error('[Proxy] ❌ Fetch failed:', {
+          requestId,
+          backendUrl,
+          errorName: fetchError?.name,
+          errorMessage: fetchError?.message,
+        });
       }
-      
-      // 네트워크 관련 추가 정보
-      if (fetchError?.cause) {
-        errorDetails.causeDetails = {
-          code: fetchError.cause?.code,
-          message: fetchError.cause?.message,
-          errno: fetchError.cause?.errno,
-          syscall: fetchError.cause?.syscall,
-          address: fetchError.cause?.address,
-          port: fetchError.cause?.port,
-        };
-      }
-      
-      console.error('[Proxy] ❌ Fetch failed:', errorDetails);
       throw fetchError;
     }
 
@@ -195,7 +138,6 @@ export default async function handler(req: any, res: any) {
       console.info('[Proxy] ◀', {
         requestId,
         status: fetchResponse.status,
-        durationMs: Date.now() - startedAt,
       });
     }
 
@@ -252,7 +194,7 @@ export default async function handler(req: any, res: any) {
     res.json(responseBody);
     
   } catch (error: any) {
-    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
+    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 30000);
     const isAbortError = error?.name === 'AbortError';
     const isNetworkError = 
       error?.message?.includes('fetch failed') ||
