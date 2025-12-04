@@ -67,19 +67,28 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
 
   const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    e.preventDefault();
+    
+    console.log('북마크 버튼 클릭됨', { noteId: note.id, user, isTogglingBookmark });
     
     if (!user) {
       toast.error('로그인이 필요합니다.');
       return;
     }
 
-    if (isTogglingBookmark) return;
+    if (isTogglingBookmark) {
+      console.log('이미 북마크 처리 중...');
+      return;
+    }
 
     try {
+      console.log('북마크 API 호출 시작', note.id);
       setIsTogglingBookmark(true);
       const result = await notesApi.toggleBookmark(note.id);
+      console.log('북마크 API 호출 성공', result);
       setIsBookmarked(result.bookmarked);
     } catch (error: any) {
+      console.error('북마크 API 호출 실패', error);
       logger.error('Failed to toggle bookmark:', error);
       toast.error('북마크 처리에 실패했습니다.');
     } finally {
@@ -157,6 +166,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
             {user && (
               <>
                 <button
+                  type="button"
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
                   className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
@@ -167,6 +177,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   {likeCount > 0 && <span className="text-sm">{likeCount}</span>}
                 </button>
                 <button
+                  type="button"
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
                   className="flex items-center gap-1 text-gray-500 hover:text-blue-500 transition-colors disabled:opacity-50"
