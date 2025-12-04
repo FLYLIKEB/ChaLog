@@ -16,7 +16,7 @@ import { Tea, Note } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { RATING_DEFAULT, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
+import { RATING_DEFAULT, RATING_MIN, RATING_MAX, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
 
 export function EditNote() {
   const navigate = useNavigate();
@@ -125,7 +125,17 @@ export function EditNote() {
 
         setNote(normalizedNote);
         setSelectedTea(normalizedNote.teaId);
-        setRatings(normalizedNote.ratings);
+        
+        // ratings 값이 1 미만이면 1로 보정 (백엔드 검증과 일치)
+        const validatedRatings = {
+          richness: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.richness || RATING_DEFAULT)),
+          strength: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.strength || RATING_DEFAULT)),
+          smoothness: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.smoothness || RATING_DEFAULT)),
+          clarity: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.clarity || RATING_DEFAULT)),
+          complexity: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.complexity || RATING_DEFAULT)),
+        };
+        setRatings(validatedRatings);
+        
         setMemo(normalizedNote.memo || '');
         setImages(normalizedNote.images || []);
         setTags(normalizedNote.tags || []);
@@ -188,19 +198,28 @@ export function EditNote() {
     try {
       setIsSaving(true);
       
+      // ratings 값이 최소값보다 작으면 최소값으로 보정
+      const validatedRatings = {
+        richness: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.richness)),
+        strength: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.strength)),
+        smoothness: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.smoothness)),
+        clarity: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.clarity)),
+        complexity: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.complexity)),
+      };
+
       // 평균 평점 계산
       const averageRating = (
-        ratings.richness +
-        ratings.strength +
-        ratings.smoothness +
-        ratings.clarity +
-        ratings.complexity
+        validatedRatings.richness +
+        validatedRatings.strength +
+        validatedRatings.smoothness +
+        validatedRatings.clarity +
+        validatedRatings.complexity
       ) / RATING_FIELDS_COUNT;
 
       await notesApi.update(noteId, {
         teaId: selectedTea,
         rating: averageRating,
-        ratings,
+        ratings: validatedRatings,
         memo: memo.trim() || undefined,
         images: images.length > 0 ? images : undefined,
         tags: tags.length > 0 ? tags : undefined,

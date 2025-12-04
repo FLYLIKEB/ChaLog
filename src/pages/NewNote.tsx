@@ -15,7 +15,7 @@ import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { RATING_DEFAULT, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
+import { RATING_DEFAULT, RATING_MIN, RATING_MAX, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
 
 export function NewNote() {
   const navigate = useNavigate();
@@ -125,19 +125,28 @@ export function NewNote() {
     try {
       setIsSaving(true);
       
+      // ratings 값이 최소값보다 작으면 최소값으로 보정
+      const validatedRatings = {
+        richness: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.richness)),
+        strength: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.strength)),
+        smoothness: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.smoothness)),
+        clarity: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.clarity)),
+        complexity: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.complexity)),
+      };
+
       // 평균 평점 계산
       const averageRating = (
-        ratings.richness +
-        ratings.strength +
-        ratings.smoothness +
-        ratings.clarity +
-        ratings.complexity
+        validatedRatings.richness +
+        validatedRatings.strength +
+        validatedRatings.smoothness +
+        validatedRatings.clarity +
+        validatedRatings.complexity
       ) / RATING_FIELDS_COUNT;
 
       await notesApi.create({
         teaId: selectedTea,
         rating: averageRating,
-        ratings,
+        ratings: validatedRatings,
         memo: memo.trim() || undefined,
         images: images.length > 0 ? images : undefined,
         tags: tags.length > 0 ? tags : undefined,
