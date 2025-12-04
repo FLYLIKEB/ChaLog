@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Note } from './entities/note.entity';
 import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
+import { NoteLike } from './entities/note-like.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
@@ -20,6 +21,8 @@ export class NotesService {
     private tagsRepository: Repository<Tag>,
     @InjectRepository(NoteTag)
     private noteTagsRepository: Repository<NoteTag>,
+    @InjectRepository(NoteLike)
+    private noteLikesRepository: Repository<NoteLike>,
     private teasService: TeasService,
     private s3Service: S3Service,
   ) {}
@@ -51,7 +54,7 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number): Promise<Note[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number): Promise<any[]> {
     const queryBuilder = this.notesRepository
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
@@ -82,10 +85,13 @@ export class NotesService {
       queryBuilder.where(conditions.join(' AND '), params);
     }
 
-    return await queryBuilder.getMany();
+    const notes = await queryBuilder.getMany();
+    
+    // 좋아요 정보 추가
+    return await this.enrichNotesWithLikes(notes, currentUserId);
   }
 
-  async findOne(id: number, userId?: number): Promise<Note> {
+  async findOne(id: number, userId?: number): Promise<any> {
     const note = await this.notesRepository.findOne({
       where: { id },
       relations: ['user', 'tea', 'noteTags', 'noteTags.tag'],
@@ -100,7 +106,9 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
     }
 
-    return note;
+    // 좋아요 정보 추가
+    const enrichedNotes = await this.enrichNotesWithLikes([note], userId);
+    return enrichedNotes[0];
   }
 
   async update(id: number, userId: number, updateNoteDto: UpdateNoteDto): Promise<Note> {
@@ -257,6 +265,85 @@ export class NotesService {
     );
 
     await this.noteTagsRepository.save(noteTags);
+  }
+
+  async toggleLike(noteId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
+    // 노트 존재 확인
+    const note = await this.notesRepository.findOne({ where: { id: noteId } });
+    if (!note) {
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
+    }
+
+    // 이미 좋아요를 눌렀는지 확인
+    const existingLike = await this.noteLikesRepository.findOne({
+      where: { noteId, userId },
+    });
+
+    if (existingLike) {
+      // 좋아요 취소
+      await this.noteLikesRepository.remove(existingLike);
+      const likeCount = await this.noteLikesRepository.count({ where: { noteId } });
+      return { liked: false, likeCount };
+    } else {
+      // 좋아요 추가
+      const newLike = this.noteLikesRepository.create({ noteId, userId });
+      await this.noteLikesRepository.save(newLike);
+      const likeCount = await this.noteLikesRepository.count({ where: { noteId } });
+      return { liked: true, likeCount };
+    }
+  }
+
+  async getLikeCount(noteId: number): Promise<number> {
+    return await this.noteLikesRepository.count({ where: { noteId } });
+  }
+
+  async isLikedByUser(noteId: number, userId?: number): Promise<boolean> {
+    if (!userId) {
+      return false;
+    }
+    const like = await this.noteLikesRepository.findOne({
+      where: { noteId, userId },
+    });
+    return !!like;
+  }
+
+  private async enrichNotesWithLikes(notes: Note[], currentUserId?: number): Promise<any[]> {
+    if (notes.length === 0) {
+      return [];
+    }
+
+    const noteIds = notes.map((note) => note.id);
+
+    // 좋아요 수 조회
+    const likeCounts = await this.noteLikesRepository
+      .createQueryBuilder('like')
+      .select('like.noteId', 'noteId')
+      .addSelect('COUNT(like.id)', 'count')
+      .where('like.noteId IN (:...noteIds)', { noteIds })
+      .groupBy('like.noteId')
+      .getRawMany();
+
+    const likeCountMap = new Map<number, number>();
+    likeCounts.forEach((item) => {
+      likeCountMap.set(item.noteId, parseInt(item.count, 10));
+    });
+
+    // 현재 사용자의 좋아요 여부 조회
+    let userLikes: NoteLike[] = [];
+    if (currentUserId && noteIds.length > 0) {
+      userLikes = await this.noteLikesRepository.find({
+        where: { noteId: In(noteIds), userId: currentUserId },
+      });
+    }
+    const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
+
+    // 노트에 좋아요 정보 추가
+    return notes.map((note) => {
+      const noteObj = note as any;
+      noteObj.likeCount = likeCountMap.get(note.id) || 0;
+      noteObj.isLiked = userLikedNoteIds.has(note.id);
+      return noteObj;
+    });
   }
 
   private async updateTeaRating(teaId: number): Promise<void> {
