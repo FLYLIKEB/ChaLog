@@ -2,8 +2,17 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
+  "builds": [
+    {
+      "src": "api/**/*.ts",
+      "use": "@vercel/node"
+    }
+  ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/proxy?path=$1" }
+    { 
+      "source": "/api/(.*)", 
+      "destination": "/api/proxy?path=$1"
+    }
   ],
   "cleanUrls": false,
   "trailingSlash": false
