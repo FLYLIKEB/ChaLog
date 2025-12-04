@@ -123,7 +123,10 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     userName: note.user?.name || '',
-    images: note.images || null,
+    // memo가 null일 수 있으므로 명시적으로 처리
+    memo: note.memo ?? null,
+    // images가 null일 수 있으므로 명시적으로 처리
+    images: note.images ?? null,
     createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
   };
 }
