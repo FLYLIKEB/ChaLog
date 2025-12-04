@@ -12,29 +12,62 @@ export default async function handler(req: any, res: any) {
   let pathString: string = '';
   let startedAt: number = Date.now();
   
+  // 기본 에러 핸들러
+  const sendError = (status: number, message: string, details?: any) => {
+    try {
+      if (res && typeof res.status === 'function') {
+        res.status(status).json({ error: message, ...details });
+      }
+    } catch (e) {
+      console.error('[Proxy] Failed to send error response:', e);
+    }
+  };
+  
   try {
+    // req와 res 유효성 검사
+    if (!req || !res) {
+      console.error('[Proxy] Invalid req or res:', { req: !!req, res: !!res });
+      return sendError(500, 'Invalid request/response objects');
+    }
+
     // 디버깅: 요청 정보 로깅
     console.log('[Proxy] Request received:', {
       method: req.method,
       url: req.url,
       query: req.query,
-      headers: req.headers ? Object.keys(req.headers) : 'no headers',
+      hasHeaders: !!req.headers,
     });
 
     // Vercel Serverless Function에서 query는 자동으로 파싱됨
-    const rawPath = req.query?.path;
+    // req.query가 없으면 req.url에서 직접 파싱 시도
+    let rawPath: string | string[] | undefined = req.query?.path;
+    
+    if (!rawPath && req.url) {
+      // req.query가 없으면 URL에서 직접 파싱
+      try {
+        const urlObj = new URL(req.url, 'http://localhost');
+        rawPath = urlObj.searchParams.get('path') || '';
+      } catch (e) {
+        console.error('[Proxy] Failed to parse URL:', e);
+      }
+    }
+    
     pathString = Array.isArray(rawPath)
       ? rawPath.join('/')
       : rawPath || '';
 
     if (!pathString) {
-      console.error('[Proxy] Missing path parameter:', { query: req.query });
-      res.status(400).json({
-        error: 'Bad Request',
-        message: 'Missing path parameter',
-        debug: process.env.VERCEL_ENV === 'development' ? { query: req.query } : undefined,
+      console.error('[Proxy] Missing path parameter:', { 
+        query: req.query, 
+        url: req.url,
+        hasQuery: !!req.query 
       });
-      return;
+      return sendError(400, 'Missing path parameter', {
+        debug: process.env.VERCEL_ENV === 'development' ? { 
+          query: req.query,
+          url: req.url 
+        } : undefined
+      });
     }
 
     // req.query에서 path를 제외한 나머지 쿼리 파라미터 추출
