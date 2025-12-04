@@ -123,7 +123,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {images.map((url, index) => (
-            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
               <img
                 src={url}
                 alt={`업로드된 이미지 ${index + 1}`}
@@ -138,15 +138,18 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                   // 인덱스 기반으로 삭제하여 같은 URL이 여러 개 있어도 정확히 해당 항목만 삭제
                   onChange(images.filter((_, i) => i !== index));
                 }}
-                className="absolute top-1.5 right-1.5 z-10 p-1.5 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
-                style={{ opacity: 1 }}
+                className="absolute top-2 right-2 z-50 flex items-center justify-center w-8 h-8 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-full shadow-xl border-2 border-white transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer"
+                style={{ 
+                  opacity: 1,
+                  pointerEvents: 'auto',
+                }}
                 aria-label={`이미지 ${index + 1} 삭제`}
                 title="삭제"
               >
-                <X className="w-4 h-4 text-white" strokeWidth={2.5} />
+                <X className="w-5 h-5 text-white" strokeWidth={3} />
               </button>
               {/* 이미지 번호 표시 */}
-              <div className="absolute bottom-1.5 left-1.5 z-10 px-1.5 py-0.5 bg-black/60 rounded text-xs text-white font-medium">
+              <div className="absolute bottom-2 left-2 z-50 px-2 py-1 bg-black/70 rounded text-xs text-white font-medium">
                 {index + 1}
               </div>
             </div>
