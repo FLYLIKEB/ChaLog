@@ -101,15 +101,21 @@ export default async function handler(req: any, res: any) {
 
     // fetch 옵션 설정
     const controller = new AbortController();
-    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 10000);
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 30000); // 30초로 증가
+    const timeoutId = setTimeout(() => {
+      console.warn('[Proxy] ⏱️ Timeout triggered after', timeoutMs, 'ms');
+      controller.abort();
+    }, timeoutMs);
 
     const fetchOptions: RequestInit = {
       method: req.method,
       headers: {
         'Content-Type': req.headers['content-type'] || 'application/json',
+        'User-Agent': 'Vercel-Proxy/1.0',
       },
       signal: controller.signal,
+      // Keep-alive 및 연결 재사용 설정
+      keepalive: true,
     };
 
     if (req.headers.authorization) {
@@ -126,8 +132,32 @@ export default async function handler(req: any, res: any) {
     }
 
     // 백엔드로 요청 전송
-    const fetchResponse = await fetch(backendUrl, fetchOptions);
-    clearTimeout(timeoutId);
+    const fetchStartTime = Date.now();
+    let fetchResponse: Response;
+    try {
+      fetchResponse = await fetch(backendUrl, fetchOptions);
+      clearTimeout(timeoutId);
+      const fetchDuration = Date.now() - fetchStartTime;
+      if (LOG_PROXY_REQUESTS) {
+        console.info('[Proxy] ✅ Fetch completed:', {
+          requestId,
+          durationMs: fetchDuration,
+          status: fetchResponse.status,
+        });
+      }
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      const fetchDuration = Date.now() - fetchStartTime;
+      console.error('[Proxy] ❌ Fetch failed:', {
+        requestId,
+        backendUrl,
+        durationMs: fetchDuration,
+        errorName: fetchError?.name,
+        errorMessage: fetchError?.message,
+        errorStack: fetchError?.stack,
+      });
+      throw fetchError;
+    }
 
     if (LOG_PROXY_REQUESTS) {
       console.info('[Proxy] ◀', {
