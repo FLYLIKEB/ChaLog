@@ -4,6 +4,7 @@ import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { RatingSlider } from '../components/RatingSlider';
 import { ImageUploader } from '../components/ImageUploader';
+import { TagInput } from '../components/TagInput';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
@@ -37,6 +38,7 @@ export function NewNote() {
   });
   const [memo, setMemo] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -138,6 +140,7 @@ export function NewNote() {
         ratings,
         memo: memo.trim() || undefined,
         images: images.length > 0 ? images : undefined,
+        tags: tags.length > 0 ? tags : undefined,
         isPublic,
       });
 
@@ -246,6 +249,24 @@ export function NewNote() {
             images={images}
             onChange={setImages}
             maxImages={5}
+          />
+        </section>
+
+        {/* 태그 입력 */}
+        <section 
+          className="bg-white rounded-lg p-4"
+          onKeyDown={(e) => {
+            // 태그 입력 섹션에서 Enter 키가 폼 제출을 트리거하지 않도록 방지
+            if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
+          <TagInput
+            tags={tags}
+            onChange={setTags}
+            maxTags={10}
           />
         </section>
 

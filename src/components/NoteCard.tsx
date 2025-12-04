@@ -37,7 +37,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
       <div className="flex items-start justify-between gap-3">
         <div className={`flex-1 min-w-0 ${hasImage ? 'flex gap-3' : ''}`}>
           {hasImage && firstImage && (
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
+            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
               <ImageWithFallback
                 src={firstImage}
                 alt="Note image"
@@ -51,6 +51,23 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
             )}
             {note.memo && (
               <p className="text-sm text-gray-600 line-clamp-2">{note.memo}</p>
+            )}
+            {note.tags && note.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {note.tags.slice(0, 3).map((tag, index) => (
+                  <span
+                    key={index}
+                    className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {note.tags.length > 3 && (
+                  <span className="text-xs px-2 py-0.5 text-gray-500">
+                    +{note.tags.length - 3}
+                  </span>
+                )}
+              </div>
             )}
             <div className="flex items-center gap-2 mt-2">
               <span className="text-xs text-gray-500">{note.userName}</span>

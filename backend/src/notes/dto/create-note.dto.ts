@@ -54,6 +54,12 @@ export class CreateNoteDto {
   @IsString({ each: true })
   images?: string[] | null;
 
+  @IsOptional()
+  @IsArray({ message: 'tags must be an array' })
+  @ArrayMaxSize(10, { message: 'tags must contain at most 10 items' })
+  @IsString({ each: true, message: 'each tag must be a string' })
+  tags?: string[];
+
   @IsBoolean()
   isPublic: boolean;
 }
