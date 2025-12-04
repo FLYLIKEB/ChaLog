@@ -37,7 +37,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
       <div className="flex items-start justify-between gap-3">
         <div className={`flex-1 min-w-0 ${hasImage ? 'flex gap-3' : ''}`}>
           {hasImage && firstImage && (
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100">
+            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
               <ImageWithFallback
                 src={firstImage}
                 alt="Note image"

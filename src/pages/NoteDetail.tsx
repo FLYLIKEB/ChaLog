@@ -193,9 +193,9 @@ export function NoteDetail() {
         {note.images && note.images.length > 0 && (
           <section className="bg-white rounded-lg p-4">
             <h3 className="mb-3">사진</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 justify-items-center">
               {note.images.map((imageUrl, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100 w-full max-w-xs">
                   <ImageWithFallback
                     src={imageUrl}
                     alt={`Note image ${index + 1}`}
