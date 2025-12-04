@@ -135,6 +135,16 @@ export default async function handler(req: any, res: any) {
     const fetchStartTime = Date.now();
     let fetchResponse: Response;
     try {
+      // 연결 테스트를 위한 추가 정보 로깅
+      if (LOG_PROXY_REQUESTS) {
+        console.info('[Proxy] 🔗 Attempting connection:', {
+          requestId,
+          backendUrl,
+          method: req.method,
+          headers: Object.keys(fetchOptions.headers || {}),
+        });
+      }
+      
       fetchResponse = await fetch(backendUrl, fetchOptions);
       clearTimeout(timeoutId);
       const fetchDuration = Date.now() - fetchStartTime;
@@ -148,14 +158,36 @@ export default async function handler(req: any, res: any) {
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       const fetchDuration = Date.now() - fetchStartTime;
-      console.error('[Proxy] ❌ Fetch failed:', {
+      
+      // 더 자세한 에러 정보 수집
+      const errorDetails: any = {
         requestId,
         backendUrl,
         durationMs: fetchDuration,
         errorName: fetchError?.name,
         errorMessage: fetchError?.message,
-        errorStack: fetchError?.stack,
-      });
+        errorCode: fetchError?.code,
+        errorCause: fetchError?.cause,
+      };
+      
+      // 스택 트레이스가 있으면 추가
+      if (fetchError?.stack) {
+        errorDetails.errorStack = fetchError.stack;
+      }
+      
+      // 네트워크 관련 추가 정보
+      if (fetchError?.cause) {
+        errorDetails.causeDetails = {
+          code: fetchError.cause?.code,
+          message: fetchError.cause?.message,
+          errno: fetchError.cause?.errno,
+          syscall: fetchError.cause?.syscall,
+          address: fetchError.cause?.address,
+          port: fetchError.cause?.port,
+        };
+      }
+      
+      console.error('[Proxy] ❌ Fetch failed:', errorDetails);
       throw fetchError;
     }
 
