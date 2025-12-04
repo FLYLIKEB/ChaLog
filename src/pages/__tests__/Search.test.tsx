@@ -1,8 +1,9 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi } from 'vitest';
+import { vi, describe, it, expect } from 'vitest';
 import { Search } from '../Search';
 import { renderWithRouter } from '../../test/renderWithRouter';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const mockTeas = [
   {
@@ -48,6 +49,24 @@ vi.mock('sonner', () => ({
   },
 }));
 
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  const navigate = vi.fn();
+  (globalThis as Record<string, unknown>).__navigate_spy__ = navigate;
+  return {
+    ...actual,
+    useNavigate: () => navigate,
+  };
+});
+
+const getNavigateSpy = () => {
+  const navigate = (globalThis as unknown as Record<string, ReturnType<typeof vi.fn> | undefined>).__navigate_spy__;
+  if (!navigate) {
+    throw new Error('navigate spy is not initialised');
+  }
+  return navigate;
+};
+
 describe('Search 페이지', () => {
   it('검색어가 없으면 안내 메시지를 보여준다', () => {
     renderWithRouter(<Search />, { route: '/search' });
@@ -74,6 +93,35 @@ describe('Search 페이지', () => {
     await user.type(input, '없는차');
 
     expect(await screen.findByText('검색 결과가 없습니다.')).toBeInTheDocument();
+  });
+
+  it('새 차 등록 버튼이 표시된다', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<Search />, { route: '/search' });
+
+    const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
+    await user.type(input, '테스트');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /새 차 등록/ })).toBeInTheDocument();
+    });
+  });
+
+  it('새 차 등록 버튼 클릭 시 새 차 등록 페이지로 이동한다', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<Search />, { route: '/search' });
+
+    const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
+    await user.type(input, '테스트');
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /새 차 등록/ })).toBeInTheDocument();
+    });
+
+    const newTeaButton = screen.getByRole('button', { name: /새 차 등록/ });
+    await user.click(newTeaButton);
+
+    expect(getNavigateSpy()).toHaveBeenCalledWith('/tea/new');
   });
 });
 

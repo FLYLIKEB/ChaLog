@@ -109,9 +109,7 @@ export function Search() {
             <Button
               variant="outline"
               className="w-full"
-              onClick={() => {
-                toast.info('새 차 등록 기능은 준비 중입니다.');
-              }}
+              onClick={() => navigate('/tea/new')}
             >
               <Plus className="w-4 h-4 mr-2" />
               새 차 등록

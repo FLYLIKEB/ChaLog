@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { RatingSlider } from '../components/RatingSlider';
 import { Input } from '../components/ui/input';
@@ -61,10 +61,27 @@ export function NewNote() {
   useEffect(() => {
     if (preselectedTeaId) {
       const teaId = parseInt(preselectedTeaId, 10);
+      if (isNaN(teaId)) return;
+
       const tea = teas.find(t => t.id === teaId);
       if (tea) {
         setSelectedTea(teaId);
         setSearchQuery(tea.name);
+      } else {
+        // teas 목록에 없으면 개별적으로 가져오기 (새로 등록한 차일 수 있음)
+        const fetchTea = async () => {
+          try {
+            const teaData = await teasApi.getById(teaId);
+            if (teaData) {
+              setTeas(prev => [...prev, teaData as Tea]);
+              setSelectedTea(teaId);
+              setSearchQuery((teaData as Tea).name);
+            }
+          } catch (error) {
+            logger.error('Failed to fetch tea:', error);
+          }
+        };
+        fetchTea();
       }
     }
   }, [preselectedTeaId, teas]);
@@ -162,6 +179,26 @@ export function NewNote() {
                   </p>
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* 검색 결과가 없을 때 새 차 추가 옵션 */}
+          {searchQuery && !selectedTea && filteredTeas.length === 0 && (
+            <div className="mt-2 p-4 border border-dashed border-gray-300 rounded-lg text-center">
+              <p className="text-sm text-gray-600 mb-3">
+                "{searchQuery}"에 대한 검색 결과가 없습니다.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigate(`/tea/new?returnTo=/note/new&searchQuery=${encodeURIComponent(searchQuery)}`);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                새 차로 등록하기
+              </Button>
             </div>
           )}
 
