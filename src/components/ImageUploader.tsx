@@ -123,13 +123,13 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {images.map((url, index) => (
-            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-lg bg-gray-100" style={{ overflow: 'visible' }}>
+            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-xl overflow-hidden bg-gray-100 group">
               <img
                 src={url}
                 alt={`업로드된 이미지 ${index + 1}`}
-                className="w-full h-full object-cover rounded-lg"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
-              {/* 삭제 버튼 - 심플하고 확실하게 보이도록 */}
+              {/* 삭제 버튼 - 애플 스타일 */}
               <button
                 type="button"
                 onClick={(e) => {
@@ -137,14 +137,14 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                   e.preventDefault();
                   onChange(images.filter((_, i) => i !== index));
                 }}
-                className="absolute -top-2 -right-2 w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center shadow-lg border-2 border-white"
+                className="absolute top-2 right-2 w-9 h-9 bg-black/60 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:bg-black/80 hover:scale-110 active:scale-95"
                 style={{ 
                   zIndex: 9999,
                 }}
                 aria-label={`이미지 ${index + 1} 삭제`}
                 title="삭제"
               >
-                <X className="w-6 h-6 text-white" strokeWidth={3} />
+                <X className="w-4 h-4 text-white" strokeWidth={2.5} />
               </button>
             </div>
           ))}
