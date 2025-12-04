@@ -6,7 +6,8 @@ const LOG_PROXY_REQUESTS =
   (process.env.LOG_PROXY_REQUESTS ?? 'true').toLowerCase() !== 'false';
 
 export default async function handler(req: any, res: any) {
-  const rawPath = req.query.path;
+  // Vercel Serverless Function에서 query는 자동으로 파싱됨
+  const rawPath = req.query?.path;
   const pathString = Array.isArray(rawPath)
     ? rawPath.join('/')
     : rawPath || '';
@@ -19,14 +20,23 @@ export default async function handler(req: any, res: any) {
     return;
   }
 
-  const queryString = req.url?.includes('?')
-    ? req.url.substring(req.url.indexOf('?') + 1)
-    : '';
-  // path 파라미터 외 나머지 쿼리만 추출
-  const searchParams = new URLSearchParams(queryString);
-  searchParams.delete('path');
+  // req.query에서 path를 제외한 나머지 쿼리 파라미터 추출
+  const queryParams = new URLSearchParams();
+  if (req.query) {
+    Object.keys(req.query).forEach(key => {
+      if (key !== 'path') {
+        const value = req.query[key];
+        if (Array.isArray(value)) {
+          value.forEach(v => queryParams.append(key, v));
+        } else {
+          queryParams.append(key, value);
+        }
+      }
+    });
+  }
+  
   const backendUrl = `${BACKEND_URL}/${pathString}${
-    searchParams.toString() ? `?${searchParams.toString()}` : ''
+    queryParams.toString() ? `?${queryParams.toString()}` : ''
   }`;
 
   const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -61,9 +71,13 @@ export default async function handler(req: any, res: any) {
       };
     }
 
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      fetchOptions.body =
-        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    // POST, PUT, PATCH 등의 경우 body 처리
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (req.body) {
+        // 이미 문자열이면 그대로 사용, 객체면 JSON 문자열로 변환
+        fetchOptions.body =
+          typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      }
     }
 
     const fetchResponse = await fetch(backendUrl, fetchOptions);
