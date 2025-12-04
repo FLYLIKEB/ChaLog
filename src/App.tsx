@@ -8,6 +8,7 @@ import { Search } from './pages/Search';
 import { TeaDetail } from './pages/TeaDetail';
 import { NewTea } from './pages/NewTea';
 import { NewNote } from './pages/NewNote';
+import { EditNote } from './pages/EditNote';
 import { NoteDetail } from './pages/NoteDetail';
 import { MyNotes } from './pages/MyNotes';
 import { Settings } from './pages/Settings';
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/tea/new" element={<NewTea />} />
             <Route path="/tea/:id" element={<TeaDetail />} />
             <Route path="/note/new" element={<NewNote />} />
+            <Route path="/note/:id/edit" element={<EditNote />} />
             <Route path="/note/:id" element={<NoteDetail />} />
             <Route path="/my-notes" element={<MyNotes />} />
             <Route path="/settings" element={<Settings />} />

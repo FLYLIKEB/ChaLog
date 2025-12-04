@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { RatingSlider } from '../components/RatingSlider';
@@ -10,24 +10,25 @@ import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
-import { Tea } from '../types';
+import { Tea, Note } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
 
-export function NewNote() {
+export function EditNote() {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { id } = useParams();
+  const noteId = id ? parseInt(id, 10) : NaN;
+  const { isAuthenticated, user } = useAuth();
   const [searchParams] = useSearchParams();
   const preselectedTeaId = searchParams.get('teaId');
+  const teasRef = useRef<Tea[]>([]);
 
   const [teas, setTeas] = useState<Tea[]>([]);
-  const teasRef = useRef<Tea[]>([]);
-  const [selectedTea, setSelectedTea] = useState<number | null>(
-    preselectedTeaId ? parseInt(preselectedTeaId, 10) : null
-  );
+  const [selectedTea, setSelectedTea] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [ratings, setRatings] = useState({
     richness: RATING_DEFAULT,
@@ -41,6 +42,8 @@ export function NewNote() {
   const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [note, setNote] = useState<Note | null>(null);
 
   const ratingFields: { key: keyof typeof ratings; label: string }[] = [
     { key: 'richness', label: '풍부함' },
@@ -50,8 +53,8 @@ export function NewNote() {
     { key: 'complexity', label: '복합성' },
   ];
 
+  // 초기 로드 시 모든 차 목록 가져오기
   useEffect(() => {
-    // 초기 로드 시 모든 차 목록 가져오기
     const fetchTeas = async () => {
       try {
         const data = await teasApi.getAll();
@@ -65,18 +68,19 @@ export function NewNote() {
     fetchTeas();
   }, []);
 
+  // NewTea에서 돌아올 때 teaId 처리
   useEffect(() => {
     if (preselectedTeaId) {
       const teaId = parseInt(preselectedTeaId, 10);
       if (isNaN(teaId)) return;
 
-      // useRef를 사용하여 최신 teas 배열 참조 (의존성 배열에 포함하지 않아도 됨)
+      // useRef를 사용하여 최신 teas 배열 참조
       const tea = teasRef.current.find(t => t.id === teaId);
       if (tea) {
         setSelectedTea(teaId);
         setSearchQuery(tea.name);
       } else {
-        // teas 목록에 없으면 개별적으로 가져오기 (새로 등록한 차일 수 있음)
+        // teas 목록에 없으면 개별적으로 가져오기
         const fetchTea = async () => {
           try {
             const teaData = await teasApi.getById(teaId);
@@ -97,6 +101,70 @@ export function NewNote() {
       }
     }
   }, [preselectedTeaId]);
+
+  // 노트 데이터 불러오기
+  useEffect(() => {
+    const fetchNote = async () => {
+      if (isNaN(noteId)) {
+        toast.error('유효하지 않은 노트 ID입니다.');
+        navigate('/my-notes');
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const noteData = await notesApi.getById(noteId);
+        const normalizedNote = noteData as Note;
+
+        // 권한 확인
+        if (normalizedNote.userId !== user?.id) {
+          toast.error('이 노트를 수정할 권한이 없습니다.');
+          navigate(`/note/${noteId}`);
+          return;
+        }
+
+        setNote(normalizedNote);
+        setSelectedTea(normalizedNote.teaId);
+        
+        // ratings 값이 1 미만이면 1로 보정 (백엔드 검증과 일치)
+        const validatedRatings = {
+          richness: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.richness || RATING_DEFAULT)),
+          strength: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.strength || RATING_DEFAULT)),
+          smoothness: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.smoothness || RATING_DEFAULT)),
+          clarity: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.clarity || RATING_DEFAULT)),
+          complexity: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.complexity || RATING_DEFAULT)),
+        };
+        setRatings(validatedRatings);
+        
+        setMemo(normalizedNote.memo || '');
+        setImages(normalizedNote.images || []);
+        setTags(normalizedNote.tags || []);
+        setIsPublic(normalizedNote.isPublic);
+
+        // 차 이름으로 검색 쿼리 설정
+        setSearchQuery(normalizedNote.teaName);
+      } catch (error: any) {
+        logger.error('Failed to fetch note:', error);
+        if (error?.statusCode === 403) {
+          toast.error('이 노트를 수정할 권한이 없습니다.');
+        } else if (error?.statusCode === 404) {
+          toast.error('노트를 찾을 수 없습니다.');
+        } else {
+          toast.error('노트를 불러오는데 실패했습니다.');
+        }
+        navigate('/my-notes');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated && user) {
+      fetchNote();
+    } else {
+      toast.error('로그인이 필요합니다.');
+      navigate('/login');
+    }
+  }, [noteId, isAuthenticated, user, navigate]);
 
   // 검색 필터링
   const filteredTeas = teas.filter(tea => {
@@ -122,6 +190,11 @@ export function NewNote() {
       return;
     }
 
+    if (isNaN(noteId)) {
+      toast.error('유효하지 않은 노트 ID입니다.');
+      return;
+    }
+
     try {
       setIsSaving(true);
       
@@ -143,7 +216,7 @@ export function NewNote() {
         validatedRatings.complexity
       ) / RATING_FIELDS_COUNT;
 
-      await notesApi.create({
+      await notesApi.update(noteId, {
         teaId: selectedTea,
         rating: averageRating,
         ratings: validatedRatings,
@@ -153,19 +226,42 @@ export function NewNote() {
         isPublic,
       });
 
-      toast.success('기록이 저장되었습니다.');
-      setTimeout(() => navigate('/my-notes'), NAVIGATION_DELAY);
-    } catch (error) {
-      logger.error('Failed to save note:', error);
-      toast.error(error instanceof Error ? error.message : '저장에 실패했습니다.');
+      toast.success('노트가 수정되었습니다.');
+      setTimeout(() => navigate(`/note/${noteId}`), NAVIGATION_DELAY);
+    } catch (error: any) {
+      logger.error('Failed to update note:', error);
+      if (error?.statusCode === 403) {
+        toast.error('이 노트를 수정할 권한이 없습니다.');
+      } else {
+        toast.error(error instanceof Error ? error.message : '수정에 실패했습니다.');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
+  if (isLoading) {
+    return (
+      <DetailFallback title="노트 수정">
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+        </div>
+      </DetailFallback>
+    );
+  }
+
+  if (!note) {
+    return (
+      <DetailFallback 
+        title="노트 수정" 
+        message="노트를 찾을 수 없거나 수정할 권한이 없습니다." 
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
-      <Header showBack title="새 노트 작성" />
+      <Header showBack title="노트 수정" />
       
       <div className="p-4 space-y-6">
         {/* 차 선택 영역 */}
@@ -177,7 +273,9 @@ export function NewNote() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              setSelectedTea(null);
+              if (!filteredTeas.some(t => t.name === e.target.value)) {
+                setSelectedTea(null);
+              }
             }}
           />
           
@@ -212,7 +310,7 @@ export function NewNote() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  navigate(`/tea/new?returnTo=/note/new&searchQuery=${encodeURIComponent(searchQuery)}`);
+                  navigate(`/tea/new?returnTo=/note/${noteId}/edit&searchQuery=${encodeURIComponent(searchQuery)}`);
                 }}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -315,10 +413,11 @@ export function NewNote() {
               저장 중...
             </>
           ) : (
-            '저장'
+            '수정 완료'
           )}
         </Button>
       </div>
     </div>
   );
 }
+

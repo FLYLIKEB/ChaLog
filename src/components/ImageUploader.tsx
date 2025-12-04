@@ -121,21 +121,33 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
 
       {/* 이미지 미리보기 그리드 */}
       {images.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
-          {images.map((url) => (
-            <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
-              <img
-                src={url}
-                alt="업로드된 이미지"
-                className="w-full h-full object-cover"
-              />
+        <div className="grid grid-cols-3 gap-3">
+          {images.map((url, index) => (
+            <div key={`image-${index}-${url}`} className="space-y-2">
+              <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                <img
+                  src={url}
+                  alt={`업로드된 이미지 ${index + 1}`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* 삭제 버튼 - 이미지 밑에 빨간색으로 배치 */}
               <button
                 type="button"
-                onClick={() => onChange(images.filter(img => img !== url))}
-                className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="이미지 삭제"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  onChange(images.filter((_, i) => i !== index));
+                }}
+                className="w-full py-2 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg text-white text-sm font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-1.5"
+                style={{
+                  backgroundColor: '#ef4444',
+                }}
+                aria-label={`이미지 ${index + 1} 삭제`}
+                title="삭제"
               >
-                <X className="w-3 h-3 text-white" />
+                <X className="w-4 h-4" strokeWidth={3} />
+                <span>삭제</span>
               </button>
             </div>
           ))}
@@ -151,8 +163,23 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
             accept="image/*"
             multiple
             onChange={handleFileSelect}
-            className="hidden"
             disabled={uploading}
+            aria-hidden="true"
+            tabIndex={-1}
+            style={{
+              position: 'absolute',
+              width: '1px',
+              height: '1px',
+              padding: 0,
+              margin: '-1px',
+              overflow: 'hidden',
+              clip: 'rect(0, 0, 0, 0)',
+              whiteSpace: 'nowrap',
+              border: 0,
+              opacity: 0,
+              visibility: 'hidden',
+              display: 'none',
+            }}
           />
           <Button
             type="button"

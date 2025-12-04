@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
@@ -337,6 +337,14 @@ export function NoteDetail() {
         {/* 내 노트일 때만 노출되는 액션 */}
         {isMyNote && (
           <section className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/note/${noteId}/edit`)}
+              className="flex-1"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              수정
+            </Button>
             <Button
               variant="outline"
               onClick={handleTogglePublic}
