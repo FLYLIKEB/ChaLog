@@ -1,4 +1,5 @@
 import { API_TIMEOUT } from '../constants';
+import { Tea } from '../types';
 
 // API Base URL 설정
 // 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)
@@ -447,10 +448,10 @@ export const authApi = {
 export const teasApi = {
   getAll: (query?: string) => {
     const endpoint = query ? `/teas?q=${encodeURIComponent(query)}` : '/teas';
-    return apiClient.get(endpoint);
+    return apiClient.get<Tea[]>(endpoint);
   },
-  getById: (id: number) => apiClient.get(`/teas/${id}`),
-  create: (data: CreateTeaRequest) => apiClient.post('/teas', data),
+  getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
+  create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
 };
 
 export const notesApi = {

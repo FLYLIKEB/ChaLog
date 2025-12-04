@@ -28,6 +28,7 @@ export function NewTea() {
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
   const [duplicateTeaId, setDuplicateTeaId] = useState<number | null>(null);
+  const [typeTouched, setTypeTouched] = useState(false);
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -90,6 +91,7 @@ export function NewTea() {
     }
 
     if (!type.trim()) {
+      setTypeTouched(true);
       toast.error('차 종류를 입력해주세요.');
       return;
     }
@@ -114,7 +116,7 @@ export function NewTea() {
         origin: origin.trim() || undefined,
       };
 
-      const createdTea = await teasApi.create(teaData) as Tea;
+      const createdTea = await teasApi.create(teaData);
       const teaId = createdTea?.id;
 
       if (!teaId) {
@@ -222,7 +224,10 @@ export function NewTea() {
                     key={teaType}
                     type="button"
                     variant={type === teaType ? 'default' : 'outline'}
-                    onClick={() => setType(teaType)}
+                    onClick={() => {
+                      setType(teaType);
+                      setTypeTouched(true);
+                    }}
                     disabled={isLoading}
                     className="w-full"
                     aria-pressed={type === teaType}
@@ -231,8 +236,11 @@ export function NewTea() {
                   </Button>
                 ))}
               </div>
-              {!type && (
+              {!type && typeTouched && (
                 <p className="text-xs text-red-500">차 종류를 선택해주세요.</p>
+              )}
+              {!type && !typeTouched && (
+                <p className="text-xs text-gray-500">차 종류를 선택해주세요.</p>
               )}
             </div>
 
