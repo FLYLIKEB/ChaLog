@@ -269,7 +269,7 @@ export function NoteDetail() {
                   disabled={isTogglingBookmark}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
                     isBookmarked 
-                      ? 'text-blue-600 hover:bg-blue-50' 
+                      ? 'text-[#030213] hover:bg-[#030213]/10' 
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                   title={isBookmarked ? '북마크 해제' : '북마크 추가'}
@@ -277,10 +277,10 @@ export function NoteDetail() {
                   <Bookmark
                     className={`w-5 h-5 transition-all ${
                       isBookmarked 
-                        ? 'fill-blue-500 text-blue-500 stroke-blue-500' 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
                         : 'fill-none text-gray-600 stroke-gray-600'
                     }`}
-                    style={isBookmarked ? { fill: 'rgb(59, 130, 246)', color: 'rgb(59, 130, 246)' } : {}}
+                    style={isBookmarked ? { fill: '#030213', color: '#030213' } : {}}
                   />
                 </button>
               </div>

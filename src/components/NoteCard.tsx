@@ -193,18 +193,18 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   disabled={isTogglingBookmark}
                   className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
                     isBookmarked 
-                      ? 'text-blue-500 hover:text-blue-600' 
-                      : 'text-gray-500 hover:text-blue-500'
+                      ? 'text-[#030213] hover:text-[#030213]/80' 
+                      : 'text-gray-500 hover:text-[#030213]'
                   }`}
                   title={isBookmarked ? '북마크 해제' : '북마크 추가'}
                 >
                   <Bookmark
                     className={`w-4 h-4 transition-all ${
                       isBookmarked 
-                        ? 'fill-blue-500 text-blue-500 stroke-blue-500' 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
                         : 'fill-none text-gray-500 stroke-gray-500'
                     }`}
-                    style={isBookmarked ? { fill: 'rgb(59, 130, 246)', color: 'rgb(59, 130, 246)' } : {}}
+                    style={isBookmarked ? { fill: '#030213', color: '#030213' } : {}}
                   />
                 </button>
               </>
