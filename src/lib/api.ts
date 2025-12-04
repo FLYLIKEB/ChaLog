@@ -104,8 +104,8 @@ interface NormalizedNote {
     clarity: number;
     complexity: number;
   };
-  memo: string | null;
-  images?: string[] | null;
+  memo: string;
+  images?: string[];
   isPublic: boolean;
   createdAt: Date;
 }
@@ -113,6 +113,7 @@ interface NormalizedNote {
 /**
  * Note 응답을 프론트엔드 타입으로 정규화
  * 백엔드의 tea/user 객체에서 teaName/userName을 추출
+ * null 값들을 안전한 기본값으로 변환
  */
 function normalizeNote(note: BackendNote): NormalizedNote {
   if (!note) {
@@ -123,10 +124,10 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     userName: note.user?.name || '',
-    // memo가 null일 수 있으므로 명시적으로 처리
-    memo: note.memo ?? null,
-    // images가 null일 수 있으므로 명시적으로 처리
-    images: note.images ?? null,
+    // memo가 null이면 빈 문자열로 변환하여 항상 string 보장
+    memo: note.memo ?? '',
+    // images가 null이면 undefined로 변환, 빈 배열이면 undefined로 변환
+    images: note.images && note.images.length > 0 ? note.images : undefined,
     createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
   };
 }
