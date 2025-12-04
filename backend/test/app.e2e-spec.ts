@@ -536,6 +536,78 @@ describe('AppController (e2e)', () => {
           });
       }
     });
+
+    it('POST /notes/:id/like - 비공개 노트에 작성자가 아닌 사용자가 좋아요 시도 시 403 에러', async () => {
+      // 비공개 노트 생성
+      const privateNoteResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '비공개 테스트 노트입니다',
+          isPublic: false,
+        })
+        .expect(201);
+      const privateNoteId = privateNoteResponse.body.id;
+
+      // 작성자가 아닌 사용자(userId2)가 좋아요 시도
+      const response = await request(app.getHttpServer())
+        .post(`/notes/${privateNoteId}/like`)
+        .set('Authorization', `Bearer ${authToken2}`)
+        .expect(403);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.statusCode).toBe(403);
+      expect(response.body.message).toContain('권한이 없습니다');
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+    });
+
+    it('POST /notes/:id/like - 비공개 노트에 작성자가 좋아요 성공', async () => {
+      // 비공개 노트 생성
+      const privateNoteResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '비공개 테스트 노트입니다',
+          isPublic: false,
+        })
+        .expect(201);
+      const privateNoteId = privateNoteResponse.body.id;
+
+      // 작성자(userId1)가 좋아요 시도
+      const response = await request(app.getHttpServer())
+        .post(`/notes/${privateNoteId}/like`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(201);
+
+      expect(response.body).toHaveProperty('liked');
+      expect(response.body).toHaveProperty('likeCount');
+      expect(response.body.liked).toBe(true);
+      expect(response.body.likeCount).toBe(1);
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM note_likes WHERE noteId = ?', [privateNoteId]);
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+    });
   });
 
   describe('/notes/:id/bookmark - 노트 북마크 API', () => {
@@ -738,6 +810,76 @@ describe('AppController (e2e)', () => {
 
       expect(response.body).toHaveProperty('message');
       expect(response.body.statusCode).toBe(400);
+    });
+
+    it('POST /notes/:id/bookmark - 비공개 노트에 작성자가 아닌 사용자가 북마크 시도 시 403 에러', async () => {
+      // 비공개 노트 생성
+      const privateNoteResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '비공개 테스트 노트입니다',
+          isPublic: false,
+        })
+        .expect(201);
+      const privateNoteId = privateNoteResponse.body.id;
+
+      // 작성자가 아닌 사용자(userId2)가 북마크 시도
+      const response = await request(app.getHttpServer())
+        .post(`/notes/${privateNoteId}/bookmark`)
+        .set('Authorization', `Bearer ${authToken2}`)
+        .expect(403);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.statusCode).toBe(403);
+      expect(response.body.message).toContain('권한이 없습니다');
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+    });
+
+    it('POST /notes/:id/bookmark - 비공개 노트에 작성자가 북마크 성공', async () => {
+      // 비공개 노트 생성
+      const privateNoteResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken1}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '비공개 테스트 노트입니다',
+          isPublic: false,
+        })
+        .expect(201);
+      const privateNoteId = privateNoteResponse.body.id;
+
+      // 작성자(userId1)가 북마크 시도
+      const response = await request(app.getHttpServer())
+        .post(`/notes/${privateNoteId}/bookmark`)
+        .set('Authorization', `Bearer ${authToken1}`)
+        .expect(201);
+
+      expect(response.body).toHaveProperty('bookmarked');
+      expect(response.body.bookmarked).toBe(true);
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM note_bookmarks WHERE noteId = ?', [privateNoteId]);
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
     });
 
     it('GET /notes/:id - 노트 조회 시 북마크 정보 포함', async () => {
