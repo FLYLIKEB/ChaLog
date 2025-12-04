@@ -13,6 +13,7 @@ import {
   InternalServerErrorException,
   UseInterceptors,
   UploadedFile,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -20,6 +21,7 @@ import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
 import { S3Service } from '../common/storage/s3.service';
 import { ImageProcessorService } from '../common/storage/image-processor.service';
 
@@ -99,18 +101,30 @@ export class NotesController {
     return this.notesService.create(parsedUserId, createNoteDto);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get()
   findAll(
     @Query('userId') userId?: string,
     @Query('public') isPublic?: string,
     @Query('teaId') teaId?: string,
+    @Request() req?: any,
   ) {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
     const userIdNum = userId ? parseInt(userId, 10) : undefined;
     const teaIdNum = teaId ? parseInt(teaId, 10) : undefined;
-    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum);
+    
+    let currentUserId: number | undefined;
+    if (req?.user?.userId) {
+      const parsedUserId = parseInt(req.user.userId, 10);
+      if (!Number.isNaN(parsedUserId)) {
+        currentUserId = parsedUserId;
+      }
+    }
+    
+    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     const parsedId = parseInt(id, 10);
@@ -169,5 +183,47 @@ export class NotesController {
     }
     
     return this.notesService.remove(parsedId, parsedUserId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(201)
+  @Post(':id/like')
+  toggleLike(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    return this.notesService.toggleLike(parsedId, parsedUserId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(201)
+  @Post(':id/bookmark')
+  toggleBookmark(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+    
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    
+    return this.notesService.toggleBookmark(parsedId, parsedUserId);
   }
 }

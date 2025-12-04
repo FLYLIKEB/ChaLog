@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock, Loader2 } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
@@ -35,6 +35,11 @@ export function NoteDetail() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
 
   useEffect(() => {
     // 삭제된 노트는 API 호출하지 않음
@@ -54,6 +59,9 @@ export function NoteDetail() {
         // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
         const normalizedNote = noteData as Note;
         setNote(normalizedNote);
+        setIsLiked(normalizedNote.isLiked ?? false);
+        setLikeCount(normalizedNote.likeCount ?? 0);
+        setIsBookmarked(normalizedNote.isBookmarked ?? false);
 
         // 차 정보 가져오기
         if (normalizedNote.teaId) {
@@ -144,6 +152,56 @@ export function NoteDetail() {
     }
   };
 
+  const handleLikeClick = async () => {
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isTogglingLike || isNaN(noteId)) return;
+
+    try {
+      setIsTogglingLike(true);
+      const result = await notesApi.toggleLike(noteId);
+      setIsLiked(result.liked);
+      setLikeCount(result.likeCount);
+    } catch (error: any) {
+      logger.error('Failed to toggle like:', error);
+      toast.error('좋아요 처리에 실패했습니다.');
+    } finally {
+      setIsTogglingLike(false);
+    }
+  };
+
+  const handleBookmarkClick = async () => {
+    console.log('북마크 버튼 클릭됨 (Detail)', { noteId, user, isTogglingBookmark });
+    
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isTogglingBookmark || isNaN(noteId)) {
+      console.log('북마크 처리 불가:', { isTogglingBookmark, noteId });
+      return;
+    }
+
+    try {
+      console.log('북마크 API 호출 시작 (Detail)', noteId);
+      setIsTogglingBookmark(true);
+      const result = await notesApi.toggleBookmark(noteId);
+      console.log('북마크 API 호출 성공 (Detail)', result, 'bookmarked:', result.bookmarked);
+      setIsBookmarked(result.bookmarked);
+      console.log('북마크 상태 업데이트 (Detail):', result.bookmarked);
+    } catch (error: any) {
+      console.error('북마크 API 호출 실패 (Detail)', error);
+      logger.error('Failed to toggle bookmark:', error);
+      toast.error('북마크 처리에 실패했습니다.');
+    } finally {
+      setIsTogglingBookmark(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
       <Header showBack title="노트 상세" />
@@ -168,18 +226,65 @@ export function NoteDetail() {
 
         {/* 평균 평점 */}
         <section className="bg-white rounded-lg p-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-2">
-              <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-              <span className="text-2xl">{Number(note.rating).toFixed(1)}</span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+                <span className="text-2xl">{Number(note.rating).toFixed(1)}</span>
+              </div>
+              <Badge variant={note.isPublic ? 'default' : 'secondary'}>
+                {note.isPublic ? (
+                  <><Globe className="w-3 h-3 mr-1" /> 공개</>
+                ) : (
+                  <><Lock className="w-3 h-3 mr-1" /> 비공개</>
+                )}
+              </Badge>
             </div>
-            <Badge variant={note.isPublic ? 'default' : 'secondary'}>
-              {note.isPublic ? (
-                <><Globe className="w-3 h-3 mr-1" /> 공개</>
-              ) : (
-                <><Lock className="w-3 h-3 mr-1" /> 비공개</>
-              )}
-            </Badge>
+            {user && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleLikeClick}
+                  disabled={isTogglingLike}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                    isLiked 
+                      ? 'text-[#030213] hover:bg-[#030213]/10' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title={isLiked ? '좋아요 취소' : '좋아요'}
+                >
+                  <Heart
+                    className={`w-5 h-5 transition-all ${
+                      isLiked 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
+                        : 'fill-none text-gray-600 stroke-gray-600'
+                    }`}
+                    style={isLiked ? { fill: '#030213', color: '#030213' } : {}}
+                  />
+                  {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBookmarkClick}
+                  disabled={isTogglingBookmark}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                    isBookmarked 
+                      ? 'text-[#030213] hover:bg-[#030213]/10' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                >
+                  <Bookmark
+                    className={`w-5 h-5 transition-all ${
+                      isBookmarked 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
+                        : 'fill-none text-gray-600 stroke-gray-600'
+                    }`}
+                    style={isBookmarked ? { fill: '#030213', color: '#030213' } : {}}
+                  />
+                </button>
+              </div>
+            )}
           </div>
           
           <p className="text-xs text-gray-500 mb-4">

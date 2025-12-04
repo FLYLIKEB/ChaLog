@@ -28,6 +28,9 @@ export interface Note {
   tags?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
+  likeCount?: number;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
 }
 
 export interface User {

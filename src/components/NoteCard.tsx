@@ -1,10 +1,12 @@
-import React, { type FC } from 'react';
-import { Star, Lock } from 'lucide-react';
+import React, { type FC, useState } from 'react';
+import { Star, Lock, Heart, Bookmark } from 'lucide-react';
 import { Note } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { notesApi } from '../lib/api';
+import { logger } from '../lib/logger';
 
 interface NoteCardProps {
   note: Note;
@@ -18,6 +20,12 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
   const firstImage = hasImage ? note.images![0] : null;
   const isMyNote = note.userId === user?.id;
   const canView = note.isPublic || isMyNote;
+  
+  const [isLiked, setIsLiked] = useState(note.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(note.likeCount ?? 0);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(note.isBookmarked ?? false);
+  const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
 
   const handleClick = () => {
     if (!canView) {
@@ -27,24 +35,92 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
     navigate(`/note/${note.id}`);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isTogglingLike) return;
+
+    try {
+      setIsTogglingLike(true);
+      const result = await notesApi.toggleLike(note.id);
+      setIsLiked(result.liked);
+      setLikeCount(result.likeCount);
+    } catch (error: any) {
+      logger.error('Failed to toggle like:', error);
+      toast.error('좋아요 처리에 실패했습니다.');
+    } finally {
+      setIsTogglingLike(false);
+    }
+  };
+
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    console.log('북마크 버튼 클릭됨', { noteId: note.id, user, isTogglingBookmark });
+    
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isTogglingBookmark) {
+      console.log('이미 북마크 처리 중...');
+      return;
+    }
+
+    try {
+      console.log('북마크 API 호출 시작', note.id);
+      setIsTogglingBookmark(true);
+      const result = await notesApi.toggleBookmark(note.id);
+      console.log('북마크 API 호출 성공', result, 'bookmarked:', result.bookmarked);
+      setIsBookmarked(result.bookmarked);
+      console.log('북마크 상태 업데이트:', result.bookmarked);
+    } catch (error: any) {
+      console.error('북마크 API 호출 실패', error);
+      logger.error('Failed to toggle bookmark:', error);
+      toast.error('북마크 처리에 실패했습니다.');
+    } finally {
+      setIsTogglingBookmark(false);
+    }
+  };
+
   return (
-    <button
+    <div
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={canView ? 'button' : undefined}
+      tabIndex={canView ? 0 : undefined}
       className={`w-full text-left p-4 bg-white border rounded-lg transition-shadow ${
         canView ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className={`flex-1 min-w-0 ${hasImage ? 'flex gap-3' : ''}`}>
-          {hasImage && firstImage && (
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-              <ImageWithFallback
-                src={firstImage}
-                alt="Note image"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+      <div className="space-y-3">
+        {/* 이미지 */}
+        {hasImage && firstImage && (
+          <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+            <ImageWithFallback
+              src={firstImage}
+              alt="Note image"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
+        {/* 내용 영역 */}
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {showTeaName && (
               <h3 className="truncate mb-1">{note.teaName}</h3>
@@ -83,12 +159,59 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
               )}
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-          <span className="text-sm">{Number(note.rating).toFixed(1)}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span className="text-sm">{Number(note.rating).toFixed(1)}</span>
+            </div>
+            {user && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleLikeClick}
+                  disabled={isTogglingLike}
+                  className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                    isLiked 
+                      ? 'text-[#030213] hover:text-[#030213]/80' 
+                      : 'text-gray-500 hover:text-[#030213]'
+                  }`}
+                  title={isLiked ? '좋아요 취소' : '좋아요'}
+                >
+                  <Heart
+                    className={`w-4 h-4 transition-all ${
+                      isLiked 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
+                        : 'fill-none text-gray-500 stroke-gray-500'
+                    }`}
+                    style={isLiked ? { fill: '#030213', color: '#030213' } : {}}
+                  />
+                  {likeCount > 0 && <span className="text-sm">{likeCount}</span>}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBookmarkClick}
+                  disabled={isTogglingBookmark}
+                  className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                    isBookmarked 
+                      ? 'text-[#030213] hover:text-[#030213]/80' 
+                      : 'text-gray-500 hover:text-[#030213]'
+                  }`}
+                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                >
+                  <Bookmark
+                    className={`w-4 h-4 transition-all ${
+                      isBookmarked 
+                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
+                        : 'fill-none text-gray-500 stroke-gray-500'
+                    }`}
+                    style={isBookmarked ? { fill: '#030213', color: '#030213' } : {}}
+                  />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };

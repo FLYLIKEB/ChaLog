@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, In, DataSource, QueryFailedError } from 'typeorm';
 import { Note } from './entities/note.entity';
 import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
+import { NoteLike } from './entities/note-like.entity';
+import { NoteBookmark } from './entities/note-bookmark.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
@@ -20,6 +22,12 @@ export class NotesService {
     private tagsRepository: Repository<Tag>,
     @InjectRepository(NoteTag)
     private noteTagsRepository: Repository<NoteTag>,
+    @InjectRepository(NoteLike)
+    private noteLikesRepository: Repository<NoteLike>,
+    @InjectRepository(NoteBookmark)
+    private noteBookmarksRepository: Repository<NoteBookmark>,
+    @InjectDataSource()
+    private dataSource: DataSource,
     private teasService: TeasService,
     private s3Service: S3Service,
   ) {}
@@ -51,7 +59,7 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number): Promise<Note[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number): Promise<any[]> {
     const queryBuilder = this.notesRepository
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
@@ -82,10 +90,13 @@ export class NotesService {
       queryBuilder.where(conditions.join(' AND '), params);
     }
 
-    return await queryBuilder.getMany();
+    const notes = await queryBuilder.getMany();
+    
+    // 좋아요 및 북마크 정보 추가
+    return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
   }
 
-  async findOne(id: number, userId?: number): Promise<Note> {
+  async findOne(id: number, userId?: number): Promise<any> {
     const note = await this.notesRepository.findOne({
       where: { id },
       relations: ['user', 'tea', 'noteTags', 'noteTags.tag'],
@@ -100,7 +111,9 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
     }
 
-    return note;
+    // 좋아요 및 북마크 정보 추가
+    const enrichedNotes = await this.enrichNotesWithLikesAndBookmarks([note], userId);
+    return enrichedNotes[0];
   }
 
   async update(id: number, userId: number, updateNoteDto: UpdateNoteDto): Promise<Note> {
@@ -257,6 +270,168 @@ export class NotesService {
     );
 
     await this.noteTagsRepository.save(noteTags);
+  }
+
+  async toggleLike(noteId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
+    // 트랜잭션으로 race condition 방지
+    return await this.dataSource.transaction(async (manager) => {
+      // 노트 존재 확인 및 권한 확인
+      const note = await manager.findOne(Note, { where: { id: noteId } });
+      if (!note) {
+        throw new NotFoundException('노트를 찾을 수 없습니다.');
+      }
+
+      // 비공개 노트는 작성자만 좋아요 가능
+      if (!note.isPublic && note.userId !== userId) {
+        throw new ForbiddenException('이 노트에 좋아요할 권한이 없습니다.');
+      }
+
+      // 이미 좋아요를 눌렀는지 확인 (트랜잭션 내에서)
+      const existingLike = await manager.findOne(NoteLike, {
+        where: { noteId, userId },
+      });
+
+      if (existingLike) {
+        // 좋아요 취소
+        await manager.remove(NoteLike, existingLike);
+        const likeCount = await manager.count(NoteLike, { where: { noteId } });
+        return { liked: false, likeCount };
+      } else {
+        // 좋아요 추가 - unique constraint 에러 처리
+        try {
+          const newLike = manager.create(NoteLike, { noteId, userId });
+          await manager.save(NoteLike, newLike);
+        } catch (error) {
+          // 동시 요청으로 인한 unique constraint 에러 처리
+          if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
+            // 이미 좋아요가 추가된 상태로 처리
+            this.logger.warn(`Duplicate like detected for noteId: ${noteId}, userId: ${userId}`);
+          } else {
+            throw error;
+          }
+        }
+        
+        // 트랜잭션 내에서 최신 likeCount 조회
+        const likeCount = await manager.count(NoteLike, { where: { noteId } });
+        return { liked: true, likeCount };
+      }
+    });
+  }
+
+  async getLikeCount(noteId: number): Promise<number> {
+    return await this.noteLikesRepository.count({ where: { noteId } });
+  }
+
+  async isLikedByUser(noteId: number, userId?: number): Promise<boolean> {
+    if (!userId) {
+      return false;
+    }
+    const like = await this.noteLikesRepository.findOne({
+      where: { noteId, userId },
+    });
+    return !!like;
+  }
+
+  async toggleBookmark(noteId: number, userId: number): Promise<{ bookmarked: boolean }> {
+    // 트랜잭션으로 race condition 방지
+    return await this.dataSource.transaction(async (manager) => {
+      // 노트 존재 확인 및 권한 확인
+      const note = await manager.findOne(Note, { where: { id: noteId } });
+      if (!note) {
+        throw new NotFoundException('노트를 찾을 수 없습니다.');
+      }
+
+      // 비공개 노트는 작성자만 북마크 가능
+      if (!note.isPublic && note.userId !== userId) {
+        throw new ForbiddenException('이 노트를 북마크할 권한이 없습니다.');
+      }
+
+      // 이미 북마크를 했는지 확인 (트랜잭션 내에서)
+      const existingBookmark = await manager.findOne(NoteBookmark, {
+        where: { noteId, userId },
+      });
+
+      if (existingBookmark) {
+        // 북마크 해제
+        await manager.remove(NoteBookmark, existingBookmark);
+        return { bookmarked: false };
+      } else {
+        // 북마크 추가 - unique constraint 에러 처리
+        try {
+          const newBookmark = manager.create(NoteBookmark, { noteId, userId });
+          await manager.save(NoteBookmark, newBookmark);
+        } catch (error) {
+          // 동시 요청으로 인한 unique constraint 에러 처리
+          if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
+            // 이미 북마크가 추가된 상태로 처리
+            this.logger.warn(`Duplicate bookmark detected for noteId: ${noteId}, userId: ${userId}`);
+          } else {
+            throw error;
+          }
+        }
+        
+        return { bookmarked: true };
+      }
+    });
+  }
+
+  async isBookmarkedByUser(noteId: number, userId?: number): Promise<boolean> {
+    if (!userId) {
+      return false;
+    }
+    const bookmark = await this.noteBookmarksRepository.findOne({
+      where: { noteId, userId },
+    });
+    return !!bookmark;
+  }
+
+  private async enrichNotesWithLikesAndBookmarks(notes: Note[], currentUserId?: number): Promise<any[]> {
+    if (notes.length === 0) {
+      return [];
+    }
+
+    const noteIds = notes.map((note) => note.id);
+
+    // 좋아요 수 조회
+    const likeCounts = await this.noteLikesRepository
+      .createQueryBuilder('like')
+      .select('like.noteId', 'noteId')
+      .addSelect('COUNT(like.id)', 'count')
+      .where('like.noteId IN (:...noteIds)', { noteIds })
+      .groupBy('like.noteId')
+      .getRawMany();
+
+    const likeCountMap = new Map<number, number>();
+    likeCounts.forEach((item) => {
+      likeCountMap.set(item.noteId, parseInt(item.count, 10));
+    });
+
+    // 현재 사용자의 좋아요 여부 조회
+    let userLikes: NoteLike[] = [];
+    if (currentUserId && noteIds.length > 0) {
+      userLikes = await this.noteLikesRepository.find({
+        where: { noteId: In(noteIds), userId: currentUserId },
+      });
+    }
+    const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
+
+    // 현재 사용자의 북마크 여부 조회
+    let userBookmarks: NoteBookmark[] = [];
+    if (currentUserId && noteIds.length > 0) {
+      userBookmarks = await this.noteBookmarksRepository.find({
+        where: { noteId: In(noteIds), userId: currentUserId },
+      });
+    }
+    const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
+
+    // 노트에 좋아요 및 북마크 정보 추가
+    return notes.map((note) => {
+      const noteObj = note as any;
+      noteObj.likeCount = likeCountMap.get(note.id) || 0;
+      noteObj.isLiked = userLikedNoteIds.has(note.id);
+      noteObj.isBookmarked = userBookmarkedNoteIds.has(note.id);
+      return noteObj;
+    });
   }
 
   private async updateTeaRating(teaId: number): Promise<void> {
