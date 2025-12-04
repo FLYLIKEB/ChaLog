@@ -1,10 +1,12 @@
-import React, { type FC } from 'react';
-import { Star, Lock } from 'lucide-react';
+import React, { type FC, useState } from 'react';
+import { Star, Lock, Heart } from 'lucide-react';
 import { Note } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { notesApi } from '../lib/api';
+import { logger } from '../lib/logger';
 
 interface NoteCardProps {
   note: Note;
@@ -18,6 +20,10 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
   const firstImage = hasImage ? note.images![0] : null;
   const isMyNote = note.userId === user?.id;
   const canView = note.isPublic || isMyNote;
+  
+  const [isLiked, setIsLiked] = useState(note.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(note.likeCount ?? 0);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
 
   const handleClick = () => {
     if (!canView) {
@@ -27,6 +33,29 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
     navigate(`/note/${note.id}`);
   };
 
+  const handleLikeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      toast.error('로그인이 필요합니다.');
+      return;
+    }
+
+    if (isTogglingLike) return;
+
+    try {
+      setIsTogglingLike(true);
+      const result = await notesApi.toggleLike(note.id);
+      setIsLiked(result.liked);
+      setLikeCount(result.likeCount);
+    } catch (error: any) {
+      logger.error('Failed to toggle like:', error);
+      toast.error('좋아요 처리에 실패했습니다.');
+    } finally {
+      setIsTogglingLike(false);
+    }
+  };
+
   return (
     <button
       onClick={handleClick}
@@ -34,17 +63,20 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
         canView ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className={`flex-1 min-w-0 ${hasImage ? 'flex gap-3' : ''}`}>
-          {hasImage && firstImage && (
-            <div className="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
-              <ImageWithFallback
-                src={firstImage}
-                alt="Note image"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
+      <div className="space-y-3">
+        {/* 이미지 */}
+        {hasImage && firstImage && (
+          <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+            <ImageWithFallback
+              src={firstImage}
+              alt="Note image"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        
+        {/* 내용 영역 */}
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {showTeaName && (
               <h3 className="truncate mb-1">{note.teaName}</h3>
@@ -83,10 +115,24 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
               )}
             </div>
           </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-          <span className="text-sm">{Number(note.rating).toFixed(1)}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span className="text-sm">{Number(note.rating).toFixed(1)}</span>
+            </div>
+            {user && (
+              <button
+                onClick={handleLikeClick}
+                disabled={isTogglingLike}
+                className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors disabled:opacity-50"
+              >
+                <Heart
+                  className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
+                />
+                {likeCount > 0 && <span className="text-sm">{likeCount}</span>}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </button>
