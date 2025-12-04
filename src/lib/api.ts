@@ -307,15 +307,17 @@ class ApiClient {
         }
         
         // 에러 메시지 추출 (여러 필드 확인)
-        let errorMessage: string = 
+        let errorMessage: string | string[] = 
           error.message || 
           error.error || 
           error.details?.message ||
           response.statusText || 
           `HTTP error! status: ${response.status}`;
         
-        // 문자열이 아닌 경우 변환
-        if (typeof errorMessage !== 'string') {
+        // 배열인 경우 첫 번째 요소 사용, 아니면 문자열로 변환
+        if (Array.isArray(errorMessage)) {
+          errorMessage = errorMessage.length > 0 ? errorMessage[0] : '알 수 없는 오류가 발생했습니다.';
+        } else if (typeof errorMessage !== 'string') {
           errorMessage = String(errorMessage);
         }
         
@@ -483,14 +485,17 @@ class ApiClient {
           };
         }
         
-        let errorMessage: string = 
+        let errorMessage: string | string[] = 
           error.message || 
           error.error || 
           error.details?.message ||
           response.statusText || 
           `HTTP error! status: ${response.status}`;
         
-        if (typeof errorMessage !== 'string') {
+        // 배열인 경우 첫 번째 요소 사용, 아니면 문자열로 변환
+        if (Array.isArray(errorMessage)) {
+          errorMessage = errorMessage.length > 0 ? errorMessage[0] : '알 수 없는 오류가 발생했습니다.';
+        } else if (typeof errorMessage !== 'string') {
           errorMessage = String(errorMessage);
         }
         
