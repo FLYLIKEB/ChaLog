@@ -28,6 +28,8 @@ export interface Note {
   tags?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
+  likeCount?: number;
+  isLiked?: boolean;
 }
 
 export interface User {
