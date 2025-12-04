@@ -35,6 +35,13 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
     navigate(`/note/${note.id}`);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   const handleLikeClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -81,8 +88,11 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
   };
 
   return (
-    <button
+    <div
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      role={canView ? 'button' : undefined}
+      tabIndex={canView ? 0 : undefined}
       className={`w-full text-left p-4 bg-white border rounded-lg transition-shadow ${
         canView ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed'
       }`}
@@ -170,6 +180,6 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 };
