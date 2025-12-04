@@ -274,20 +274,42 @@ class ApiClient {
       });
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({
-          message: response.statusText,
-          statusCode: response.status,
-        }));
+        // 응답 본문 읽기 시도 (JSON 또는 텍스트)
+        let error: any;
+        const contentType = response.headers.get('content-type') || '';
         
-        // 에러 메시지를 한글로 변환
-        // error.message가 문자열이 아닐 수 있으므로 항상 문자열로 변환
-        let errorMessage: string;
-        if (typeof error.message === 'string') {
-          errorMessage = error.message;
-        } else if (error.message) {
-          errorMessage = String(error.message);
-        } else {
-          errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          if (contentType.includes('application/json')) {
+            error = await response.json();
+          } else {
+            const text = await response.text();
+            try {
+              // 텍스트가 JSON일 수도 있으므로 파싱 시도
+              error = JSON.parse(text);
+            } catch {
+              // JSON이 아니면 텍스트로 처리
+              error = { message: text || response.statusText };
+            }
+          }
+        } catch (parseError) {
+          // 파싱 실패 시 기본값 사용
+          error = {
+            message: response.statusText || `HTTP error! status: ${response.status}`,
+            statusCode: response.status,
+          };
+        }
+        
+        // 에러 메시지 추출 (여러 필드 확인)
+        let errorMessage: string = 
+          error.message || 
+          error.error || 
+          error.details?.message ||
+          response.statusText || 
+          `HTTP error! status: ${response.status}`;
+        
+        // 문자열이 아닌 경우 변환
+        if (typeof errorMessage !== 'string') {
+          errorMessage = String(errorMessage);
         }
         
         // 백엔드에서 이미 한글 메시지를 보내지만, 혹시 모를 영어 메시지에 대비
@@ -322,13 +344,27 @@ class ApiClient {
           if (errorMessage.includes('already exists') || errorMessage.includes('exists')) {
             errorMessage = '이미 존재하는 이메일입니다.';
           }
-        } else if (response.status === 500) {
-          if (!errorMessage.match(/[가-힣]/)) {
-            errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+        } else if (response.status === 500 || response.status === 502 || response.status === 504) {
+          // 500, 502, 504 에러는 백엔드 메시지를 그대로 전달 (이미 한글이거나 상세 정보 포함)
+          // 한글이 없으면 기본 메시지 사용
+          if (!errorMessage.match(/[가-힣]/) && errorMessage === response.statusText) {
+            if (response.status === 502) {
+              errorMessage = '백엔드 서버에 연결할 수 없습니다.';
+            } else if (response.status === 504) {
+              errorMessage = '백엔드 서버 응답 시간이 초과되었습니다.';
+            } else {
+              errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            }
           }
         }
         
-        throw new Error(errorMessage);
+        // 상세 정보가 있으면 포함
+        const apiError: ApiError = {
+          message: errorMessage,
+          statusCode: response.status,
+        };
+        
+        throw apiError;
       }
 
       // 204 No Content 응답 처리
