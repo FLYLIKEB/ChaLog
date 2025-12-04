@@ -10,6 +10,7 @@ import {
   Request,
   Query,
   BadRequestException,
+  InternalServerErrorException,
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
@@ -72,8 +73,13 @@ export class NotesController {
 
       return { url };
     } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.',
+      // 사용자 입력 오류(파일 형식, 크기)는 이미 위에서 처리됨
+      // S3 또는 이미지 처리 서버 오류는 500으로 처리
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        error instanceof Error ? error.message : '이미지 업로드 중 오류가 발생했습니다.',
       );
     }
   }

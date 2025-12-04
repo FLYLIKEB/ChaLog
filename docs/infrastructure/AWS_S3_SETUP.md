@@ -187,10 +187,11 @@ S3 버킷에서 이미지를 공개적으로 읽을 수 있도록 버킷 정책�
 
 ```env
 # AWS S3 설정
+# 주의: 아래는 예제 값입니다. 실제 값으로 교체하세요.
 AWS_REGION=ap-northeast-2
 AWS_S3_BUCKET_NAME=chalog-images
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=sXD/SbRVY/LXnbogPofxpSuixY5x9LQMen9395mU
+AWS_ACCESS_KEY_ID=<your-access-key-id>
+AWS_SECRET_ACCESS_KEY=<your-secret-access-key>
 ```
 
 **실제 값으로 변경**:
@@ -351,6 +352,10 @@ pm2 restart chalog-backend
 3. **버킷 정책 검토**
    - 필요한 경우에만 퍼블릭 액세스 허용
    - IP 제한 등 추가 보안 설정 고려
+
+4. **.env 파일 관리**
+   - `.env` 파일을 `.gitignore`에 포함
+   - 민감한 자격 증명이 Git에 커밋되지 않도록 주의
 
 ## 관련 문서
 

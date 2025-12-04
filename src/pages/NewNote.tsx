@@ -111,7 +111,7 @@ export function NewNote() {
   const handleSave = async () => {
     if (!isAuthenticated) {
       toast.error('로그인이 필요합니다.');
-      navigate('/settings');
+      navigate('/login');
       return;
     }
 

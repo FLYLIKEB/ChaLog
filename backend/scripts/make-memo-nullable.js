@@ -12,8 +12,7 @@ async function makeMemoNullable() {
   const databaseUrl = process.env.DATABASE_URL;
   
   if (!databaseUrl) {
-    console.error('❌ DATABASE_URL 환경 변수가 설정되지 않았습니다.');
-    process.exit(1);
+    throw new Error('DATABASE_URL 환경 변수가 설정되지 않았습니다.');
   }
 
   // DATABASE_URL 파싱
@@ -21,8 +20,8 @@ async function makeMemoNullable() {
   const config = {
     host: url.hostname,
     port: parseInt(url.port) || 3306,
-    user: url.username,
-    password: url.password || undefined,
+    user: decodeURIComponent(url.username),
+    password: url.password ? decodeURIComponent(url.password) : undefined,
     database: url.pathname.slice(1),
   };
 
@@ -44,8 +43,7 @@ async function makeMemoNullable() {
     );
 
     if (columns.length === 0) {
-      console.error('❌ memo 컬럼을 찾을 수 없습니다.');
-      process.exit(1);
+      throw new Error('memo 컬럼을 찾을 수 없습니다.');
     }
 
     if (columns[0].IS_NULLABLE === 'YES') {
@@ -63,8 +61,7 @@ async function makeMemoNullable() {
     console.log('✅ memo 컬럼이 성공적으로 nullable로 변경되었습니다.');
     
   } catch (error) {
-    console.error('❌ 에러 발생:', error.message);
-    process.exit(1);
+    throw error;
   } finally {
     if (connection) {
       await connection.end();
@@ -73,5 +70,12 @@ async function makeMemoNullable() {
   }
 }
 
-makeMemoNullable();
+makeMemoNullable()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('❌ 에러 발생:', error.message);
+    process.exit(1);
+  });
 

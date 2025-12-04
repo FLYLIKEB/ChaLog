@@ -14,6 +14,10 @@ export class S3Service {
     const endpoint = this.configService.get<string>('AWS_S3_ENDPOINT');
 
     this.bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME') || '';
+    
+    if (!this.bucketName) {
+      console.warn('[S3Service] AWS_S3_BUCKET_NAME 환경 변수가 설정되지 않았습니다. 이미지 업로드가 비활성화됩니다.');
+    }
 
     this.s3Client = new S3Client({
       region,

@@ -460,8 +460,6 @@ class ApiClient {
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!response.ok) {
         let error: any;
         const contentType = response.headers.get('content-type') || '';
@@ -512,8 +510,6 @@ class ApiClient {
 
       return await response.json();
     } catch (error) {
-      clearTimeout(timeoutId);
-      
       if (error instanceof Error && error.name === 'AbortError') {
         throw {
           message: '요청 시간이 초과되었습니다.',
@@ -522,6 +518,8 @@ class ApiClient {
       }
       
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 }

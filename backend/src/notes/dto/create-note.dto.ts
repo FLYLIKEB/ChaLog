@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, IsObject, ValidateNested, IsOptional, IsArray } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, IsObject, ValidateNested, IsOptional, IsArray, ArrayMaxSize } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 class RatingsDto {
@@ -50,6 +50,7 @@ export class CreateNoteDto {
   @IsOptional()
   @Transform(({ value }) => value === null ? null : value)
   @IsArray()
+  @ArrayMaxSize(5)
   @IsString({ each: true })
   images?: string[] | null;
 

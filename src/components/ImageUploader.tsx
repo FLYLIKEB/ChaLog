@@ -57,11 +57,37 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
 
     try {
       const uploadPromises = filesToUpload.map(file => notesApi.uploadImage(file));
-      const results = await Promise.all(uploadPromises);
-      const newUrls = results.map(result => result.url);
+      const results = await Promise.allSettled(uploadPromises);
       
-      onChange([...images, ...newUrls]);
-      toast.success(`${newUrls.length}장의 이미지가 업로드되었습니다.`);
+      const successfulUrls: string[] = [];
+      let failedCount = 0;
+      
+      for (const result of results) {
+        if (result.status === 'fulfilled') {
+          successfulUrls.push(result.value.url);
+        } else {
+          failedCount++;
+          logger.error('Failed to upload image:', result.reason);
+        }
+      }
+      
+      if (successfulUrls.length > 0) {
+        onChange([...images, ...successfulUrls]);
+        toast.success(`${successfulUrls.length}장의 이미지가 업로드되었습니다.`);
+      }
+      
+      if (failedCount > 0) {
+        toast.error(`${failedCount}장의 이미지 업로드에 실패했습니다.`);
+      }
+      
+      // 모든 업로드가 실패한 경우에만 에러 처리
+      if (successfulUrls.length === 0 && failedCount > 0) {
+        const firstError = results.find(r => r.status === 'rejected') as PromiseRejectedResult;
+        if (firstError?.reason?.statusCode === 401) {
+          toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
+          navigate('/login');
+        }
+      }
     } catch (error: any) {
       logger.error('Failed to upload images:', error);
       if (error?.statusCode === 401) {
@@ -79,10 +105,6 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
     }
   };
 
-  const handleRemove = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index);
-    onChange(newImages);
-  };
 
   const handleButtonClick = () => {
     fileInputRef.current?.click();
@@ -100,16 +122,16 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       {/* 이미지 미리보기 그리드 */}
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
-          {images.map((url, index) => (
-            <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+          {images.map((url) => (
+            <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
               <img
                 src={url}
-                alt={`Upload ${index + 1}`}
+                alt="업로드된 이미지"
                 className="w-full h-full object-cover"
               />
               <button
                 type="button"
-                onClick={() => handleRemove(index)}
+                onClick={() => onChange(images.filter(img => img !== url))}
                 className="absolute top-1 right-1 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                 aria-label="이미지 삭제"
               >

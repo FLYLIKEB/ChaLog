@@ -8,6 +8,11 @@ export class ImageProcessorService {
   private readonly QUALITY = 85;
 
   async processImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
+    // 지원하지 않는 형식은 sharp 호출 전에 검증하여 원본 반환
+    if (!this.validateImageType(mimeType)) {
+      return buffer;
+    }
+
     let image = sharp(buffer);
 
     // 이미지 메타데이터 가져오기
@@ -39,10 +44,10 @@ export class ImageProcessorService {
       return await image
         .webp({ quality: this.QUALITY })
         .toBuffer();
-    } else {
-      // 지원하지 않는 형식은 원본 반환
-      return buffer;
     }
+    
+    // 위에서 이미 검증했으므로 여기 도달하지 않아야 함
+    return buffer;
   }
 
   validateImageType(mimeType: string): boolean {

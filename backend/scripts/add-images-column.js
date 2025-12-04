@@ -21,8 +21,8 @@ async function addImagesColumn() {
   const config = {
     host: url.hostname,
     port: parseInt(url.port) || 3306,
-    user: url.username,
-    password: url.password || undefined,
+    user: decodeURIComponent(url.username),
+    password: url.password ? decodeURIComponent(url.password) : undefined,
     database: url.pathname.slice(1),
   };
 
