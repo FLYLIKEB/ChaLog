@@ -91,24 +91,30 @@ export class S3Service {
 
   /**
    * 파일명과 MIME 타입에서 확장자를 추출
-   * 파일명에 확장자가 없으면 MIME 타입에서 추출
+   * 파일명에 확장자가 없거나 유효하지 않으면 MIME 타입에서 추출
    */
   private getExtension(filename: string, mimeType?: string): string {
-    // 파일명에서 확장자 추출 시도
-    const parts = filename.split('.');
-    if (parts.length > 1) {
-      const ext = parts.pop()?.toLowerCase();
-      // 확장자가 유효한지 확인 (빈 문자열이 아니고, 파일명 전체가 아닌 경우)
-      if (ext && ext.length > 0 && ext.length < filename.length) {
-        return ext;
-      }
-    }
-
-    // 파일명에서 확장자를 추출할 수 없으면 MIME 타입에서 추출
+    // MIME 타입이 있으면 우선적으로 사용 (가장 신뢰할 수 있는 정보)
     if (mimeType) {
       const ext = this.mimeToExtension[mimeType.toLowerCase()];
       if (ext) {
         return ext;
+      }
+    }
+
+    // 파일명에서 확장자 추출 시도
+    const parts = filename.split('.');
+    if (parts.length > 1) {
+      const ext = parts.pop()?.toLowerCase();
+      // 확장자가 유효한지 확인
+      // 1. 빈 문자열이 아님
+      // 2. 파일명 전체가 아님 (점이 있는 경우)
+      // 3. 일반적인 이미지 확장자 목록에 포함되어 있음 (추가 검증)
+      if (ext && ext.length > 0 && ext.length < filename.length) {
+        const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp', 'svg'];
+        if (validExtensions.includes(ext)) {
+          return ext;
+        }
       }
     }
 
