@@ -165,6 +165,8 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
             onChange={handleFileSelect}
             className="hidden"
             disabled={uploading}
+            aria-hidden="true"
+            tabIndex={-1}
           />
           <Button
             type="button"
