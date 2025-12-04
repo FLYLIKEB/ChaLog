@@ -329,10 +329,29 @@ describe('ImageUploader 컴포넌트', () => {
 
       render(<ImageUploader images={images} onChange={mockOnChange} />);
 
-      const deleteButtons = screen.getAllByLabelText('이미지 삭제');
+      const deleteButtons = screen.getAllByTitle('삭제');
       await user.click(deleteButtons[0]);
 
       expect(mockOnChange).toHaveBeenCalledWith([images[1]]);
+    });
+
+    it('같은 URL이 여러 개 있을 때 인덱스 기반으로 정확히 삭제해야 함', async () => {
+      const user = userEvent.setup();
+      const sameUrl = 'https://example.com/same-image.jpg';
+      const images = [
+        sameUrl,
+        'https://example.com/image2.jpg',
+        sameUrl, // 같은 URL이 두 번째로 다시 나타남
+      ];
+
+      render(<ImageUploader images={images} onChange={mockOnChange} />);
+
+      const deleteButtons = screen.getAllByTitle('삭제');
+      // 두 번째 이미지(다른 URL) 삭제
+      await user.click(deleteButtons[1]);
+
+      // 두 번째 이미지만 삭제되어야 함 (같은 URL이 있어도 첫 번째와 세 번째는 유지)
+      expect(mockOnChange).toHaveBeenCalledWith([sameUrl, sameUrl]);
     });
 
     it('이미지가 없을 때 빈 상태 UI를 표시해야 함', () => {
@@ -352,10 +371,12 @@ describe('ImageUploader 컴포넌트', () => {
 
       render(<ImageUploader images={images} onChange={mockOnChange} />);
 
-      const imageElements = screen.getAllByAltText('업로드된 이미지');
+      const imageElements = screen.getAllByAltText(/업로드된 이미지/);
       expect(imageElements).toHaveLength(2);
       expect(imageElements[0]).toHaveAttribute('src', images[0]);
+      expect(imageElements[0]).toHaveAttribute('alt', '업로드된 이미지 1');
       expect(imageElements[1]).toHaveAttribute('src', images[1]);
+      expect(imageElements[1]).toHaveAttribute('alt', '업로드된 이미지 2');
     });
 
     it('이미지 개수 표시가 정확해야 함', () => {

@@ -123,7 +123,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       {images.length > 0 && (
         <div className="grid grid-cols-3 gap-2">
           {images.map((url, index) => (
-            <div key={url} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
+            <div key={`image-${index}-${url}`} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group">
               <img
                 src={url}
                 alt={`업로드된 이미지 ${index + 1}`}
@@ -135,11 +135,12 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  onChange(images.filter(img => img !== url));
+                  // 인덱스 기반으로 삭제하여 같은 URL이 여러 개 있어도 정확히 해당 항목만 삭제
+                  onChange(images.filter((_, i) => i !== index));
                 }}
                 className="absolute top-1.5 right-1.5 z-10 p-1.5 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95"
                 style={{ opacity: 1 }}
-                aria-label="이미지 삭제"
+                aria-label={`이미지 ${index + 1} 삭제`}
                 title="삭제"
               >
                 <X className="w-4 h-4 text-white" strokeWidth={2.5} />
