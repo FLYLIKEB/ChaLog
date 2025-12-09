@@ -162,13 +162,18 @@ export function NewNote() {
         ? values.reduce((sum, val) => sum + val, 0) / values.length
         : null;
 
+      // memo 처리: 빈 문자열이나 공백만 있는 경우 null로 변환
+      // 백엔드 API는 @IsOptional()로 memo를 선택적 필드로 허용하지만,
+      // 빈 문자열 대신 null을 전송하는 것이 일관성 있음
+      const processedMemo = memo && memo.trim() ? memo.trim() : null;
+
       await notesApi.create({
         teaId: selectedTea,
         schemaId: schema.id,
         overallRating: overallRating !== null ? overallRating : calculatedOverallRating,
         isRatingIncluded: true,
         axisValues: axisValuesArray,
-        memo: memo.trim() || null,
+        memo: processedMemo,
         images: images.length > 0 ? images : null,
         tags: tags.length > 0 ? tags : undefined,
         isPublic,
