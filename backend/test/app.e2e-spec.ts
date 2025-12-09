@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { AppModule } from '../src/app.module';
 import { ConfigModule } from '@nestjs/config';
 import { TestHelper, TestUser, TestTea, TestNote } from './helpers/test-helper';
@@ -46,7 +47,10 @@ describe('AppController (e2e)', () => {
         }),
         AppModule,
       ],
-    }).compile();
+    })
+      .overrideGuard(ThrottlerGuard)
+      .useValue({ canActivate: () => true }) // 테스트 환경에서 rate limiting 비활성화
+      .compile();
 
     app = moduleFixture.createNestApplication();
     dataSource = moduleFixture.get<DataSource>(DataSource);
