@@ -10,7 +10,8 @@ declare global {
       init: (appKey: string) => void;
       isInitialized: () => boolean;
       Auth: {
-        login: (options: { success: (authObj: any) => void; fail: (err: any) => void }) => void;
+        authorize: (options: { redirectUri: string; state?: string; scope?: string; throughTalk?: boolean; prompts?: string }) => void;
+        login: (options: { success: (authObj: any) => void; fail: (err: any) => void }) => void; // 구버전 호환
         getAccessToken: () => string | null;
         logout?: () => void;
       };
@@ -272,9 +273,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const loginWithKakao = useCallback(async () => {
+  const loginWithKakao = useCallback(async (code?: string) => {
     const startTime = Date.now();
-    logger.info('=== 카카오 로그인 시작 ===');
+    logger.info('=== 카카오 로그인 시작 ===', { hasCode: !!code });
     
     try {
       // 1. 브라우저 환경 확인
@@ -284,6 +285,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       logger.info('[1/7] 브라우저 환경 확인 완료');
+
+      // code가 있으면 리다이렉트 후 처리
+      if (code) {
+        logger.info('[리다이렉트 후 처리] 인증 코드로 액세스 토큰 교환 시작');
+        // code를 accessToken으로 교환 (카카오 REST API 사용)
+        const kakaoAppKey = import.meta.env.VITE_KAKAO_APP_KEY;
+        if (!kakaoAppKey) {
+          throw new Error('카카오 앱 키가 설정되지 않았습니다.');
+        }
+
+        const redirectUri = `${window.location.origin}/login`;
+        try {
+          // 카카오 서버에 code를 전송하여 accessToken 받기
+          const tokenResponse = await fetch('https://kauth.kakao.com/oauth/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              client_id: kakaoAppKey,
+              redirect_uri: redirectUri,
+              code: code,
+            }),
+          });
+
+          if (!tokenResponse.ok) {
+            const errorData = await tokenResponse.json().catch(() => ({}));
+            logger.error('[리다이렉트 후 처리] 토큰 교환 실패:', errorData);
+            throw new Error(`토큰 교환 실패: ${errorData.error_description || errorData.error || '알 수 없는 오류'}`);
+          }
+
+          const tokenData = await tokenResponse.json();
+          const kakaoAccessToken = tokenData.access_token;
+
+          if (!kakaoAccessToken) {
+            throw new Error('액세스 토큰을 받을 수 없습니다.');
+          }
+
+          logger.info('[리다이렉트 후 처리] 액세스 토큰 획득 완료, 백엔드로 전송 중...');
+          
+          // 백엔드로 카카오 액세스 토큰 전송
+          const response = await authApi.loginWithKakao({ accessToken: kakaoAccessToken });
+          logger.info('[백엔드] 카카오 로그인 API 호출 성공:', {
+            hasAccessToken: !!response.access_token,
+            hasUser: !!response.user,
+            userId: response.user?.id,
+            userName: response.user?.name,
+          });
+
+          setToken(response.access_token);
+          setUser(response.user);
+          localStorage.setItem('access_token', response.access_token);
+          localStorage.setItem('user', JSON.stringify(response.user));
+          
+          const elapsedTime = Date.now() - startTime;
+          logger.info(`=== 카카오 로그인 완료 (소요 시간: ${elapsedTime}ms) ===`);
+          
+          toast.success('카카오 로그인되었습니다.');
+          return;
+        } catch (error) {
+          logger.error('[리다이렉트 후 처리] 토큰 교환 실패:', error);
+          throw error;
+        }
+      }
 
       // 2. 환경 변수 확인
       const kakaoAppKey = import.meta.env.VITE_KAKAO_APP_KEY;
@@ -430,13 +496,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // 5. 카카오 로그인 API 확인
       logger.info('[5/7] 카카오 로그인 API 확인');
+      const hasAuthorize = !!(window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function');
+      const hasLogin = !!(window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function');
       logger.debug('[5/7] API 상태:', {
         hasAuth: !!window.Kakao.Auth,
-        hasLoginFunction: !!(window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function'),
+        hasAuthorizeFunction: hasAuthorize,
+        hasLoginFunction: hasLogin,
         hasGetAccessToken: !!(window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function'),
       });
 
-      if (!window.Kakao.Auth || typeof window.Kakao.Auth.login !== 'function') {
+      if (!window.Kakao.Auth || (!hasAuthorize && !hasLogin)) {
         logger.error('[5/7] 카카오 로그인 API 사용 불가');
         throw new Error('카카오 로그인 API를 사용할 수 없습니다. 페이지를 새로고침해주세요.');
       }
@@ -459,7 +528,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         '5. 설정 반영 시간': '설정 저장 후 5-10분 대기 필요',
       });
 
+      // Kakao SDK 2.5.0 이상에서는 authorize 사용 (리다이렉트 방식)
+      if (hasAuthorize) {
+        logger.info('[6/7] 카카오 로그인 요청 시작 (authorize 방식)', loginRequestInfo);
+        const redirectUri = `${window.location.origin}/login`;
+        window.Kakao.Auth.authorize({
+          redirectUri,
+          scope: 'profile_nickname,account_email',
+          throughTalk: false,
+        });
+        // authorize는 리다이렉트 방식이므로 여기서 종료
+        return;
+      }
+
+      // 구버전 SDK 호환 (login 방식)
       await new Promise<void>((resolve, reject) => {
+        if (!hasLogin) {
+          reject(new Error('카카오 로그인 API를 사용할 수 없습니다. SDK 버전을 확인해주세요.'));
+          return;
+        }
+
         window.Kakao.Auth.login({
           success: (authObj) => {
             logger.info('[6/7] 카카오 로그인 성공:', {

@@ -370,7 +370,8 @@ class ApiClient {
         tokenPrefix: token.substring(0, 20) + '...',
       });
     } else {
-      logger.warn(`[API Request ${requestId}] 인증 토큰 없음`);
+      // 인증 토큰이 없는 것은 공개 API 호출 시 정상적인 상황이므로 debug 레벨로 변경
+      logger.debug(`[API Request ${requestId}] 인증 토큰 없음 (공개 API 호출)`);
     }
 
     // 테스트 환경에서 상대 URL을 절대 URL로 변환
@@ -412,7 +413,8 @@ class ApiClient {
         supportsTargetAddressSpace: supportsTargetAddressSpace(),
       });
     } else if (isLocalNetworkRequest(url)) {
-      logger.warn(`[API Request ${requestId}] 로컬 네트워크 요청이지만 targetAddressSpace 미지원`, {
+      // 모바일 브라우저에서 targetAddressSpace 미지원은 정상적인 상황이므로 debug 레벨로 변경
+      logger.debug(`[API Request ${requestId}] 로컬 네트워크 요청 (targetAddressSpace 미지원, 기능에는 영향 없음)`, {
         supportsTargetAddressSpace: supportsTargetAddressSpace(),
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'unknown',
       });
