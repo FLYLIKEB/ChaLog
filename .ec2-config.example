@@ -1,0 +1,17 @@
+# EC2 서버 설정 파일 예제
+# 이 파일을 .ec2-config로 복사하고 실제 값으로 수정하세요
+# 
+# 사용법:
+#   cp .ec2-config.example .ec2-config
+#   nano .ec2-config
+
+# EC2 호스트 IP 또는 도메인
+# 예: 52.78.150.124 또는 api.yourdomain.com
+EC2_HOST=your-ec2-ip
+
+# EC2 사용자명 (기본값: ubuntu)
+EC2_USER=ubuntu
+
+# SSH 키 경로 (기본값: ~/.ssh/summy.pem)
+SSH_KEY_PATH=~/.ssh/summy.pem
+

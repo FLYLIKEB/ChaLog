@@ -1,0 +1,63 @@
+# ChaLog 프로젝트용 zsh 설정
+# 이 파일을 ~/.zshrc에 추가하거나 source로 로드하세요
+# 
+# 사용법:
+#   echo "source $(pwd)/.zshrc.cha-log" >> ~/.zshrc
+#   또는
+#   source .zshrc.cha-log
+
+# 프로젝트 루트 디렉토리
+export CHALOG_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || echo "$HOME/Documents/programming/ChaLog")"
+
+# EC2 로그 확인 alias
+alias ec2logs='$CHALOG_ROOT/scripts/view-ec2-logs.sh'
+alias ec2log='ec2logs pm2'
+alias ec2logf='ec2logs pm2 -f'
+alias ec2status='ec2logs status'
+alias ec2error='ec2logs error'
+alias ec2nginx='ec2logs nginx'
+
+# EC2 설정 파일 편집
+alias ec2config='nano $CHALOG_ROOT/.ec2-config'
+
+# EC2 설정 파일에서 환경 변수 로드
+if [ -f "$CHALOG_ROOT/.ec2-config" ]; then
+    while IFS='=' read -r key value; do
+        # 주석 제거
+        key=$(echo "$key" | sed 's/#.*$//')
+        value=$(echo "$value" | sed 's/#.*$//')
+        # 공백 제거
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        # 빈 줄이나 주석만 있는 줄 건너뛰기
+        if [ -n "$key" ] && [ -n "$value" ]; then
+            export "$key=$value"
+        fi
+    done < "$CHALOG_ROOT/.ec2-config"
+fi
+
+# 도움말 함수
+ec2logs-help() {
+    echo "📋 ChaLog EC2 로그 확인 명령어"
+    echo ""
+    echo "기본 명령어:"
+    echo "  ec2logs pm2          PM2 로그 확인"
+    echo "  ec2logs pm2 -f        PM2 실시간 로그"
+    echo "  ec2logs status       PM2 상태 확인"
+    echo "  ec2logs error        에러 로그 확인"
+    echo "  ec2logs nginx        Nginx 로그 확인"
+    echo ""
+    echo "간단한 alias:"
+    echo "  ec2log               PM2 로그 (최근 100줄)"
+    echo "  ec2logf              PM2 실시간 로그"
+    echo "  ec2status            PM2 상태"
+    echo "  ec2error             에러 로그"
+    echo "  ec2nginx             Nginx 로그"
+    echo ""
+    echo "설정:"
+    echo "  ec2config            .ec2-config 파일 편집"
+    echo ""
+    echo "도움말:"
+    echo "  ec2logs --help       상세 도움말"
+}
+

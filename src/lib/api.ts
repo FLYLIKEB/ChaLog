@@ -1,23 +1,44 @@
 import { API_TIMEOUT } from '../constants';
 import { Tea, User } from '../types';
+import { logger } from './logger';
 
 // API Base URL 설정
 // 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)
 // 개발 환경: Vite 프록시를 통해 /api 사용 (CORS 문제 방지)
 const API_BASE_URL = (() => {
+  const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const networkInfo = typeof navigator !== 'undefined' ? ((navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection) : null;
+  
   // 프로덕션 환경에서 Vercel 배포인 경우 항상 /api 사용
-  if (import.meta.env.PROD && window.location.hostname.includes('vercel.app')) {
+  if (import.meta.env.PROD && typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     // Vercel rewrites를 통해 /api로 프록시됨
-    return '/api';
+    const baseURL = '/api';
+    console.log('[API Config] 프로덕션 환경 (Vercel)', {
+      baseURL,
+      hostname: window.location.hostname,
+      origin: window.location.origin,
+      isMobile,
+      networkType: networkInfo?.effectiveType || 'unknown',
+      userAgent: navigator.userAgent.substring(0, 100),
+    });
+    return baseURL;
   }
   // 개발 환경: Vite 프록시를 사용하여 같은 origin으로 요청 (CORS 문제 방지)
   // 환경 변수가 명시적으로 설정되어 있으면 사용, 없으면 /api 프록시 사용
   const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
-  // 개발 환경에서만 로그 출력
-  if (import.meta.env.DEV) {
-    console.log('[API Config] VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL);
-    console.log('[API Config] Final API_BASE_URL:', baseURL);
-  }
+  console.log('[API Config] 환경 설정', {
+    isProduction: import.meta.env.PROD,
+    isDevelopment: import.meta.env.DEV,
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    finalBaseURL: baseURL,
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
+    origin: typeof window !== 'undefined' ? window.location.origin : 'unknown',
+    isMobile,
+    networkType: networkInfo?.effectiveType || 'unknown',
+    networkDownlink: networkInfo?.downlink || 'unknown',
+    networkRtt: networkInfo?.rtt || 'unknown',
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'unknown',
+  });
   return baseURL;
 })();
 
@@ -295,18 +316,39 @@ class ApiClient {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    // 개발 환경에서만 로그 출력
-    if (import.meta.env.DEV) {
-      console.log('[ApiClient] Base URL:', this.baseURL);
-    }
+    const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('[ApiClient] 초기화', {
+      baseURL: this.baseURL,
+      isMobile,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'unknown',
+    });
   }
 
   private async request<T>(
     endpoint: string,
     options: RequestInit & { timeout?: number } = {}
   ): Promise<T> {
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const startTime = Date.now();
     const token = localStorage.getItem('access_token');
     const timeout = options.timeout ?? API_TIMEOUT;
+    
+    // 모바일 환경 감지
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const networkInfo = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    
+    logger.info(`[API Request ${requestId}] 시작`, {
+      endpoint,
+      method: options.method || 'GET',
+      isMobile,
+      userAgent: navigator.userAgent.substring(0, 100),
+      networkType: networkInfo?.effectiveType || 'unknown',
+      networkDownlink: networkInfo?.downlink || 'unknown',
+      networkRtt: networkInfo?.rtt || 'unknown',
+      timeout,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+    });
     
     // timeout을 제거한 fetch 옵션 생성
     const { timeout: _, ...fetchOptions } = options;
@@ -318,6 +360,11 @@ class ApiClient {
 
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      logger.debug(`[API Request ${requestId}] 인증 토큰 포함`, {
+        tokenPrefix: token.substring(0, 20) + '...',
+      });
+    } else {
+      logger.warn(`[API Request ${requestId}] 인증 토큰 없음`);
     }
 
     // 테스트 환경에서 상대 URL을 절대 URL로 변환
@@ -333,6 +380,15 @@ class ApiClient {
       url = `${this.baseURL}${endpoint}`;
     }
     
+    logger.info(`[API Request ${requestId}] 요청 URL`, {
+      fullUrl: url,
+      baseURL: this.baseURL,
+      endpoint,
+      isLocalNetwork: isLocalNetworkRequest(url),
+      isLoopback: isLoopbackRequest(url),
+      isPrivate: isPrivateNetworkRequest(url),
+    });
+    
     // Chrome의 Private Network Access 정책 대응
     // targetAddressSpace 옵션을 fetch 옵션에 직접 포함
     const fetchOptionsWithAddressSpace: RequestInit & { targetAddressSpace?: 'private' | 'local' } = {
@@ -345,21 +401,60 @@ class ApiClient {
       // localhost(loopback)는 'local', private IP는 'private' 사용
       const addressSpace: 'local' | 'private' = isLoopbackRequest(url) ? 'local' : 'private';
       fetchOptionsWithAddressSpace.targetAddressSpace = addressSpace;
+      logger.debug(`[API Request ${requestId}] targetAddressSpace 설정`, {
+        addressSpace,
+        supportsTargetAddressSpace: supportsTargetAddressSpace(),
+      });
+    } else if (isLocalNetworkRequest(url)) {
+      logger.warn(`[API Request ${requestId}] 로컬 네트워크 요청이지만 targetAddressSpace 미지원`, {
+        supportsTargetAddressSpace: supportsTargetAddressSpace(),
+        userAgent: navigator.userAgent.substring(0, 50),
+      });
     }
     
     // AbortController를 사용한 타임아웃 설정
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
+      logger.error(`[API Request ${requestId}] 타임아웃 발생`, {
+        timeout,
+        elapsedTime: Date.now() - startTime,
+      });
       controller.abort();
     }, timeout);
     
+    logger.debug(`[API Request ${requestId}] fetch 옵션`, {
+      method: fetchOptionsWithAddressSpace.method || 'GET',
+      headers: Object.keys(headers),
+      hasBody: !!fetchOptionsWithAddressSpace.body,
+      bodySize: fetchOptionsWithAddressSpace.body ? String(fetchOptionsWithAddressSpace.body).length : 0,
+      hasSignal: !!controller.signal,
+      targetAddressSpace: (fetchOptionsWithAddressSpace as any).targetAddressSpace,
+    });
+    
     try {
+      logger.info(`[API Request ${requestId}] fetch 호출 시작`);
       const response = await fetch(url, {
         ...fetchOptionsWithAddressSpace,
         signal: controller.signal,
       });
+      
+      const responseTime = Date.now() - startTime;
+      logger.info(`[API Request ${requestId}] 응답 수신`, {
+        status: response.status,
+        statusText: response.statusText,
+        responseTime: `${responseTime}ms`,
+        headers: Object.fromEntries(response.headers.entries()),
+        ok: response.ok,
+      });
 
       if (!response.ok) {
+        logger.error(`[API Request ${requestId}] 응답 오류`, {
+          status: response.status,
+          statusText: response.statusText,
+          responseTime: `${Date.now() - startTime}ms`,
+          contentType: response.headers.get('content-type'),
+        });
+        
         // 응답 본문 읽기 시도 (JSON 또는 텍스트)
         let error: any;
         const contentType = response.headers.get('content-type') || '';
@@ -367,8 +462,13 @@ class ApiClient {
         try {
           if (contentType.includes('application/json')) {
             error = await response.json();
+            logger.error(`[API Request ${requestId}] 에러 응답 본문 (JSON)`, error);
           } else {
             const text = await response.text();
+            logger.error(`[API Request ${requestId}] 에러 응답 본문 (텍스트)`, {
+              text: text.substring(0, 500), // 처음 500자만
+              fullLength: text.length,
+            });
             try {
               // 텍스트가 JSON일 수도 있으므로 파싱 시도
               error = JSON.parse(text);
@@ -378,6 +478,10 @@ class ApiClient {
             }
           }
         } catch (parseError) {
+          logger.error(`[API Request ${requestId}] 응답 본문 파싱 실패`, {
+            parseError,
+            contentType,
+          });
           // 파싱 실패 시 기본값 사용
           error = {
             message: response.statusText || `HTTP error! status: ${response.status}`,
@@ -452,29 +556,87 @@ class ApiClient {
           statusCode: response.status,
         };
         
+        logger.error(`[API Request ${requestId}] 최종 에러`, {
+          apiError,
+          totalTime: `${Date.now() - startTime}ms`,
+        });
+        
         throw apiError;
       }
 
       // 204 No Content 응답 처리
       if (response.status === 204) {
+        logger.info(`[API Request ${requestId}] 성공 (204 No Content)`, {
+          responseTime: `${Date.now() - startTime}ms`,
+        });
         return null as T;
       }
 
+      logger.debug(`[API Request ${requestId}] 응답 본문 파싱 시작`);
       const data = await response.json();
+      logger.debug(`[API Request ${requestId}] 응답 본문 파싱 완료`, {
+        dataKeys: typeof data === 'object' && data !== null ? Object.keys(data) : 'not an object',
+        isArray: Array.isArray(data),
+        arrayLength: Array.isArray(data) ? data.length : undefined,
+      });
+      
       // 날짜 문자열을 Date 객체로 자동 변환
       const parsedData = parseDates(data);
       
       // Note 관련 응답인 경우 정규화 (tea/user 객체에서 teaName/userName 추출)
       const isNoteEndpoint = endpoint.startsWith('/notes');
       if (isNoteEndpoint) {
-        return normalizeNotes(parsedData as BackendNote | BackendNote[]) as T;
+        logger.debug(`[API Request ${requestId}] Note 정규화 수행`);
+        const normalized = normalizeNotes(parsedData as BackendNote | BackendNote[]) as T;
+        logger.info(`[API Request ${requestId}] 성공 (Note 정규화 완료)`, {
+          responseTime: `${Date.now() - startTime}ms`,
+        });
+        return normalized;
       }
       
+      logger.info(`[API Request ${requestId}] 성공`, {
+        responseTime: `${Date.now() - startTime}ms`,
+      });
       return parsedData as T;
     } catch (error) {
+      const elapsedTime = Date.now() - startTime;
+      
       // AbortError 처리 (타임아웃)
       if (error instanceof Error && error.name === 'AbortError') {
+        logger.error(`[API Request ${requestId}] 타임아웃 에러`, {
+          errorName: error.name,
+          errorMessage: error.message,
+          elapsedTime: `${elapsedTime}ms`,
+          timeout,
+          isMobile,
+          networkType: networkInfo?.effectiveType || 'unknown',
+        });
         throw new Error(`요청 시간이 초과되었습니다 (${timeout}ms)`);
+      }
+      
+      // 네트워크 에러 상세 로깅
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        logger.error(`[API Request ${requestId}] 네트워크 에러`, {
+          errorName: error.name,
+          errorMessage: error.message,
+          errorStack: error.stack,
+          elapsedTime: `${elapsedTime}ms`,
+          url,
+          isMobile,
+          networkType: networkInfo?.effectiveType || 'unknown',
+          networkDownlink: networkInfo?.downlink || 'unknown',
+          networkRtt: networkInfo?.rtt || 'unknown',
+          isOnline: navigator.onLine,
+          userAgent: navigator.userAgent.substring(0, 100),
+        });
+      } else {
+        logger.error(`[API Request ${requestId}] 예외 발생`, {
+          error,
+          errorName: error instanceof Error ? error.name : 'Unknown',
+          errorMessage: error instanceof Error ? error.message : String(error),
+          errorStack: error instanceof Error ? error.stack : undefined,
+          elapsedTime: `${elapsedTime}ms`,
+        });
       }
       
       if (error instanceof Error) {
@@ -484,6 +646,8 @@ class ApiClient {
     } finally {
       // fetch가 완료되면 타임아웃 클리어
       clearTimeout(timeoutId);
+      const totalTime = Date.now() - startTime;
+      logger.debug(`[API Request ${requestId}] 완료 (총 소요 시간: ${totalTime}ms)`);
     }
   }
 
@@ -510,10 +674,27 @@ class ApiClient {
   }
 
   async uploadFile<T>(endpoint: string, file: File): Promise<T> {
+    const requestId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const startTime = Date.now();
     const token = localStorage.getItem('access_token');
     const timeout = API_TIMEOUT;
     
+    // 모바일 환경 감지
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const networkInfo = (navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection;
+    
+    logger.info(`[File Upload ${requestId}] 시작`, {
+      endpoint,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      isMobile,
+      networkType: networkInfo?.effectiveType || 'unknown',
+      hasToken: !!token,
+    });
+    
     if (!token) {
+      logger.error(`[File Upload ${requestId}] 인증 토큰 없음`);
       throw {
         message: '로그인이 필요합니다.',
         statusCode: 401,
@@ -526,31 +707,61 @@ class ApiClient {
 
     const url = `${this.baseURL}${endpoint}`;
     
+    logger.info(`[File Upload ${requestId}] 업로드 URL`, {
+      url,
+      baseURL: this.baseURL,
+      endpoint,
+    });
+    
     const formData = new FormData();
     formData.append('image', file);
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
+      logger.error(`[File Upload ${requestId}] 타임아웃 발생`, {
+        timeout,
+        elapsedTime: Date.now() - startTime,
+      });
       controller.abort();
     }, timeout);
     
     try {
+      logger.info(`[File Upload ${requestId}] fetch 호출 시작`);
       const response = await fetch(url, {
         method: 'POST',
         headers,
         body: formData,
         signal: controller.signal,
       });
+      
+      const responseTime = Date.now() - startTime;
+      logger.info(`[File Upload ${requestId}] 응답 수신`, {
+        status: response.status,
+        statusText: response.statusText,
+        responseTime: `${responseTime}ms`,
+        ok: response.ok,
+      });
 
       if (!response.ok) {
+        logger.error(`[File Upload ${requestId}] 응답 오류`, {
+          status: response.status,
+          statusText: response.statusText,
+          responseTime: `${Date.now() - startTime}ms`,
+        });
+        
         let error: any;
         const contentType = response.headers.get('content-type') || '';
         
         try {
           if (contentType.includes('application/json')) {
             error = await response.json();
+            logger.error(`[File Upload ${requestId}] 에러 응답 본문 (JSON)`, error);
           } else {
             const text = await response.text();
+            logger.error(`[File Upload ${requestId}] 에러 응답 본문 (텍스트)`, {
+              text: text.substring(0, 500),
+              fullLength: text.length,
+            });
             try {
               error = JSON.parse(text);
             } catch {
@@ -558,6 +769,10 @@ class ApiClient {
             }
           }
         } catch (parseError) {
+          logger.error(`[File Upload ${requestId}] 응답 본문 파싱 실패`, {
+            parseError,
+            contentType,
+          });
           error = {
             message: response.statusText || `HTTP error! status: ${response.status}`,
             statusCode: response.status,
@@ -590,21 +805,67 @@ class ApiClient {
           statusCode: response.status,
         };
         
+        logger.error(`[File Upload ${requestId}] 최종 에러`, {
+          apiError,
+          totalTime: `${Date.now() - startTime}ms`,
+        });
+        
         throw apiError;
       }
 
-      return await response.json();
+      logger.debug(`[File Upload ${requestId}] 응답 본문 파싱 시작`);
+      const data = await response.json();
+      logger.info(`[File Upload ${requestId}] 성공`, {
+        responseTime: `${Date.now() - startTime}ms`,
+        dataKeys: typeof data === 'object' && data !== null ? Object.keys(data) : 'not an object',
+      });
+      
+      return data;
     } catch (error) {
+      const elapsedTime = Date.now() - startTime;
+      
       if (error instanceof Error && error.name === 'AbortError') {
+        logger.error(`[File Upload ${requestId}] 타임아웃 에러`, {
+          errorName: error.name,
+          elapsedTime: `${elapsedTime}ms`,
+          timeout,
+          isMobile,
+          networkType: networkInfo?.effectiveType || 'unknown',
+        });
         throw {
           message: '요청 시간이 초과되었습니다.',
           statusCode: 408,
         } as ApiError;
       }
       
+      // 네트워크 에러 상세 로깅
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        logger.error(`[File Upload ${requestId}] 네트워크 에러`, {
+          errorName: error.name,
+          errorMessage: error.message,
+          errorStack: error.stack,
+          elapsedTime: `${elapsedTime}ms`,
+          url,
+          isMobile,
+          networkType: networkInfo?.effectiveType || 'unknown',
+          isOnline: navigator.onLine,
+          fileSize: file.size,
+          fileName: file.name,
+        });
+      } else {
+        logger.error(`[File Upload ${requestId}] 예외 발생`, {
+          error,
+          errorName: error instanceof Error ? error.name : 'Unknown',
+          errorMessage: error instanceof Error ? error.message : String(error),
+          elapsedTime: `${elapsedTime}ms`,
+        });
+      }
+      
       throw error;
     } finally {
       clearTimeout(timeoutId);
+      const totalTime = Date.now() - startTime;
+      logger.debug(`[File Upload ${requestId}] 완료 (총 소요 시간: ${totalTime}ms)`);
     }
   }
 }
