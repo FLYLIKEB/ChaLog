@@ -64,7 +64,7 @@ describe('NoteDetail - 이미지 가운데 정렬', () => {
 
     await waitFor(() => {
       const imageGallery = screen.getByText('사진').nextElementSibling;
-      expect(imageGallery).toHaveClass('grid', 'grid-cols-2', 'gap-3', 'justify-items-center');
+      expect(imageGallery).toHaveClass('grid', 'grid-cols-1', 'sm:grid-cols-2', 'gap-3', 'justify-items-center');
     });
   });
 

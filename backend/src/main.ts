@@ -55,6 +55,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  // 전역 API prefix 설정
+  app.setGlobalPrefix('api');
+
   // 전역 ValidationPipe 설정
   app.useGlobalPipes(
     new ValidationPipe({
