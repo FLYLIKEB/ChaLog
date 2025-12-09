@@ -148,28 +148,28 @@ export function UserProfile() {
       
       <div className="p-6 space-y-6">
         {/* 프로필 헤더 섹션 */}
-        <Card className="p-6 md:p-8">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative">
+        <Card className="p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div className="relative flex-shrink-0">
               <UserAvatar 
                 name={user.name} 
                 profileImageUrl={user.profileImageUrl}
-                size="xl" 
+                size="md" 
               />
               {isOwnProfile && (
                 <Button
                   onClick={() => setIsEditModalOpen(true)}
                   size="icon"
-                  className="absolute bottom-0 right-0 rounded-full w-8 h-8 bg-primary hover:bg-primary/90"
+                  className="absolute bottom-0 right-0 rounded-full w-7 h-7 bg-primary hover:bg-primary/90 shadow-md border-2 border-background"
                   aria-label="프로필 사진 수정"
                 >
-                  <Camera className="w-4 h-4" />
+                  <Camera className="w-3.5 h-3.5" />
                 </Button>
               )}
             </div>
-            <div>
-              <h2 className="text-2xl font-semibold text-primary">{user.name}</h2>
-              <p className="text-sm text-muted-foreground">작성한 노트 {notes.length}개</p>
+            <div className="flex flex-col items-center text-center">
+              <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
+              <p className="text-sm text-muted-foreground mt-1">작성한 노트 {notes.length}개</p>
             </div>
           </div>
         </Card>
@@ -186,7 +186,7 @@ export function UserProfile() {
         )}
 
         {/* 통계 카드 섹션 */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <StatCard
             icon={Star}
             value={stats.averageRating}
