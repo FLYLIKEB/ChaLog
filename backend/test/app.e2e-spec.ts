@@ -3,14 +3,49 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
+import { ConfigModule } from '@nestjs/config';
+
+// 테스트 환경 변수 설정
+process.env.NODE_ENV = 'test';
 
 describe('AppController (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
+  let testDatabaseName: string;
 
   beforeAll(async () => {
+    // 테스트 DB URL 확인
+    const testDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+    if (!testDbUrl) {
+      throw new Error('TEST_DATABASE_URL or DATABASE_URL must be set for tests');
+    }
+
+    // 테스트 DB 이름 추출 (로깅용)
+    try {
+      const url = new URL(testDbUrl);
+      testDatabaseName = url.pathname.slice(1);
+      console.log(`[TEST] Using test database: ${testDatabaseName}`);
+      
+      // 경고: 프로덕션 DB를 사용하는 경우 경고
+      if (!testDatabaseName.includes('test') && !testDatabaseName.includes('_test')) {
+        console.warn(`[WARNING] Test database name "${testDatabaseName}" does not contain "test". Make sure you are using a test database!`);
+      }
+    } catch (error) {
+      console.warn('[WARNING] Could not parse database URL for validation');
+    }
+
+    // 테스트 환경 변수 강제 설정
+    process.env.NODE_ENV = 'test';
+    
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [
+        ConfigModule.forRoot({
+          isGlobal: true,
+          envFilePath: ['.env.test', '.env'], // 테스트용 env 파일 우선 사용
+          ignoreEnvFile: false,
+        }),
+        AppModule,
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -27,7 +62,25 @@ describe('AppController (e2e)', () => {
   }, 30000); // 타임아웃 30초로 증가
 
   afterAll(async () => {
+    // 모든 테스트 데이터 정리
+    try {
+      console.log(`[TEST] Cleaning up test database: ${testDatabaseName}`);
+      await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
+      await dataSource.query('DELETE FROM note_bookmarks');
+      await dataSource.query('DELETE FROM note_likes');
+      await dataSource.query('DELETE FROM note_tags');
+      await dataSource.query('DELETE FROM tags');
+      await dataSource.query('DELETE FROM notes');
+      await dataSource.query('DELETE FROM teas');
+      await dataSource.query('DELETE FROM user_authentications');
+      await dataSource.query('DELETE FROM users');
+      await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
+      console.log(`[TEST] Test database cleaned up: ${testDatabaseName}`);
+    } catch (error) {
+      console.error('[ERROR] Failed to clean up test database:', error);
+    } finally {
     await app.close();
+    }
   });
 
   it('/ (GET)', () => {

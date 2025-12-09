@@ -2,7 +2,11 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => {
-  const databaseUrl = configService.get<string>('DATABASE_URL');
+  // 테스트 환경에서는 TEST_DATABASE_URL 우선 사용, 없으면 DATABASE_URL 사용
+  const isTest = configService.get<string>('NODE_ENV') === 'test' || process.env.NODE_ENV === 'test';
+  const databaseUrl = isTest 
+    ? (configService.get<string>('TEST_DATABASE_URL') || configService.get<string>('DATABASE_URL'))
+    : configService.get<string>('DATABASE_URL');
   
   if (!databaseUrl) {
     throw new Error('DATABASE_URL environment variable is not set');
@@ -68,9 +72,11 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     database,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     // synchronize는 개발 환경에서도 명시적으로 활성화해야 함 (데이터 손실 위험)
-    synchronize: configService.get<string>('NODE_ENV') === 'development' && 
+    // 테스트 환경에서는 synchronize를 false로 설정 (테스트 DB는 수동으로 관리)
+    synchronize: !isTest && 
+                 configService.get<string>('NODE_ENV') === 'development' && 
                  configService.get<string>('DB_SYNCHRONIZE') === 'true',
-    logging: configService.get<string>('NODE_ENV') === 'development',
+    logging: configService.get<string>('NODE_ENV') === 'development' || isTest,
     // AWS RDS/Aurora 연결 최적화
     // t3.small 환경에 맞게 연결 풀 크기 조정 (2GB RAM, 2 vCPU)
     extra: {
