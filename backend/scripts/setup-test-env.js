@@ -7,9 +7,28 @@
 
 const { config } = require('dotenv');
 const path = require('path');
+const fs = require('fs');
+
+const envPath = path.join(__dirname, '../.env');
+const envExamplePath = path.join(__dirname, '../.env.example');
+
+// .env 파일 존재 여부 확인
+if (!fs.existsSync(envPath)) {
+  console.error('❌ backend/.env 파일을 찾을 수 없습니다.');
+  
+  // .env.example이 있으면 복사 제안
+  if (fs.existsSync(envExamplePath)) {
+    console.error(`   다음 명령어를 실행하세요:`);
+    console.error(`   cp backend/.env.example backend/.env`);
+    console.error(`   그 후 DATABASE_URL을 설정해주세요.`);
+  } else {
+    console.error('   backend/.env 파일을 생성하고 DATABASE_URL을 설정해주세요.');
+  }
+  process.exit(1);
+}
 
 // .env 파일 로드
-config({ path: path.join(__dirname, '../.env') });
+config({ path: envPath });
 
 const databaseUrl = process.env.DATABASE_URL;
 
