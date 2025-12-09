@@ -13,12 +13,13 @@ export function calculateTopTags(notes: Note[]): string[] {
     return DEFAULT_TAGS;
   }
 
-  const tagMapping: Record<string, keyof Note['ratings']> = {
-    풍부함: 'richness',
-    강함: 'strength',
-    부드러움: 'smoothness',
-    깨끗함: 'clarity',
-    복합적: 'complexity',
+  // 축 코드와 태그 매핑
+  const axisCodeToTag: Record<string, string> = {
+    RICHNESS: '풍부함',
+    STRENGTH: '강함',
+    SMOOTHNESS: '부드러움',
+    CLARITY: '깨끗함',
+    COMPLEXITY: '복합적',
   };
 
   const tagStats: Record<string, { sum: number; count: number }> = {
@@ -31,10 +32,14 @@ export function calculateTopTags(notes: Note[]): string[] {
 
   // 각 노트의 평점을 집계
   notes.forEach(note => {
-    if (note.ratings) {
-      Object.entries(tagMapping).forEach(([tag, key]) => {
-        tagStats[tag].sum += note.ratings[key];
-        tagStats[tag].count += 1;
+    if (note.axisValues && note.axisValues.length > 0) {
+      note.axisValues.forEach(axisValue => {
+        const axisCode = axisValue.axis?.code;
+        if (axisCode && axisCodeToTag[axisCode]) {
+          const tag = axisCodeToTag[axisCode];
+          tagStats[tag].sum += axisValue.valueNumeric;
+          tagStats[tag].count += 1;
+        }
       });
     }
   });

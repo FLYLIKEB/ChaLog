@@ -77,7 +77,7 @@ export function UserProfile() {
       };
     }
     
-    const averageRating = notes.reduce((sum, note) => sum + (note.rating || 0), 0) / notes.length;
+    const averageRating = notes.reduce((sum, note) => sum + (note.overallRating || 0), 0) / notes.length;
     const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
     
     return {
@@ -93,7 +93,7 @@ export function UserProfile() {
       if (sort === 'latest') {
         return b.createdAt.getTime() - a.createdAt.getTime();
       } else {
-        return b.rating - a.rating;
+        return (b.overallRating || 0) - (a.overallRating || 0);
       }
     });
   }, [notes, sort]);

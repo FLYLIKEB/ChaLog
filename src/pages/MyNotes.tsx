@@ -65,7 +65,7 @@ export function MyNotes() {
     if (sort === 'latest') {
       return b.createdAt.getTime() - a.createdAt.getTime();
     } else {
-      return b.rating - a.rating;
+      return (b.overallRating || 0) - (a.overallRating || 0);
     }
   });
 
