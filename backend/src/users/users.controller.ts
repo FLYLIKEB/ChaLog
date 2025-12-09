@@ -11,6 +11,7 @@ import {
   UploadedFile,
   Request,
   InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -23,6 +24,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
+  private readonly logger = new Logger(UsersController.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly s3Service: S3Service,
@@ -87,9 +90,9 @@ export class UsersController {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        error instanceof Error ? error.message : '이미지 업로드 중 오류가 발생했습니다.',
-      );
+      // 내부 오류 상세 정보는 로깅하고, 클라이언트에는 일반적인 메시지만 반환
+      this.logger.error('프로필 이미지 업로드 실패:', error instanceof Error ? error.message : error);
+      throw new InternalServerErrorException('이미지 업로드 중 오류가 발생했습니다.');
     }
   }
 
