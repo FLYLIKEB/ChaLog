@@ -148,6 +148,9 @@ echo "✅ PR 리뷰 처리 완료"
 - null 처리 누락
 - 보안 취약점
 - 데이터 정합성 문제
+- **DB 스키마 변경 시 Migration 누락** ⚠️
+  - 엔티티 파일 변경 시 Migration 파일이 함께 포함되어야 함
+  - Migration 파일 없이 엔티티만 변경된 경우 반드시 요청
 
 ### Medium/Minor 우선순위
 
@@ -206,12 +209,49 @@ fix: [PR #<번호> 리뷰 반영] <주요 변경사항>
 - GitHub 인증 확인: `gh auth status`
 - 스레드 ID 재확인
 
+## DB 스키마 변경 시 필수 체크리스트
+
+### Migration 관련 필수 확인 사항
+
+PR에 엔티티 파일(`*.entity.ts`) 변경이 포함된 경우:
+
+1. **Migration 파일 포함 확인**
+   - ✅ `migrations/` 폴더에 새로운 Migration 파일이 있는지 확인
+   - ✅ 엔티티 변경사항과 Migration이 일치하는지 확인
+   - ❌ 엔티티만 변경하고 Migration이 없는 경우 반드시 요청
+
+2. **Migration 파일 검증**
+   - ✅ `up` 메서드가 올바르게 구현되었는지 확인
+   - ✅ `down` 메서드가 구현되어 롤백 가능한지 확인
+   - ✅ SQL 쿼리가 안전한지 확인 (데이터 손실 위험 없음)
+
+3. **테스트 DB 적용 확인**
+   - ✅ 테스트 DB에 Migration이 적용되었는지 확인
+   - ✅ E2E 테스트가 통과하는지 확인
+
+4. **커밋 규칙**
+   - ✅ 엔티티 파일과 Migration 파일은 항상 함께 커밋
+   - ✅ 커밋 메시지에 Migration 내용 포함
+
+### 자동 체크 스크립트
+
+```bash
+# PR에 엔티티 변경이 있는지 확인
+git diff origin/main...HEAD --name-only | grep "\.entity\.ts$"
+
+# Migration 파일이 있는지 확인
+git diff origin/main...HEAD --name-only | grep "migrations/.*\.ts$"
+
+# 둘 다 있으면 OK, 엔티티만 있으면 경고
+```
+
 ## 모범 사례
 
 1. **일괄 처리**: 모든 리뷰를 반영한 후 한번에 커밋 및 푸시
 2. **명확한 커밋 메시지**: 반영한 리뷰 내용을 명확히 기록
 3. **자동화 활용**: 스크립트를 사용하여 반복 작업 자동화
 4. **검증**: 푸시 전에 변경사항 확인
+5. **Migration 필수**: 엔티티 변경 시 반드시 Migration 포함
 
 ## 관련 문서
 
@@ -219,3 +259,5 @@ fix: [PR #<번호> 리뷰 반영] <주요 변경사항>
 - Git 브랜치 전략: `.cursor/rules/workflow/git.md` 참고
 - PR 워크플로우: `.cursor/rules/workflow/pr.md` 참고
 - 코드 스타일 가이드: `.cursor/rules/development/code-style.md` 참고
+- **DB Migration 가이드**: [`backend/MIGRATION_WORKFLOW.md`](../../backend/MIGRATION_WORKFLOW.md) - 스키마 변경 워크플로우
+- **Migration 사용법**: [`backend/MIGRATIONS.md`](../../backend/MIGRATIONS.md) - Migration 명령어 및 사용법

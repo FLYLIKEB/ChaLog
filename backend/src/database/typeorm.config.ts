@@ -71,8 +71,12 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     ...(password && { password }),
     database,
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+    migrations: [__dirname + '/../../migrations/**/*{.ts,.js}'],
+    migrationsTableName: 'migrations',
+    migrationsRun: false, // 자동 실행 비활성화 (수동으로 migration 실행)
     // synchronize는 개발 환경에서도 명시적으로 활성화해야 함 (데이터 손실 위험)
     // 테스트 환경에서는 synchronize를 false로 설정 (테스트 DB는 수동으로 관리)
+    // Production에서는 반드시 false로 설정하고 migrations만 사용
     synchronize: !isTest && 
                  configService.get<string>('NODE_ENV') === 'development' && 
                  configService.get<string>('DB_SYNCHRONIZE') === 'true',

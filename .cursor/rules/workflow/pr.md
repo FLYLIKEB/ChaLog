@@ -23,3 +23,13 @@ Detailed Guide: docs/workflow/PR_REVIEW_PROCESS.md
   - Use `Related to #123` for related but not directly closing issues
 - Use `gh pr create` if available, otherwise provide GitHub URL
 
+## DB Schema Changes (Migration Required)
+
+- When entity files (`*.entity.ts`) are modified, Migration files must be included
+- Check for Migration files in `backend/migrations/` directory
+- Verify Migration file has both `up` and `down` methods implemented
+- Entity files and Migration files must be committed together
+- If entity changes exist without Migration files, request Migration creation
+- Test DB must have Migration applied before PR merge
+- Reference: `backend/MIGRATION_WORKFLOW.md` for detailed workflow
+

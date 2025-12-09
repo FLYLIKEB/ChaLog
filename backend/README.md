@@ -97,8 +97,44 @@ CREATE DATABASE chalog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 - `./scripts/start-ssh-tunnel.sh` - SSH 터널 시작 (RDS 연결용)
 - `./scripts/stop-ssh-tunnel.sh` - SSH 터널 종료
 - `./scripts/check-database.sh` - 데이터베이스 확인 및 생성
+- `./scripts/sync-schema.sh` - 스키마 동기화 (Migration 실행)
+- `./scripts/compare-schema.sh` - 테스트/프로덕션 DB 스키마 비교
 
 자세한 사용법은 [`docs/SCRIPTS.md`](../docs/SCRIPTS.md)를 참고하세요.
+
+## 데이터베이스 마이그레이션
+
+이 프로젝트는 TypeORM Migrations를 사용하여 데이터베이스 스키마를 형상관리합니다.
+
+### Migration 명령어
+
+- `npm run migration:run` - Migration 실행
+- `npm run migration:revert` - Migration 롤백
+- `npm run migration:show` - Migration 상태 확인
+- `npm run migration:generate` - 엔티티 변경사항으로부터 Migration 생성
+- `npm run migration:create` - 빈 Migration 파일 생성
+
+### 스키마 동기화
+
+**테스트 DB 동기화:**
+```bash
+cd backend
+TEST_DATABASE_URL=mysql://... ./scripts/sync-schema.sh test
+```
+
+**프로덕션 DB 동기화:**
+```bash
+cd backend
+DATABASE_URL=mysql://... ./scripts/sync-schema.sh prod
+```
+
+**스키마 비교:**
+```bash
+cd backend
+DATABASE_URL=... TEST_DATABASE_URL=... ./scripts/compare-schema.sh
+```
+
+자세한 내용은 [`MIGRATIONS.md`](./MIGRATIONS.md)를 참고하세요.
 
 ## 실행
 

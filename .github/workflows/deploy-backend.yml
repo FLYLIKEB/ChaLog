@@ -411,7 +411,7 @@ jobs:
                chmod 600 /home/ubuntu/chalog-backend/.env && \
                echo '✅ .env 파일 생성 완료'"
 
-          # EC2에서 배포 실행
+      - name: Deploy to EC2
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               "$EC2_USER@$EC2_HOST" << 'ENDSSH'
@@ -546,6 +546,15 @@ jobs:
             else
               PM2_CMD=$(command -v pm2)
               echo "✅ PM2 이미 설치됨: $($PM2_CMD --version)"
+            fi
+            
+            # 데이터베이스 마이그레이션 실행
+            echo "🔄 데이터베이스 마이그레이션 실행 중..."
+            export $(cat .env | xargs)
+            if npm run migration:run; then
+              echo "✅ 마이그레이션 완료"
+            else
+              echo "⚠️ 마이그레이션 실행 중 오류 발생. 계속 진행합니다."
             fi
             
             # PM2로 재시작

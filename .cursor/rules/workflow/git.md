@@ -15,3 +15,11 @@
   - Do not create temporary markdown files for issue preparation - create issues directly
   - If temporary markdown files are created, delete them immediately after creating the issue
 
+## DB Migration Commits
+
+- When committing entity file changes (`*.entity.ts`), always include Migration files (`migrations/*.ts`)
+- Commit format: `feat: Add location column to notes` (include both entity and migration files)
+- Never commit entity changes without corresponding Migration files
+- Migration files must be in `backend/migrations/` directory
+- Test Migration on test DB before committing: `TEST_DATABASE_URL=... npm run migration:run`
+

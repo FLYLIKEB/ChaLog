@@ -61,7 +61,14 @@
 - [x] 북마크 정보는 서버에 저장
 - [x] 북마크 엔티티/테이블 생성
 
+### DB Migration (스키마 변경 시)
+- [ ] 엔티티 파일 변경 시 Migration 파일 포함
+- [ ] Migration 파일의 `up` 및 `down` 메서드 구현 확인
+- [ ] 테스트 DB에 Migration 적용 및 검증 완료
+- [ ] E2E 테스트 통과 확인
+
 ## 관련 이슈
 Closes #26
 Closes #27
+
 

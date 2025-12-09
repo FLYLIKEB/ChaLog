@@ -187,8 +187,57 @@ AWS RDS의 마스터 비밀번호는 **보안상의 이유로 생성 후에는 �
 - ✅ 정기적인 비밀번호 변경 (프로덕션)
 - ✅ 환경 변수로 관리 (코드에 하드코딩 금지)
 
+## TypeORM Migrations
+
+이 프로젝트는 TypeORM Migrations를 사용하여 데이터베이스 스키마를 형상관리합니다.
+
+### Migration 실행
+
+**로컬 개발 환경:**
+```bash
+cd backend
+npm run migration:run
+```
+
+**테스트 DB 동기화:**
+```bash
+cd backend
+TEST_DATABASE_URL=mysql://... ./scripts/sync-schema.sh test
+```
+
+**프로덕션 DB 동기화:**
+```bash
+cd backend
+DATABASE_URL=mysql://... ./scripts/sync-schema.sh prod
+```
+
+### 스키마 비교
+
+테스트 DB와 프로덕션 DB의 스키마를 비교:
+```bash
+cd backend
+DATABASE_URL=... TEST_DATABASE_URL=... ./scripts/compare-schema.sh
+```
+
+### Migration 생성
+
+엔티티 변경사항으로부터 자동 생성:
+```bash
+cd backend
+npm run migration:generate -- migrations/MigrationName
+```
+
+빈 Migration 파일 생성:
+```bash
+cd backend
+npm run migration:create -- migrations/MigrationName
+```
+
+자세한 내용은 [`backend/MIGRATIONS.md`](../../backend/MIGRATIONS.md)를 참고하세요.
+
 ## 추가 리소스
 
 - [AWS RDS 공식 문서](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/)
 - [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드
+- [`backend/MIGRATIONS.md`](../../backend/MIGRATIONS.md) - TypeORM Migrations 가이드
 
