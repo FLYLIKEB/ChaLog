@@ -80,6 +80,8 @@ jobs:
         run: |
           mkdir -p deploy-package
           cp -r dist deploy-package/
+          cp -r migrations deploy-package/  # Migration 파일 포함
+          cp src/database/data-source.ts deploy-package/dist/src/database/ 2>/dev/null || cp src/database/data-source.ts deploy-package/  # data-source.ts 포함 (Migration 실행용)
           cp package.json package-lock.json ecosystem.config.js deploy-package/
           # package-lock.json이 없으면 생성
           if [ ! -f package-lock.json ]; then
@@ -412,6 +414,10 @@ jobs:
                echo '✅ .env 파일 생성 완료'"
 
       - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
           ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
               "$EC2_USER@$EC2_HOST" << 'ENDSSH'
@@ -551,10 +557,25 @@ jobs:
             # 데이터베이스 마이그레이션 실행
             echo "🔄 데이터베이스 마이그레이션 실행 중..."
             export $(cat .env | xargs)
-            if npm run migration:run; then
-              echo "✅ 마이그레이션 완료"
+            # migrations 폴더와 data-source.ts가 배포 패키지에 포함되어 있으므로 실행 가능
+            # data-source.ts 경로 확인 (배포 패키지 구조에 따라)
+            if [ -f "dist/src/database/data-source.ts" ]; then
+              DATA_SOURCE_PATH="dist/src/database/data-source.ts"
+            elif [ -f "src/database/data-source.ts" ]; then
+              DATA_SOURCE_PATH="src/database/data-source.ts"
             else
-              echo "⚠️ 마이그레이션 실행 중 오류 발생. 계속 진행합니다."
+              echo "⚠️ data-source.ts 파일을 찾을 수 없습니다. 마이그레이션을 건너뜁니다."
+              DATA_SOURCE_PATH=""
+            fi
+            
+            if [ -n "$DATA_SOURCE_PATH" ] && [ -d "migrations" ]; then
+              if npx typeorm-ts-node-commonjs migration:run -d "$DATA_SOURCE_PATH"; then
+                echo "✅ 마이그레이션 완료"
+              else
+                echo "⚠️ 마이그레이션 실행 중 오류 발생. 계속 진행합니다."
+              fi
+            else
+              echo "⚠️ 마이그레이션 파일이 없습니다. 건너뜁니다."
             fi
             
             # PM2로 재시작
