@@ -323,27 +323,18 @@ EOF
 $comment
 EOF
       
-      log "🤖 AI에게 리뷰 반영을 요청합니다..."
-      log "   리뷰 내용이 $review_file 에 저장되었습니다."
+      log "🤖 리뷰 반영을 위해 AI에게 요청합니다..."
       log ""
-      log "   다음 명령을 실행하거나 AI에게 요청하세요:"
-      log "   \"$file_path 파일의 $line 라인 근처 코드래빗 리뷰를 반영해줘\""
-      log "   또는: \"$review_file 파일의 리뷰를 반영해줘\""
+      log "   📋 리뷰 요약:"
+      echo "$comment" | grep -E "^(Fix|Refactor|🛠️|🧩)" | head -3 | sed 's/^/      /' || echo "      (리뷰 내용 확인 필요)" | sed 's/^/      /'
       log ""
-      log "   리뷰 반영 후 Enter를 누르면 자동으로 커밋됩니다..."
-      log "   (또는 's'를 입력하여 건너뛰기)"
-      
-      # 짧은 대기 시간 (사용자가 AI에게 요청할 시간)
-      read -t 10 -p "리뷰 반영 완료 후 Enter (10초 후 자동 진행): " -r || true
-      
-      if [[ $REPLY =~ ^[Ss]$ ]]; then
-        log "⏭️  이 리뷰를 건너뜁니다."
-        rm -f "$review_file"
-        continue
-      fi
+      log "   💡 AI에게 다음을 요청하세요:"
+      log "      \"$file_path 파일의 $line 라인 근처 코드래빗 리뷰를 반영해줘\""
+      log ""
+      log "   ⏱️  변경사항을 확인합니다 (최대 3초)..."
       
       # 변경사항 확인 (짧은 대기)
-      local max_checks=5
+      local max_checks=3
       local check_count=0
       local has_changes=false
       
@@ -355,6 +346,28 @@ EOF
         sleep 1
         check_count=$((check_count + 1))
       done
+      
+      # 변경사항이 없으면 사용자에게 알림
+      if [ "$has_changes" != "true" ]; then
+        log "   ⚠️  아직 변경사항이 없습니다."
+        log "   AI에게 요청한 후 다시 스크립트를 실행하거나,"
+        log "   's'를 입력하여 이 리뷰를 건너뛰세요."
+        read -t 5 -p "   건너뛰기? (s/Enter): " -r || true
+        
+        if [[ $REPLY =~ ^[Ss]$ ]]; then
+          log "⏭️  이 리뷰를 건너뜁니다."
+          rm -f "$review_file"
+          continue
+        fi
+        
+        # 한 번 더 확인
+        if git diff --quiet && git diff --cached --quiet; then
+          log "⚠️  변경사항이 없어 건너뜁니다."
+          rm -f "$review_file"
+          continue
+        fi
+        has_changes=true
+      fi
       
       # 변경사항 확인
       if [ "$has_changes" != "true" ] && (git diff --quiet && git diff --cached --quiet); then
