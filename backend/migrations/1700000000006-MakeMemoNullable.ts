@@ -12,7 +12,11 @@ export class MakeMemoNullable1700000000006 implements MigrationInterface {
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    // memo 컬럼을 다시 NOT NULL로 변경 (주의: 기존 NULL 값이 있으면 실패할 수 있음)
+    // 기존 NULL 값을 빈 문자열로 변환
+    await queryRunner.query(`
+      UPDATE \`notes\` SET \`memo\` = '' WHERE \`memo\` IS NULL
+    `);
+    // memo 컬럼을 다시 NOT NULL로 변경
     await queryRunner.query(`
       ALTER TABLE \`notes\` 
       MODIFY COLUMN \`memo\` TEXT NOT NULL
