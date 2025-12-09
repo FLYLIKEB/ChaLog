@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ConfigModule } from '@nestjs/config';
-import { TestHelper, TestUser, TestTea } from './helpers/test-helper';
+import { TestHelper, TestUser, TestTea, TestNote } from './helpers/test-helper';
 import { TEST_CONSTANTS, TEST_DEFAULTS } from './constants/test-constants';
 
 // 테스트 환경 변수 설정
@@ -296,85 +296,32 @@ describe('AppController (e2e)', () => {
   });
 
   describe('/notes/:id/like - 노트 좋아요 API', () => {
-    let authToken1: string;
-    let authToken2: string;
-    let userId1: number;
-    let userId2: number;
-    let teaId: number;
-    let noteId: number;
+    let testUser1: TestUser;
+    let testUser2: TestUser;
+    let testTea: TestTea;
+    let testNote: TestNote;
 
     beforeAll(async () => {
-      // 테스트용 사용자 2명 등록 및 로그인
-      const uniqueEmail1 = `likeuser1-${Date.now()}@example.com`;
-      const uniqueEmail2 = `likeuser2-${Date.now()}@example.com`;
-
-      // 사용자 1 등록
-      const registerResponse1 = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: uniqueEmail1,
-          name: 'Like Test User 1',
-          password: 'password123',
-        })
-        .expect(201);
-      authToken1 = registerResponse1.body.access_token;
-
-      // 사용자 1 프로필 조회로 userId 얻기
-      const profileResponse1 = await request(app.getHttpServer())
-        .post('/auth/profile')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .expect(201);
-      userId1 = profileResponse1.body.userId;
-
-      // 사용자 2 등록
-      const registerResponse2 = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: uniqueEmail2,
-          name: 'Like Test User 2',
-          password: 'password123',
-        })
-        .expect(201);
-      authToken2 = registerResponse2.body.access_token;
-
-      // 사용자 2 프로필 조회로 userId 얻기
-      const profileResponse2 = await request(app.getHttpServer())
-        .post('/auth/profile')
-        .set('Authorization', `Bearer ${authToken2}`)
-        .expect(201);
-      userId2 = profileResponse2.body.userId;
+      // 테스트용 사용자 2명 생성
+      const users = await testHelper.createUsers(2, 'Like Test User');
+      testUser1 = users[0];
+      testUser2 = users[1];
 
       // 테스트용 차 생성
-      const teaResponse = await request(app.getHttpServer())
-        .post('/teas')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          name: '테스트 차',
-          year: 2023,
-          type: '홍차',
-        })
-        .expect(201);
-      teaId = teaResponse.body.id;
+      testTea = await testHelper.createTea(testUser1.token, {
+        name: TEST_DEFAULTS.TEA.name,
+        year: TEST_DEFAULTS.TEA.year,
+        type: TEST_DEFAULTS.TEA.type,
+      });
 
       // 테스트용 노트 생성
-      const noteResponse = await request(app.getHttpServer())
-        .post('/notes')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          teaId: teaId,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
-          memo: '테스트 노트입니다',
-          isPublic: true,
-        })
-        .expect(201);
-      noteId = noteResponse.body.id;
+      testNote = await testHelper.createNote(testUser1.token, {
+        teaId: testTea.id,
+        rating: TEST_DEFAULTS.NOTE.rating,
+        ratings: TEST_DEFAULTS.NOTE.ratings,
+        memo: TEST_DEFAULTS.NOTE.memo,
+        isPublic: TEST_DEFAULTS.NOTE.isPublic,
+      });
     });
 
     beforeEach(async () => {
@@ -383,19 +330,19 @@ describe('AppController (e2e)', () => {
     });
 
     afterAll(async () => {
-      // 테스트 종료 후 생성한 데이터 정리 (CASCADE로 관련 데이터도 자동 삭제)
+      // 테스트 종료 후 생성한 데이터 정리
       try {
-        if (noteId) {
-          await dataSource.query('DELETE FROM notes WHERE id = ?', [noteId]);
+        if (testNote?.id) {
+          await dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
         }
-        if (teaId) {
-          await dataSource.query('DELETE FROM teas WHERE id = ?', [teaId]);
+        if (testTea?.id) {
+          await dataSource.query('DELETE FROM teas WHERE id = ?', [testTea.id]);
         }
-        if (userId1) {
-          await dataSource.query('DELETE FROM users WHERE id = ?', [userId1]);
+        if (testUser1?.id) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [testUser1.id]);
         }
-        if (userId2) {
-          await dataSource.query('DELETE FROM users WHERE id = ?', [userId2]);
+        if (testUser2?.id) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [testUser2.id]);
         }
       } catch (error) {
         console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
@@ -403,9 +350,8 @@ describe('AppController (e2e)', () => {
     });
 
     it('POST /notes/:id/like - 좋아요 추가 성공', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
 
       expect(response.body).toHaveProperty('liked');
