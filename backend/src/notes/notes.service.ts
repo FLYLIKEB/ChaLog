@@ -88,43 +88,48 @@ export class NotesService {
   }
 
   async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number): Promise<any[]> {
-    const queryBuilder = this.notesRepository
-      .createQueryBuilder('note')
-      .leftJoinAndSelect('note.user', 'user')
-      .leftJoinAndSelect('note.tea', 'tea')
-      .leftJoinAndSelect('note.schema', 'schema')
-      .leftJoinAndSelect('note.noteTags', 'noteTags')
-      .leftJoinAndSelect('noteTags.tag', 'tag')
-      .leftJoinAndSelect('note.axisValues', 'axisValues')
-      .leftJoinAndSelect('axisValues.axis', 'axis')
-      .orderBy('note.createdAt', 'DESC');
+    try {
+      const queryBuilder = this.notesRepository
+        .createQueryBuilder('note')
+        .leftJoinAndSelect('note.user', 'user')
+        .leftJoinAndSelect('note.tea', 'tea')
+        .leftJoinAndSelect('note.schema', 'schema')
+        .leftJoinAndSelect('note.noteTags', 'noteTags')
+        .leftJoinAndSelect('noteTags.tag', 'tag')
+        .leftJoinAndSelect('note.axisValues', 'axisValues')
+        .leftJoinAndSelect('axisValues.axis', 'axis')
+        .orderBy('note.createdAt', 'DESC');
 
-    const conditions: string[] = [];
-    const params: Record<string, any> = {};
+      const conditions: string[] = [];
+      const params: Record<string, any> = {};
 
-    if (userId) {
-      conditions.push('note.userId = :userId');
-      params.userId = userId;
+      if (userId) {
+        conditions.push('note.userId = :userId');
+        params.userId = userId;
+      }
+
+      if (isPublic !== undefined) {
+        conditions.push('note.isPublic = :isPublic');
+        params.isPublic = isPublic;
+      }
+
+      if (teaId) {
+        conditions.push('note.teaId = :teaId');
+        params.teaId = teaId;
+      }
+
+      if (conditions.length > 0) {
+        queryBuilder.where(conditions.join(' AND '), params);
+      }
+
+      const notes = await queryBuilder.getMany();
+      
+      // 좋아요 및 북마크 정보 추가
+      return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+    } catch (error) {
+      this.logger.error(`Failed to findAll notes: ${error.message}`, error.stack);
+      throw error;
     }
-
-    if (isPublic !== undefined) {
-      conditions.push('note.isPublic = :isPublic');
-      params.isPublic = isPublic;
-    }
-
-    if (teaId) {
-      conditions.push('note.teaId = :teaId');
-      params.teaId = teaId;
-    }
-
-    if (conditions.length > 0) {
-      queryBuilder.where(conditions.join(' AND '), params);
-    }
-
-    const notes = await queryBuilder.getMany();
-    
-    // 좋아요 및 북마크 정보 추가
-    return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
   }
 
   async findOne(id: number, userId?: number): Promise<any> {
@@ -435,67 +440,72 @@ export class NotesService {
   }
 
   private async enrichNotesWithLikesAndBookmarks(notes: Note[], currentUserId?: number): Promise<any[]> {
-    if (notes.length === 0) {
-      return [];
-    }
+    try {
+      if (notes.length === 0) {
+        return [];
+      }
 
-    const noteIds = notes.map((note) => note.id);
+      const noteIds = notes.map((note) => note.id);
 
-    // 좋아요 수 조회
-    const likeCounts = await this.noteLikesRepository
-      .createQueryBuilder('like')
-      .select('like.noteId', 'noteId')
-      .addSelect('COUNT(like.id)', 'count')
-      .where('like.noteId IN (:...noteIds)', { noteIds })
-      .groupBy('like.noteId')
-      .getRawMany();
+      // 좋아요 수 조회
+      const likeCounts = await this.noteLikesRepository
+        .createQueryBuilder('like')
+        .select('like.noteId', 'noteId')
+        .addSelect('COUNT(like.id)', 'count')
+        .where('like.noteId IN (:...noteIds)', { noteIds })
+        .groupBy('like.noteId')
+        .getRawMany();
 
-    const likeCountMap = new Map<number, number>();
-    likeCounts.forEach((item) => {
-      likeCountMap.set(item.noteId, parseInt(item.count, 10));
-    });
-
-    // 현재 사용자의 좋아요 여부 조회
-    let userLikes: NoteLike[] = [];
-    if (currentUserId && noteIds.length > 0) {
-      userLikes = await this.noteLikesRepository.find({
-        where: { noteId: In(noteIds), userId: currentUserId },
+      const likeCountMap = new Map<number, number>();
+      likeCounts.forEach((item) => {
+        likeCountMap.set(item.noteId, parseInt(item.count, 10));
       });
-    }
-    const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
 
-    // 현재 사용자의 북마크 여부 조회
-    let userBookmarks: NoteBookmark[] = [];
-    if (currentUserId && noteIds.length > 0) {
-      userBookmarks = await this.noteBookmarksRepository.find({
-        where: { noteId: In(noteIds), userId: currentUserId },
+      // 현재 사용자의 좋아요 여부 조회
+      let userLikes: NoteLike[] = [];
+      if (currentUserId && noteIds.length > 0) {
+        userLikes = await this.noteLikesRepository.find({
+          where: { noteId: In(noteIds), userId: currentUserId },
+        });
+      }
+      const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
+
+      // 현재 사용자의 북마크 여부 조회
+      let userBookmarks: NoteBookmark[] = [];
+      if (currentUserId && noteIds.length > 0) {
+        userBookmarks = await this.noteBookmarksRepository.find({
+          where: { noteId: In(noteIds), userId: currentUserId },
+        });
+      }
+      const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
+
+      // 노트에 좋아요 및 북마크 정보 추가
+      return notes.map((note) => {
+        const noteObj = note as any;
+        noteObj.likeCount = likeCountMap.get(note.id) || 0;
+        noteObj.isLiked = userLikedNoteIds.has(note.id);
+        noteObj.isBookmarked = userBookmarkedNoteIds.has(note.id);
+        return noteObj;
       });
+    } catch (error) {
+      this.logger.error(`Failed to enrich notes with likes and bookmarks: ${error.message}`, error.stack);
+      throw error;
     }
-    const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
-
-    // 노트에 좋아요 및 북마크 정보 추가
-    return notes.map((note) => {
-      const noteObj = note as any;
-      noteObj.likeCount = likeCountMap.get(note.id) || 0;
-      noteObj.isLiked = userLikedNoteIds.has(note.id);
-      noteObj.isBookmarked = userBookmarkedNoteIds.has(note.id);
-      return noteObj;
-    });
   }
 
   /**
    * 노트의 축 값을 설정합니다.
    * 기존 축 값을 삭제하고 새로운 축 값을 추가합니다.
+   * 검증은 데이터 삭제 전에 수행되어 일관성을 보장합니다.
    */
   private async setNoteAxisValues(noteId: number, schemaId: number, axisValues: Array<{ axisId: number; value: number }>): Promise<void> {
-    // 기존 축 값 삭제
-    await this.noteAxisValueRepository.delete({ noteId });
-
     if (axisValues.length === 0) {
+      // 빈 배열인 경우 기존 값만 삭제
+      await this.noteAxisValueRepository.delete({ noteId });
       return;
     }
 
-    // 축 ID 유효성 검증 및 스키마 일치 확인
+    // 검증: 축 ID 유효성 검증 및 스키마 일치 확인 (데이터 삭제 전에 수행)
     const axisIds = axisValues.map(av => av.axisId);
     const axes = await this.ratingAxisRepository.find({
       where: { id: In(axisIds) },
@@ -510,6 +520,9 @@ export class NotesService {
     if (invalidAxes.length > 0) {
       throw new BadRequestException('제공된 축 중 일부가 노트의 스키마에 속하지 않습니다.');
     }
+
+    // 검증이 성공한 후에만 기존 축 값 삭제
+    await this.noteAxisValueRepository.delete({ noteId });
 
     // NoteAxisValue 생성
     const noteAxisValues = axisValues.map(av =>
