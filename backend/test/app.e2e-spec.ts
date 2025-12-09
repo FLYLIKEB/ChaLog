@@ -36,9 +36,6 @@ describe('AppController (e2e)', () => {
     } catch (error) {
       console.warn('[WARNING] Could not parse database URL for validation');
     }
-
-    // 테스트 환경 변수 강제 설정
-    process.env.NODE_ENV = 'test';
     
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [

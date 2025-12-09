@@ -71,27 +71,20 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
     e.stopPropagation();
     e.preventDefault();
     
-    console.log('북마크 버튼 클릭됨', { noteId: note.id, user, isTogglingBookmark });
-    
     if (!user) {
       toast.error('로그인이 필요합니다.');
       return;
     }
 
     if (isTogglingBookmark) {
-      console.log('이미 북마크 처리 중...');
       return;
     }
 
     try {
-      console.log('북마크 API 호출 시작', note.id);
       setIsTogglingBookmark(true);
       const result = await notesApi.toggleBookmark(note.id);
-      console.log('북마크 API 호출 성공', result, 'bookmarked:', result.bookmarked);
       setIsBookmarked(result.bookmarked);
-      console.log('북마크 상태 업데이트:', result.bookmarked);
     } catch (error: any) {
-      console.error('북마크 API 호출 실패', error);
       logger.error('Failed to toggle bookmark:', error);
       toast.error('북마크 처리에 실패했습니다.');
     } finally {

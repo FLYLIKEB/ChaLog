@@ -50,10 +50,11 @@ export function UserProfile() {
         setUser(userData as User);
         const notesArray = Array.isArray(notesData) ? notesData : [];
         setNotes(notesArray as Note[]);
-      } catch (error: any) {
+      } catch (error: unknown) {
         logger.error('Failed to fetch user profile:', error);
         
-        if (error?.statusCode === 404) {
+        const statusCode = (error as { statusCode?: number })?.statusCode;
+        if (statusCode === 404) {
           toast.error('사용자를 찾을 수 없습니다.');
         } else {
           toast.error('사용자를 불러오는데 실패했습니다.');
@@ -87,13 +88,15 @@ export function UserProfile() {
   }, [notes]);
 
   // 정렬 조건 적용
-  const sortedNotes = [...notes].sort((a, b) => {
-    if (sort === 'latest') {
-      return b.createdAt.getTime() - a.createdAt.getTime();
-    } else {
-      return b.rating - a.rating;
-    }
-  });
+  const sortedNotes = useMemo(() => {
+    return [...notes].sort((a, b) => {
+      if (sort === 'latest') {
+        return b.createdAt.getTime() - a.createdAt.getTime();
+      } else {
+        return b.rating - a.rating;
+      }
+    });
+  }, [notes, sort]);
 
   if (isLoading) {
     return (
@@ -132,7 +135,7 @@ export function UserProfile() {
         </Card>
 
         {/* 통계 카드 섹션 */}
-        <div className="grid grid-cols-3 gap-4 md:grid-cols-1">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <StatCard
             icon={Star}
             value={stats.averageRating}

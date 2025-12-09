@@ -44,8 +44,9 @@ export function getAvatarGradient(name: string): { from: string; to: string } {
 /**
  * 사용자 이름을 기반으로 텍스트 색상을 반환
  * 그라데이션 배경에 잘 보이도록 항상 흰색 반환
+ * 향후 그라데이션 밝기에 따른 동적 색상 지원 가능
  */
-export function getAvatarTextColor(name: string): string {
+export function getAvatarTextColor(_name?: string): string {
   return 'text-white';
 }
 

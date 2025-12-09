@@ -22,11 +22,17 @@
 ### Test Isolation Requirements
 - Each test group must clean up data in `beforeEach` or `afterEach`
 - Use `cleanupDatabase()` helper function for consistent cleanup order
-- Cleanup order: child tables first (note_bookmarks, note_likes, note_tags) → parent tables (notes, teas, users)
+- Cleanup order (used by `cleanupDatabase()`): child tables first → parent tables
+  - `note_bookmarks` → `note_likes` → `note_tags` → `tags` → `notes` → `teas` → `user_authentications` → `users`
+- Note: Individual test groups may perform more granular cleanup in their `beforeEach` handlers
 - Disable foreign key checks during cleanup: `SET FOREIGN_KEY_CHECKS = 0`
 
 ### Before Writing Tests
 - Ensure test database exists and has all required tables
 - Verify `.env.test` file is configured correctly
 - Check that test DB name contains `test` or `_test`
+
+### Import Rules
+- Always use default import for `supertest`: `import request from 'supertest'`
+- Never use namespace import: `import * as request from 'supertest'` (causes TypeScript call signature errors)
 

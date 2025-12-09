@@ -14,11 +14,12 @@ const sizeClasses = {
 };
 
 export function UserAvatar({ name, size = "md", className, ...props }: UserAvatarProps) {
-  const userInitial = name.charAt(0).toUpperCase();
+  const userInitial = (name.charAt(0) || '?').toUpperCase();
   const sizeClass = sizeClasses[size];
 
   return (
     <div
+      data-slot="avatar"
       className={cn(
         "rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold shadow-sm",
         sizeClass,
