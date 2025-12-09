@@ -129,6 +129,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                   src={url}
                   alt={`업로드된 이미지 ${index + 1}`}
                   className="w-full h-full object-cover"
+                  loading="lazy"
                 />
               </div>
               {/* 삭제 버튼 - 이미지 밑에 빨간색으로 배치 */}

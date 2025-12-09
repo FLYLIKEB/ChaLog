@@ -56,7 +56,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
                 isActive && 'rounded-full bg-accent flex items-center justify-center',
               )}
             />
-            <span className="text-xs">{item.label}</span>
+            <span className="text-xs sm:text-xs font-medium">{item.label}</span>
           </button>
         );
       })}

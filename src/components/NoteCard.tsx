@@ -1,4 +1,4 @@
-import React, { type FC, useState } from 'react';
+import React, { type FC, useState, memo } from 'react';
 import { Star, Lock, Heart, Bookmark } from 'lucide-react';
 import { Note } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,7 @@ interface NoteCardProps {
   showTeaName?: boolean;
 }
 
-export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
+const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const hasImage = note.images && note.images.length > 0;
@@ -125,17 +125,17 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
               <p className="text-sm text-muted-foreground line-clamp-2">{note.memo}</p>
             )}
             {note.tags && note.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-1.5 mt-2">
                 {note.tags.slice(0, 3).map((tag, index) => (
                   <span
                     key={index}
-                    className="text-xs px-2 py-0.5 bg-muted text-foreground rounded-full"
+                    className="text-xs sm:text-sm px-2.5 py-1 bg-muted text-foreground rounded-full font-medium"
                   >
                     {tag}
                   </span>
                 ))}
                 {note.tags.length > 3 && (
-                  <span className="text-xs px-2 py-0.5 text-muted-foreground">
+                  <span className="text-xs sm:text-sm px-2.5 py-1 text-muted-foreground font-medium">
                     +{note.tags.length - 3}
                   </span>
                 )}
@@ -224,3 +224,5 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
     </Card>
   );
 };
+
+export const NoteCard = memo(NoteCardComponent);

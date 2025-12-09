@@ -38,6 +38,7 @@ export function NewNote() {
   const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const teaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // 초기 로드 시 모든 차 목록 가져오기
@@ -190,6 +191,7 @@ export function NewNote() {
         <section className="bg-white rounded-lg p-4">
           <Label className="mb-2 block">차 선택</Label>
           <Input
+            ref={teaInputRef}
             type="text"
             placeholder="차 이름으로 검색..."
             value={searchQuery}
@@ -200,7 +202,14 @@ export function NewNote() {
           />
           
           {searchQuery && !selectedTea && filteredTeas.length > 0 && (
-            <div className="mt-2 border rounded-lg divide-y max-h-48 overflow-y-auto">
+            <div
+              className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-white border rounded-lg shadow-lg divide-y max-h-48 overflow-y-auto"
+              style={{
+                top: `${teaInputRef.current ? teaInputRef.current.getBoundingClientRect().bottom + 8 : 0}px`,
+                left: '50%',
+                transform: 'translateX(-50%)',
+              }}
+            >
               {filteredTeas.map(tea => (
                 <button
                   key={tea.id}
@@ -208,7 +217,7 @@ export function NewNote() {
                     setSelectedTea(tea.id);
                     setSearchQuery(tea.name);
                   }}
-                  className="w-full text-left p-3 hover:bg-gray-50 transition-colors"
+                  className="w-full text-left p-3 hover:bg-gray-50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
                   <p className="text-xs text-gray-500 mt-1">
