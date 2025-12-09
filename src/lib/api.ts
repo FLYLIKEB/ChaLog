@@ -579,7 +579,33 @@ class ApiClient {
       }
 
       logger.debug(`[API Request ${requestId}] 응답 본문 파싱 시작`);
-      const data = await response.json();
+      let data: any;
+      try {
+        const responseText = await response.text();
+        if (!responseText || responseText.trim() === '') {
+          logger.warn(`[API Request ${requestId}] 응답 본문이 비어있음`);
+          data = null;
+        } else {
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            logger.error(`[API Request ${requestId}] JSON 파싱 실패`, {
+              parseError,
+              responseText: responseText.substring(0, 500),
+              contentType: response.headers.get('content-type'),
+            });
+            throw new Error(`응답을 파싱할 수 없습니다: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+          }
+        }
+      } catch (textError) {
+        logger.error(`[API Request ${requestId}] 응답 본문 읽기 실패`, {
+          textError,
+          errorName: textError instanceof Error ? textError.name : 'Unknown',
+          errorMessage: textError instanceof Error ? textError.message : String(textError),
+        });
+        throw new Error(`응답을 읽을 수 없습니다: ${textError instanceof Error ? textError.message : String(textError)}`);
+      }
+      
       logger.debug(`[API Request ${requestId}] 응답 본문 파싱 완료`, {
         dataKeys: typeof data === 'object' && data !== null ? Object.keys(data) : 'not an object',
         isArray: Array.isArray(data),
