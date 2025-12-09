@@ -48,9 +48,13 @@ const mockUser = {
   email: 'test@example.com',
 };
 
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: vi.fn(),
-}));
+vi.mock('../../contexts/AuthContext', async () => {
+  const actual = await vi.importActual<typeof import('../../contexts/AuthContext')>('../../contexts/AuthContext');
+  return {
+    ...actual,
+    useAuth: vi.fn(),
+  };
+});
 
 vi.mock('../../lib/api', () => ({
   notesApi: {
@@ -68,10 +72,13 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+const mockToastError = vi.fn();
+const mockToastSuccess = vi.fn();
+
 vi.mock('sonner', () => ({
   toast: {
-    error: vi.fn(),
-    success: vi.fn(),
+    error: (...args: any[]) => mockToastError(...args),
+    success: (...args: any[]) => mockToastSuccess(...args),
   },
 }));
 
@@ -82,9 +89,11 @@ describe('Saved 페이지', () => {
       user: mockUser,
       isAuthenticated: true,
       isLoading: false,
+      token: 'mock-token',
       login: vi.fn(),
+      register: vi.fn(),
+      loginWithKakao: vi.fn(),
       logout: vi.fn(),
-      refreshUser: vi.fn(),
     });
     vi.mocked(notesApi.getAll).mockResolvedValue(mockBookmarkedNotes);
   });
@@ -99,9 +108,11 @@ describe('Saved 페이지', () => {
       user: null,
       isAuthenticated: false,
       isLoading: false,
+      token: null,
       login: vi.fn(),
+      register: vi.fn(),
+      loginWithKakao: vi.fn(),
       logout: vi.fn(),
-      refreshUser: vi.fn(),
     });
 
     renderWithRouter(<Saved />, { route: '/saved' });
@@ -144,14 +155,24 @@ describe('Saved 페이지', () => {
   });
 
   it('API 에러 시 에러 메시지를 표시한다', async () => {
-    const mockToast = require('sonner').toast;
+    mockToastError.mockClear();
     vi.mocked(notesApi.getAll).mockRejectedValue(new Error('API Error'));
 
     renderWithRouter(<Saved />, { route: '/saved' });
 
+    // 로딩이 완료될 때까지 대기
     await waitFor(() => {
-      expect(mockToast.error).toHaveBeenCalledWith('저장한 노트를 불러오는데 실패했습니다.');
-    }, { timeout: 5000 });
+      expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
+    }, { timeout: 3000 });
+
+    // 에러 후 빈 상태가 표시됨
+    await waitFor(() => {
+      expect(screen.getByText('아직 저장한 노트가 없습니다.')).toBeInTheDocument();
+    });
+
+    // toast가 호출되었는지 확인 (비동기 처리 완료 후)
+    await new Promise(resolve => setTimeout(resolve, 100));
+    expect(mockToastError).toHaveBeenCalledWith('저장한 노트를 불러오는데 실패했습니다.');
   });
 
   it('인증 로딩 중에는 로딩 스피너를 표시한다', () => {
@@ -159,9 +180,11 @@ describe('Saved 페이지', () => {
       user: null,
       isAuthenticated: false,
       isLoading: true,
+      token: null,
       login: vi.fn(),
+      register: vi.fn(),
+      loginWithKakao: vi.fn(),
       logout: vi.fn(),
-      refreshUser: vi.fn(),
     });
 
     renderWithRouter(<Saved />, { route: '/saved' });
