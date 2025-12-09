@@ -30,18 +30,28 @@ const DEFAULT_FLOATING_ACTION_CONFIG: FloatingActionRouteConfig = {
 
 const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = {
   '/my-notes': { position: 'aboveNav' },
+  '/note/new': { hidden: true },
+  '/note/:id/edit': { hidden: true },
+  '/tea/new': { hidden: true },
 };
 
 function FloatingActionButtonSwitcher() {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // 동적 라우트 처리
+  const shouldHide = 
+    location.pathname === '/note/new' ||
+    location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
+    location.pathname === '/tea/new';
+  
   const override = floatingActionRouteOverrides[location.pathname];
   const config = {
     ...DEFAULT_FLOATING_ACTION_CONFIG,
     ...override,
   };
 
-  if (config.hidden) {
+  if (config.hidden || shouldHide) {
     return null;
   }
 

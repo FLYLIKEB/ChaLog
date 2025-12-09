@@ -142,11 +142,6 @@ export function NewNote() {
       return;
     }
 
-    if (!memo.trim()) {
-      toast.error('메모를 작성해주세요.');
-      return;
-    }
-
     try {
       setIsSaving(true);
       

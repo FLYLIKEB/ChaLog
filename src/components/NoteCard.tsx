@@ -178,7 +178,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
                   className={cn(
-                    "flex items-center gap-1 transition-colors disabled:opacity-50",
+                    "min-h-[44px] min-w-[44px] flex items-center justify-center gap-1 transition-colors disabled:opacity-50",
                     isLiked 
                       ? 'text-primary hover:text-primary/80' 
                       : 'text-muted-foreground hover:text-primary'
@@ -187,7 +187,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                 >
                   <Heart
                     className={cn(
-                      "w-4 h-4 transition-all",
+                      "w-5 h-5 transition-all",
                       isLiked 
                         ? 'fill-primary text-primary stroke-primary' 
                         : 'fill-none text-muted-foreground stroke-muted-foreground'
@@ -200,7 +200,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
                   className={cn(
-                    "flex items-center gap-1 transition-colors disabled:opacity-50",
+                    "min-h-[44px] min-w-[44px] flex items-center justify-center gap-1 transition-colors disabled:opacity-50",
                     isBookmarked 
                       ? 'text-primary hover:text-primary/80' 
                       : 'text-muted-foreground hover:text-primary'
@@ -209,7 +209,7 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                 >
                   <Bookmark
                     className={cn(
-                      "w-4 h-4 transition-all",
+                      "w-5 h-5 transition-all",
                       isBookmarked 
                         ? 'fill-primary text-primary stroke-primary' 
                         : 'fill-none text-muted-foreground stroke-muted-foreground'

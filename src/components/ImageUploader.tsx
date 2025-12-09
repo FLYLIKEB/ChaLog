@@ -121,7 +121,7 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
 
       {/* 이미지 미리보기 그리드 */}
       {images.length > 0 && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {images.map((url, index) => (
             <div key={`image-${index}-${url}`} className="space-y-2">
               <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">

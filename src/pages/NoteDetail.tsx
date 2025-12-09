@@ -248,7 +248,7 @@ export function NoteDetail() {
                   type="button"
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                  className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
                     isLiked 
                       ? 'text-primary hover:bg-primary/10' 
                       : 'text-muted-foreground hover:bg-accent'
@@ -268,7 +268,7 @@ export function NoteDetail() {
                   type="button"
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                  className={`min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
                     isBookmarked 
                       ? 'text-primary hover:bg-primary/10' 
                       : 'text-muted-foreground hover:bg-accent'
@@ -307,7 +307,7 @@ export function NoteDetail() {
         {note.images && note.images.length > 0 && (
           <section className="bg-card rounded-lg p-4">
             <h3 className="mb-3 text-primary">사진</h3>
-            <div className="grid grid-cols-2 gap-3 justify-items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center">
               {note.images.map((imageUrl, index) => (
                 <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full max-w-xs">
                   <ImageWithFallback

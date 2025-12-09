@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -17,6 +18,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -27,12 +29,38 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
       !tags.includes(tag)
   );
 
+  // 드롭다운 위치 계산
+  useEffect(() => {
+    const updatePosition = () => {
+      if (inputRef.current && showSuggestions) {
+        const rect = inputRef.current.getBoundingClientRect();
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX,
+          width: rect.width,
+        });
+      }
+    };
+
+    if (showSuggestions) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+    }
+
+    return () => {
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [showSuggestions]);
+
   // 외부 클릭 시 추천 목록 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
+        !containerRef.current.contains(event.target as Node) &&
+        !(event.target as Element).closest('[data-tag-suggestions]')
       ) {
         setShowSuggestions(false);
       }
@@ -185,9 +213,17 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
           disabled={tags.length >= maxTags}
         />
 
-        {/* 추천 태그 목록 */}
-        {showSuggestions && filteredSuggestions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+        {/* 추천 태그 목록 - Portal 사용하여 키보드 위에 표시 */}
+        {showSuggestions && filteredSuggestions.length > 0 && typeof document !== 'undefined' && createPortal(
+          <div
+            data-tag-suggestions
+            className="fixed z-50 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto"
+            style={{
+              top: `${dropdownPosition.top}px`,
+              left: `${dropdownPosition.left}px`,
+              width: `${dropdownPosition.width}px`,
+            }}
+          >
             <div className="p-2">
               <p className="text-xs text-gray-500 mb-2 px-2">추천 태그</p>
               <div className="flex flex-wrap gap-2">
@@ -197,16 +233,17 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-auto py-1 px-2 text-xs"
+                    className="min-h-[44px] h-auto py-2 px-3 text-xs"
                     onClick={() => handleSuggestionClick(tag)}
                   >
-                    <Plus className="w-3 h-3 mr-1" />
+                    <Plus className="w-4 h-4 mr-1" />
                     {tag}
                   </Button>
                 ))}
               </div>
             </div>
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 

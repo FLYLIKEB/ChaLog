@@ -81,7 +81,7 @@ export function TeaDetail() {
         <section className="bg-white rounded-lg p-4 space-y-3">
           <h1>{tea.name}</h1>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p className="text-xs text-gray-500 mb-1">종류</p>
               <p className="text-sm">{tea.type}</p>

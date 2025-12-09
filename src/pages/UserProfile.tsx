@@ -160,10 +160,10 @@ export function UserProfile() {
                 <Button
                   onClick={() => setIsEditModalOpen(true)}
                   size="icon"
-                  className="absolute bottom-0 right-0 rounded-full w-7 h-7 bg-primary hover:bg-primary/90 shadow-md border-2 border-background"
+                  className="absolute bottom-0 right-0 rounded-full min-w-[44px] min-h-[44px] w-11 h-11 bg-primary hover:bg-primary/90 shadow-md border-2 border-background"
                   aria-label="프로필 사진 수정"
                 >
-                  <Camera className="w-3.5 h-3.5" />
+                  <Camera className="w-5 h-5" />
                 </Button>
               )}
             </div>

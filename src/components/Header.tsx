@@ -13,12 +13,12 @@ export function Header({ title, showBack, showProfile }: HeaderProps) {
   const { isAuthenticated } = useAuth();
 
   return (
-    <header className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
+    <header className="sticky top-0 z-10 bg-card border-b border-border px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between">
       <div className="flex items-center gap-3">
         {showBack && (
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-accent rounded-full transition-colors"
+            className="min-h-[44px] min-w-[44px] p-2 hover:bg-accent rounded-full transition-colors flex items-center justify-center"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -34,7 +34,7 @@ export function Header({ title, showBack, showProfile }: HeaderProps) {
       {showProfile && (
         <button
           onClick={() => navigate(isAuthenticated ? '/settings' : '/login')}
-          className="p-2 hover:bg-accent rounded-full transition-colors"
+          className="min-h-[44px] min-w-[44px] p-2 hover:bg-accent rounded-full transition-colors flex items-center justify-center"
         >
           <User className="w-5 h-5" />
         </button>

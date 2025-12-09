@@ -29,7 +29,9 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 flex items-center justify-around',
+        'fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3',
+        'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
+        'flex items-center justify-around',
         className,
       )}
       {...rest}
@@ -44,7 +46,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
             key={item.path}
             onClick={() => handleNavigate(item.path)}
             className={cn(
-              'flex flex-col items-center gap-1 transition-colors',
+              'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors',
               isActive ? 'text-primary' : 'text-muted-foreground',
             )}
           >
