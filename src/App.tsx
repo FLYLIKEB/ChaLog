@@ -70,7 +70,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="max-w-2xl mx-auto bg-white min-h-screen">
+        <div className="max-w-2xl mx-auto bg-white min-h-screen px-4 sm:px-6">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/preview_page.html" element={<Navigate to="/" replace />} />

@@ -51,7 +51,7 @@ export function Login() {
     <div className="min-h-screen bg-gray-50">
       <Header showBack title="로그인" />
       
-      <div className="p-4 max-w-md mx-auto">
+      <div className="p-4 sm:max-w-md sm:mx-auto">
         <div className="bg-white rounded-lg p-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold mb-2">로그인</h1>

@@ -59,7 +59,7 @@ export function Home() {
     <div className="min-h-screen bg-background pb-20">
       <Header showProfile />
       
-      <div className="p-6 space-y-6">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         {/* 오늘의 차 섹션 */}
         <Section title="오늘의 차" spacing="lg">
           {todayTea ? (

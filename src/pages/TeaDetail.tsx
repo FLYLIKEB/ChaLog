@@ -109,9 +109,9 @@ export function TeaDetail() {
 
         {/* 평점 요약 */}
         <section className="bg-white rounded-lg p-4">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="text-center">
-              <div className="flex items-center gap-2 mb-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+            <div className="text-center sm:text-left">
+              <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
                 <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
                 <span className="text-2xl">{Number(tea.averageRating).toFixed(1)}</span>
               </div>

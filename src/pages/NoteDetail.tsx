@@ -345,11 +345,11 @@ export function NoteDetail() {
 
         {/* 내 노트일 때만 노출되는 액션 */}
         {isMyNote && (
-          <section className="flex gap-3">
+          <section className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
               onClick={() => navigate(`/note/${noteId}/edit`)}
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
             >
               <Edit className="w-4 h-4 mr-2" />
               수정
@@ -357,7 +357,7 @@ export function NoteDetail() {
             <Button
               variant="outline"
               onClick={handleTogglePublic}
-              className="flex-1"
+              className="flex-1 min-h-[44px]"
               disabled={isUpdating}
             >
               {isUpdating ? (
@@ -369,9 +369,9 @@ export function NoteDetail() {
             <Button
               variant="outline"
               onClick={() => setShowDeleteDialog(true)}
-              className="px-4"
+              className="min-h-[44px] min-w-[44px] px-4"
             >
-              <Trash2 className="w-4 h-4 text-red-600" />
+              <Trash2 className="w-5 h-5 text-red-600" />
             </Button>
           </section>
         )}
