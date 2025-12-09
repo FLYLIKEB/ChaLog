@@ -948,11 +948,12 @@ export const teasApi = {
 export const notesApi = {
   getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number) => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean) => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
     if (teaId !== undefined) params.append('teaId', String(teaId));
+    if (bookmarked !== undefined) params.append('bookmarked', String(bookmarked));
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },

@@ -87,8 +87,58 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number): Promise<any[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean): Promise<any[]> {
     try {
+      // 북마크 필터가 활성화된 경우, 북마크한 노트만 조회
+      if (bookmarked) {
+        if (!currentUserId) {
+          throw new BadRequestException('북마크한 노트를 조회하려면 로그인이 필요합니다.');
+        }
+        
+        // 북마크한 노트 ID 및 북마크한 날짜 조회 (북마크한 날짜 기준 최신순)
+        const bookmarkedNotes = await this.noteBookmarksRepository
+          .createQueryBuilder('bookmark')
+          .select('bookmark.noteId', 'noteId')
+          .addSelect('bookmark.createdAt', 'createdAt')
+          .where('bookmark.userId = :userId', { userId: currentUserId })
+          .orderBy('bookmark.createdAt', 'DESC')
+          .getRawMany();
+        
+        const bookmarkedNoteIds = bookmarkedNotes.map(b => b.noteId);
+        
+        if (bookmarkedNoteIds.length === 0) {
+          return [];
+        }
+        
+        // 북마크한 노트만 조회
+        const queryBuilder = this.notesRepository
+          .createQueryBuilder('note')
+          .leftJoinAndSelect('note.user', 'user')
+          .leftJoinAndSelect('note.tea', 'tea')
+          .leftJoinAndSelect('note.schema', 'schema')
+          .leftJoinAndSelect('note.noteTags', 'noteTags')
+          .leftJoinAndSelect('noteTags.tag', 'tag')
+          .leftJoinAndSelect('note.axisValues', 'axisValues')
+          .leftJoinAndSelect('axisValues.axis', 'axis')
+          .where('note.id IN (:...noteIds)', { noteIds: bookmarkedNoteIds });
+        
+        const notes = await queryBuilder.getMany();
+        
+        // 북마크한 날짜 기준으로 정렬 (북마크 테이블의 createdAt 기준)
+        const bookmarkMap = new Map(
+          bookmarkedNotes.map(b => [b.noteId, new Date(b.createdAt).getTime()])
+        );
+        const sortedNotes = notes.sort((a, b) => {
+          const bookmarkTimeA = bookmarkMap.get(a.id) || 0;
+          const bookmarkTimeB = bookmarkMap.get(b.id) || 0;
+          return bookmarkTimeB - bookmarkTimeA; // 최신순 (큰 값이 먼저)
+        });
+        
+        // 좋아요 및 북마크 정보 추가
+        return await this.enrichNotesWithLikesAndBookmarks(sortedNotes, currentUserId);
+      }
+      
+      // 기존 로직 (북마크 필터 없음)
       const queryBuilder = this.notesRepository
         .createQueryBuilder('note')
         .leftJoinAndSelect('note.user', 'user')
