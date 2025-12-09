@@ -113,7 +113,7 @@ export class NotesController {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
     const userIdNum = userId ? parseInt(userId, 10) : undefined;
     const teaIdNum = teaId ? parseInt(teaId, 10) : undefined;
-    const bookmarkedFilter = bookmarked === 'true' ? true : undefined;
+    const bookmarkedFilter = bookmarked === 'true' ? true : bookmarked === 'false' ? false : undefined;
     
     let currentUserId: number | undefined;
     if (req?.user?.userId) {
