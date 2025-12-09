@@ -310,44 +310,56 @@ EOF
       log "   파일: $file_path:$line"
       log "   작성자: $author"
       log "   내용:"
-      echo "$comment" | sed 's/^/   > /'
+      echo "$comment" | sed 's/^/   > /' | head -20
       log ""
       
-      # 현재 상태 저장 (변경사항 감지용)
-      local initial_status=$(git status --porcelain)
+      # 리뷰 내용을 임시 파일에 저장 (AI가 읽을 수 있도록)
+      local review_file="/tmp/coderabbit_review_${thread_id}.txt"
+      cat > "$review_file" <<EOF
+코드래빗 리뷰:
+파일: $file_path:$line
+리뷰 ID: $thread_id
+
+$comment
+EOF
       
-      # 사용자에게 수정 요청 및 파일 변경 감지
-      log "이 리뷰를 반영하려면 코드를 수정하세요."
-      log "또는 AI 도구를 사용하여 '이 리뷰 반영해줘'라고 요청하세요."
-      log "파일 변경을 감지하면 자동으로 커밋됩니다..."
+      log "🤖 AI에게 리뷰 반영을 요청합니다..."
+      log "   리뷰 내용이 $review_file 에 저장되었습니다."
+      log ""
+      log "   다음 명령을 실행하거나 AI에게 요청하세요:"
+      log "   \"$file_path 파일의 $line 라인 근처 코드래빗 리뷰를 반영해줘\""
+      log "   또는: \"$review_file 파일의 리뷰를 반영해줘\""
+      log ""
+      log "   리뷰 반영 후 Enter를 누르면 자동으로 커밋됩니다..."
+      log "   (또는 's'를 입력하여 건너뛰기)"
       
-      # 파일 변경 감지 (최대 5분 대기)
-      local max_wait=300  # 5분
-      local wait_interval=2  # 2초마다 확인
-      local waited=0
+      # 짧은 대기 시간 (사용자가 AI에게 요청할 시간)
+      read -t 10 -p "리뷰 반영 완료 후 Enter (10초 후 자동 진행): " -r || true
+      
+      if [[ $REPLY =~ ^[Ss]$ ]]; then
+        log "⏭️  이 리뷰를 건너뜁니다."
+        rm -f "$review_file"
+        continue
+      fi
+      
+      # 변경사항 확인 (짧은 대기)
+      local max_checks=5
+      local check_count=0
       local has_changes=false
       
-      while [ $waited -lt $max_wait ]; do
-        local current_status=$(git status --porcelain)
-        
-        # 변경사항이 있으면 루프 종료
-        if [ "$initial_status" != "$current_status" ]; then
+      while [ $check_count -lt $max_checks ]; do
+        if ! git diff --quiet || ! git diff --cached --quiet; then
           has_changes=true
           break
         fi
-        
-        sleep $wait_interval
-        waited=$((waited + wait_interval))
-        
-        # 10초마다 진행 상황 표시
-        if [ $((waited % 10)) -eq 0 ]; then
-          log "   대기 중... (${waited}초 경과, 최대 ${max_wait}초)"
-        fi
+        sleep 1
+        check_count=$((check_count + 1))
       done
       
       # 변경사항 확인
       if [ "$has_changes" != "true" ] && (git diff --quiet && git diff --cached --quiet); then
         log "⚠️  변경사항이 없습니다. 이 리뷰를 건너뜁니다."
+        rm -f "$review_file"
         continue
       fi
       
