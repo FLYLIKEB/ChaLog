@@ -61,13 +61,13 @@ export function EditNote() {
   useEffect(() => {
     const fetchSchema = async () => {
       try {
-        const schemas = await notesApi.getActiveSchemas();
+        const schemas = await notesApi.getActiveSchemas() as RatingSchema[];
         if (schemas && schemas.length > 0) {
           const firstSchema = schemas[0];
           setSchema(firstSchema);
           
           // 스키마의 축 정보 가져오기
-          const axesData = await notesApi.getSchemaAxes(firstSchema.id);
+          const axesData = (await notesApi.getSchemaAxes(firstSchema.id)) as RatingAxis[];
           setAxes(axesData);
         }
       } catch (error) {
@@ -142,7 +142,7 @@ export function EditNote() {
           
           // 축 정보 가져오기
           try {
-            const axesData = await notesApi.getSchemaAxes(normalizedNote.schema.id);
+            const axesData = (await notesApi.getSchemaAxes(normalizedNote.schema.id)) as RatingAxis[];
             setAxes(axesData);
             
             // axisValues 설정
@@ -195,6 +195,24 @@ export function EditNote() {
     }
   }, [noteId, isAuthenticated, user, navigate]);
 
+  // axisValues 변경 시 overallRating 자동 재계산
+  useEffect(() => {
+    if (axes.length === 0 || Object.keys(axisValues).length === 0) {
+      return;
+    }
+
+    const values = axes
+      .filter(axis => axisValues[axis.id] !== undefined)
+      .map(axis => axisValues[axis.id]);
+
+    if (values.length > 0) {
+      const calculatedRating = values.reduce((sum, val) => sum + val, 0) / values.length;
+      setOverallRating(calculatedRating);
+    } else {
+      setOverallRating(null);
+    }
+  }, [axisValues, axes]);
+
   // 검색 필터링
   const filteredTeas = teas.filter(tea => {
     const query = searchQuery.toLowerCase();
@@ -240,7 +258,7 @@ export function EditNote() {
           value: Math.max(RATING_MIN, Math.min(RATING_MAX, axisValues[axis.id])),
         }));
 
-      // overallRating 계산 (축 값들의 평균)
+      // overallRating 계산 (축 값들의 평균) - 항상 현재 axisValues에서 재계산
       const values = axisValuesArray.map(av => av.value);
       const calculatedOverallRating = values.length > 0
         ? values.reduce((sum, val) => sum + val, 0) / values.length
@@ -249,7 +267,7 @@ export function EditNote() {
       await notesApi.update(noteId, {
         teaId: selectedTea,
         schemaId: schema.id,
-        overallRating: overallRating !== null ? overallRating : calculatedOverallRating,
+        overallRating: calculatedOverallRating,
         isRatingIncluded: true,
         axisValues: axisValuesArray,
         memo: memo.trim() || null,
