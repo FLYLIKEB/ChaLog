@@ -6,8 +6,18 @@
     "node": ">=20"
   },
   "overrides": {
-    "glob": "^10.0.0",
-    "inflight": "npm:@isaacs/inflight@^1.0.6"
+    "glob": "^10.5.0",
+    "inflight": "npm:@isaacs/inflight@^1.0.6",
+    "test-exclude": {
+      "glob": "^10.5.0",
+      "inflight": "npm:@isaacs/inflight@^1.0.6"
+    },
+    "babel-plugin-istanbul": {
+      "test-exclude": {
+        "glob": "^10.5.0",
+        "inflight": "npm:@isaacs/inflight@^1.0.6"
+      }
+    }
   },
   "scripts": {
     "build": "nest build",
@@ -67,7 +77,7 @@
     "dotenv": "^16.4.5",
     "jest": "^30.2.0",
     "supertest": "^7.1.4",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
