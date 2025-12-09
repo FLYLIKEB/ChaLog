@@ -38,6 +38,18 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+vi.mock('../../components/ui/UserAvatar', () => ({
+  UserAvatar: ({ name, profileImageUrl }: { name: string; profileImageUrl?: string | null }) => (
+    <div data-slot="avatar" data-testid="user-avatar">
+      {profileImageUrl ? (
+        <img src={profileImageUrl} alt={name} />
+      ) : (
+        <span>{name.charAt(0).toUpperCase()}</span>
+      )}
+    </div>
+  ),
+}));
+
 const mockUser: User = {
   id: 2,
   name: '프로필 사용자',
@@ -250,13 +262,14 @@ describe('UserProfile', () => {
 
     await waitFor(() => {
       // UserAvatar 컴포넌트가 렌더링되어야 함
-      const avatar = screen.getByText('프').closest('[data-slot="avatar"]');
+      const avatar = screen.getByTestId('user-avatar');
       expect(avatar).toBeInTheDocument();
-      // 이미지가 있을 수 있지만 테스트 환경에서는 로드되지 않을 수 있음
-      const image = screen.queryByAltText('프로필 사용자');
-      if (image) {
-        expect(image).toHaveAttribute('src', 'https://example.com/profile.jpg');
-      }
+    });
+
+    // 프로필 이미지가 있는 경우 이미지 요소가 렌더링되어야 함
+    await waitFor(() => {
+      const image = screen.getByAltText('프로필 사용자');
+      expect(image).toHaveAttribute('src', 'https://example.com/profile.jpg');
     });
   });
 

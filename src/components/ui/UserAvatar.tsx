@@ -20,6 +20,11 @@ export function UserAvatar({ name, profileImageUrl, size = "md", className, ...p
   const sizeClass = sizeClasses[size];
   const [imageError, setImageError] = React.useState(false);
 
+  // profileImageUrl이 변경되면 에러 상태 리셋
+  React.useEffect(() => {
+    setImageError(false);
+  }, [profileImageUrl]);
+
   const handleImageError = () => {
     setImageError(true);
   };
