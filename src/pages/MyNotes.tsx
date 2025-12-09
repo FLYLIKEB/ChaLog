@@ -71,15 +71,15 @@ export function MyNotes() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="min-h-screen bg-background pb-20">
         <Header title="내 노트" />
         <div className="p-4">
           <EmptyState type="notes" message="로그인이 필요합니다." />
@@ -90,7 +90,7 @@ export function MyNotes() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <Header title="내 노트" />
       
       <div className="p-4 space-y-4">

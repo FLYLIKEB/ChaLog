@@ -1081,6 +1081,567 @@ describe('AppController (e2e)', () => {
       expect(response.body).not.toHaveProperty('credential');
       expect(response.body).not.toHaveProperty('authentications');
     });
+
+    it('GET /users/:id - 노트를 작성한 사용자 프로필 조회', async () => {
+      // 테스트용 차 생성
+      const teaResponse = await request(app.getHttpServer())
+        .post('/teas')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: '테스트 차',
+          year: 2023,
+          type: '홍차',
+        })
+        .expect(201);
+      const teaId = teaResponse.body.id;
+
+      // 테스트용 노트 생성
+      await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '테스트 노트',
+          isPublic: true,
+        })
+        .expect(201);
+
+      // 사용자 프로필 조회
+      const response = await request(app.getHttpServer())
+        .get(`/users/${userId}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('name');
+      expect(response.body.id).toBe(userId);
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM notes WHERE userId = ?', [userId]);
+      await dataSource.query('DELETE FROM teas WHERE id = ?', [teaId]);
+    });
+  });
+
+  describe('/notes - 노트 CRUD API', () => {
+    let authToken: string;
+    let userId: number;
+    let teaId: number;
+    let noteId: number;
+
+    beforeAll(async () => {
+      // 테스트용 사용자 등록 및 로그인
+      const uniqueEmail = `notecrud-${Date.now()}@example.com`;
+      const registerResponse = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: uniqueEmail,
+          name: 'Note CRUD Test User',
+          password: 'password123',
+        })
+        .expect(201);
+      authToken = registerResponse.body.access_token;
+
+      // 프로필 조회로 userId 얻기
+      const profileResponse = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(201);
+      userId = profileResponse.body.userId;
+
+      // 테스트용 차 생성
+      const teaResponse = await request(app.getHttpServer())
+        .post('/teas')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: 'CRUD 테스트 차',
+          year: 2023,
+          type: '홍차',
+        })
+        .expect(201);
+      teaId = teaResponse.body.id;
+    });
+
+    beforeEach(async () => {
+      // 테스트 격리를 위해 각 테스트 전에 노트 데이터만 정리
+      await dataSource.query('DELETE FROM notes');
+    });
+
+    afterAll(async () => {
+      // 테스트 종료 후 생성한 데이터 정리
+      try {
+        if (noteId) {
+          await dataSource.query('DELETE FROM notes WHERE id = ?', [noteId]);
+        }
+        if (teaId) {
+          await dataSource.query('DELETE FROM teas WHERE id = ?', [teaId]);
+        }
+        if (userId) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId]);
+        }
+      } catch (error) {
+        console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+      }
+    });
+
+    it('POST /notes - 노트 생성 성공', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: 'CRUD 테스트 노트',
+          isPublic: true,
+        })
+        .expect(201);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.rating).toBe(4.5);
+      expect(response.body.memo).toBe('CRUD 테스트 노트');
+      expect(response.body.isPublic).toBe(true);
+      noteId = response.body.id;
+    });
+
+    it('POST /notes - 인증 없이 노트 생성 실패', () => {
+      return request(app.getHttpServer())
+        .post('/notes')
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+        })
+        .expect(401);
+    });
+
+    it('GET /notes - 노트 목록 조회 (인증 없이)', async () => {
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '공개 노트',
+          isPublic: true,
+        })
+        .expect(201);
+      noteId = createResponse.body.id;
+
+      // 인증 없이 노트 목록 조회
+      const response = await request(app.getHttpServer())
+        .get('/notes?public=true')
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      const note = response.body.find((n: any) => n.id === noteId);
+      expect(note).toBeDefined();
+      expect(note.isPublic).toBe(true);
+    });
+
+    it('GET /notes - userId 필터로 노트 조회', async () => {
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '사용자 필터 테스트',
+          isPublic: true,
+        })
+        .expect(201);
+      noteId = createResponse.body.id;
+
+      // userId로 필터링
+      const response = await request(app.getHttpServer())
+        .get(`/notes?userId=${userId}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      const note = response.body.find((n: any) => n.id === noteId);
+      expect(note).toBeDefined();
+      expect(note.userId).toBe(userId);
+    });
+
+    it('GET /notes - teaId 필터로 노트 조회', async () => {
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '차 필터 테스트',
+          isPublic: true,
+        })
+        .expect(201);
+      noteId = createResponse.body.id;
+
+      // teaId로 필터링
+      const response = await request(app.getHttpServer())
+        .get(`/notes?teaId=${teaId}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      const note = response.body.find((n: any) => n.id === noteId);
+      expect(note).toBeDefined();
+      expect(note.teaId).toBe(teaId);
+    });
+
+    it('PATCH /notes/:id - 노트 수정 성공', async () => {
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '원본 메모',
+          isPublic: true,
+        })
+        .expect(201);
+      noteId = createResponse.body.id;
+
+      // 노트 수정
+      const response = await request(app.getHttpServer())
+        .patch(`/notes/${noteId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          rating: 5.0,
+          memo: '수정된 메모',
+        })
+        .expect(200);
+
+      expect(response.body.rating).toBe(5.0);
+      expect(response.body.memo).toBe('수정된 메모');
+    });
+
+    it('PATCH /notes/:id - 다른 사용자의 노트 수정 실패', async () => {
+      // 다른 사용자 생성
+      const otherEmail = `otheruser-${Date.now()}@example.com`;
+      const otherRegisterResponse = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: otherEmail,
+          name: 'Other User',
+          password: 'password123',
+        })
+        .expect(201);
+      const otherAuthToken = otherRegisterResponse.body.access_token;
+
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '다른 사용자 수정 테스트',
+          isPublic: true,
+        })
+        .expect(201);
+      const testNoteId = createResponse.body.id;
+
+      // 다른 사용자가 수정 시도
+      const response = await request(app.getHttpServer())
+        .patch(`/notes/${testNoteId}`)
+        .set('Authorization', `Bearer ${otherAuthToken}`)
+        .send({
+          memo: '수정 시도',
+        })
+        .expect(403);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.statusCode).toBe(403);
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [testNoteId]);
+      const otherProfileResponse = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${otherAuthToken}`)
+        .expect(201);
+      await dataSource.query('DELETE FROM users WHERE id = ?', [otherProfileResponse.body.userId]);
+    });
+
+    it('DELETE /notes/:id - 노트 삭제 성공', async () => {
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '삭제 테스트 노트',
+          isPublic: true,
+        })
+        .expect(201);
+      const testNoteId = createResponse.body.id;
+
+      // 노트 삭제
+      await request(app.getHttpServer())
+        .delete(`/notes/${testNoteId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      // 삭제 확인
+      await request(app.getHttpServer())
+        .get(`/notes/${testNoteId}`)
+        .expect(404);
+    });
+
+    it('DELETE /notes/:id - 다른 사용자의 노트 삭제 실패', async () => {
+      // 다른 사용자 생성
+      const otherEmail = `otheruser2-${Date.now()}@example.com`;
+      const otherRegisterResponse = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: otherEmail,
+          name: 'Other User 2',
+          password: 'password123',
+        })
+        .expect(201);
+      const otherAuthToken = otherRegisterResponse.body.access_token;
+
+      // 먼저 노트 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/notes')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          teaId: teaId,
+          rating: 4.5,
+          ratings: {
+            richness: 4,
+            strength: 5,
+            smoothness: 4,
+            clarity: 4,
+            complexity: 5,
+          },
+          memo: '다른 사용자 삭제 테스트',
+          isPublic: true,
+        })
+        .expect(201);
+      const testNoteId = createResponse.body.id;
+
+      // 다른 사용자가 삭제 시도
+      const response = await request(app.getHttpServer())
+        .delete(`/notes/${testNoteId}`)
+        .set('Authorization', `Bearer ${otherAuthToken}`)
+        .expect(403);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.statusCode).toBe(403);
+
+      // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [testNoteId]);
+      const otherProfileResponse = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${otherAuthToken}`)
+        .expect(201);
+      await dataSource.query('DELETE FROM users WHERE id = ?', [otherProfileResponse.body.userId]);
+    });
+  });
+
+  describe('/teas - 차 API 추가 테스트', () => {
+    let authToken: string;
+    let userId: number;
+    let teaId: number;
+
+    beforeAll(async () => {
+      // 테스트용 사용자 등록 및 로그인
+      const uniqueEmail = `teatest2-${Date.now()}@example.com`;
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: uniqueEmail,
+          name: 'Tea Test User 2',
+          password: 'password123',
+        });
+
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          email: uniqueEmail,
+          password: 'password123',
+        });
+
+      authToken = loginResponse.body.access_token;
+
+      // userId 얻기
+      const profileResponse = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(201);
+      userId = profileResponse.body.userId;
+    });
+
+    beforeEach(async () => {
+      // 테스트 격리를 위해 각 테스트 전에 teas 및 관련 notes 데이터 정리
+      await dataSource.query('DELETE FROM notes');
+      await dataSource.query('DELETE FROM teas');
+    });
+
+    afterAll(async () => {
+      // 테스트 종료 후 생성한 사용자 데이터 정리
+      try {
+        if (userId) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [userId]);
+        }
+      } catch (error) {
+        console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+      }
+    });
+
+    it('GET /teas/:id - 차 상세 조회 성공', async () => {
+      // 먼저 차 생성
+      const createResponse = await request(app.getHttpServer())
+        .post('/teas')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: '정산소종',
+          year: 2023,
+          type: '홍차',
+          seller: '차향',
+          origin: '중국 푸젠',
+        })
+        .expect(201);
+      teaId = createResponse.body.id;
+
+      // 차 상세 조회
+      const response = await request(app.getHttpServer())
+        .get(`/teas/${teaId}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body.name).toBe('정산소종');
+      expect(response.body.type).toBe('홍차');
+      expect(response.body.year).toBe(2023);
+    });
+
+    it('GET /teas/:id - 존재하지 않는 차 조회 시 404 에러', async () => {
+      const nonExistentTeaId = 999999;
+      const response = await request(app.getHttpServer())
+        .get(`/teas/${nonExistentTeaId}`)
+        .expect(404);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.statusCode).toBe(404);
+    });
+
+    it('GET /teas/:id - 잘못된 차 ID 형식으로 조회 시 400 에러', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/teas/invalid-id')
+        .expect(400);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.statusCode).toBe(400);
+    });
+
+    it('GET /teas?q=검색어 - 차 검색 성공', async () => {
+      // 먼저 차 생성
+      const createResponse1 = await request(app.getHttpServer())
+        .post('/teas')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: '정산소종',
+          year: 2023,
+          type: '홍차',
+        })
+        .expect(201);
+
+      const createResponse2 = await request(app.getHttpServer())
+        .post('/teas')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          name: '다즐링',
+          year: 2022,
+          type: '홍차',
+        })
+        .expect(201);
+
+      // 검색 테스트
+      const response = await request(app.getHttpServer())
+        .get('/teas?q=정산')
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      const foundTea = response.body.find((t: any) => t.name === '정산소종');
+      expect(foundTea).toBeDefined();
+      
+      // 검색어가 포함되지 않은 차는 검색 결과에 없어야 함
+      const notFoundTea = response.body.find((t: any) => t.name === '다즐링');
+      expect(notFoundTea).toBeUndefined();
+    });
+
+    it('GET /teas?q=검색어 - 검색 결과 없음', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/teas?q=존재하지않는차')
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBe(0);
+    });
   });
 });
 

@@ -4,6 +4,7 @@ import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
 import { TeaCard } from '../components/TeaCard';
 import { BottomNav } from '../components/BottomNav';
+import { Section } from '../components/ui/Section';
 import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note } from '../types';
 import { logger } from '../lib/logger';
@@ -48,30 +49,28 @@ export function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <Header showProfile />
       
-      <div className="p-4 space-y-6">
+      <div className="p-6 space-y-6">
         {/* 오늘의 차 섹션 */}
-        <section>
-          <h2 className="mb-3">오늘의 차</h2>
+        <Section title="오늘의 차" spacing="lg">
           {todayTea ? (
             <TeaCard tea={todayTea} />
           ) : (
             <EmptyState type="feed" message="등록된 차가 없습니다." />
           )}
-        </section>
+        </Section>
 
         {/* 공개 노트 섹션 */}
-        <section>
-          <h2 className="mb-3">공개 노트</h2>
+        <Section title="공개 노트" spacing="lg">
           {publicNotes.length > 0 ? (
             <div className="space-y-3">
               {publicNotes.map(note => (
@@ -81,7 +80,7 @@ export function Home() {
           ) : (
             <EmptyState type="feed" message="아직 등록된 노트가 없습니다." />
           )}
-        </section>
+        </Section>
       </div>
 
       <BottomNav />

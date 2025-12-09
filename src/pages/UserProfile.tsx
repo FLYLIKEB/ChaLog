@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
-import { Avatar, AvatarFallback } from '../components/ui/avatar';
 import {
   Select,
   SelectContent,
@@ -15,9 +14,12 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi } from '../lib/api';
 import { User, Note } from '../types';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Star, Heart, FileText } from 'lucide-react';
 import { logger } from '../lib/logger';
-import { getAvatarGradient, getAvatarTextColor } from '../utils/avatar';
+import { UserAvatar } from '../components/ui/UserAvatar';
+import { StatCard } from '../components/ui/StatCard';
+import { Card } from '../components/ui/card';
+import { Section } from '../components/ui/Section';
 
 type SortType = 'latest' | 'rating';
 
@@ -64,6 +66,26 @@ export function UserProfile() {
     fetchData();
   }, [userId]);
 
+  // 통계 계산
+  const stats = useMemo(() => {
+    if (notes.length === 0) {
+      return {
+        averageRating: 0,
+        totalLikes: 0,
+        noteCount: 0,
+      };
+    }
+    
+    const averageRating = notes.reduce((sum, note) => sum + (note.rating || 0), 0) / notes.length;
+    const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
+    
+    return {
+      averageRating: Number(averageRating.toFixed(1)),
+      totalLikes,
+      noteCount: notes.length,
+    };
+  }, [notes]);
+
   // 정렬 조건 적용
   const sortedNotes = [...notes].sort((a, b) => {
     if (sort === 'latest') {
@@ -75,15 +97,15 @@ export function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" role="status" aria-label="로딩 중" />
+      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="min-h-screen bg-background pb-20">
         <Header showBack title="사용자 프로필" />
         <div className="p-4">
           <EmptyState type="notes" message="사용자를 찾을 수 없습니다." />
@@ -93,35 +115,45 @@ export function UserProfile() {
     );
   }
 
-  // 사용자 이름의 첫 글자 추출
-  const userInitial = user.name.charAt(0).toUpperCase();
-  const gradient = getAvatarGradient(user.name);
-  const textColor = getAvatarTextColor(user.name);
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <Header showBack title="사용자 프로필" />
       
-      <div className="p-4 space-y-4">
-        {/* 프로필 정보 섹션 */}
-        <section className="bg-white rounded-lg p-4">
-          <div className="flex items-center gap-4 mb-4">
-            <div 
-              className={`w-20 h-20 rounded-full bg-gradient-to-br ${gradient.from} ${gradient.to} flex items-center justify-center ${textColor} text-2xl font-bold shadow-lg ring-2 ring-white/30`}
-            >
-              {userInitial}
-            </div>
+      <div className="p-6 space-y-6">
+        {/* 프로필 헤더 섹션 */}
+        <Card className="p-6 md:p-8">
+          <div className="flex items-center gap-4 mb-6">
+            <UserAvatar name={user.name} size="xl" />
             <div>
-              <h2 className="text-xl font-semibold">{user.name}</h2>
-              <p className="text-sm text-gray-500">작성한 노트 {notes.length}개</p>
+              <h2 className="text-2xl font-semibold text-primary">{user.name}</h2>
+              <p className="text-sm text-muted-foreground">작성한 노트 {notes.length}개</p>
             </div>
           </div>
-        </section>
+        </Card>
+
+        {/* 통계 카드 섹션 */}
+        <div className="grid grid-cols-3 gap-4 md:grid-cols-1">
+          <StatCard
+            icon={Star}
+            value={stats.averageRating}
+            label="평균 평점"
+          />
+          <StatCard
+            icon={Heart}
+            value={stats.totalLikes.toLocaleString('ko-KR')}
+            label="총 좋아요"
+          />
+          <StatCard
+            icon={FileText}
+            value={stats.noteCount}
+            label="작성한 노트"
+          />
+        </div>
 
         {/* 정렬 드롭다운 */}
         {notes.length > 0 && (
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               총 {sortedNotes.length}개
             </span>
             <Select value={sort} onValueChange={(v) => setSort(v as SortType)}>
@@ -136,16 +168,18 @@ export function UserProfile() {
           </div>
         )}
 
-        {/* 노트 목록 */}
-        {sortedNotes.length > 0 ? (
-          <div className="space-y-3">
-            {sortedNotes.map(note => (
-              <NoteCard key={note.id} note={note} showTeaName />
-            ))}
-          </div>
-        ) : (
-          <EmptyState type="notes" message="아직 작성한 노트가 없습니다." />
-        )}
+        {/* 노트 목록 섹션 */}
+        <Section spacing="lg">
+          {sortedNotes.length > 0 ? (
+            <div className="space-y-3">
+              {sortedNotes.map(note => (
+                <NoteCard key={note.id} note={note} showTeaName />
+              ))}
+            </div>
+          ) : (
+            <EmptyState type="notes" message="아직 작성한 노트가 없습니다." />
+          )}
+        </Section>
       </div>
 
       <BottomNav />

@@ -7,6 +7,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { notesApi } from '../lib/api';
 import { logger } from '../lib/logger';
+import { Card } from './ui/card';
+import { cn } from './ui/utils';
 
 interface NoteCardProps {
   note: Note;
@@ -98,14 +100,15 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
   };
 
   return (
-    <div
+    <Card
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role={canView ? 'button' : undefined}
       tabIndex={canView ? 0 : undefined}
-      className={`w-full text-left p-4 bg-white border rounded-lg transition-shadow ${
-        canView ? 'hover:shadow-md cursor-pointer' : 'opacity-60 cursor-not-allowed'
-      }`}
+      className={cn(
+        "w-full text-left p-4 transition-shadow cursor-pointer",
+        canView ? 'hover:shadow-md' : 'opacity-60 cursor-not-allowed'
+      )}
     >
       <div className="space-y-3">
         {/* 이미지 */}
@@ -123,23 +126,23 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {showTeaName && (
-              <h3 className="truncate mb-1">{note.teaName}</h3>
+              <h3 className="truncate mb-1 text-primary">{note.teaName}</h3>
             )}
             {note.memo && (
-              <p className="text-sm text-gray-600 line-clamp-2">{note.memo}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{note.memo}</p>
             )}
             {note.tags && note.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-2">
                 {note.tags.slice(0, 3).map((tag, index) => (
                   <span
                     key={index}
-                    className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full"
+                    className="text-xs px-2 py-0.5 bg-muted text-foreground rounded-full"
                   >
                     {tag}
                   </span>
                 ))}
                 {note.tags.length > 3 && (
-                  <span className="text-xs px-2 py-0.5 text-gray-500">
+                  <span className="text-xs px-2 py-0.5 text-muted-foreground">
                     +{note.tags.length - 3}
                   </span>
                 )}
@@ -152,18 +155,18 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   e.preventDefault();
                   navigate(`/user/${note.userId}`);
                 }}
-                className="text-xs text-gray-500 hover:text-[#030213] cursor-pointer transition-colors"
+                className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
               >
                 {note.userName}
               </button>
-              <span className="text-xs text-gray-400">·</span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">·</span>
+              <span className="text-xs text-muted-foreground">
                 {note.createdAt.toLocaleDateString('ko-KR')}
               </span>
               {!note.isPublic && (
                 <>
-                  <span className="text-xs text-gray-400">·</span>
-                  <Lock className="w-3 h-3 text-gray-400" />
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <Lock className="w-3 h-3 text-muted-foreground" />
                 </>
               )}
             </div>
@@ -179,20 +182,21 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   type="button"
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
-                  className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                  className={cn(
+                    "flex items-center gap-1 transition-colors disabled:opacity-50",
                     isLiked 
-                      ? 'text-[#030213] hover:text-[#030213]/80' 
-                      : 'text-gray-500 hover:text-[#030213]'
-                  }`}
+                      ? 'text-primary hover:text-primary/80' 
+                      : 'text-muted-foreground hover:text-primary'
+                  )}
                   title={isLiked ? '좋아요 취소' : '좋아요'}
                 >
                   <Heart
-                    className={`w-4 h-4 transition-all ${
+                    className={cn(
+                      "w-4 h-4 transition-all",
                       isLiked 
-                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
-                        : 'fill-none text-gray-500 stroke-gray-500'
-                    }`}
-                    style={isLiked ? { fill: '#030213', color: '#030213' } : {}}
+                        ? 'fill-primary text-primary stroke-primary' 
+                        : 'fill-none text-muted-foreground stroke-muted-foreground'
+                    )}
                   />
                   {likeCount > 0 && <span className="text-sm">{likeCount}</span>}
                 </button>
@@ -200,20 +204,21 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
                   type="button"
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
-                  className={`flex items-center gap-1 transition-colors disabled:opacity-50 ${
+                  className={cn(
+                    "flex items-center gap-1 transition-colors disabled:opacity-50",
                     isBookmarked 
-                      ? 'text-[#030213] hover:text-[#030213]/80' 
-                      : 'text-gray-500 hover:text-[#030213]'
-                  }`}
+                      ? 'text-primary hover:text-primary/80' 
+                      : 'text-muted-foreground hover:text-primary'
+                  )}
                   title={isBookmarked ? '북마크 해제' : '북마크 추가'}
                 >
                   <Bookmark
-                    className={`w-4 h-4 transition-all ${
+                    className={cn(
+                      "w-4 h-4 transition-all",
                       isBookmarked 
-                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
-                        : 'fill-none text-gray-500 stroke-gray-500'
-                    }`}
-                    style={isBookmarked ? { fill: '#030213', color: '#030213' } : {}}
+                        ? 'fill-primary text-primary stroke-primary' 
+                        : 'fill-none text-muted-foreground stroke-muted-foreground'
+                    )}
                   />
                 </button>
               </>
@@ -221,6 +226,6 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   );
 };

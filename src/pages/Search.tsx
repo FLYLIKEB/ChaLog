@@ -72,13 +72,13 @@ export function Search() {
   const showResults = searchQuery.length > 0 || hasSearched;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="min-h-screen bg-background pb-20">
       <Header title="차 검색" />
       
       <div className="p-4 space-y-4">
         {/* 검색 입력 영역 */}
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <Input
             type="text"
             placeholder="차 이름, 종류, 구매처로 검색..."
@@ -93,7 +93,7 @@ export function Search() {
           <>
             {isLoading ? (
               <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : teas.length > 0 ? (
               <div className="space-y-3">
