@@ -71,9 +71,12 @@ describe('AppController (e2e)', () => {
       // 외래키 의존성이 있는 테이블부터 삭제 (자식 테이블 먼저)
       await dataSource.query('DELETE FROM note_bookmarks');
       await dataSource.query('DELETE FROM note_likes');
+      await dataSource.query('DELETE FROM note_axis_value');
       await dataSource.query('DELETE FROM note_tags');
       await dataSource.query('DELETE FROM tags');
       await dataSource.query('DELETE FROM notes');
+      await dataSource.query('DELETE FROM rating_axis');
+      await dataSource.query('DELETE FROM rating_schema');
       await dataSource.query('DELETE FROM teas');
       await dataSource.query('DELETE FROM user_authentications');
       await dataSource.query('DELETE FROM users');
@@ -315,10 +318,18 @@ describe('AppController (e2e)', () => {
       });
 
       // 테스트용 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+      
       testNote = await testHelper.createNote(testUser1.token, {
         teaId: testTea.id,
-        rating: TEST_DEFAULTS.NOTE.rating,
-        ratings: TEST_DEFAULTS.NOTE.ratings,
+        schemaId: schema.id,
+        overallRating: TEST_DEFAULTS.NOTE.overallRating,
+        isRatingIncluded: TEST_DEFAULTS.NOTE.isRatingIncluded,
+        axisValues: TEST_DEFAULTS.NOTE.axisValues.map((av, index) => ({
+          axisId: axes[index]?.id || av.axisId,
+          value: av.value,
+        })),
         memo: TEST_DEFAULTS.NOTE.memo,
         isPublic: TEST_DEFAULTS.NOTE.isPublic,
       });
@@ -333,6 +344,7 @@ describe('AppController (e2e)', () => {
       // 테스트 종료 후 생성한 데이터 정리
       try {
         if (testNote?.id) {
+          await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [testNote.id]);
           await dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
         }
         if (testTea?.id) {
@@ -518,10 +530,16 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/like - 비공개 노트에 작성자가 아닌 사용자가 좋아요 시도 시 403 에러', async () => {
       // 비공개 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+      
       const privateNote = await testHelper.createNote(testUser1.token, {
         teaId: testTea.id,
-        rating: TEST_DEFAULTS.NOTE.rating,
-        ratings: TEST_DEFAULTS.NOTE.ratings,
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '비공개 테스트 노트입니다',
         isPublic: false,
       });
@@ -536,15 +554,22 @@ describe('AppController (e2e)', () => {
       expect(response.body.message).toContain('권한이 없습니다');
 
       // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [privateNote.id]);
       await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
 
     it('POST /notes/:id/like - 비공개 노트에 작성자가 좋아요 성공', async () => {
       // 비공개 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+      
       const privateNote = await testHelper.createNote(testUser1.token, {
         teaId: testTea.id,
-        rating: TEST_DEFAULTS.NOTE.rating,
-        ratings: TEST_DEFAULTS.NOTE.ratings,
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '비공개 테스트 노트입니다',
         isPublic: false,
       });
@@ -561,6 +586,7 @@ describe('AppController (e2e)', () => {
 
       // 테스트 데이터 정리
       await dataSource.query('DELETE FROM note_likes WHERE noteId = ?', [privateNote.id]);
+      await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [privateNote.id]);
       await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
   });
@@ -605,10 +631,18 @@ describe('AppController (e2e)', () => {
       });
 
       // 테스트용 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+      
       testNote = await testHelper.createNote(testUser1.token, {
         teaId: testTea.id,
-        rating: TEST_DEFAULTS.NOTE.rating,
-        ratings: TEST_DEFAULTS.NOTE.ratings,
+        schemaId: schema.id,
+        overallRating: TEST_DEFAULTS.NOTE.overallRating,
+        isRatingIncluded: TEST_DEFAULTS.NOTE.isRatingIncluded,
+        axisValues: TEST_DEFAULTS.NOTE.axisValues.map((av, index) => ({
+          axisId: axes[index]?.id || av.axisId,
+          value: av.value,
+        })),
         memo: TEST_DEFAULTS.NOTE.memo,
         isPublic: TEST_DEFAULTS.NOTE.isPublic,
       });
@@ -623,6 +657,7 @@ describe('AppController (e2e)', () => {
       // 테스트 종료 후 생성한 데이터 정리
       try {
         if (testNote?.id) {
+          await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [testNote.id]);
           await dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
         }
         if (testTea?.id) {
@@ -709,10 +744,16 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/bookmark - 비공개 노트에 작성자가 아닌 사용자가 북마크 시도 시 403 에러', async () => {
       // 비공개 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+      
       const privateNote = await testHelper.createNote(testUser1.token, {
         teaId: testTea.id,
-        rating: TEST_DEFAULTS.NOTE.rating,
-        ratings: TEST_DEFAULTS.NOTE.ratings,
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '비공개 테스트 노트입니다',
         isPublic: false,
       });
@@ -727,15 +768,22 @@ describe('AppController (e2e)', () => {
       expect(response.body.message).toContain('권한이 없습니다');
 
       // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [privateNote.id]);
       await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
 
     it('POST /notes/:id/bookmark - 비공개 노트에 작성자가 북마크 성공', async () => {
       // 비공개 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+      
       const privateNote = await testHelper.createNote(testUser1.token, {
         teaId: testTea.id,
-        rating: TEST_DEFAULTS.NOTE.rating,
-        ratings: TEST_DEFAULTS.NOTE.ratings,
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '비공개 테스트 노트입니다',
         isPublic: false,
       });
@@ -750,6 +798,7 @@ describe('AppController (e2e)', () => {
 
       // 테스트 데이터 정리
       await dataSource.query('DELETE FROM note_bookmarks WHERE noteId = ?', [privateNote.id]);
+      await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [privateNote.id]);
       await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
 
@@ -922,16 +971,18 @@ describe('AppController (e2e)', () => {
       });
 
       // 테스트 헬퍼를 사용하여 노트 생성
+      const activeSchema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(activeSchema.id);
+      
       await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: activeSchema.id,
+        overallRating: 4.5,
+        isRatingIncluded: true,
+        axisValues: axes.map((axis: any) => ({
+          axisId: axis.id,
+          value: axis.code === 'RICHNESS' ? 4 : axis.code === 'STRENGTH' ? 5 : axis.code === 'SMOOTHNESS' ? 4 : axis.code === 'CLARITY' ? 4 : 5,
+        })),
         memo: '테스트 노트',
         isPublic: true,
       });
@@ -994,17 +1045,20 @@ describe('AppController (e2e)', () => {
       }
     });
 
-    it('POST /notes - 노트 생성 성공', async () => {
+    it('POST /notes - 노트 생성 성공 (새 구조)', async () => {
+      // 활성 스키마 조회
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const noteData = {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        overallRating: 4.4,
+        isRatingIncluded: true,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: axis.displayOrder === 1 ? 4 : axis.displayOrder === 2 ? 5 : 4,
+        })),
         memo: 'CRUD 테스트 노트',
         isPublic: true,
       };
@@ -1015,41 +1069,45 @@ describe('AppController (e2e)', () => {
         .expect(201);
 
       expect(response.body).toHaveProperty('id');
-      expect(response.body.rating).toBe(noteData.rating);
+      expect(response.body.schemaId).toBe(schema.id);
+      expect(response.body.overallRating).toBeCloseTo(noteData.overallRating, 1);
       expect(response.body.memo).toBe(noteData.memo);
       expect(response.body.isPublic).toBe(noteData.isPublic);
+      expect(response.body.axisValues).toBeDefined();
+      expect(Array.isArray(response.body.axisValues)).toBe(true);
       noteId = response.body.id;
     });
 
-    it('POST /notes - 인증 없이 노트 생성 실패', () => {
+    it('POST /notes - 인증 없이 노트 생성 실패', async () => {
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       return testHelper.unauthenticatedRequest()
         .post('/notes')
         .send({
           teaId: testTea.id,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
+          schemaId: schema.id,
+          axisValues: axes.map((axis) => ({
+            axisId: axis.id,
+            value: 4,
+          })),
         })
         .expect(401);
     });
 
     it('GET /notes - 노트 목록 조회 (인증 없이)', async () => {
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        overallRating: 4.4,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '공개 노트',
         isPublic: true,
       });
@@ -1064,20 +1122,22 @@ describe('AppController (e2e)', () => {
       const note = response.body.find((n: any) => n.id === noteId);
       expect(note).toBeDefined();
       expect(note.isPublic).toBe(true);
+      expect(note.schemaId).toBe(schema.id);
+      expect(note.axisValues).toBeDefined();
     });
 
     it('GET /notes - userId 필터로 노트 조회', async () => {
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '사용자 필터 테스트',
         isPublic: true,
       });
@@ -1092,20 +1152,21 @@ describe('AppController (e2e)', () => {
       const note = response.body.find((n: any) => n.id === noteId);
       expect(note).toBeDefined();
       expect(note.userId).toBe(testUser.id);
+      expect(note.schemaId).toBe(schema.id);
     });
 
     it('GET /notes - teaId 필터로 노트 조회', async () => {
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '차 필터 테스트',
         isPublic: true,
       });
@@ -1120,20 +1181,21 @@ describe('AppController (e2e)', () => {
       const note = response.body.find((n: any) => n.id === noteId);
       expect(note).toBeDefined();
       expect(note.teaId).toBe(testTea.id);
+      expect(note.schemaId).toBe(schema.id);
     });
 
-    it('PATCH /notes/:id - 노트 수정 성공', async () => {
+    it('PATCH /notes/:id - 노트 수정 성공 (새 구조)', async () => {
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '원본 메모',
         isPublic: true,
       });
@@ -1143,13 +1205,19 @@ describe('AppController (e2e)', () => {
       const response = await testHelper.authenticatedRequest(testUser.token)
         .patch(`/notes/${noteId}`)
         .send({
-          rating: 5.0,
+          overallRating: 5.0,
+          axisValues: axes.map((axis) => ({
+            axisId: axis.id,
+            value: 5,
+          })),
           memo: '수정된 메모',
         })
         .expect(200);
 
-      expect(response.body.rating).toBe(5.0);
+      expect(response.body.overallRating).toBe(5.0);
       expect(response.body.memo).toBe('수정된 메모');
+      expect(response.body.axisValues).toBeDefined();
+      expect(response.body.axisValues.length).toBe(axes.length);
     });
 
     it('PATCH /notes/:id - 다른 사용자의 노트 수정 실패', async () => {
@@ -1157,16 +1225,16 @@ describe('AppController (e2e)', () => {
       const otherTestUser = await testHelper.createUser('Other User');
 
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '다른 사용자 수정 테스트',
         isPublic: true,
       });
@@ -1183,22 +1251,23 @@ describe('AppController (e2e)', () => {
       expect(response.body.statusCode).toBe(403);
 
       // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [testNote.id]);
       await dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
       await dataSource.query('DELETE FROM users WHERE id = ?', [otherTestUser.id]);
     });
 
     it('DELETE /notes/:id - 노트 삭제 성공', async () => {
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '삭제 테스트 노트',
         isPublic: true,
       });
@@ -1219,16 +1288,16 @@ describe('AppController (e2e)', () => {
       const otherTestUser = await testHelper.createUser('Other User 2');
 
       // 테스트 헬퍼를 사용하여 노트 생성
+      const schema = await testHelper.getActiveSchema();
+      const axes = await testHelper.getSchemaAxes(schema.id);
+
       const testNote = await testHelper.createNote(testUser.token, {
         teaId: testTea.id,
-        rating: 4.5,
-        ratings: {
-          richness: 4,
-          strength: 5,
-          smoothness: 4,
-          clarity: 4,
-          complexity: 5,
-        },
+        schemaId: schema.id,
+        axisValues: axes.map((axis) => ({
+          axisId: axis.id,
+          value: 4,
+        })),
         memo: '다른 사용자 삭제 테스트',
         isPublic: true,
       });
@@ -1242,8 +1311,93 @@ describe('AppController (e2e)', () => {
       expect(response.body.statusCode).toBe(403);
 
       // 테스트 데이터 정리
+      await dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [testNote.id]);
       await dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
       await dataSource.query('DELETE FROM users WHERE id = ?', [otherTestUser.id]);
+    });
+  });
+
+  describe('/notes/schemas - 평가 스키마 API', () => {
+    beforeEach(async () => {
+      // 테스트 격리를 위해 각 테스트 전에 관련 데이터 정리
+      await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
+      await dataSource.query('DELETE FROM note_axis_value');
+      await dataSource.query('DELETE FROM notes');
+      await dataSource.query('DELETE FROM rating_axis');
+      await dataSource.query('DELETE FROM rating_schema');
+      await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
+    });
+
+    it('GET /notes/schemas/active - 활성 스키마 목록 조회', async () => {
+      const response = await testHelper.unauthenticatedRequest()
+        .get('/notes/schemas/active')
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.length).toBeGreaterThan(0);
+      
+      const schema = response.body[0];
+      expect(schema).toHaveProperty('id');
+      expect(schema).toHaveProperty('code');
+      expect(schema).toHaveProperty('version');
+      expect(schema).toHaveProperty('nameKo');
+      expect(schema).toHaveProperty('nameEn');
+      expect(schema.isActive).toBe(true);
+    });
+
+    it('GET /notes/schemas/:schemaId/axes - 스키마의 축 목록 조회', async () => {
+      // 활성 스키마 조회
+      const schemasResponse = await testHelper.unauthenticatedRequest()
+        .get('/notes/schemas/active')
+        .expect(200);
+
+      const schema = schemasResponse.body[0];
+      expect(schema).toBeDefined();
+
+      // 스키마의 축 목록 조회
+      const axesResponse = await testHelper.unauthenticatedRequest()
+        .get(`/notes/schemas/${schema.id}/axes`)
+        .expect(200);
+
+      expect(Array.isArray(axesResponse.body)).toBe(true);
+      expect(axesResponse.body.length).toBeGreaterThan(0);
+
+      const axis = axesResponse.body[0];
+      expect(axis).toHaveProperty('id');
+      expect(axis).toHaveProperty('schemaId');
+      expect(axis).toHaveProperty('code');
+      expect(axis).toHaveProperty('nameKo');
+      expect(axis).toHaveProperty('nameEn');
+      expect(axis).toHaveProperty('displayOrder');
+      expect(axis.schemaId).toBe(schema.id);
+    });
+
+    it('GET /notes/schemas/:schemaId/axes - 존재하지 않는 스키마일 때 404 반환', async () => {
+      await testHelper.unauthenticatedRequest()
+        .get('/notes/schemas/99999/axes')
+        .expect(404);
+    });
+
+    it('GET /notes/schemas/:schemaId/axes - 축 목록이 displayOrder로 정렬되어야 함', async () => {
+      // 활성 스키마 조회
+      const schemasResponse = await testHelper.unauthenticatedRequest()
+        .get('/notes/schemas/active')
+        .expect(200);
+
+      const schema = schemasResponse.body[0];
+
+      // 스키마의 축 목록 조회
+      const axesResponse = await testHelper.unauthenticatedRequest()
+        .get(`/notes/schemas/${schema.id}/axes`)
+        .expect(200);
+
+      const axes = axesResponse.body;
+      expect(axes.length).toBeGreaterThan(1);
+
+      // displayOrder로 정렬되어 있는지 확인
+      for (let i = 1; i < axes.length; i++) {
+        expect(axes[i].displayOrder).toBeGreaterThanOrEqual(axes[i - 1].displayOrder);
+      }
     });
   });
 

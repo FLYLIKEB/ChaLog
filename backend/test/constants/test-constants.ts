@@ -18,14 +18,15 @@ export const TEST_DEFAULTS = {
     type: '홍차',
   },
   NOTE: {
-    rating: 4.5,
-    ratings: {
-      richness: 4,
-      strength: 5,
-      smoothness: 4,
-      clarity: 4,
-      complexity: 5,
-    },
+    overallRating: 4.5,
+    isRatingIncluded: true,
+    axisValues: [
+      { axisId: 1, value: 4 }, // RICHNESS
+      { axisId: 2, value: 5 }, // STRENGTH
+      { axisId: 3, value: 4 }, // SMOOTHNESS
+      { axisId: 4, value: 4 }, // CLARITY
+      { axisId: 5, value: 5 }, // COMPLEXITY
+    ],
     memo: '테스트 노트입니다',
     isPublic: true,
   },
