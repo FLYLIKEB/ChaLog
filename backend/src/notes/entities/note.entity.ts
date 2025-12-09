@@ -2,6 +2,8 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { User } from '../../users/entities/user.entity';
 import { Tea } from '../../teas/entities/tea.entity';
 import { NoteTag } from './note-tag.entity';
+import { RatingSchema } from './rating-schema.entity';
+import { NoteAxisValue } from './note-axis-value.entity';
 
 @Entity('notes')
 export class Note {
@@ -22,17 +24,18 @@ export class Note {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column({ type: 'decimal', precision: 3, scale: 2 })
-  rating: number;
+  @Column()
+  schemaId: number;
 
-  @Column({ type: 'json' })
-  ratings: {
-    richness: number;
-    strength: number;
-    smoothness: number;
-    clarity: number;
-    complexity: number;
-  };
+  @ManyToOne(() => RatingSchema)
+  @JoinColumn({ name: 'schemaId' })
+  schema: RatingSchema;
+
+  @Column({ type: 'decimal', precision: 3, scale: 1, nullable: true })
+  overallRating: number | null;
+
+  @Column({ type: 'boolean', default: true })
+  isRatingIncluded: boolean;
 
   @Column({ type: 'text', nullable: true })
   memo: string | null;
@@ -45,6 +48,9 @@ export class Note {
 
   @OneToMany(() => NoteTag, (noteTag) => noteTag.note, { cascade: true })
   noteTags: NoteTag[];
+
+  @OneToMany(() => NoteAxisValue, (axisValue) => axisValue.note, { cascade: true })
+  axisValues: NoteAxisValue[];
 
   @CreateDateColumn({ precision: 0 })
   createdAt: Date;

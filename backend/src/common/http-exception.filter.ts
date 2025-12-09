@@ -4,11 +4,14 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -28,20 +31,46 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = (exceptionResponse as any).message || exceptionResponse;
         error = (exceptionResponse as any).error;
       }
+
+      // 500 에러가 아닌 경우에도 로깅 (경고 레벨)
+      if (status >= 500) {
+        this.logger.error(
+          `HTTP ${status} Error: ${JSON.stringify(message)}`,
+          exception instanceof Error ? exception.stack : undefined,
+        );
+      } else {
+        this.logger.warn(
+          `HTTP ${status} Error: ${JSON.stringify(message)} - ${request.method} ${request.url}`,
+        );
+      }
     } else if (exception instanceof Error) {
       // 모든 에러에 대해 원본 메시지를 그대로 전달
       message = exception.message;
       error = exception.name;
       
-      // 스택 트레이스도 포함 (개발 환경에서 유용)
-      if (process.env.NODE_ENV !== 'production') {
-        console.error('Unhandled exception:', {
-          message: exception.message,
-          stack: exception.stack,
-          url: request.url,
-          method: request.method,
-        });
-      }
+      // 상세한 에러 로깅
+      this.logger.error(
+        `Unhandled Exception: ${exception.message}`,
+        exception.stack,
+      );
+      this.logger.error(
+        `Request Details: ${request.method} ${request.url}`,
+        JSON.stringify({
+          query: request.query,
+          params: request.params,
+          body: request.body,
+          headers: {
+            'content-type': request.headers['content-type'],
+            'authorization': request.headers['authorization'] ? '[REDACTED]' : undefined,
+          },
+        }, null, 2),
+      );
+    } else {
+      // 알 수 없는 에러 타입
+      this.logger.error(
+        `Unknown Exception Type: ${typeof exception}`,
+        JSON.stringify(exception, Object.getOwnPropertyNames(exception)),
+      );
     }
 
     const errorResponse = {

@@ -1,31 +1,14 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, IsObject, ValidateNested, IsOptional, IsArray, ArrayMaxSize } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, IsObject } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
-class RatingsDto {
+class AxisValueDto {
   @IsNumber()
-  @Min(1)
-  @Max(5)
-  richness: number;
+  axisId: number;
 
   @IsNumber()
   @Min(1)
   @Max(5)
-  strength: number;
-
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  smoothness: number;
-
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  clarity: number;
-
-  @IsNumber()
-  @Min(1)
-  @Max(5)
-  complexity: number;
+  value: number;
 }
 
 export class CreateNoteDto {
@@ -33,14 +16,22 @@ export class CreateNoteDto {
   teaId: number;
 
   @IsNumber()
+  schemaId: number;
+
+  @IsOptional()
+  @IsNumber()
   @Min(1)
   @Max(5)
-  rating: number;
+  overallRating?: number | null;
 
-  @IsObject()
-  @ValidateNested()
-  @Type(() => RatingsDto)
-  ratings: RatingsDto;
+  @IsOptional()
+  @IsBoolean()
+  isRatingIncluded?: boolean;
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AxisValueDto)
+  axisValues: AxisValueDto[];
 
   @IsOptional()
   @Transform(({ value }) => value === null ? null : value)

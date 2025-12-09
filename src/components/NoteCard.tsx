@@ -165,10 +165,12 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-              <span className="text-sm">{Number(note.rating).toFixed(1)}</span>
-            </div>
+            {note.overallRating !== null && (
+              <div className="flex items-center gap-1">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span className="text-sm">{Number(note.overallRating).toFixed(1)}</span>
+              </div>
+            )}
             {user && (
               <>
                 <button

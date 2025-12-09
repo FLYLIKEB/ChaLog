@@ -228,10 +228,12 @@ export function NoteDetail() {
         <section className="bg-card rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-                <span className="text-2xl text-primary">{Number(note.rating).toFixed(1)}</span>
-              </div>
+              {note.overallRating !== null && (
+                <div className="flex items-center gap-2">
+                  <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+                  <span className="text-2xl text-primary">{Number(note.overallRating).toFixed(1)}</span>
+                </div>
+              )}
               <Badge variant={note.isPublic ? 'default' : 'secondary'}>
                 {note.isPublic ? (
                   <><Globe className="w-3 h-3 mr-1" /> 공개</>
@@ -296,7 +298,9 @@ export function NoteDetail() {
             </button>
           </p>
 
-          <RatingVisualization ratings={note.ratings} />
+          {note.axisValues && note.axisValues.length > 0 && (
+            <RatingVisualization axisValues={note.axisValues} />
+          )}
         </section>
 
         {/* 이미지 갤러리 */}
