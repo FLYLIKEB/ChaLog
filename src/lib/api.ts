@@ -76,14 +76,41 @@ interface BackendNote {
   tea?: { name: string };
   userId: number;
   user?: { name: string };
-  rating: number;
-  ratings: {
-    richness: number;
-    strength: number;
-    smoothness: number;
-    clarity: number;
-    complexity: number;
+  schemaId: number;
+  schema?: {
+    id: number;
+    code: string;
+    version: string;
+    nameKo: string;
+    nameEn: string;
+    descriptionKo?: string | null;
+    descriptionEn?: string | null;
+    overallMinValue: number;
+    overallMaxValue: number;
+    overallStep: number;
+    isActive: boolean;
   };
+  overallRating: number | null;
+  isRatingIncluded: boolean;
+  axisValues?: Array<{
+    axisId: number;
+    valueNumeric: number;
+    axis?: {
+      id: number;
+      schemaId: number;
+      code: string;
+      nameKo: string;
+      nameEn: string;
+      descriptionKo?: string | null;
+      descriptionEn?: string | null;
+      minValue: number;
+      maxValue: number;
+      stepValue: number;
+      displayOrder: number;
+      isRequired: boolean;
+      teaType?: string | null;
+    };
+  }>;
   memo: string | null;
   images?: string[] | null;
   noteTags?: Array<{ tag: { name: string } }>;
@@ -98,15 +125,42 @@ interface NormalizedNote {
   teaName: string;
   userId: number;
   userName: string;
-  rating: number;
-  ratings: {
-    richness: number;
-    strength: number;
-    smoothness: number;
-    clarity: number;
-    complexity: number;
+  schemaId: number;
+  schema?: {
+    id: number;
+    code: string;
+    version: string;
+    nameKo: string;
+    nameEn: string;
+    descriptionKo?: string | null;
+    descriptionEn?: string | null;
+    overallMinValue: number;
+    overallMaxValue: number;
+    overallStep: number;
+    isActive: boolean;
   };
-  memo: string;
+  overallRating: number | null;
+  isRatingIncluded: boolean;
+  axisValues?: Array<{
+    axisId: number;
+    valueNumeric: number;
+    axis?: {
+      id: number;
+      schemaId: number;
+      code: string;
+      nameKo: string;
+      nameEn: string;
+      descriptionKo?: string | null;
+      descriptionEn?: string | null;
+      minValue: number;
+      maxValue: number;
+      stepValue: number;
+      displayOrder: number;
+      isRequired: boolean;
+      teaType?: string | null;
+    };
+  }>;
+  memo: string | null;
   images?: string[];
   tags?: string[];
   isPublic: boolean;
@@ -136,8 +190,8 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     userName: note.user?.name || '',
-    // memo가 null이면 빈 문자열로 변환하여 항상 string 보장
-    memo: note.memo ?? '',
+    // memo는 null을 유지 (이제 nullable)
+    memo: note.memo,
     // images가 null이면 undefined로 변환, 빈 배열이면 undefined로 변환
     images: note.images && note.images.length > 0 ? note.images : undefined,
     // tags 추출: noteTags 관계에서 추출하거나 직접 tags 필드 사용
@@ -581,16 +635,15 @@ export interface CreateTeaRequest {
 
 export interface CreateNoteRequest {
   teaId: number;
-  rating: number;
-  ratings: {
-    richness: number;
-    strength: number;
-    smoothness: number;
-    clarity: number;
-    complexity: number;
-  };
-  memo?: string;
-  images?: string[];
+  schemaId: number;
+  overallRating?: number | null;
+  isRatingIncluded?: boolean;
+  axisValues: Array<{
+    axisId: number;
+    value: number;
+  }>;
+  memo?: string | null;
+  images?: string[] | null;
   tags?: string[];
   isPublic: boolean;
 }
@@ -615,6 +668,8 @@ export const teasApi = {
 };
 
 export const notesApi = {
+  getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
+  getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
   getAll: (userId?: number, isPublic?: boolean, teaId?: number) => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
