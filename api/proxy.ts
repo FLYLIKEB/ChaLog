@@ -93,7 +93,8 @@ export default async function handler(req: any, res: any) {
       });
     }
     
-    backendUrl = `${BACKEND_URL}/${pathString}${
+    // 백엔드에 setGlobalPrefix('api')가 설정되어 있으므로 /api prefix 추가
+    backendUrl = `${BACKEND_URL}/api/${pathString}${
       queryParams.toString() ? `?${queryParams.toString()}` : ''
     }`;
 
