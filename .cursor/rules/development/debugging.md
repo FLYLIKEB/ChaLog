@@ -51,3 +51,32 @@
 - 브라우저에서 요청을 보낼 때 백엔드 터미널에 에러 로그가 출력되는지 확인
 - `enrichNotesWithLikesAndBookmarks` 같은 복잡한 메서드에서는 상세한 에러 로깅 추가
 - TypeORM의 `getRawMany()` 결과는 다양한 키 형식으로 반환될 수 있으므로 안전하게 처리
+
+## 테스트 구조
+
+### E2E 테스트 파일 구조
+백엔드 E2E 테스트는 기능별로 분리되어 있습니다:
+
+```
+backend/test/
+├── app.e2e-spec.ts          # 메인 테스트 파일 (모든 스위트 import)
+├── setup/
+│   └── test-setup.ts        # 공통 테스트 설정 (앱 초기화, DB 정리 등)
+├── suites/                  # 기능별 테스트 파일들
+│   ├── auth.e2e-spec.ts     # 인증 API 테스트
+│   ├── teas.e2e-spec.ts     # 차 API 테스트
+│   ├── notes-like.e2e-spec.ts      # 노트 좋아요 API 테스트
+│   ├── notes-bookmark.e2e-spec.ts  # 노트 북마크 API 테스트
+│   ├── users.e2e-spec.ts    # 사용자 프로필 API 테스트
+│   ├── notes-crud.e2e-spec.ts      # 노트 CRUD API 테스트
+│   └── notes-schemas.e2e-spec.ts   # 평가 스키마 API 테스트
+├── helpers/
+│   └── test-helper.ts      # 테스트 헬퍼 클래스 (사용자/차/노트 생성 등)
+└── constants/
+    └── test-constants.ts    # 테스트 상수
+```
+
+### 테스트 디버깅 팁
+- 특정 기능의 테스트만 실행하려면 해당 스위트 파일을 직접 실행
+- 각 테스트 파일은 독립적으로 실행 가능 (자체 `beforeAll`/`afterAll` 포함)
+- 공통 설정은 `test/setup/test-setup.ts`에서 관리
