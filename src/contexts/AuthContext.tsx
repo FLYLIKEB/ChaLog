@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoading(false);
 
-    // 카카오 SDK 초기화 (스크립트 로드 대기)
+    // 카카오 SDK 동적 로드 및 초기화
     const initKakaoSDK = async () => {
       logger.info('[SDK 초기화] 카카오 SDK 초기화 프로세스 시작');
       
@@ -86,6 +86,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // 카카오 SDK 스크립트가 로드되어 있지 않은 경우 동적으로 로드
+      if (!window.Kakao || typeof window.Kakao.init !== 'function') {
+        logger.info('[SDK 초기화] 카카오 SDK 스크립트 동적 로드 시작');
+        
+        // 이미 스크립트 태그가 있는지 확인
+        const existingScript = document.querySelector('script[src*="kakao.js"]');
+        if (existingScript) {
+          logger.info('[SDK 초기화] 카카오 SDK 스크립트 태그가 이미 존재합니다. 로드 대기 중...');
+        } else {
+          // 스크립트 동적 로드
+          const script = document.createElement('script');
+          script.src = 'https://developers.kakao.com/sdk/js/kakao.js';
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          
+          script.onerror = () => {
+            logger.error('[SDK 초기화] 카카오 SDK 스크립트 로드 실패');
+          };
+          
+          document.head.appendChild(script);
+          logger.info('[SDK 초기화] 카카오 SDK 스크립트 태그 추가 완료');
+        }
+      }
+
       logger.info('[SDK 초기화] 카카오 SDK 로드 대기 시작');
       logger.debug('[SDK 초기화] 초기 상태:', {
         windowKakaoExists: !!window.Kakao,
@@ -93,57 +117,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         hasIsInitialized: !!(window.Kakao && typeof window.Kakao.isInitialized === 'function'),
       });
 
-      // 카카오 SDK 로드 대기 (최대 10초)
+      // 카카오 SDK 로드 대기 (최대 15초, 모바일 환경 고려)
       let attempts = 0;
-      const maxAttempts = 100; // 10초 (100ms * 100)
+      const maxAttempts = 150; // 15초 (100ms * 150)
       
-      await new Promise<void>((resolve, reject) => {
-      const checkInterval = setInterval(() => {
-        attempts++;
-          
-          // 카카오 SDK가 로드되었는지 확인
-          if (window.Kakao && typeof window.Kakao.init === 'function' && typeof window.Kakao.isInitialized === 'function') {
-          clearInterval(checkInterval);
-            logger.info(`[SDK 초기화] 카카오 SDK 로드 완료 (시도 횟수: ${attempts})`);
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const checkInterval = setInterval(() => {
+            attempts++;
             
-            // 초기화되지 않았다면 초기화
-          if (!window.Kakao.isInitialized()) {
-              try {
-                logger.info('[SDK 초기화] 카카오 SDK 초기화 시도 중...');
-            window.Kakao.init(kakaoAppKey);
-                const isInit = window.Kakao.isInitialized();
-                logger.info('[SDK 초기화] 카카오 SDK 초기화 완료:', {
-                  isInitialized: isInit,
-                });
-              } catch (error) {
-                logger.error('[SDK 초기화] 카카오 SDK 초기화 실패:', {
-                  error,
-                  errorMessage: error instanceof Error ? error.message : String(error),
-                });
-                reject(error);
-                return;
+            // 카카오 SDK가 로드되었는지 확인
+            if (window.Kakao && typeof window.Kakao.init === 'function' && typeof window.Kakao.isInitialized === 'function') {
+              clearInterval(checkInterval);
+              logger.info(`[SDK 초기화] 카카오 SDK 로드 완료 (시도 횟수: ${attempts})`);
+              
+              // 초기화되지 않았다면 초기화
+              if (!window.Kakao.isInitialized()) {
+                try {
+                  logger.info('[SDK 초기화] 카카오 SDK 초기화 시도 중...');
+                  window.Kakao.init(kakaoAppKey);
+                  const isInit = window.Kakao.isInitialized();
+                  logger.info('[SDK 초기화] 카카오 SDK 초기화 완료:', {
+                    isInitialized: isInit,
+                  });
+                } catch (error) {
+                  logger.error('[SDK 초기화] 카카오 SDK 초기화 실패:', {
+                    error,
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                  });
+                  reject(error);
+                  return;
+                }
+              } else {
+                logger.info('[SDK 초기화] 카카오 SDK가 이미 초기화되어 있었습니다.');
               }
-            } else {
-              logger.info('[SDK 초기화] 카카오 SDK가 이미 초기화되어 있었습니다.');
+              
+              resolve();
+            } else if (attempts >= maxAttempts) {
+              clearInterval(checkInterval);
+              const error = new Error('카카오 SDK를 불러올 수 없습니다. 네트워크 연결을 확인하고 페이지를 새로고침해주세요.');
+              logger.error(`[SDK 초기화] 카카오 SDK 로드 시간 초과 (시도 횟수: ${attempts}):`, error);
+              reject(error);
+            } else if (attempts % 20 === 0) {
+              logger.debug(`[SDK 초기화] SDK 로드 대기 중... (${attempts}/${maxAttempts})`);
             }
-            
-            resolve();
-        } else if (attempts >= maxAttempts) {
-          clearInterval(checkInterval);
-            const error = new Error('카카오 SDK를 불러올 수 없습니다. 네트워크 연결을 확인하고 페이지를 새로고침해주세요.');
-            logger.error(`[SDK 초기화] 카카오 SDK 로드 시간 초과 (시도 횟수: ${attempts}):`, error);
-            reject(error);
-          } else if (attempts % 20 === 0) {
-            logger.debug(`[SDK 초기화] SDK 로드 대기 중... (${attempts}/${maxAttempts})`);
-        }
-      }, 100);
-      }).catch((error) => {
+          }, 100);
+        });
+      } catch (error) {
         logger.error('[SDK 초기화] 카카오 SDK 초기화 중 오류 발생:', {
           error,
           errorMessage: error instanceof Error ? error.message : String(error),
         });
         // 카카오 SDK 초기화 실패해도 앱은 정상 작동해야 함
-      });
+      }
     };
 
     initKakaoSDK();
@@ -207,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // 3. 카카오 SDK 로드 확인 및 대기
+      // 3. 카카오 SDK 로드 확인 및 동적 로드
       logger.info('[3/7] 카카오 SDK 로드 확인 시작');
       logger.debug('[3/7] SDK 상태:', {
         windowKakaoExists: !!window.Kakao,
@@ -217,10 +243,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!window.Kakao || typeof window.Kakao.init !== 'function') {
+        logger.info('[3/7] 카카오 SDK 스크립트 동적 로드 시작');
+        
+        // 이미 스크립트 태그가 있는지 확인
+        const existingScript = document.querySelector('script[src*="kakao.js"]');
+        if (!existingScript) {
+          // 스크립트 동적 로드
+          const script = document.createElement('script');
+          script.src = 'https://developers.kakao.com/sdk/js/kakao.js';
+          script.async = true;
+          script.crossOrigin = 'anonymous';
+          
+          script.onerror = () => {
+            logger.error('[3/7] 카카오 SDK 스크립트 로드 실패');
+          };
+          
+          document.head.appendChild(script);
+          logger.info('[3/7] 카카오 SDK 스크립트 태그 추가 완료');
+        } else {
+          logger.info('[3/7] 카카오 SDK 스크립트 태그가 이미 존재합니다. 로드 대기 중...');
+        }
+        
         logger.info('[3/7] 카카오 SDK 로드 대기 중...');
         await new Promise<void>((resolve, reject) => {
           let attempts = 0;
-          const maxAttempts = 100; // 10초
+          const maxAttempts = 150; // 15초 (모바일 환경 고려)
           const checkInterval = setInterval(() => {
             attempts++;
             if (window.Kakao && typeof window.Kakao.init === 'function') {
@@ -231,7 +278,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               clearInterval(checkInterval);
               logger.error(`[3/7] 카카오 SDK 로드 시간 초과 (시도 횟수: ${attempts})`);
               reject(new Error('카카오 SDK를 불러올 수 없습니다. 네트워크 연결을 확인하고 페이지를 새로고침해주세요.'));
-            } else if (attempts % 10 === 0) {
+            } else if (attempts % 20 === 0) {
               logger.debug(`[3/7] SDK 로드 대기 중... (${attempts}/${maxAttempts})`);
             }
           }, 100);
