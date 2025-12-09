@@ -1,5 +1,5 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea } from '../types';
+import { Tea, User } from '../types';
 
 // API Base URL 설정
 // 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)

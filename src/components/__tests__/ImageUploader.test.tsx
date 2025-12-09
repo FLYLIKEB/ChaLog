@@ -18,6 +18,12 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({
     isAuthenticated: true,
     user: { id: 1, name: '테스트 사용자', email: 'test@example.com' },
+    token: 'mock-token',
+    isLoading: false,
+    login: vi.fn(),
+    register: vi.fn(),
+    loginWithKakao: vi.fn(),
+    logout: vi.fn(),
   })),
 }));
 
@@ -219,6 +225,12 @@ describe('ImageUploader 컴포넌트', () => {
       vi.mocked(useAuth).mockReturnValue({
         isAuthenticated: false,
         user: null,
+        token: null,
+        isLoading: false,
+        login: vi.fn(),
+        register: vi.fn(),
+        loginWithKakao: vi.fn(),
+        logout: vi.fn(),
       });
 
       render(<ImageUploader images={[]} onChange={mockOnChange} />);
