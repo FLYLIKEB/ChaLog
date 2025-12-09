@@ -1320,12 +1320,52 @@ describe('AppController (e2e)', () => {
   describe('/notes/schemas - 평가 스키마 API', () => {
     beforeEach(async () => {
       // 테스트 격리를 위해 각 테스트 전에 관련 데이터 정리
-      // 스키마와 축은 삭제하지 않음 - 마이그레이션에서 생성된 기본 데이터 유지
       await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
       await dataSource.query('DELETE FROM note_axis_value');
       await dataSource.query('DELETE FROM notes');
-      // rating_axis와 rating_schema는 삭제하지 않음 (기본 스키마 유지)
       await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
+
+      // 기본 스키마가 없으면 재생성 (afterAll의 cleanupDatabase로 삭제되었을 수 있음)
+      let schemaResult = await dataSource.query(`
+        SELECT id FROM rating_schema WHERE code = 'STANDARD' AND version = '1.0.0' LIMIT 1
+      `);
+      
+      let schemaId: number | undefined;
+      
+      if (!schemaResult || schemaResult.length === 0) {
+        // 기본 스키마 생성
+        await dataSource.query(`
+          INSERT INTO rating_schema (code, version, nameKo, nameEn, descriptionKo, descriptionEn, overallMinValue, overallMaxValue, overallStep, isActive)
+          VALUES ('STANDARD', '1.0.0', '차록 표준 평가', 'ChaLog Standard Rating', '차록의 기본 평가 축 세트', 'ChaLog default rating axis set', 1, 5, 0.5, TRUE)
+        `);
+        
+        // 생성된 스키마 ID 조회
+        schemaResult = await dataSource.query(`
+          SELECT id FROM rating_schema WHERE code = 'STANDARD' AND version = '1.0.0' LIMIT 1
+        `);
+      }
+      
+      schemaId = schemaResult[0]?.id;
+
+      if (schemaId) {
+        // 기본 축들이 있는지 확인
+        const axesResult = await dataSource.query(`
+          SELECT COUNT(*) as count FROM rating_axis WHERE schemaId = ${schemaId}
+        `);
+        
+        if (!axesResult || axesResult.length === 0 || axesResult[0]?.count === 0) {
+          // 기본 축들 생성
+          await dataSource.query(`
+            INSERT INTO rating_axis (schemaId, code, nameKo, nameEn, descriptionKo, descriptionEn, minValue, maxValue, stepValue, displayOrder, isRequired)
+            VALUES
+              (${schemaId}, 'RICHNESS', '풍부함', 'Richness', '차의 풍부한 맛과 향', 'Richness of taste and aroma', 1, 5, 1, 1, TRUE),
+              (${schemaId}, 'STRENGTH', '강도', 'Strength', '차의 강한 맛', 'Strength of taste', 1, 5, 1, 2, TRUE),
+              (${schemaId}, 'SMOOTHNESS', '부드러움', 'Smoothness', '차의 부드러운 맛', 'Smoothness of taste', 1, 5, 1, 3, TRUE),
+              (${schemaId}, 'CLARITY', '명확함', 'Clarity', '차의 명확한 맛', 'Clarity of taste', 1, 5, 1, 4, TRUE),
+              (${schemaId}, 'COMPLEXITY', '복잡성', 'Complexity', '차의 복잡한 맛', 'Complexity of taste', 1, 5, 1, 5, TRUE)
+          `);
+        }
+      }
     });
 
     it('GET /notes/schemas/active - 활성 스키마 목록 조회', async () => {
