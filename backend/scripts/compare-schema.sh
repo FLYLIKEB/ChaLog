@@ -52,13 +52,19 @@ DIFF_FOUND=0
 for table in "${TABLES[@]}"; do
   echo "🔍 $table 테이블 비교 중..."
   
-  # 프로덕션 DB 스키마 추출
+  # 프로덕션 DB 스키마 추출 (환경 의존적인 부분 제거)
   PROD_SCHEMA=$(mysql -h "$PROD_HOST" -P "$PROD_PORT" -u "$PROD_USER" -p"$PROD_PASS" "$PROD_DB" \
-    -e "SHOW CREATE TABLE \`$table\`" 2>/dev/null | tail -n 1 | cut -f 2) || PROD_SCHEMA=""
+    -e "SHOW CREATE TABLE \`$table\`" 2>/dev/null | tail -n 1 | cut -f 2 | \
+    sed -E 's/AUTO_INCREMENT=[0-9]+ //g' | \
+    sed -E 's/ROW_FORMAT=[A-Z_]+ //g' | \
+    sed -E 's/COMMENT=.+? //g') || PROD_SCHEMA=""
   
-  # 테스트 DB 스키마 추출
+  # 테스트 DB 스키마 추출 (환경 의존적인 부분 제거)
   TEST_SCHEMA=$(mysql -h "$TEST_HOST" -P "$TEST_PORT" -u "$TEST_USER" -p"$TEST_PASS" "$TEST_DB" \
-    -e "SHOW CREATE TABLE \`$table\`" 2>/dev/null | tail -n 1 | cut -f 2) || TEST_SCHEMA=""
+    -e "SHOW CREATE TABLE \`$table\`" 2>/dev/null | tail -n 1 | cut -f 2 | \
+    sed -E 's/AUTO_INCREMENT=[0-9]+ //g' | \
+    sed -E 's/ROW_FORMAT=[A-Z_]+ //g' | \
+    sed -E 's/COMMENT=.+? //g') || TEST_SCHEMA=""
   
   if [ -z "$PROD_SCHEMA" ] && [ -z "$TEST_SCHEMA" ]; then
     echo "  ⚠️  두 DB 모두에 $table 테이블이 없습니다."
