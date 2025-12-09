@@ -77,7 +77,7 @@ query {
 EOF
 )
   
-  gh api graphql -f query="$query" | jq -r --argjson bots '["coderabbit", "code-rabbit", "coderabbit[bot]", "code-rabbit[bot]"]' '
+  gh api graphql -f query="$query" | jq -r --argjson bots '["coderabbit", "code-rabbit", "coderabbit[bot]", "code-rabbit[bot]", "coderabbitai"]' '
     .data.repository.pullRequest.reviewThreads.nodes[] 
     | select(.isResolved == false) 
     | select(.comments.nodes[0].author.login as $author | $bots | index($author) != null)
