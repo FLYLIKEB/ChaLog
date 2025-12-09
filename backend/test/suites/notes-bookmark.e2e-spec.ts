@@ -183,7 +183,10 @@ describe('/notes/:id/bookmark - 노트 북마크 API', () => {
 
     expect(response.body).toHaveProperty('message');
     expect(response.body.statusCode).toBe(403);
-    expect(response.body.message).toContain('권한이 없습니다');
+    const message = Array.isArray(response.body.message) 
+      ? response.body.message[0] 
+      : response.body.message;
+    expect(message).toContain('권한이 없습니다');
 
     // 테스트 데이터 정리
     await context.dataSource.query('DELETE FROM note_axis_value WHERE noteId = ?', [privateNote.id]);

@@ -34,5 +34,11 @@
       mockReset: true,
       restoreMocks: true,
       clearMocks: true,
+      exclude: [
+        '**/node_modules/**',
+        '**/dist/**',
+        '**/backend/**',
+        '**/*.config.*',
+      ],
     },
   });

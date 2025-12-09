@@ -116,7 +116,7 @@ describe('NoteDetail - 이미지 가운데 정렬', () => {
 
     await waitFor(() => {
       const authorName = screen.getByText('테스트 사용자');
-      expect(authorName).toHaveClass('hover:text-[#030213]', 'cursor-pointer');
+      expect(authorName).toHaveClass('hover:text-primary', 'cursor-pointer');
     });
   });
 });

@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, DataSource } from 'typeorm';
 import { NotesService } from './notes.service';
 import { Note } from './entities/note.entity';
 import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
+import { NoteLike } from './entities/note-like.entity';
+import { NoteBookmark } from './entities/note-bookmark.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
@@ -51,6 +53,41 @@ describe('NotesService', () => {
     delete: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+  };
+
+  const mockLikeQueryBuilder = {
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn(),
+  };
+
+  const mockNoteLikesRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+    count: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockLikeQueryBuilder),
+  };
+
+  const mockBookmarkQueryBuilder = {
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    groupBy: jest.fn().mockReturnThis(),
+    getRawMany: jest.fn(),
+  };
+
+  const mockNoteBookmarksRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+    createQueryBuilder: jest.fn(() => mockBookmarkQueryBuilder),
   };
 
   const mockRatingSchemaRepository = {
@@ -105,6 +142,14 @@ describe('NotesService', () => {
           useValue: mockNoteTagsRepository,
         },
         {
+          provide: getRepositoryToken(NoteLike),
+          useValue: mockNoteLikesRepository,
+        },
+        {
+          provide: getRepositoryToken(NoteBookmark),
+          useValue: mockNoteBookmarksRepository,
+        },
+        {
           provide: getRepositoryToken(RatingSchema),
           useValue: mockRatingSchemaRepository,
         },
@@ -117,7 +162,7 @@ describe('NotesService', () => {
           useValue: mockNoteAxisValueRepository,
         },
         {
-          provide: 'DataSource',
+          provide: DataSource,
           useValue: mockDataSource,
         },
         {
@@ -142,6 +187,11 @@ describe('NotesService', () => {
     s3Service = module.get<S3Service>(S3Service);
 
     jest.clearAllMocks();
+    // 기본 mock 설정
+    mockLikeQueryBuilder.getRawMany.mockResolvedValue([]);
+    mockBookmarkQueryBuilder.getRawMany.mockResolvedValue([]);
+    mockNoteLikesRepository.find.mockResolvedValue([]);
+    mockNoteBookmarksRepository.find.mockResolvedValue([]);
   });
 
   describe('getActiveSchemas', () => {
@@ -503,7 +553,9 @@ describe('NotesService', () => {
         },
       ];
 
-      mockNotesRepository.find.mockResolvedValue(notes);
+      // isRatingIncluded가 true인 노트만 반환하도록 필터링
+      const filteredNotes = notes.filter(note => note.isRatingIncluded === true);
+      mockNotesRepository.find.mockResolvedValue(filteredNotes);
       mockTeasService.updateRating.mockResolvedValue(undefined);
 
       await service['updateTeaRating'](teaId);

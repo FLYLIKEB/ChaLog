@@ -71,7 +71,10 @@ describe('/users/:id - 사용자 프로필 조회 API', () => {
       .expect(404);
 
     expect(response.body).toHaveProperty('message');
-    expect(response.body.message).toContain('사용자를 찾을 수 없습니다');
+    const message = Array.isArray(response.body.message) 
+      ? response.body.message[0] 
+      : response.body.message;
+    expect(message).toContain('사용자를 찾을 수 없습니다');
   });
 
   it('GET /users/:id - 잘못된 사용자 ID 형식으로 조회 시 400 에러', async () => {
@@ -130,6 +133,209 @@ describe('/users/:id - 사용자 프로필 조회 API', () => {
     // 테스트 데이터 정리
     await context.dataSource.query('DELETE FROM notes WHERE userId = ?', [testUser.id]);
     await context.dataSource.query('DELETE FROM teas WHERE id = ?', [testTea.id]);
+  });
+});
+
+describe('/users/profile-image - 프로필 이미지 업로드 API', () => {
+  let context: TestContext;
+  let testUser: TestUser;
+  let otherTestUser: TestUser;
+
+  beforeAll(async () => {
+    context = await setupTestApp();
+    [testUser, otherTestUser] = await context.testHelper.createUsers(2, 'Profile Image Test User');
+  }, TEST_CONSTANTS.TEST_TIMEOUT);
+
+  afterAll(async () => {
+    await teardownTestApp(context);
+  });
+
+  // 간단한 PNG 이미지 버퍼 생성 (1x1 픽셀)
+  const createTestImageBuffer = (): Buffer => {
+    // 최소한의 유효한 PNG 이미지 (1x1 픽셀, 투명)
+    const pngSignature = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+    const ihdr = Buffer.from([
+      0x00, 0x00, 0x00, 0x0D, // IHDR chunk length
+      0x49, 0x48, 0x44, 0x52, // IHDR
+      0x00, 0x00, 0x00, 0x01, // width: 1
+      0x00, 0x00, 0x00, 0x01, // height: 1
+      0x08, 0x06, 0x00, 0x00, 0x00, // bit depth, color type, compression, filter, interlace
+      0x1F, 0x15, 0xC4, 0x89, // CRC
+    ]);
+    const iend = Buffer.from([
+      0x00, 0x00, 0x00, 0x00, // IEND chunk length
+      0x49, 0x45, 0x4E, 0x44, // IEND
+      0xAE, 0x42, 0x60, 0x82, // CRC
+    ]);
+    return Buffer.concat([pngSignature, ihdr, iend]);
+  };
+
+  it('POST /users/profile-image - 프로필 이미지 업로드 성공', async () => {
+    const imageBuffer = createTestImageBuffer();
+    
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/users/profile-image')
+      .attach('image', imageBuffer, 'test.png')
+      .expect(201);
+
+    expect(response.body).toHaveProperty('url');
+    expect(typeof response.body.url).toBe('string');
+    expect(response.body.url.length).toBeGreaterThan(0);
+  });
+
+  it('POST /users/profile-image - 인증 없이 업로드 시 401 에러', async () => {
+    const imageBuffer = createTestImageBuffer();
+    
+    const response = await context.testHelper.unauthenticatedRequest()
+      .post('/users/profile-image')
+      .attach('image', imageBuffer, 'test.png')
+      .expect(401);
+
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('POST /users/profile-image - 파일 없이 업로드 시 400 에러', async () => {
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/users/profile-image')
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
+    const message = Array.isArray(response.body.message) 
+      ? response.body.message[0] 
+      : response.body.message;
+    expect(message).toContain('이미지 파일이 필요합니다');
+  });
+
+  it('POST /users/profile-image - 지원하지 않는 파일 형식 시 400 에러', async () => {
+    const textBuffer = Buffer.from('This is not an image');
+    
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/users/profile-image')
+      .attach('image', textBuffer, 'test.txt')
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
+    const message = Array.isArray(response.body.message) 
+      ? response.body.message[0] 
+      : response.body.message;
+    expect(message).toContain('지원하지 않는 이미지 형식');
+  });
+
+  it('POST /users/profile-image - 파일 크기 초과 시 400 또는 413 에러', async () => {
+    // 11MB 크기의 버퍼 생성
+    const largeBuffer = Buffer.alloc(11 * 1024 * 1024);
+    
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/users/profile-image')
+      .attach('image', largeBuffer, 'large.png')
+      .expect((res) => {
+        // NestJS는 파일 크기 초과 시 413을 반환할 수 있음
+        expect([400, 413]).toContain(res.status);
+      });
+
+    expect(response.body).toHaveProperty('message');
+    const message = Array.isArray(response.body.message) 
+      ? response.body.message[0] 
+      : response.body.message;
+    expect(message).toMatch(/파일 크기|payload|too large/i);
+  });
+});
+
+describe('/users/:id - 프로필 업데이트 API', () => {
+  let context: TestContext;
+  let testUser: TestUser;
+  let otherTestUser: TestUser;
+
+  beforeAll(async () => {
+    context = await setupTestApp();
+    [testUser, otherTestUser] = await context.testHelper.createUsers(2, 'Profile Update Test User');
+  }, TEST_CONSTANTS.TEST_TIMEOUT);
+
+  afterAll(async () => {
+    await teardownTestApp(context);
+  });
+
+  it('PATCH /users/:id - 프로필 이미지 URL 업데이트 성공', async () => {
+    const newImageUrl = 'https://example.com/profile.jpg';
+    
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/users/${testUser.id}`)
+      .send({ profileImageUrl: newImageUrl })
+      .expect(200);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body).toHaveProperty('profileImageUrl');
+    expect(response.body.profileImageUrl).toBe(newImageUrl);
+  });
+
+  it('PATCH /users/:id - 프로필 이미지 URL 제거 성공', async () => {
+    // 먼저 이미지 URL 설정
+    await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/users/${testUser.id}`)
+      .send({ profileImageUrl: 'https://example.com/profile.jpg' })
+      .expect(200);
+
+    // 이미지 URL 제거
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/users/${testUser.id}`)
+      .send({ profileImageUrl: null })
+      .expect(200);
+
+    expect(response.body).toHaveProperty('profileImageUrl');
+    expect(response.body.profileImageUrl).toBeNull();
+  });
+
+  it('PATCH /users/:id - 다른 사용자 프로필 수정 시 403 에러', async () => {
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/users/${otherTestUser.id}`)
+      .send({ profileImageUrl: 'https://example.com/profile.jpg' })
+      .expect(403);
+
+    expect(response.body).toHaveProperty('message');
+    const message = Array.isArray(response.body.message) 
+      ? response.body.message[0] 
+      : response.body.message;
+    expect(message).toContain('권한이 없습니다');
+  });
+
+  it('PATCH /users/:id - 인증 없이 업데이트 시 401 에러', async () => {
+    const response = await context.testHelper.unauthenticatedRequest()
+      .patch(`/users/${testUser.id}`)
+      .send({ profileImageUrl: 'https://example.com/profile.jpg' })
+      .expect(401);
+
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('PATCH /users/:id - 존재하지 않는 사용자 업데이트 시 404 에러', async () => {
+    const nonExistentUserId = 999999;
+    
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/users/${nonExistentUserId}`)
+      .send({ profileImageUrl: 'https://example.com/profile.jpg' })
+      .expect(404);
+
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('PATCH /users/:id - 잘못된 사용자 ID 형식 시 400 에러', async () => {
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch('/users/invalid-id')
+      .send({ profileImageUrl: 'https://example.com/profile.jpg' })
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
+  });
+
+  it('PATCH /users/:id - 프로필 이미지 URL이 너무 길면 400 에러', async () => {
+    const longUrl = 'https://example.com/' + 'a'.repeat(600); // 500자 초과
+    
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/users/${testUser.id}`)
+      .send({ profileImageUrl: longUrl })
+      .expect(400);
+
+    expect(response.body).toHaveProperty('message');
   });
 });
 

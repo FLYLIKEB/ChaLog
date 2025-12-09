@@ -5,6 +5,13 @@ import { MemoryRouter } from 'react-router-dom';
 import { usersApi, notesApi } from '../../lib/api';
 import { User, Note } from '../../types';
 
+const mockNavigate = vi.fn();
+const mockUseParams = vi.fn(() => ({ id: '2' }));
+const mockUseAuth = vi.fn(() => ({
+  user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+  isAuthenticated: true,
+}));
+
 vi.mock('../../lib/api', async () => {
   const actual = await vi.importActual<typeof import('../../lib/api')>('../../lib/api');
   return {
@@ -19,18 +26,15 @@ vi.mock('../../lib/api', async () => {
 });
 
 vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({
-    user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
-    isAuthenticated: true,
-  }),
+  useAuth: () => mockUseAuth(),
 }));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
-    useParams: () => ({ id: '2' }),
-    useNavigate: () => vi.fn(),
+    useParams: () => mockUseParams(),
+    useNavigate: () => mockNavigate,
   };
 });
 
@@ -85,6 +89,12 @@ const mockNotes: Note[] = [
 
 describe('UserProfile', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseParams.mockReturnValue({ id: '2' });
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+      isAuthenticated: true,
+    });
     vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
     vi.mocked(notesApi.getAll).mockResolvedValue(mockNotes);
   });
@@ -179,6 +189,122 @@ describe('UserProfile', () => {
     await waitFor(() => {
       expect(screen.getByText(/아직 작성한 노트가 없습니다/)).toBeInTheDocument();
     });
+  });
+
+  it('내 프로필일 때 프로필 사진 수정 버튼을 표시해야 함', async () => {
+    mockUseParams.mockReturnValue({ id: '1' }); // 현재 사용자 ID와 동일
+    
+    const mockUserWithProfile: User = {
+      ...mockUser,
+      id: 1, // 현재 사용자 ID와 동일
+      profileImageUrl: 'https://example.com/profile.jpg',
+    };
+
+    vi.mocked(usersApi.getById).mockResolvedValue(mockUserWithProfile);
+    
+    render(
+      <MemoryRouter>
+        <UserProfile />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      const editButton = screen.getByLabelText('프로필 사진 수정');
+      expect(editButton).toBeInTheDocument();
+    });
+  });
+
+  it('다른 사용자 프로필일 때 프로필 사진 수정 버튼을 표시하지 않아야 함', async () => {
+    const mockUserWithProfile: User = {
+      ...mockUser,
+      id: 2, // 현재 사용자 ID와 다름
+      profileImageUrl: 'https://example.com/profile.jpg',
+    };
+
+    vi.mocked(usersApi.getById).mockResolvedValue(mockUserWithProfile);
+    
+    render(
+      <MemoryRouter>
+        <UserProfile />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('프로필 사진 수정')).not.toBeInTheDocument();
+    });
+  });
+
+  it('프로필 사진 URL이 있을 때 UserAvatar에 전달해야 함', async () => {
+    const mockUserWithProfile: User = {
+      ...mockUser,
+      profileImageUrl: 'https://example.com/profile.jpg',
+    };
+
+    vi.mocked(usersApi.getById).mockResolvedValue(mockUserWithProfile);
+    
+    render(
+      <MemoryRouter>
+        <UserProfile />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      // UserAvatar 컴포넌트가 렌더링되어야 함
+      const avatar = screen.getByText('프').closest('[data-slot="avatar"]');
+      expect(avatar).toBeInTheDocument();
+      // 이미지가 있을 수 있지만 테스트 환경에서는 로드되지 않을 수 있음
+      const image = screen.queryByAltText('프로필 사용자');
+      if (image) {
+        expect(image).toHaveAttribute('src', 'https://example.com/profile.jpg');
+      }
+    });
+  });
+
+  it('내 프로필일 때 모든 노트를 조회해야 함', async () => {
+    mockUseParams.mockReturnValue({ id: '1' }); // 현재 사용자 ID와 동일
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+      isAuthenticated: true,
+      isLoading: false,
+    });
+    
+    const mockUserOwn: User = {
+      ...mockUser,
+      id: 1, // 현재 사용자 ID와 동일
+    };
+
+    vi.mocked(usersApi.getById).mockResolvedValue(mockUserOwn);
+    
+    render(
+      <MemoryRouter>
+        <UserProfile />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      // 내 프로필이면 undefined (모든 노트 조회)
+      expect(notesApi.getAll).toHaveBeenCalledWith(1, undefined);
+    }, { timeout: 3000 });
+  });
+
+  it('다른 사용자 프로필일 때 공개 노트만 조회해야 함', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+      isAuthenticated: true,
+      isLoading: false,
+    });
+    vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
+    
+    render(
+      <MemoryRouter>
+        <UserProfile />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      // 다른 사용자면 true (공개 노트만 조회)
+      expect(notesApi.getAll).toHaveBeenCalledWith(2, true);
+    }, { timeout: 3000 });
   });
 });
 

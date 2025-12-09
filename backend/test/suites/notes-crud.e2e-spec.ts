@@ -77,7 +77,11 @@ describe('/notes - 노트 CRUD API', () => {
 
     expect(response.body).toHaveProperty('id');
     expect(response.body.schemaId).toBe(schema.id);
-    expect(response.body.overallRating).toBeCloseTo(noteData.overallRating, 1);
+    // overallRating은 DB에서 DECIMAL로 저장되어 문자열로 반환될 수 있음
+    const overallRating = typeof response.body.overallRating === 'string' 
+      ? parseFloat(response.body.overallRating) 
+      : response.body.overallRating;
+    expect(overallRating).toBeCloseTo(noteData.overallRating, 1);
     expect(response.body.memo).toBe(noteData.memo);
     expect(response.body.isPublic).toBe(noteData.isPublic);
     expect(response.body.axisValues).toBeDefined();
@@ -221,7 +225,11 @@ describe('/notes - 노트 CRUD API', () => {
       })
       .expect(200);
 
-    expect(response.body.overallRating).toBe(5.0);
+    // overallRating은 DB에서 DECIMAL로 저장되어 문자열로 반환될 수 있음
+    const overallRating = typeof response.body.overallRating === 'string' 
+      ? parseFloat(response.body.overallRating) 
+      : response.body.overallRating;
+    expect(overallRating).toBe(5.0);
     expect(response.body.memo).toBe('수정된 메모');
     expect(response.body.axisValues).toBeDefined();
     expect(response.body.axisValues.length).toBe(axes.length);

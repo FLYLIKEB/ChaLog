@@ -2,10 +2,20 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => {
-  // 테스트 환경에서는 TEST_DATABASE_URL 우선 사용, 없으면 DATABASE_URL 사용
+  // 테스트 환경에서는 TEST_DATABASE_URL만 사용 (필수), 프로덕션에서는 DATABASE_URL 사용
   const isTest = configService.get<string>('NODE_ENV') === 'test' || process.env.NODE_ENV === 'test';
   const databaseUrl = isTest 
-    ? (configService.get<string>('TEST_DATABASE_URL') || configService.get<string>('DATABASE_URL'))
+    ? (() => {
+        const testDbUrl = configService.get<string>('TEST_DATABASE_URL');
+        if (!testDbUrl) {
+          throw new Error(
+            'TEST_DATABASE_URL must be set for tests. ' +
+            'Using production DATABASE_URL is dangerous and will delete all data. ' +
+            'Please set TEST_DATABASE_URL to a test database.'
+          );
+        }
+        return testDbUrl;
+      })()
     : configService.get<string>('DATABASE_URL');
   
   if (!databaseUrl) {

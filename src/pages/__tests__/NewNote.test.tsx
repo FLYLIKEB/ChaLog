@@ -34,6 +34,23 @@ vi.mock('../../lib/api', () => ({
   },
   notesApi: {
     create: vi.fn(() => Promise.resolve({ id: 1 })),
+    getActiveSchemas: vi.fn(() => Promise.resolve([
+      {
+        id: 1,
+        code: 'STANDARD',
+        version: '1.0.0',
+        nameKo: '표준 평가',
+        nameEn: 'Standard Rating',
+        axes: [
+          { id: 1, code: 'RICHNESS', nameKo: '풍부함', minValue: 1, maxValue: 5, stepValue: 1 },
+          { id: 2, code: 'STRENGTH', nameKo: '강도', minValue: 1, maxValue: 5, stepValue: 1 },
+        ],
+      },
+    ])),
+    getSchemaAxes: vi.fn(() => Promise.resolve([
+      { id: 1, code: 'RICHNESS', nameKo: '풍부함', minValue: 1, maxValue: 5, stepValue: 1 },
+      { id: 2, code: 'STRENGTH', nameKo: '강도', minValue: 1, maxValue: 5, stepValue: 1 },
+    ])),
   },
 }));
 

@@ -20,10 +20,14 @@ export interface TestContext {
  * 테스트 앱 초기화
  */
 export async function setupTestApp(): Promise<TestContext> {
-  // 테스트 DB URL 확인
-  const testDbUrl = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+  // 테스트 DB URL 확인 - TEST_DATABASE_URL 필수
+  const testDbUrl = process.env.TEST_DATABASE_URL;
   if (!testDbUrl) {
-    throw new Error('TEST_DATABASE_URL or DATABASE_URL must be set for tests');
+    throw new Error(
+      'TEST_DATABASE_URL must be set for tests. ' +
+      'Using production DATABASE_URL is dangerous and will delete all data. ' +
+      'Please set TEST_DATABASE_URL to a test database.'
+    );
   }
 
   // 테스트 DB 이름 추출 (로깅용)
@@ -33,11 +37,19 @@ export async function setupTestApp(): Promise<TestContext> {
     testDatabaseName = url.pathname.slice(1);
     console.log(`[TEST] Using test database: ${testDatabaseName}`);
     
-    // 경고: 프로덕션 DB를 사용하는 경우 경고
+    // 프로덕션 DB 사용 방지: DB 이름에 "test"가 없으면 에러 발생
     if (!testDatabaseName.includes('test') && !testDatabaseName.includes('_test')) {
-      console.warn(`[WARNING] Test database name "${testDatabaseName}" does not contain "test". Make sure you are using a test database!`);
+      throw new Error(
+        `[ERROR] Test database name "${testDatabaseName}" does not contain "test". ` +
+        'This is likely a production database. Tests will delete all data. ' +
+        'Please set TEST_DATABASE_URL to a test database (e.g., chalog_test).'
+      );
     }
   } catch (error) {
+    // URL 파싱 에러가 아닌 경우 (위의 throw) 그대로 전파
+    if (error instanceof Error && error.message.includes('[ERROR]')) {
+      throw error;
+    }
     console.warn('[WARNING] Could not parse database URL for validation');
   }
   
@@ -125,9 +137,9 @@ export async function ensureDefaultSchema(dataSource: DataSource): Promise<numbe
     const axisCount = axesResult && axesResult.length > 0 ? parseInt(axesResult[0].count || '0', 10) : 0;
     
     if (axisCount === 0) {
-      // 기본 축들 생성
+      // 기본 축들 생성 (컬럼명을 백틱으로 감싸서 예약어 충돌 방지)
       await dataSource.query(`
-        INSERT INTO rating_axis (schemaId, code, nameKo, nameEn, descriptionKo, descriptionEn, minValue, maxValue, stepValue, displayOrder, isRequired)
+        INSERT INTO rating_axis (\`schemaId\`, \`code\`, \`nameKo\`, \`nameEn\`, \`descriptionKo\`, \`descriptionEn\`, \`minValue\`, \`maxValue\`, \`stepValue\`, \`displayOrder\`, \`isRequired\`)
         VALUES
           (${schemaId}, 'RICHNESS', '풍부함', 'Richness', '차의 풍부한 맛과 향', 'Richness of taste and aroma', 1, 5, 1, 1, TRUE),
           (${schemaId}, 'STRENGTH', '강도', 'Strength', '차의 강한 맛', 'Strength of taste', 1, 5, 1, 2, TRUE),

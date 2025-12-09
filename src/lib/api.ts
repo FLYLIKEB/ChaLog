@@ -320,7 +320,18 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
-    const url = `${this.baseURL}${endpoint}`;
+    // 테스트 환경에서 상대 URL을 절대 URL로 변환
+    let url: string;
+    if (this.baseURL.startsWith('/')) {
+      // 상대 경로인 경우 절대 URL로 변환
+      // 테스트 환경(jsdom)에서는 window.location.origin이 없을 수 있으므로 기본값 사용
+      const origin = (typeof window !== 'undefined' && window.location?.origin) 
+        ? window.location.origin 
+        : 'http://localhost:5173';
+      url = `${origin}${this.baseURL}${endpoint}`;
+    } else {
+      url = `${this.baseURL}${endpoint}`;
+    }
     
     // Chrome의 Private Network Access 정책 대응
     // targetAddressSpace 옵션을 fetch 옵션에 직접 포함
@@ -689,5 +700,7 @@ export const notesApi = {
 
 export const usersApi = {
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
+  uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
+  updateProfile: (id: number, data: { profileImageUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
 };
 
