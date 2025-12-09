@@ -21,10 +21,10 @@ PR 번호: 19
 ### 처리 프로세스
 
 1. **PR 정보 파싱**: 링크에서 PR 번호 추출 또는 직접 사용
-2. **리뷰 스레드 확인**: 해결되지 않은 모든 리뷰 스레드 조회
-3. **코드 반영**: 리뷰 내용을 코드에 자동 반영
-4. **커밋**: 모든 변경사항을 하나의 커밋으로 생성
-5. **푸시**: 원격 저장소에 한번에 푸시
+2. **리뷰 스레드 확인**: 해결되지 않은 모든 코드래빗 리뷰 스레드 조회
+3. **코드 반영**: AI 도구를 사용하여 리뷰 내용을 코드에 반영
+4. **자동 커밋**: 파일 변경 감지 시 자동으로 커밋 및 푸시
+5. **답글 작성**: 리뷰 스레드의 첫 번째 코멘트에 직접 답글 작성 (REST API 사용)
 6. **Resolve 처리**: 해결된 리뷰 스레드를 자동으로 resolve
 
 ## 자동화 워크플로우
@@ -82,17 +82,26 @@ git commit -m "fix: [PR #$PR_NUMBER 리뷰 반영] 리뷰 내용 요약"
 git push
 ```
 
-### 5. 리뷰 스레드 자동 Resolve
+### 5. 리뷰 스레드에 답글 작성 및 Resolve
 
 ```bash
-# 해결된 리뷰 스레드 ID 수집
-THREAD_IDS=$(gh api graphql -f query="..." | jq -r '...')
+# 리뷰 코멘트에 답글 작성 (REST API)
+gh api "repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies" \
+  -X POST \
+  -f body="✅ 리뷰 반영 완료"
 
-# 모든 스레드 resolve 처리
-for THREAD_ID in $THREAD_IDS; do
-  gh api graphql -f query="mutation { resolveReviewThread(input: { threadId: \"$THREAD_ID\" }) { thread { id isResolved } } }"
-done
+# 리뷰 스레드 resolve (GraphQL API)
+gh api graphql -f query="mutation {
+  resolveReviewThread(input: { threadId: \"$THREAD_ID\" }) {
+    thread {
+      id
+      isResolved
+    }
+  }
+}"
 ```
+
+참고: 스크립트는 리뷰 스레드의 첫 번째 코멘트 ID를 사용하여 직접 답글을 작성합니다.
 
 ## 자동화 스크립트
 
