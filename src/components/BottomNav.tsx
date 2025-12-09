@@ -29,7 +29,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-white border-t px-4 py-3 flex items-center justify-around',
+        'fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3 flex items-center justify-around',
         className,
       )}
       {...rest}
@@ -45,13 +45,13 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
             onClick={() => handleNavigate(item.path)}
             className={cn(
               'flex flex-col items-center gap-1 transition-colors',
-              isActive ? 'text-emerald-600' : 'text-gray-500',
+              isActive ? 'text-primary' : 'text-muted-foreground',
             )}
           >
             <div
               className={cn(
                 'w-6 h-6',
-                isActive && 'rounded-full bg-emerald-100 flex items-center justify-center',
+                isActive && 'rounded-full bg-accent flex items-center justify-center',
               )}
             />
             <span className="text-xs">{item.label}</span>

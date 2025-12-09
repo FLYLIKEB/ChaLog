@@ -11,7 +11,8 @@
 - Modules: `backend/src/{module}/`
 
 ### Testing
+- See `development/testing.md` for detailed testing guidelines
 - Frontend: Vitest + Testing Library (`*.test.tsx` in `__tests__/`)
-- Backend: Jest (`*.spec.ts` alongside source)
+- Backend: Jest (`*.spec.ts` alongside source, E2E in `test/`)
 - Pattern: Arrange → Act → Assert
 

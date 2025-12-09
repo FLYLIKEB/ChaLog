@@ -28,10 +28,10 @@ export function EmptyState({ type, message }: EmptyStateProps) {
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
-      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-        <Icon className="w-8 h-8 text-gray-400" />
+      <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+        <Icon className="w-8 h-8 text-muted-foreground" />
       </div>
-      <p className="text-gray-500 text-center">{displayMessage}</p>
+      <p className="text-muted-foreground text-center">{displayMessage}</p>
     </div>
   );
 }

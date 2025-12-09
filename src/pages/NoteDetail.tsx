@@ -95,7 +95,7 @@ export function NoteDetail() {
     return (
       <DetailFallback title="노트 상세">
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       </DetailFallback>
     );
@@ -203,19 +203,19 @@ export function NoteDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-6">
+    <div className="min-h-screen bg-background pb-6">
       <Header showBack title="노트 상세" />
       
       <div className="p-4 space-y-6">
         {/* 차 정보 요약 */}
         {tea && (
-          <section className="bg-white rounded-lg p-4">
+          <section className="bg-card rounded-lg p-4">
             <button
               onClick={() => navigate(`/tea/${tea.id}`)}
               className="text-left w-full"
             >
-              <h2 className="mb-2">{tea.name}</h2>
-              <div className="flex flex-wrap gap-2 text-sm text-gray-600">
+              <h2 className="mb-2 text-primary">{tea.name}</h2>
+              <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                 <span>{tea.type}</span>
                 {tea.year && <span>· {tea.year}년</span>}
                 {tea.seller && <span>· {tea.seller}</span>}
@@ -225,12 +225,12 @@ export function NoteDetail() {
         )}
 
         {/* 평균 평점 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-                <span className="text-2xl">{Number(note.rating).toFixed(1)}</span>
+                <span className="text-2xl text-primary">{Number(note.rating).toFixed(1)}</span>
               </div>
               <Badge variant={note.isPublic ? 'default' : 'secondary'}>
                 {note.isPublic ? (
@@ -248,18 +248,17 @@ export function NoteDetail() {
                   disabled={isTogglingLike}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
                     isLiked 
-                      ? 'text-[#030213] hover:bg-[#030213]/10' 
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'text-primary hover:bg-primary/10' 
+                      : 'text-muted-foreground hover:bg-accent'
                   }`}
                   title={isLiked ? '좋아요 취소' : '좋아요'}
                 >
                   <Heart
                     className={`w-5 h-5 transition-all ${
                       isLiked 
-                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
-                        : 'fill-none text-gray-600 stroke-gray-600'
+                        ? 'fill-primary text-primary stroke-primary' 
+                        : 'fill-none text-muted-foreground stroke-muted-foreground'
                     }`}
-                    style={isLiked ? { fill: '#030213', color: '#030213' } : {}}
                   />
                   {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
                 </button>
@@ -269,26 +268,32 @@ export function NoteDetail() {
                   disabled={isTogglingBookmark}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
                     isBookmarked 
-                      ? 'text-[#030213] hover:bg-[#030213]/10' 
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'text-primary hover:bg-primary/10' 
+                      : 'text-muted-foreground hover:bg-accent'
                   }`}
                   title={isBookmarked ? '북마크 해제' : '북마크 추가'}
                 >
                   <Bookmark
                     className={`w-5 h-5 transition-all ${
                       isBookmarked 
-                        ? 'fill-[#030213] text-[#030213] stroke-[#030213]' 
-                        : 'fill-none text-gray-600 stroke-gray-600'
+                        ? 'fill-primary text-primary stroke-primary' 
+                        : 'fill-none text-muted-foreground stroke-muted-foreground'
                     }`}
-                    style={isBookmarked ? { fill: '#030213', color: '#030213' } : {}}
                   />
                 </button>
               </div>
             )}
+
           </div>
           
-          <p className="text-xs text-gray-500 mb-4">
-            {note.createdAt.toLocaleDateString('ko-KR')} · {note.userName}
+          <p className="text-xs text-muted-foreground mb-4">
+            {note.createdAt.toLocaleDateString('ko-KR')} ·{' '}
+            <button
+              onClick={() => navigate(`/user/${note.userId}`)}
+              className="hover:text-primary cursor-pointer transition-colors"
+            >
+              {note.userName}
+            </button>
           </p>
 
           <RatingVisualization ratings={note.ratings} />
@@ -296,11 +301,11 @@ export function NoteDetail() {
 
         {/* 이미지 갤러리 */}
         {note.images && note.images.length > 0 && (
-          <section className="bg-white rounded-lg p-4">
-            <h3 className="mb-3">사진</h3>
+          <section className="bg-card rounded-lg p-4">
+            <h3 className="mb-3 text-primary">사진</h3>
             <div className="grid grid-cols-2 gap-3 justify-items-center">
               {note.images.map((imageUrl, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-gray-100 w-full max-w-xs">
+                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full max-w-xs">
                   <ImageWithFallback
                     src={imageUrl}
                     alt={`Note image ${index + 1}`}
@@ -314,8 +319,8 @@ export function NoteDetail() {
 
         {/* 태그 */}
         {note.tags && note.tags.length > 0 && (
-          <section className="bg-white rounded-lg p-4">
-            <h3 className="mb-3">태그</h3>
+          <section className="bg-card rounded-lg p-4">
+            <h3 className="mb-3 text-primary">태그</h3>
             <div className="flex flex-wrap gap-2">
               {note.tags.map((tag, index) => (
                 <Badge key={index} variant="secondary">
@@ -328,9 +333,9 @@ export function NoteDetail() {
 
         {/* 메모 */}
         {note.memo && (
-          <section className="bg-white rounded-lg p-4">
-            <h3 className="mb-3">메모</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">{note.memo}</p>
+          <section className="bg-card rounded-lg p-4">
+            <h3 className="mb-3 text-primary">메모</h3>
+            <p className="text-foreground whitespace-pre-wrap">{note.memo}</p>
           </section>
         )}
 

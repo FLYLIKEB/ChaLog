@@ -177,9 +177,50 @@ src/
 
 ## 테스트
 
+### 단위 테스트
+
 ```bash
 npm run test
 ```
+
+### E2E 테스트
+
+**⚠️ 중요: E2E 테스트는 별도의 테스트 데이터베이스를 사용해야 합니다.**
+
+테스트 실행 시 프로덕션 데이터베이스의 데이터가 삭제될 수 있으므로, 반드시 테스트 전용 데이터베이스를 설정하세요.
+
+**테스트 DB 설정 방법:**
+
+1. 테스트용 데이터베이스 생성:
+```sql
+CREATE DATABASE cha_log_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+2. `.env.test` 파일 생성 (`.env.test.example` 참고):
+```bash
+cp .env.test.example .env.test
+```
+
+3. `.env.test` 파일에 테스트 DB URL 설정:
+```env
+TEST_DATABASE_URL=mysql://username:password@localhost:3306/cha_log_test
+```
+
+또는 기존 `.env` 파일의 `DATABASE_URL`을 테스트 DB로 변경:
+```env
+DATABASE_URL=mysql://username:password@localhost:3306/cha_log_test
+```
+
+**테스트 실행:**
+
+```bash
+npm run test:e2e
+```
+
+**주의사항:**
+- 테스트 DB 이름에 `test` 또는 `_test`가 포함되어 있지 않으면 경고가 표시됩니다
+- 테스트 실행 후 테스트 DB의 모든 데이터가 삭제됩니다
+- 프로덕션 DB를 사용하지 않도록 주의하세요
 
 # GitHub Actions 자동 배포 테스트
 # GitHub Actions 배포 테스트 - Wed Nov 26 23:06:23 KST 2025

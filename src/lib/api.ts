@@ -1,5 +1,5 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea } from '../types';
+import { Tea, User } from '../types';
 
 // API Base URL 설정
 // 프로덕션(Vercel): /api 프록시 사용 (vercel.json의 rewrites 설정)
@@ -630,5 +630,9 @@ export const notesApi = {
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
+};
+
+export const usersApi = {
+  getById: (id: number) => apiClient.get<User>(`/users/${id}`),
 };
 
