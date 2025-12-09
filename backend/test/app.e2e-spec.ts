@@ -267,11 +267,11 @@ describe('AppController (e2e)', () => {
 
     it('POST /teas - 인증된 사용자가 새 차를 생성할 수 있어야 함', async () => {
       const teaData = {
-        name: '정산소종',
-        year: 2023,
-        type: '홍차',
-        seller: '차향',
-        origin: '중국 푸젠',
+          name: '정산소종',
+          year: 2023,
+          type: '홍차',
+          seller: '차향',
+          origin: '중국 푸젠',
       };
       
       const response = await testHelper.authenticatedRequest(testUser.token)
@@ -362,15 +362,13 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/like - 좋아요 취소 성공', async () => {
       // 먼저 좋아요 추가
-      await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
 
       // 좋아요 취소
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
 
       expect(response.body.liked).toBe(false);
@@ -379,25 +377,22 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/like - 중복 좋아요 방지 (토글 동작)', async () => {
       // 첫 번째 좋아요
-      const response1 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response1 = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
       expect(response1.body.liked).toBe(true);
       expect(response1.body.likeCount).toBe(1);
 
       // 두 번째 좋아요 (취소되어야 함)
-      const response2 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response2 = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
       expect(response2.body.liked).toBe(false);
       expect(response2.body.likeCount).toBe(0);
 
       // 세 번째 좋아요 (다시 추가되어야 함)
-      const response3 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response3 = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
       expect(response3.body.liked).toBe(true);
       expect(response3.body.likeCount).toBe(1);
@@ -405,9 +400,8 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/like - 존재하지 않는 노트에 좋아요 실패', async () => {
       const nonExistentNoteId = 99999;
-      const response = await request(app.getHttpServer())
+      const response = await testHelper.authenticatedRequest(testUser2.token)
         .post(`/notes/${nonExistentNoteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
         .expect(404);
 
       expect(response.body).toHaveProperty('message');
@@ -415,15 +409,14 @@ describe('AppController (e2e)', () => {
     });
 
     it('POST /notes/:id/like - 인증 없이 좋아요 실패', async () => {
-      return request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
+      return testHelper.unauthenticatedRequest()
+        .post(`/notes/${testNote.id}/like`)
         .expect(401);
     });
 
     it('POST /notes/:id/like - 잘못된 노트 ID 형식으로 좋아요 실패', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await testHelper.authenticatedRequest(testUser2.token)
         .post('/notes/invalid-id/like')
-        .set('Authorization', `Bearer ${authToken2}`)
         .expect(400);
 
       expect(response.body).toHaveProperty('message');
@@ -432,18 +425,16 @@ describe('AppController (e2e)', () => {
 
     it('GET /notes/:id - 노트 조회 시 좋아요 정보 포함', async () => {
       // 먼저 좋아요 추가
-      const likeResponse = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const likeResponse = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect(201);
       
       expect(likeResponse.body.liked).toBe(true);
       expect(likeResponse.body.likeCount).toBe(1);
 
       // 노트 조회 (인증된 사용자) - 트랜잭션으로 인해 데이터가 즉시 반영됨
-      const response = await request(app.getHttpServer())
-        .get(`/notes/${noteId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .get(`/notes/${testNote.id}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('likeCount');
@@ -454,9 +445,8 @@ describe('AppController (e2e)', () => {
 
     it('GET /notes/:id - 좋아요하지 않은 노트 조회 시 isLiked는 false', async () => {
       // 좋아요 없이 노트 조회
-      const response = await request(app.getHttpServer())
-        .get(`/notes/${noteId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .get(`/notes/${testNote.id}`)
         .expect(200);
 
       expect(response.body.likeCount).toBe(0);
@@ -466,8 +456,8 @@ describe('AppController (e2e)', () => {
     it('GET /notes/:id - 인증 없이 노트 조회 시 좋아요 정보 포함 (isLiked는 false)', async () => {
       // 이전 테스트에서 좋아요가 추가되어 있을 수 있으므로 확인
       // 인증 없이 노트 조회
-      const response = await request(app.getHttpServer())
-        .get(`/notes/${noteId}`)
+      const response = await testHelper.unauthenticatedRequest()
+        .get(`/notes/${testNote.id}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('likeCount');
@@ -479,13 +469,12 @@ describe('AppController (e2e)', () => {
 
     it('GET /notes - 노트 목록 조회 시 좋아요 정보 포함', async () => {
       // 노트 목록 조회
-      const response = await request(app.getHttpServer())
+      const response = await testHelper.authenticatedRequest(testUser2.token)
         .get('/notes')
-        .set('Authorization', `Bearer ${authToken2}`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
-      const note = response.body.find((n: any) => n.id === noteId);
+      const note = response.body.find((n: any) => n.id === testNote.id);
       expect(note).toBeDefined();
       expect(note).toHaveProperty('likeCount');
       expect(note).toHaveProperty('isLiked');
@@ -498,9 +487,8 @@ describe('AppController (e2e)', () => {
     it('POST /notes/:id/like - 여러 사용자가 같은 노트에 좋아요', async () => {
       // Rate limiting 회피를 위해 테스트를 간소화
       // 사용자 1이 좋아요
-      const response1 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/like`)
-        .set('Authorization', `Bearer ${authToken1}`)
+      const response1 = await testHelper.authenticatedRequest(testUser1.token)
+        .post(`/notes/${testNote.id}/like`)
         .expect((res) => {
           // Rate limiting이 발생할 수 있으므로 201 또는 429 모두 허용
           if (res.status === 429) {
@@ -515,9 +503,8 @@ describe('AppController (e2e)', () => {
       // Rate limiting이 발생하지 않은 경우에만 계속
       if (response1.status === 201) {
         // 사용자 1이 좋아요 취소
-        const response2 = await request(app.getHttpServer())
-          .post(`/notes/${noteId}/like`)
-          .set('Authorization', `Bearer ${authToken1}`)
+        const response2 = await testHelper.authenticatedRequest(testUser1.token)
+          .post(`/notes/${testNote.id}/like`)
           .expect((res) => {
             if (res.status === 429) {
               return;
@@ -531,29 +518,17 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/like - 비공개 노트에 작성자가 아닌 사용자가 좋아요 시도 시 403 에러', async () => {
       // 비공개 노트 생성
-      const privateNoteResponse = await request(app.getHttpServer())
-        .post('/notes')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          teaId: teaId,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
+      const privateNote = await testHelper.createNote(testUser1.token, {
+        teaId: testTea.id,
+        rating: TEST_DEFAULTS.NOTE.rating,
+        ratings: TEST_DEFAULTS.NOTE.ratings,
           memo: '비공개 테스트 노트입니다',
           isPublic: false,
-        })
-        .expect(201);
-      const privateNoteId = privateNoteResponse.body.id;
+      });
 
       // 작성자가 아닌 사용자(userId2)가 좋아요 시도
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${privateNoteId}/like`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${privateNote.id}/like`)
         .expect(403);
 
       expect(response.body).toHaveProperty('message');
@@ -561,34 +536,22 @@ describe('AppController (e2e)', () => {
       expect(response.body.message).toContain('권한이 없습니다');
 
       // 테스트 데이터 정리
-      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
 
     it('POST /notes/:id/like - 비공개 노트에 작성자가 좋아요 성공', async () => {
       // 비공개 노트 생성
-      const privateNoteResponse = await request(app.getHttpServer())
-        .post('/notes')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          teaId: teaId,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
+      const privateNote = await testHelper.createNote(testUser1.token, {
+        teaId: testTea.id,
+        rating: TEST_DEFAULTS.NOTE.rating,
+        ratings: TEST_DEFAULTS.NOTE.ratings,
           memo: '비공개 테스트 노트입니다',
           isPublic: false,
-        })
-        .expect(201);
-      const privateNoteId = privateNoteResponse.body.id;
+      });
 
       // 작성자(userId1)가 좋아요 시도
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${privateNoteId}/like`)
-        .set('Authorization', `Bearer ${authToken1}`)
+      const response = await testHelper.authenticatedRequest(testUser1.token)
+        .post(`/notes/${privateNote.id}/like`)
         .expect(201);
 
       expect(response.body).toHaveProperty('liked');
@@ -597,18 +560,16 @@ describe('AppController (e2e)', () => {
       expect(response.body.likeCount).toBe(1);
 
       // 테스트 데이터 정리
-      await dataSource.query('DELETE FROM note_likes WHERE noteId = ?', [privateNoteId]);
-      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+      await dataSource.query('DELETE FROM note_likes WHERE noteId = ?', [privateNote.id]);
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
   });
 
   describe('/notes/:id/bookmark - 노트 북마크 API', () => {
-    let authToken1: string;
-    let authToken2: string;
-    let userId1: number;
-    let userId2: number;
-    let teaId: number;
-    let noteId: number;
+    let testUser1: TestUser;
+    let testUser2: TestUser;
+    let testTea: TestTea;
+    let testNote: TestNote;
 
     beforeAll(async () => {
       // 북마크 테이블이 없으면 생성
@@ -630,77 +591,27 @@ describe('AppController (e2e)', () => {
         // 테이블이 이미 존재하거나 다른 이유로 실패할 수 있음
         console.warn('북마크 테이블 생성 시도 중 오류 (무시 가능):', error.message);
       }
-      // 테스트용 사용자 2명 등록 및 로그인
-      const uniqueEmail1 = `bookmarkuser1-${Date.now()}@example.com`;
-      const uniqueEmail2 = `bookmarkuser2-${Date.now()}@example.com`;
-
-      // 사용자 1 등록
-      const registerResponse1 = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: uniqueEmail1,
-          name: 'Bookmark Test User 1',
-          password: 'password123',
-        })
-        .expect(201);
-      authToken1 = registerResponse1.body.access_token;
-
-      // 사용자 1 프로필 조회로 userId 얻기
-      const profileResponse1 = await request(app.getHttpServer())
-        .post('/auth/profile')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .expect(201);
-      userId1 = profileResponse1.body.userId;
-
-      // 사용자 2 등록
-      const registerResponse2 = await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: uniqueEmail2,
-          name: 'Bookmark Test User 2',
-          password: 'password123',
-        })
-        .expect(201);
-      authToken2 = registerResponse2.body.access_token;
-
-      // 사용자 2 프로필 조회로 userId 얻기
-      const profileResponse2 = await request(app.getHttpServer())
-        .post('/auth/profile')
-        .set('Authorization', `Bearer ${authToken2}`)
-        .expect(201);
-      userId2 = profileResponse2.body.userId;
+      
+      // 테스트용 사용자 2명 생성
+      const users = await testHelper.createUsers(2, 'Bookmark Test User');
+      testUser1 = users[0];
+      testUser2 = users[1];
 
       // 테스트용 차 생성
-      const teaResponse = await request(app.getHttpServer())
-        .post('/teas')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          name: '테스트 차',
-          year: 2023,
-          type: '홍차',
-        })
-        .expect(201);
-      teaId = teaResponse.body.id;
+      testTea = await testHelper.createTea(testUser1.token, {
+        name: TEST_DEFAULTS.TEA.name,
+        year: TEST_DEFAULTS.TEA.year,
+        type: TEST_DEFAULTS.TEA.type,
+      });
 
       // 테스트용 노트 생성
-      const noteResponse = await request(app.getHttpServer())
-        .post('/notes')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          teaId: teaId,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
-          memo: '테스트 노트입니다',
-          isPublic: true,
-        })
-        .expect(201);
-      noteId = noteResponse.body.id;
+      testNote = await testHelper.createNote(testUser1.token, {
+        teaId: testTea.id,
+        rating: TEST_DEFAULTS.NOTE.rating,
+        ratings: TEST_DEFAULTS.NOTE.ratings,
+        memo: TEST_DEFAULTS.NOTE.memo,
+        isPublic: TEST_DEFAULTS.NOTE.isPublic,
+      });
     });
 
     beforeEach(async () => {
@@ -709,19 +620,19 @@ describe('AppController (e2e)', () => {
     });
 
     afterAll(async () => {
-      // 테스트 종료 후 생성한 데이터 정리 (CASCADE로 관련 데이터도 자동 삭제)
+      // 테스트 종료 후 생성한 데이터 정리
       try {
-        if (noteId) {
-          await dataSource.query('DELETE FROM notes WHERE id = ?', [noteId]);
+        if (testNote?.id) {
+          await dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
         }
-        if (teaId) {
-          await dataSource.query('DELETE FROM teas WHERE id = ?', [teaId]);
+        if (testTea?.id) {
+          await dataSource.query('DELETE FROM teas WHERE id = ?', [testTea.id]);
         }
-        if (userId1) {
-          await dataSource.query('DELETE FROM users WHERE id = ?', [userId1]);
+        if (testUser1?.id) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [testUser1.id]);
         }
-        if (userId2) {
-          await dataSource.query('DELETE FROM users WHERE id = ?', [userId2]);
+        if (testUser2?.id) {
+          await dataSource.query('DELETE FROM users WHERE id = ?', [testUser2.id]);
         }
       } catch (error) {
         console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
@@ -729,9 +640,8 @@ describe('AppController (e2e)', () => {
     });
 
     it('POST /notes/:id/bookmark - 북마크 추가 성공', async () => {
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
 
       expect(response.body).toHaveProperty('bookmarked');
@@ -740,15 +650,13 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/bookmark - 북마크 해제 성공', async () => {
       // 먼저 북마크 추가
-      await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
 
       // 북마크 해제
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
 
       expect(response.body.bookmarked).toBe(false);
@@ -756,32 +664,28 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/bookmark - 중복 북마크 방지 (토글 동작)', async () => {
       // 첫 번째 북마크
-      const response1 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response1 = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
       expect(response1.body.bookmarked).toBe(true);
 
       // 두 번째 북마크 (해제되어야 함)
-      const response2 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response2 = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
       expect(response2.body.bookmarked).toBe(false);
 
       // 세 번째 북마크 (다시 추가되어야 함)
-      const response3 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response3 = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
       expect(response3.body.bookmarked).toBe(true);
     });
 
     it('POST /notes/:id/bookmark - 존재하지 않는 노트에 북마크 실패', async () => {
       const nonExistentNoteId = 99999;
-      const response = await request(app.getHttpServer())
+      const response = await testHelper.authenticatedRequest(testUser2.token)
         .post(`/notes/${nonExistentNoteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
         .expect(404);
 
       expect(response.body).toHaveProperty('message');
@@ -789,15 +693,14 @@ describe('AppController (e2e)', () => {
     });
 
     it('POST /notes/:id/bookmark - 인증 없이 북마크 실패', async () => {
-      return request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
+      return testHelper.unauthenticatedRequest()
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(401);
     });
 
     it('POST /notes/:id/bookmark - 잘못된 노트 ID 형식으로 북마크 실패', async () => {
-      const response = await request(app.getHttpServer())
+      const response = await testHelper.authenticatedRequest(testUser2.token)
         .post('/notes/invalid-id/bookmark')
-        .set('Authorization', `Bearer ${authToken2}`)
         .expect(400);
 
       expect(response.body).toHaveProperty('message');
@@ -806,29 +709,17 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/bookmark - 비공개 노트에 작성자가 아닌 사용자가 북마크 시도 시 403 에러', async () => {
       // 비공개 노트 생성
-      const privateNoteResponse = await request(app.getHttpServer())
-        .post('/notes')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          teaId: teaId,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
+      const privateNote = await testHelper.createNote(testUser1.token, {
+        teaId: testTea.id,
+        rating: TEST_DEFAULTS.NOTE.rating,
+        ratings: TEST_DEFAULTS.NOTE.ratings,
           memo: '비공개 테스트 노트입니다',
           isPublic: false,
-        })
-        .expect(201);
-      const privateNoteId = privateNoteResponse.body.id;
+      });
 
       // 작성자가 아닌 사용자(userId2)가 북마크 시도
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${privateNoteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${privateNote.id}/bookmark`)
         .expect(403);
 
       expect(response.body).toHaveProperty('message');
@@ -836,57 +727,43 @@ describe('AppController (e2e)', () => {
       expect(response.body.message).toContain('권한이 없습니다');
 
       // 테스트 데이터 정리
-      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
 
     it('POST /notes/:id/bookmark - 비공개 노트에 작성자가 북마크 성공', async () => {
       // 비공개 노트 생성
-      const privateNoteResponse = await request(app.getHttpServer())
-        .post('/notes')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({
-          teaId: teaId,
-          rating: 4.5,
-          ratings: {
-            richness: 4,
-            strength: 5,
-            smoothness: 4,
-            clarity: 4,
-            complexity: 5,
-          },
+      const privateNote = await testHelper.createNote(testUser1.token, {
+        teaId: testTea.id,
+        rating: TEST_DEFAULTS.NOTE.rating,
+        ratings: TEST_DEFAULTS.NOTE.ratings,
           memo: '비공개 테스트 노트입니다',
           isPublic: false,
-        })
-        .expect(201);
-      const privateNoteId = privateNoteResponse.body.id;
+      });
 
       // 작성자(userId1)가 북마크 시도
-      const response = await request(app.getHttpServer())
-        .post(`/notes/${privateNoteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken1}`)
+      const response = await testHelper.authenticatedRequest(testUser1.token)
+        .post(`/notes/${privateNote.id}/bookmark`)
         .expect(201);
 
       expect(response.body).toHaveProperty('bookmarked');
       expect(response.body.bookmarked).toBe(true);
 
       // 테스트 데이터 정리
-      await dataSource.query('DELETE FROM note_bookmarks WHERE noteId = ?', [privateNoteId]);
-      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNoteId]);
+      await dataSource.query('DELETE FROM note_bookmarks WHERE noteId = ?', [privateNote.id]);
+      await dataSource.query('DELETE FROM notes WHERE id = ?', [privateNote.id]);
     });
 
     it('GET /notes/:id - 노트 조회 시 북마크 정보 포함', async () => {
       // 먼저 북마크 추가
-      const bookmarkResponse = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const bookmarkResponse = await testHelper.authenticatedRequest(testUser2.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect(201);
       
       expect(bookmarkResponse.body.bookmarked).toBe(true);
 
       // 노트 조회 (인증된 사용자) - 트랜잭션으로 인해 데이터가 즉시 반영됨
-      const response = await request(app.getHttpServer())
-        .get(`/notes/${noteId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .get(`/notes/${testNote.id}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('isBookmarked');
@@ -895,9 +772,8 @@ describe('AppController (e2e)', () => {
 
     it('GET /notes/:id - 북마크하지 않은 노트 조회 시 isBookmarked는 false', async () => {
       // 북마크 없이 노트 조회
-      const response = await request(app.getHttpServer())
-        .get(`/notes/${noteId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
+      const response = await testHelper.authenticatedRequest(testUser2.token)
+        .get(`/notes/${testNote.id}`)
         .expect(200);
 
       expect(response.body.isBookmarked).toBe(false);
@@ -905,8 +781,8 @@ describe('AppController (e2e)', () => {
 
     it('GET /notes/:id - 인증 없이 노트 조회 시 북마크 정보 포함 (isBookmarked는 false)', async () => {
       // 인증 없이 노트 조회
-      const response = await request(app.getHttpServer())
-        .get(`/notes/${noteId}`)
+      const response = await testHelper.unauthenticatedRequest()
+        .get(`/notes/${testNote.id}`)
         .expect(200);
 
       expect(response.body).toHaveProperty('isBookmarked');
@@ -915,13 +791,12 @@ describe('AppController (e2e)', () => {
 
     it('GET /notes - 노트 목록 조회 시 북마크 정보 포함', async () => {
       // 노트 목록 조회
-      const response = await request(app.getHttpServer())
+      const response = await testHelper.authenticatedRequest(testUser2.token)
         .get('/notes')
-        .set('Authorization', `Bearer ${authToken2}`)
         .expect(200);
 
       expect(Array.isArray(response.body)).toBe(true);
-      const note = response.body.find((n: any) => n.id === noteId);
+      const note = response.body.find((n: any) => n.id === testNote.id);
       expect(note).toBeDefined();
       expect(note).toHaveProperty('isBookmarked');
       // 북마크를 누르지 않았으므로 false여야 함
@@ -930,9 +805,8 @@ describe('AppController (e2e)', () => {
 
     it('POST /notes/:id/bookmark - 여러 사용자가 같은 노트에 북마크', async () => {
       // 사용자 1이 북마크
-      const response1 = await request(app.getHttpServer())
-        .post(`/notes/${noteId}/bookmark`)
-        .set('Authorization', `Bearer ${authToken1}`)
+      const response1 = await testHelper.authenticatedRequest(testUser1.token)
+        .post(`/notes/${testNote.id}/bookmark`)
         .expect((res) => {
           // Rate limiting이 발생할 수 있으므로 201 또는 429 모두 허용
           if (res.status === 429) {
@@ -945,9 +819,8 @@ describe('AppController (e2e)', () => {
       // Rate limiting이 발생하지 않은 경우에만 계속
       if (response1.status === 201) {
         // 사용자 1이 북마크 해제
-        const response2 = await request(app.getHttpServer())
-          .post(`/notes/${noteId}/bookmark`)
-          .set('Authorization', `Bearer ${authToken1}`)
+        const response2 = await testHelper.authenticatedRequest(testUser1.token)
+          .post(`/notes/${testNote.id}/bookmark`)
           .expect((res) => {
             if (res.status === 429) {
               return;
