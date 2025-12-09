@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, In, DataSource, QueryFailedError } from 'typeorm';
 import { Note } from './entities/note.entity';
@@ -6,6 +6,9 @@ import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
 import { NoteLike } from './entities/note-like.entity';
 import { NoteBookmark } from './entities/note-bookmark.entity';
+import { RatingSchema } from './entities/rating-schema.entity';
+import { RatingAxis } from './entities/rating-axis.entity';
+import { NoteAxisValue } from './entities/note-axis-value.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
@@ -26,6 +29,12 @@ export class NotesService {
     private noteLikesRepository: Repository<NoteLike>,
     @InjectRepository(NoteBookmark)
     private noteBookmarksRepository: Repository<NoteBookmark>,
+    @InjectRepository(RatingSchema)
+    private ratingSchemaRepository: Repository<RatingSchema>,
+    @InjectRepository(RatingAxis)
+    private ratingAxisRepository: Repository<RatingAxis>,
+    @InjectRepository(NoteAxisValue)
+    private noteAxisValueRepository: Repository<NoteAxisValue>,
     @InjectDataSource()
     private dataSource: DataSource,
     private teasService: TeasService,
@@ -36,16 +45,35 @@ export class NotesService {
     // 차가 존재하는지 확인
     const tea = await this.teasService.findOne(createNoteDto.teaId);
     
-    // tags 필드를 분리
-    const { tags, ...noteData } = createNoteDto;
+    // 스키마가 존재하는지 확인
+    const schema = await this.ratingSchemaRepository.findOne({
+      where: { id: createNoteDto.schemaId },
+    });
+    if (!schema) {
+      throw new NotFoundException('평가 스키마를 찾을 수 없습니다.');
+    }
+
+    // tags와 axisValues 필드를 분리
+    const { tags, axisValues, ...noteData } = createNoteDto;
+    
+    // isRatingIncluded 기본값 설정
+    const isRatingIncluded = createNoteDto.isRatingIncluded !== undefined 
+      ? createNoteDto.isRatingIncluded 
+      : true;
     
     const note = this.notesRepository.create({
       ...noteData,
       userId,
       teaId: tea.id,
+      isRatingIncluded,
     });
 
     const savedNote = await this.notesRepository.save(note);
+    
+    // 축 값 처리
+    if (axisValues && axisValues.length > 0) {
+      await this.setNoteAxisValues(savedNote.id, axisValues);
+    }
     
     // 태그 처리
     if (tags && tags.length > 0) {
@@ -55,7 +83,7 @@ export class NotesService {
     // 차의 평균 평점 업데이트
     await this.updateTeaRating(tea.id);
 
-    // 태그를 포함한 노트 반환
+    // 축 값와 태그를 포함한 노트 반환
     return this.findOne(savedNote.id, userId);
   }
 
@@ -64,8 +92,11 @@ export class NotesService {
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
       .leftJoinAndSelect('note.tea', 'tea')
+      .leftJoinAndSelect('note.schema', 'schema')
       .leftJoinAndSelect('note.noteTags', 'noteTags')
       .leftJoinAndSelect('noteTags.tag', 'tag')
+      .leftJoinAndSelect('note.axisValues', 'axisValues')
+      .leftJoinAndSelect('axisValues.axis', 'axis')
       .orderBy('note.createdAt', 'DESC');
 
     const conditions: string[] = [];
@@ -99,7 +130,7 @@ export class NotesService {
   async findOne(id: number, userId?: number): Promise<any> {
     const note = await this.notesRepository.findOne({
       where: { id },
-      relations: ['user', 'tea', 'noteTags', 'noteTags.tag'],
+      relations: ['user', 'tea', 'schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
     });
 
     if (!note) {
@@ -123,11 +154,26 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
 
-    // tags 필드를 분리
-    const { tags, ...noteData } = updateNoteDto;
+    // schemaId 변경 시 스키마 존재 확인
+    if (updateNoteDto.schemaId !== undefined) {
+      const schema = await this.ratingSchemaRepository.findOne({
+        where: { id: updateNoteDto.schemaId },
+      });
+      if (!schema) {
+        throw new NotFoundException('평가 스키마를 찾을 수 없습니다.');
+      }
+    }
+
+    // tags와 axisValues 필드를 분리
+    const { tags, axisValues, ...noteData } = updateNoteDto;
 
     Object.assign(note, noteData);
     const updatedNote = await this.notesRepository.save(note);
+
+    // 축 값 업데이트 (axisValues가 제공된 경우에만)
+    if (axisValues !== undefined) {
+      await this.setNoteAxisValues(id, axisValues);
+    }
 
     // 태그 업데이트 (tags가 제공된 경우에만)
     if (tags !== undefined) {
@@ -137,7 +183,7 @@ export class NotesService {
     // 차의 평균 평점 업데이트
     await this.updateTeaRating(note.teaId);
 
-    // 태그를 포함한 업데이트된 노트 반환
+    // 축 값와 태그를 포함한 업데이트된 노트 반환
     return this.findOne(id, userId);
   }
 
@@ -434,20 +480,82 @@ export class NotesService {
     });
   }
 
+  /**
+   * 노트의 축 값을 설정합니다.
+   * 기존 축 값을 삭제하고 새로운 축 값을 추가합니다.
+   */
+  private async setNoteAxisValues(noteId: number, axisValues: Array<{ axisId: number; value: number }>): Promise<void> {
+    // 기존 축 값 삭제
+    await this.noteAxisValueRepository.delete({ noteId });
+
+    if (axisValues.length === 0) {
+      return;
+    }
+
+    // 축 ID 유효성 검증
+    const axisIds = axisValues.map(av => av.axisId);
+    const axes = await this.ratingAxisRepository.find({
+      where: { id: In(axisIds) },
+    });
+
+    if (axes.length !== axisIds.length) {
+      throw new BadRequestException('유효하지 않은 축 ID가 포함되어 있습니다.');
+    }
+
+    // NoteAxisValue 생성
+    const noteAxisValues = axisValues.map(av =>
+      this.noteAxisValueRepository.create({
+        noteId,
+        axisId: av.axisId,
+        valueNumeric: av.value,
+      })
+    );
+
+    await this.noteAxisValueRepository.save(noteAxisValues);
+  }
+
+  async getActiveSchemas(): Promise<RatingSchema[]> {
+    return await this.ratingSchemaRepository.find({
+      where: { isActive: true },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getSchemaAxes(schemaId: number): Promise<RatingAxis[]> {
+    const schema = await this.ratingSchemaRepository.findOne({
+      where: { id: schemaId },
+    });
+    if (!schema) {
+      throw new NotFoundException('평가 스키마를 찾을 수 없습니다.');
+    }
+    return await this.ratingAxisRepository.find({
+      where: { schemaId },
+      order: { displayOrder: 'ASC' },
+    });
+  }
+
   private async updateTeaRating(teaId: number): Promise<void> {
     const notes = await this.notesRepository.find({
-      where: { teaId },
+      where: { teaId, isRatingIncluded: true },
     });
 
     if (notes.length === 0) {
-      // 모든 노트가 삭제되었을 때 평점을 초기화
+      // 모든 노트가 삭제되었거나 포함되지 않았을 때 평점을 초기화
+      await this.teasService.updateRating(teaId, 0, 0);
+      return;
+    }
+
+    // overallRating이 있는 노트만 계산
+    const notesWithRating = notes.filter(note => note.overallRating !== null);
+    
+    if (notesWithRating.length === 0) {
       await this.teasService.updateRating(teaId, 0, 0);
       return;
     }
 
     const averageRating =
-      notes.reduce((sum, note) => sum + Number(note.rating), 0) / notes.length;
+      notesWithRating.reduce((sum, note) => sum + Number(note.overallRating), 0) / notesWithRating.length;
 
-    await this.teasService.updateRating(teaId, averageRating, notes.length);
+    await this.teasService.updateRating(teaId, averageRating, notesWithRating.length);
   }
 }

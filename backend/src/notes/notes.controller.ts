@@ -226,4 +226,18 @@ export class NotesController {
     
     return this.notesService.toggleBookmark(parsedId, parsedUserId);
   }
+
+  @Get('schemas/active')
+  async getActiveSchemas() {
+    return this.notesService.getActiveSchemas();
+  }
+
+  @Get('schemas/:schemaId/axes')
+  async getSchemaAxes(@Param('schemaId') schemaId: string) {
+    const parsedSchemaId = parseInt(schemaId, 10);
+    if (Number.isNaN(parsedSchemaId)) {
+      throw new BadRequestException('Invalid schemaId');
+    }
+    return this.notesService.getSchemaAxes(parsedSchemaId);
+  }
 }
