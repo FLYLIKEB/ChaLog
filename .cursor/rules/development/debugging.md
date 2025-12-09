@@ -24,14 +24,24 @@
 ### 서버 로그 확인 방법
 백엔드 서버의 에러 로그를 확인할 때는 다음 방법을 사용:
 
-1. **백엔드 서버를 포그라운드로 실행**:
+1. **스크립트로 실행한 경우** (`start-local.sh` 사용):
+   ```bash
+   # 백엔드 로그 실시간 확인
+   tail -f /tmp/chalog-backend.log
+   
+   # 프론트엔드 로그 실시간 확인
+   tail -f /tmp/chalog-frontend.log
+   ```
+   `start-local.sh` 스크립트는 로그를 자동으로 `/tmp/chalog-backend.log`와 `/tmp/chalog-frontend.log`에 저장합니다.
+
+2. **백엔드 서버를 포그라운드로 실행**:
    ```bash
    cd backend
    npm run start:dev
    ```
    이렇게 하면 서버 로그가 실시간으로 표시됩니다.
 
-2. **로그 파일로 확인** (백그라운드 실행 시):
+3. **로그 파일로 확인** (백그라운드 실행 시):
    ```bash
    # 서버를 로그 파일로 실행
    cd backend && npm run start:dev 2>&1 | tee /tmp/backend-logs.txt &
@@ -40,7 +50,7 @@
    tail -f /tmp/backend-logs.txt
    ```
 
-3. **포트 충돌 해결**:
+4. **포트 충돌 해결**:
    ```bash
    # 포트 3000을 사용하는 프로세스 종료
    lsof -ti:3000 | xargs kill -9 2>/dev/null
