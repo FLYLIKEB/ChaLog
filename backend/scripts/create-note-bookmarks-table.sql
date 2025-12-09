@@ -11,3 +11,4 @@ CREATE TABLE IF NOT EXISTS `note_bookmarks` (
   FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+

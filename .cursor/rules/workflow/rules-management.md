@@ -3,7 +3,7 @@
 ### Structure
 - Rules are organized in `.cursor/rules/` by category:
   - `development/`: Development practices (code-style, debugging, error-handling, testing)
-  - `workflow/`: Workflow processes (git, pr, development-server, scripts, file-management)
+  - `workflow/`: Workflow processes (git, pr, database, development-server, scripts, file-management)
 
 ### Naming Convention
 - Use specific, descriptive names (e.g., `git.md`, `pr.md` instead of generic `workflow.md`)

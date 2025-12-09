@@ -68,6 +68,34 @@ npm run test:e2e
 - ❌ 프로덕션 DB를 테스트에 사용하지 마세요
 - ❌ 테스트 실행 중 프로덕션 서버와 같은 DB를 사용하지 마세요
 
+## 데이터베이스 마이그레이션
+
+테스트 DB에도 프로덕션과 동일한 스키마를 적용해야 합니다.
+
+### Migration 실행
+
+**테스트 DB에 Migration 적용:**
+```bash
+cd backend
+TEST_DATABASE_URL=mysql://username:password@localhost:3306/cha_log_test npm run migration:run
+```
+
+또는 스키마 동기화 스크립트 사용:
+```bash
+cd backend
+TEST_DATABASE_URL=mysql://username:password@localhost:3306/cha_log_test ./scripts/sync-schema.sh test
+```
+
+### 스키마 비교
+
+테스트 DB와 프로덕션 DB의 스키마가 일치하는지 확인:
+```bash
+cd backend
+DATABASE_URL=mysql://... TEST_DATABASE_URL=mysql://... ./scripts/compare-schema.sh
+```
+
+자세한 내용은 [`MIGRATIONS.md`](./MIGRATIONS.md)를 참고하세요.
+
 ## 문제 해결
 
 ### 테스트가 프로덕션 DB를 사용하는 경우
@@ -91,5 +119,19 @@ DELETE FROM teas;
 DELETE FROM user_authentications;
 DELETE FROM users;
 SET FOREIGN_KEY_CHECKS = 1;
+```
+
+### 테스트 DB 스키마가 프로덕션과 다른 경우
+
+1. 스키마 비교 실행:
+```bash
+cd backend
+DATABASE_URL=... TEST_DATABASE_URL=... ./scripts/compare-schema.sh
+```
+
+2. 테스트 DB에 Migration 적용:
+```bash
+cd backend
+TEST_DATABASE_URL=... ./scripts/sync-schema.sh test
 ```
 

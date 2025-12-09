@@ -108,3 +108,4 @@ const createNoteBookmarksTable = async () => {
 
 createNoteBookmarksTable();
 
+
