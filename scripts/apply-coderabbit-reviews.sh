@@ -8,7 +8,7 @@ set -euo pipefail
 
 REPO_OWNER="FLYLIKEB"
 REPO_NAME="ChaLog"
-CODERABBIT_BOT_NAMES=("coderabbit" "code-rabbit" "coderabbit[bot]" "code-rabbit[bot]")
+CODERABBIT_BOT_NAMES=("coderabbit" "code-rabbit" "coderabbit[bot]" "code-rabbit[bot]" "coderabbitai")
 
 log() {
   echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" >&2
