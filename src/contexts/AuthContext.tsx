@@ -97,8 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 이미 스크립트 태그가 있는지 확인 (kakao.js / kakao.min.js 모두 포함)
         const existingScript = document.querySelector('script[src*="kakao"]') as HTMLScriptElement | null;
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const primarySrc = 'https://developers.kakao.com/sdk/js/kakao.min.js';
-        const fallbackSrc = 'https://t1.kakaocdn.net/kakao_js_sdk/2.5.0/kakao.min.js';
+        // 공식 CDN 사용 (developers.kakao.com은 CORS 문제로 사용 불가)
+        const primarySrc = 'https://t1.kakaocdn.net/kakao_js_sdk/2.5.0/kakao.min.js';
+        const fallbackSrc = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 
         const attachScript = (src: string) => {
           const script = document.createElement('script');
@@ -323,8 +324,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         // 이미 스크립트 태그가 있는지 확인 (kakao.js / kakao.min.js 모두 포함)
         const existingScript = document.querySelector('script[src*="kakao"]') as HTMLScriptElement | null;
-        const primarySrc = 'https://developers.kakao.com/sdk/js/kakao.min.js';
-        const fallbackSrc = 'https://t1.kakaocdn.net/kakao_js_sdk/2.5.0/kakao.min.js';
+        // 공식 CDN 사용 (developers.kakao.com은 CORS 문제로 사용 불가)
+        const primarySrc = 'https://t1.kakaocdn.net/kakao_js_sdk/2.5.0/kakao.min.js';
+        const fallbackSrc = 'https://developers.kakao.com/sdk/js/kakao.min.js';
 
         const attachScript = (src: string) => {
           const script = document.createElement('script');

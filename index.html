@@ -6,9 +6,10 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChaLog</title>
     <!-- 카카오 SDK 사전 로드: 모바일 환경에서 로드 실패를 줄이기 위해 head에 포함 -->
+    <!-- 공식 CDN 사용 (developers.kakao.com은 CORS 문제로 사용 불가) -->
     <script
       id="kakao-sdk"
-      src="https://developers.kakao.com/sdk/js/kakao.min.js"
+      src="https://t1.kakaocdn.net/kakao_js_sdk/2.5.0/kakao.min.js"
       async
       defer
       crossorigin="anonymous"
