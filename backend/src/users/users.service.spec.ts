@@ -262,6 +262,7 @@ describe('UsersService', () => {
         const mockManager = {
           create: jest.fn().mockReturnValue(mockUser),
           save: jest.fn().mockResolvedValue(mockUser),
+          findOne: jest.fn().mockResolvedValue(null), // 이메일 중복 확인용
         };
         return await callback(mockManager);
       });

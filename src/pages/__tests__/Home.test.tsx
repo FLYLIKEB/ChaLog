@@ -88,9 +88,15 @@ describe('Home 페이지', () => {
     mathRandomSpy.mockRestore();
   });
 
-  it('오늘의 차 카드와 공개 노트를 렌더링한다', () => {
+  it('오늘의 차 카드와 공개 노트를 렌더링한다', async () => {
     renderWithRouter(<Home />, { route: '/' });
 
+    // API 호출이 완료될 때까지 대기 - 로딩 스피너가 사라지고 콘텐츠가 나타날 때까지 기다림
+    await screen.findByText('오늘의 차', {}, { timeout: 5000 });
+    
+    // 로딩 스피너가 사라졌는지 확인
+    expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
+    
     expect(screen.getByText('오늘의 차')).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: '화과향' })).toHaveLength(2);
 

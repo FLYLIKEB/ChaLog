@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -7,6 +7,7 @@ import {
   UserAuthentication,
   AuthProvider,
 } from './entities/user-authentication.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -206,5 +207,21 @@ export class UsersService {
       where: { userId, provider: AuthProvider.EMAIL },
     });
     return auth?.providerId || null;
+  }
+
+  async update(id: number, userId: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.findOne(id);
+    
+    // 본인 프로필만 수정 가능
+    if (user.id !== userId) {
+      throw new ForbiddenException('이 프로필을 수정할 권한이 없습니다.');
+    }
+
+    // 프로필 이미지 URL 업데이트
+    if (updateUserDto.profileImageUrl !== undefined) {
+      user.profileImageUrl = updateUserDto.profileImageUrl;
+    }
+
+    return await this.usersRepository.save(user);
   }
 }

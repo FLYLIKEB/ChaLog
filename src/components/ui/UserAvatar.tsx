@@ -1,8 +1,10 @@
 import * as React from "react";
 import { cn } from "./utils";
+import { Avatar, AvatarImage, AvatarFallback } from "./avatar";
 
 interface UserAvatarProps extends React.ComponentProps<"div"> {
   name: string;
+  profileImageUrl?: string | null;
   size?: "sm" | "md" | "lg" | "xl";
 }
 
@@ -13,22 +15,46 @@ const sizeClasses = {
   xl: "w-24 h-24 text-2xl",
 };
 
-export function UserAvatar({ name, size = "md", className, ...props }: UserAvatarProps) {
+export function UserAvatar({ name, profileImageUrl, size = "md", className, ...props }: UserAvatarProps) {
   const userInitial = (name.charAt(0) || '?').toUpperCase();
   const sizeClass = sizeClasses[size];
+  const [imageError, setImageError] = React.useState(false);
+
+  // profileImageUrl이 변경되면 에러 상태 리셋
+  React.useEffect(() => {
+    setImageError(false);
+  }, [profileImageUrl]);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  // 이미지 URL이 있고 에러가 발생하지 않았을 때만 이미지 표시
+  const showImage = profileImageUrl && !imageError;
 
   return (
-    <div
+    <Avatar
       data-slot="avatar"
-      className={cn(
-        "rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold shadow-sm",
-        sizeClass,
-        className
-      )}
+      className={cn(sizeClass, className)}
       {...props}
     >
-      {userInitial}
-    </div>
+      {showImage && (
+        <AvatarImage
+          src={profileImageUrl}
+          alt={name}
+          onError={handleImageError}
+          className="object-cover"
+        />
+      )}
+      <AvatarFallback
+        className={cn(
+          "bg-primary text-primary-foreground font-semibold shadow-sm",
+          sizeClass
+        )}
+      >
+        {userInitial}
+      </AvatarFallback>
+    </Avatar>
   );
 }
 

@@ -220,7 +220,15 @@ export class TestHelper {
    * HTTP 요청 헬퍼 (인증 포함)
    */
   authenticatedRequest(token: string) {
-    return request(this.app.getHttpServer()).set('Authorization', `Bearer ${token}`);
+    const req = request(this.app.getHttpServer());
+    // supertest의 request()는 함수를 반환하므로, HTTP 메서드를 체이닝할 수 있도록 래핑
+    return {
+      get: (url: string) => req.get(url).set('Authorization', `Bearer ${token}`),
+      post: (url: string) => req.post(url).set('Authorization', `Bearer ${token}`),
+      patch: (url: string) => req.patch(url).set('Authorization', `Bearer ${token}`),
+      put: (url: string) => req.put(url).set('Authorization', `Bearer ${token}`),
+      delete: (url: string) => req.delete(url).set('Authorization', `Bearer ${token}`),
+    };
   }
 
   /**

@@ -15,14 +15,14 @@ export function StatCard({ icon: Icon, value, label, className, ...props }: Stat
   return (
     <div
       className={cn(
-        "bg-card rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow",
+        "flex flex-col items-center justify-center p-3 rounded-lg bg-card/50 border border-border/50",
         className
       )}
       {...props}
     >
-      <Icon className="w-5 h-5 text-muted-foreground mb-2" />
-      <div className="text-2xl font-semibold text-primary">{displayValue}</div>
-      <div className="text-xs text-muted-foreground">{label}</div>
+      <Icon className="w-4 h-4 text-muted-foreground mb-1.5" />
+      <div className="text-lg font-semibold text-foreground mb-0.5">{displayValue}</div>
+      <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">{label}</div>
     </div>
   );
 }

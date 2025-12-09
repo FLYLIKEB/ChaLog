@@ -16,6 +16,9 @@ export class User {
   @Column()
   name: string;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  profileImageUrl: string | null;
+
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];
 

@@ -14,25 +14,38 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi } from '../lib/api';
 import { User, Note } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
 import { Card } from '../components/ui/card';
 import { Section } from '../components/ui/Section';
+import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from '../components/ui/button';
 
 type SortType = 'latest' | 'rating';
 
 export function UserProfile() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser, isLoading: authLoading } = useAuth();
   const userId = id ? parseInt(id, 10) : NaN;
   const [user, setUser] = useState<User | null>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // 내 프로필인지 확인 (인증 로딩이 완료된 후에만 확인)
+  const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
 
   useEffect(() => {
+    // 인증 로딩이 완료될 때까지 기다림
+    if (authLoading) {
+      return;
+    }
+
     const fetchData = async () => {
       if (isNaN(userId)) {
         toast.error('유효하지 않은 사용자 ID입니다.');
@@ -42,9 +55,11 @@ export function UserProfile() {
 
       try {
         setIsLoading(true);
+        // 내 프로필이면 모든 노트, 다른 사용자면 공개 노트만
+        const isPublicFilter = isOwnProfile ? undefined : true;
         const [userData, notesData] = await Promise.all([
           usersApi.getById(userId),
-          notesApi.getAll(userId, true), // 공개 노트만 조회
+          notesApi.getAll(userId, isPublicFilter),
         ]);
         
         setUser(userData as User);
@@ -65,7 +80,7 @@ export function UserProfile() {
     };
 
     fetchData();
-  }, [userId]);
+  }, [userId, isOwnProfile, authLoading]);
 
   // 통계 계산
   const stats = useMemo(() => {
@@ -101,6 +116,12 @@ export function UserProfile() {
     });
   }, [notes, sort]);
 
+  const handleProfileImageUpdate = (imageUrl: string) => {
+    if (user) {
+      setUser({ ...user, profileImageUrl: imageUrl || null });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
@@ -127,18 +148,45 @@ export function UserProfile() {
       
       <div className="p-6 space-y-6">
         {/* 프로필 헤더 섹션 */}
-        <Card className="p-6 md:p-8">
-          <div className="flex items-center gap-4 mb-6">
-            <UserAvatar name={user.name} size="xl" />
-            <div>
-              <h2 className="text-2xl font-semibold text-primary">{user.name}</h2>
-              <p className="text-sm text-muted-foreground">작성한 노트 {notes.length}개</p>
+        <Card className="p-4 sm:p-6 md:p-8">
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div className="relative flex-shrink-0">
+              <UserAvatar 
+                name={user.name} 
+                profileImageUrl={user.profileImageUrl}
+                size="md" 
+              />
+              {isOwnProfile && (
+                <Button
+                  onClick={() => setIsEditModalOpen(true)}
+                  size="icon"
+                  className="absolute bottom-0 right-0 rounded-full w-7 h-7 bg-primary hover:bg-primary/90 shadow-md border-2 border-background"
+                  aria-label="프로필 사진 수정"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                </Button>
+              )}
+            </div>
+            <div className="flex flex-col items-center text-center">
+              <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
+              <p className="text-sm text-muted-foreground mt-1">작성한 노트 {notes.length}개</p>
             </div>
           </div>
         </Card>
 
+        {/* 프로필 사진 수정 모달 */}
+        {isOwnProfile && user && (
+          <ProfileImageEditModal
+            open={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            currentImageUrl={user.profileImageUrl}
+            onSuccess={handleProfileImageUpdate}
+            userId={user.id}
+          />
+        )}
+
         {/* 통계 카드 섹션 */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
           <StatCard
             icon={Star}
             value={stats.averageRating}
