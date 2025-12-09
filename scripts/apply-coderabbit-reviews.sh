@@ -114,9 +114,6 @@ add_comment_to_thread() {
   local comment_body=$2
   local pr_number=$3
   
-  # GraphQL mutation에서 특수문자 이스케이프 (변수 사용)
-  local escaped_body=$(echo "$comment_body" | jq -Rs .)
-  
   # 변수를 사용한 GraphQL mutation
   local mutation='mutation($threadId: ID!, $body: String!) {
     addComment(input: { subjectId: $threadId, body: $body }) {
