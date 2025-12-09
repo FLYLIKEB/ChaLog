@@ -58,20 +58,22 @@ export function NewNote() {
     const fetchSchema = async () => {
       try {
         const schemas = await notesApi.getActiveSchemas();
-        if (schemas && schemas.length > 0) {
+        if (Array.isArray(schemas) && schemas.length > 0) {
           const firstSchema = schemas[0];
           setSchema(firstSchema);
           
           // 스키마의 축 정보 가져오기
-          const axesData = await notesApi.getSchemaAxes(firstSchema.id);
-          setAxes(axesData);
-          
-          // 기본값 설정
-          const initialValues: Record<number, number> = {};
-          axesData.forEach((axis: RatingAxis) => {
-            initialValues[axis.id] = RATING_DEFAULT;
-          });
-          setAxisValues(initialValues);
+          const axesData = await notesApi.getSchemaAxes(firstSchema.id) as RatingAxis[];
+          if (Array.isArray(axesData)) {
+            setAxes(axesData);
+            
+            // 기본값 설정
+            const initialValues: Record<number, number> = {};
+            axesData.forEach((axis: RatingAxis) => {
+              initialValues[axis.id] = RATING_DEFAULT;
+            });
+            setAxisValues(initialValues);
+          }
         }
       } catch (error) {
         logger.error('Failed to fetch schema:', error);

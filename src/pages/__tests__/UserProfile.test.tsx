@@ -63,14 +63,9 @@ const mockNotes: Note[] = [
     teaName: '테스트 차 1',
     userId: 2,
     userName: '프로필 사용자',
-    rating: 4.5,
-    ratings: {
-      richness: 4,
-      strength: 3,
-      smoothness: 4,
-      clarity: 5,
-      complexity: 4,
-    },
+    schemaId: 1,
+    overallRating: 4.5,
+    isRatingIncluded: true,
     memo: '테스트 메모 1',
     images: ['https://example.com/image1.jpg'],
     tags: ['풀향'],
@@ -83,14 +78,9 @@ const mockNotes: Note[] = [
     teaName: '테스트 차 2',
     userId: 2,
     userName: '프로필 사용자',
-    rating: 3.5,
-    ratings: {
-      richness: 3,
-      strength: 4,
-      smoothness: 3,
-      clarity: 3,
-      complexity: 4,
-    },
+    schemaId: 1,
+    overallRating: 3.5,
+    isRatingIncluded: true,
     memo: '테스트 메모 2',
     images: null,
     tags: ['허브향'],
@@ -278,7 +268,6 @@ describe('UserProfile', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
       isAuthenticated: true,
-      isLoading: false,
     });
     
     const mockUserOwn: User = {
@@ -304,7 +293,6 @@ describe('UserProfile', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
       isAuthenticated: true,
-      isLoading: false,
     });
     vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
     
