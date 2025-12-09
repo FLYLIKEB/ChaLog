@@ -267,11 +267,11 @@ describe('AppController (e2e)', () => {
 
     it('POST /teas - 인증된 사용자가 새 차를 생성할 수 있어야 함', async () => {
       const teaData = {
-          name: '정산소종',
-          year: 2023,
-          type: '홍차',
-          seller: '차향',
-          origin: '중국 푸젠',
+        name: '정산소종',
+        year: 2023,
+        type: '홍차',
+        seller: '차향',
+        origin: '중국 푸젠',
       };
       
       const response = await testHelper.authenticatedRequest(testUser.token)
@@ -522,8 +522,8 @@ describe('AppController (e2e)', () => {
         teaId: testTea.id,
         rating: TEST_DEFAULTS.NOTE.rating,
         ratings: TEST_DEFAULTS.NOTE.ratings,
-          memo: '비공개 테스트 노트입니다',
-          isPublic: false,
+        memo: '비공개 테스트 노트입니다',
+        isPublic: false,
       });
 
       // 작성자가 아닌 사용자(userId2)가 좋아요 시도
@@ -545,8 +545,8 @@ describe('AppController (e2e)', () => {
         teaId: testTea.id,
         rating: TEST_DEFAULTS.NOTE.rating,
         ratings: TEST_DEFAULTS.NOTE.ratings,
-          memo: '비공개 테스트 노트입니다',
-          isPublic: false,
+        memo: '비공개 테스트 노트입니다',
+        isPublic: false,
       });
 
       // 작성자(userId1)가 좋아요 시도
@@ -713,8 +713,8 @@ describe('AppController (e2e)', () => {
         teaId: testTea.id,
         rating: TEST_DEFAULTS.NOTE.rating,
         ratings: TEST_DEFAULTS.NOTE.ratings,
-          memo: '비공개 테스트 노트입니다',
-          isPublic: false,
+        memo: '비공개 테스트 노트입니다',
+        isPublic: false,
       });
 
       // 작성자가 아닌 사용자(userId2)가 북마크 시도
@@ -736,8 +736,8 @@ describe('AppController (e2e)', () => {
         teaId: testTea.id,
         rating: TEST_DEFAULTS.NOTE.rating,
         ratings: TEST_DEFAULTS.NOTE.ratings,
-          memo: '비공개 테스트 노트입니다',
-          isPublic: false,
+        memo: '비공개 테스트 노트입니다',
+        isPublic: false,
       });
 
       // 작성자(userId1)가 북마크 시도
