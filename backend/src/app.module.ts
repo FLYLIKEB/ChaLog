@@ -18,12 +18,19 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60000, // 1분
-        limit: 10, // 10회 요청 제한
+    ThrottlerModule.forRootAsync({
+      useFactory: (configService: ConfigService) => {
+        // 테스트 환경에서는 rate limiting 비활성화 (매우 높은 제한)
+        const isTest = process.env.NODE_ENV === 'test';
+        return [
+          {
+            ttl: 60000, // 1분
+            limit: isTest ? 10000 : 10, // 테스트 환경에서는 10000회, 프로덕션에서는 10회
+          },
+        ];
       },
-    ]),
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => getTypeOrmConfig(configService),
