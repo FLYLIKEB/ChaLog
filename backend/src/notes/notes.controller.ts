@@ -107,11 +107,13 @@ export class NotesController {
     @Query('userId') userId?: string,
     @Query('public') isPublic?: string,
     @Query('teaId') teaId?: string,
+    @Query('bookmarked') bookmarked?: string,
     @Request() req?: any,
   ) {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
     const userIdNum = userId ? parseInt(userId, 10) : undefined;
     const teaIdNum = teaId ? parseInt(teaId, 10) : undefined;
+    const bookmarkedFilter = bookmarked === 'true' ? true : undefined;
     
     let currentUserId: number | undefined;
     if (req?.user?.userId) {
@@ -121,7 +123,7 @@ export class NotesController {
       }
     }
     
-    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId);
+    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId, bookmarkedFilter);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
