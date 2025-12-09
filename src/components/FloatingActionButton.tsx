@@ -28,6 +28,7 @@ export function FloatingActionButton({
       onClick={onClick}
       className={cn(
         'fixed right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        'mb-[env(safe-area-inset-bottom)]',
         positionClasses[position],
         className
       )}
@@ -36,5 +37,4 @@ export function FloatingActionButton({
     </button>
   );
 }
-
 
