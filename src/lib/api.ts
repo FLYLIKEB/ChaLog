@@ -370,7 +370,8 @@ class ApiClient {
         tokenPrefix: token.substring(0, 20) + '...',
       });
     } else {
-      logger.warn(`[API Request ${requestId}] 인증 토큰 없음`);
+      // 인증 토큰이 없는 것은 공개 API 호출 시 정상적인 상황이므로 debug 레벨로 변경
+      logger.debug(`[API Request ${requestId}] 인증 토큰 없음 (공개 API 호출)`);
     }
 
     // 테스트 환경에서 상대 URL을 절대 URL로 변환
@@ -412,7 +413,8 @@ class ApiClient {
         supportsTargetAddressSpace: supportsTargetAddressSpace(),
       });
     } else if (isLocalNetworkRequest(url)) {
-      logger.warn(`[API Request ${requestId}] 로컬 네트워크 요청이지만 targetAddressSpace 미지원`, {
+      // 모바일 브라우저에서 targetAddressSpace 미지원은 정상적인 상황이므로 debug 레벨로 변경
+      logger.debug(`[API Request ${requestId}] 로컬 네트워크 요청 (targetAddressSpace 미지원, 기능에는 영향 없음)`, {
         supportsTargetAddressSpace: supportsTargetAddressSpace(),
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 50) : 'unknown',
       });
@@ -579,7 +581,33 @@ class ApiClient {
       }
 
       logger.debug(`[API Request ${requestId}] 응답 본문 파싱 시작`);
-      const data = await response.json();
+      let data: any;
+      try {
+        const responseText = await response.text();
+        if (!responseText || responseText.trim() === '') {
+          logger.warn(`[API Request ${requestId}] 응답 본문이 비어있음`);
+          data = null;
+        } else {
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseError) {
+            logger.error(`[API Request ${requestId}] JSON 파싱 실패`, {
+              parseError,
+              responseText: responseText.substring(0, 500),
+              contentType: response.headers.get('content-type'),
+            });
+            throw new Error(`응답을 파싱할 수 없습니다: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+          }
+        }
+      } catch (textError) {
+        logger.error(`[API Request ${requestId}] 응답 본문 읽기 실패`, {
+          textError,
+          errorName: textError instanceof Error ? textError.name : 'Unknown',
+          errorMessage: textError instanceof Error ? textError.message : String(textError),
+        });
+        throw new Error(`응답을 읽을 수 없습니다: ${textError instanceof Error ? textError.message : String(textError)}`);
+      }
+      
       logger.debug(`[API Request ${requestId}] 응답 본문 파싱 완료`, {
         dataKeys: typeof data === 'object' && data !== null ? Object.keys(data) : 'not an object',
         isArray: Array.isArray(data),
@@ -948,11 +976,12 @@ export const teasApi = {
 export const notesApi = {
   getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number) => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean) => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
     if (teaId !== undefined) params.append('teaId', String(teaId));
+    if (bookmarked !== undefined) params.append('bookmarked', String(bookmarked));
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },

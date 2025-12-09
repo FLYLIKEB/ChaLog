@@ -97,11 +97,10 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
       connectionLimit: 8, // 연결 풀 최대 크기 (t3.small 최적화: 5 → 8)
       // 연결 타임아웃 설정 (밀리초)
       connectTimeout: 60000, // 60초 - 연결 시도 타임아웃
-      acquireTimeout: 60000, // 60초 - 연결 풀에서 연결 획득 타임아웃
       // 연결 유지 설정 (네트워크 불안정 시 연결 중단 방지)
       enableKeepAlive: true, // Keep-alive 활성화
       keepAliveInitialDelay: 0, // Keep-alive 초기 지연 시간 (0 = 즉시 시작)
-      // 참고: timeout과 reconnect는 mysql2에서 지원되지 않으므로 제거됨
+      // 참고: acquireTimeout, timeout, reconnect는 mysql2에서 지원되지 않으므로 제거됨
       // 재연결은 TypeORM의 연결 에러 핸들러와 PROTOCOL_CONNECTION_LOST/ECONNRESET 처리로 관리됨
       ...sslConfig,
     },

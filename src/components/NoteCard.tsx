@@ -13,9 +13,10 @@ import { cn } from './ui/utils';
 interface NoteCardProps {
   note: Note;
   showTeaName?: boolean;
+  onBookmarkToggle?: (isBookmarked: boolean) => void;
 }
 
-const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
+const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBookmarkToggle }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const hasImage = note.images && note.images.length > 0;
@@ -84,6 +85,10 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false }) => 
       setIsTogglingBookmark(true);
       const result = await notesApi.toggleBookmark(note.id);
       setIsBookmarked(result.bookmarked);
+      // 북마크 토글 콜백 호출
+      if (onBookmarkToggle) {
+        onBookmarkToggle(result.bookmarked);
+      }
     } catch (error: any) {
       logger.error('Failed to toggle bookmark:', error);
       toast.error('북마크 처리에 실패했습니다.');

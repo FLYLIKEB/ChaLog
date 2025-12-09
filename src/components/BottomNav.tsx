@@ -1,17 +1,20 @@
 import { HTMLAttributes } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { Home, Search, FileText, Bookmark } from 'lucide-react';
 import { cn } from './ui/utils';
 
 type BottomNavItem = {
   label: string;
   path: string;
+  icon: React.ComponentType<{ className?: string }>;
   isActive?: (pathname: string) => boolean;
 };
 
 const NAV_ITEMS: BottomNavItem[] = [
-  { label: '홈', path: '/' },
-  { label: '검색', path: '/search' },
-  { label: '내 노트', path: '/my-notes' },
+  { label: '홈', path: '/', icon: Home },
+  { label: '검색', path: '/search', icon: Search },
+  { label: '내 노트', path: '/my-notes', icon: FileText },
+  { label: '저장함', path: '/saved', icon: Bookmark },
 ];
 
 type BottomNavProps = HTMLAttributes<HTMLElement>;
@@ -40,6 +43,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
         const isActive = item.isActive
           ? item.isActive(location.pathname)
           : location.pathname === item.path;
+        const Icon = item.icon;
 
         return (
           <button
@@ -49,13 +53,16 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
               'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors',
               isActive ? 'text-primary' : 'text-muted-foreground',
             )}
+            aria-label={item.label}
           >
             <div
               className={cn(
-                'w-6 h-6',
-                isActive && 'rounded-full bg-accent flex items-center justify-center',
+                'w-6 h-6 flex items-center justify-center',
+                isActive && 'rounded-full bg-accent',
               )}
-            />
+            >
+              <Icon className="w-5 h-5" />
+            </div>
             <span className="text-xs sm:text-xs font-medium">{item.label}</span>
           </button>
         );

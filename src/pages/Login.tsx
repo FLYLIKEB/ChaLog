@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
@@ -10,11 +10,47 @@ import { toast } from 'sonner';
 
 export function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, loginWithKakao } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isKakaoLoading, setIsKakaoLoading] = useState(false);
+
+  // 카카오 로그인 리다이렉트 후 인증 코드 처리
+  useEffect(() => {
+    const code = searchParams.get('code');
+    const error = searchParams.get('error');
+    const errorDescription = searchParams.get('error_description');
+
+    if (error) {
+      toast.error(`카카오 로그인 실패: ${errorDescription || error}`);
+      // URL에서 에러 파라미터 제거
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    if (code) {
+      // 인증 코드가 있으면 처리
+      handleKakaoCallback(code);
+    }
+  }, [searchParams, navigate]);
+
+  const handleKakaoCallback = async (code: string) => {
+    try {
+      setIsKakaoLoading(true);
+      // 인증 코드를 사용하여 로그인 처리
+      await loginWithKakao(code);
+      // URL에서 code 파라미터 제거하고 홈으로 이동
+      navigate('/', { replace: true });
+    } catch (error) {
+      // 에러는 AuthContext에서 이미 처리됨
+      // URL에서 code 파라미터 제거
+      navigate('/login', { replace: true });
+    } finally {
+      setIsKakaoLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

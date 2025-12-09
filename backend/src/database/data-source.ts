@@ -94,7 +94,6 @@ export const AppDataSource = new DataSource({
   extra: {
     connectionLimit: 8,
     connectTimeout: 60000,
-    acquireTimeout: 60000,
     enableKeepAlive: true,
     keepAliveInitialDelay: 0,
     ...sslConfig,

@@ -7,6 +7,7 @@ import './suites/auth.e2e-spec';
 import './suites/teas.e2e-spec';
 import './suites/notes-like.e2e-spec';
 import './suites/notes-bookmark.e2e-spec';
+import './suites/notes-bookmarked-list.e2e-spec';
 import './suites/users.e2e-spec';
 import './suites/notes-crud.e2e-spec';
 import './suites/notes-schemas.e2e-spec';

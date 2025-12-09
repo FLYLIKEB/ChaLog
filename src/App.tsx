@@ -11,6 +11,7 @@ import { NewNote } from './pages/NewNote';
 import { EditNote } from './pages/EditNote';
 import { NoteDetail } from './pages/NoteDetail';
 import { MyNotes } from './pages/MyNotes';
+import { Saved } from './pages/Saved';
 import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
@@ -82,6 +83,7 @@ export default function App() {
             <Route path="/note/:id" element={<NoteDetail />} />
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/my-notes" element={<MyNotes />} />
+            <Route path="/saved" element={<Saved />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

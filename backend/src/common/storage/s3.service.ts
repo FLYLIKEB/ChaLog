@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class S3Service {
+  private readonly logger = new Logger(S3Service.name);
   private s3Client: S3Client;
   private bucketName: string;
 
@@ -15,9 +16,7 @@ export class S3Service {
 
     this.bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME') || '';
     
-    if (!this.bucketName) {
-      console.warn('[S3Service] AWS_S3_BUCKET_NAME 환경 변수가 설정되지 않았습니다. 이미지 업로드가 비활성화됩니다.');
-    }
+    // S3 버킷이 설정되지 않은 경우, 이미지 업로드 시 에러가 발생하므로 경고는 출력하지 않음
 
     this.s3Client = new S3Client({
       region,
