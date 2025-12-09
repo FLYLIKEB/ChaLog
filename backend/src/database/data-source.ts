@@ -34,12 +34,12 @@ if (url.protocol !== 'mysql:') {
 }
 
 // 필수 값 추출 및 검증
-const username = url.username;
+const username = url.username ? decodeURIComponent(url.username) : undefined;
 if (!username) {
   throw new Error('DATABASE_URL must include a username');
 }
 
-const password = url.password || undefined;
+const password = url.password ? decodeURIComponent(url.password) : undefined;
 const hostname = url.hostname;
 if (!hostname) {
   throw new Error('DATABASE_URL must include a hostname');
