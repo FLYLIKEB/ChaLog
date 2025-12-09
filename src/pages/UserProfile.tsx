@@ -80,8 +80,11 @@ export function UserProfile() {
     const averageRating = notes.reduce((sum, note) => sum + (note.overallRating || 0), 0) / notes.length;
     const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
     
+    // NaN 체크 및 기본값 설정
+    const safeAverageRating = isNaN(averageRating) ? 0 : Number(averageRating.toFixed(1));
+    
     return {
-      averageRating: Number(averageRating.toFixed(1)),
+      averageRating: safeAverageRating,
       totalLikes,
       noteCount: notes.length,
     };
