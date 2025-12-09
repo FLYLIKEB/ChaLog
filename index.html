@@ -5,7 +5,14 @@
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ChaLog</title>
-    <!-- 카카오 SDK는 AuthContext에서 동적으로 로드됩니다 -->
+    <!-- 카카오 SDK 사전 로드: 모바일 환경에서 로드 실패를 줄이기 위해 head에 포함 -->
+    <script
+      id="kakao-sdk"
+      src="https://developers.kakao.com/sdk/js/kakao.min.js"
+      async
+      defer
+      crossorigin="anonymous"
+    ></script>
     </head>
 
     <body>

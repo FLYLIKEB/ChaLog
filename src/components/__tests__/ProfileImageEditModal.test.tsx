@@ -51,7 +51,7 @@ describe('ProfileImageEditModal', () => {
       />
     );
 
-    expect(screen.getByText('프로필 사진 수정')).toBeInTheDocument();
+    expect(screen.getByText('프로필 사진')).toBeInTheDocument();
     expect(screen.getByText(/프로필 사진을 업로드하거나 제거할 수 있습니다/)).toBeInTheDocument();
   });
 
@@ -66,7 +66,7 @@ describe('ProfileImageEditModal', () => {
       />
     );
 
-    expect(screen.queryByText('프로필 사진 수정')).not.toBeInTheDocument();
+    expect(screen.queryByText('프로필 사진')).not.toBeInTheDocument();
   });
 
   it('현재 프로필 사진이 있을 때 미리보기를 표시해야 함', () => {
@@ -86,7 +86,6 @@ describe('ProfileImageEditModal', () => {
   });
 
   it('프로필 사진 업로드 성공 시 onSuccess 콜백 호출', async () => {
-    const user = userEvent.setup();
     const mockFile = new File(['test'], 'test.png', { type: 'image/png' });
     
     vi.mocked(usersApi.uploadProfileImage).mockResolvedValue({ url: 'https://example.com/new-profile.jpg' });
@@ -107,11 +106,19 @@ describe('ProfileImageEditModal', () => {
       />
     );
 
-    // 숨겨진 파일 입력 찾기
+    // 파일 입력 찾기
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();
     
-    await user.upload(fileInput, mockFile);
+    // 파일 입력에 직접 파일 설정 (Object.defineProperty 사용)
+    Object.defineProperty(fileInput, 'files', {
+      value: [mockFile],
+      writable: false,
+    });
+    
+    // change 이벤트 트리거
+    const changeEvent = new Event('change', { bubbles: true });
+    fileInput.dispatchEvent(changeEvent);
 
     await waitFor(() => {
       expect(usersApi.uploadProfileImage).toHaveBeenCalled();
@@ -184,7 +191,6 @@ describe('ProfileImageEditModal', () => {
   });
 
   it('업로드 중일 때 버튼이 비활성화되어야 함', async () => {
-    const user = userEvent.setup();
     const mockFile = new File(['test'], 'test.png', { type: 'image/png' });
     
     // 업로드가 완료되지 않도록 Promise를 pending 상태로 유지
@@ -205,7 +211,15 @@ describe('ProfileImageEditModal', () => {
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
     expect(fileInput).toBeInTheDocument();
     
-    await user.upload(fileInput, mockFile);
+    // 파일 입력에 직접 파일 설정 (Object.defineProperty 사용)
+    Object.defineProperty(fileInput, 'files', {
+      value: [mockFile],
+      writable: false,
+    });
+    
+    // change 이벤트 트리거
+    const changeEvent = new Event('change', { bubbles: true });
+    fileInput.dispatchEvent(changeEvent);
 
     await waitFor(() => {
       expect(screen.getByText('업로드 중...')).toBeInTheDocument();
