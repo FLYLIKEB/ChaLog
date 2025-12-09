@@ -12,11 +12,11 @@ import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
-import { Tea, Note } from '../types';
+import { Tea, Note, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { RATING_DEFAULT, RATING_MIN, RATING_MAX, RATING_FIELDS_COUNT, NAVIGATION_DELAY } from '../constants';
+import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 
 export function EditNote() {
   const navigate = useNavigate();
@@ -30,13 +30,10 @@ export function EditNote() {
   const [teas, setTeas] = useState<Tea[]>([]);
   const [selectedTea, setSelectedTea] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [ratings, setRatings] = useState({
-    richness: RATING_DEFAULT,
-    strength: RATING_DEFAULT,
-    smoothness: RATING_DEFAULT,
-    clarity: RATING_DEFAULT,
-    complexity: RATING_DEFAULT,
-  });
+  const [schema, setSchema] = useState<RatingSchema | null>(null);
+  const [axes, setAxes] = useState<RatingAxis[]>([]);
+  const [axisValues, setAxisValues] = useState<Record<number, number>>({});
+  const [overallRating, setOverallRating] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -44,14 +41,6 @@ export function EditNote() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [note, setNote] = useState<Note | null>(null);
-
-  const ratingFields: { key: keyof typeof ratings; label: string }[] = [
-    { key: 'richness', label: '풍부함' },
-    { key: 'strength', label: '강도' },
-    { key: 'smoothness', label: '부드러움' },
-    { key: 'clarity', label: '깨끗함' },
-    { key: 'complexity', label: '복합성' },
-  ];
 
   // 초기 로드 시 모든 차 목록 가져오기
   useEffect(() => {
@@ -66,6 +55,26 @@ export function EditNote() {
       }
     };
     fetchTeas();
+  }, []);
+
+  // 스키마와 축 정보 가져오기
+  useEffect(() => {
+    const fetchSchema = async () => {
+      try {
+        const schemas = await notesApi.getActiveSchemas();
+        if (schemas && schemas.length > 0) {
+          const firstSchema = schemas[0];
+          setSchema(firstSchema);
+          
+          // 스키마의 축 정보 가져오기
+          const axesData = await notesApi.getSchemaAxes(firstSchema.id);
+          setAxes(axesData);
+        }
+      } catch (error) {
+        logger.error('Failed to fetch schema:', error);
+      }
+    };
+    fetchSchema();
   }, []);
 
   // NewTea에서 돌아올 때 teaId 처리
@@ -125,16 +134,36 @@ export function EditNote() {
 
         setNote(normalizedNote);
         setSelectedTea(normalizedNote.teaId);
+        setOverallRating(normalizedNote.overallRating);
         
-        // ratings 값이 1 미만이면 1로 보정 (백엔드 검증과 일치)
-        const validatedRatings = {
-          richness: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.richness || RATING_DEFAULT)),
-          strength: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.strength || RATING_DEFAULT)),
-          smoothness: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.smoothness || RATING_DEFAULT)),
-          clarity: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.clarity || RATING_DEFAULT)),
-          complexity: Math.max(RATING_MIN, Math.min(RATING_MAX, normalizedNote.ratings.complexity || RATING_DEFAULT)),
-        };
-        setRatings(validatedRatings);
+        // 스키마와 축 정보 설정
+        if (normalizedNote.schema) {
+          setSchema(normalizedNote.schema);
+          
+          // 축 정보 가져오기
+          try {
+            const axesData = await notesApi.getSchemaAxes(normalizedNote.schema.id);
+            setAxes(axesData);
+            
+            // axisValues 설정
+            if (normalizedNote.axisValues && normalizedNote.axisValues.length > 0) {
+              const initialValues: Record<number, number> = {};
+              normalizedNote.axisValues.forEach((av) => {
+                initialValues[av.axisId] = av.valueNumeric;
+              });
+              setAxisValues(initialValues);
+            } else {
+              // 기본값 설정
+              const initialValues: Record<number, number> = {};
+              axesData.forEach((axis: RatingAxis) => {
+                initialValues[axis.id] = RATING_DEFAULT;
+              });
+              setAxisValues(initialValues);
+            }
+          } catch (error) {
+            logger.error('Failed to fetch axes:', error);
+          }
+        }
         
         setMemo(normalizedNote.memo || '');
         setImages(normalizedNote.images || []);
@@ -195,33 +224,36 @@ export function EditNote() {
       return;
     }
 
+    if (!schema) {
+      toast.error('평가 스키마를 불러오지 못했습니다.');
+      return;
+    }
+
     try {
       setIsSaving(true);
       
-      // ratings 값이 최소값보다 작으면 최소값으로 보정
-      const validatedRatings = {
-        richness: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.richness)),
-        strength: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.strength)),
-        smoothness: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.smoothness)),
-        clarity: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.clarity)),
-        complexity: Math.max(RATING_MIN, Math.min(RATING_MAX, ratings.complexity)),
-      };
+      // axisValues 배열 생성
+      const axisValuesArray = axes
+        .filter(axis => axisValues[axis.id] !== undefined)
+        .map(axis => ({
+          axisId: axis.id,
+          value: Math.max(RATING_MIN, Math.min(RATING_MAX, axisValues[axis.id])),
+        }));
 
-      // 평균 평점 계산
-      const averageRating = (
-        validatedRatings.richness +
-        validatedRatings.strength +
-        validatedRatings.smoothness +
-        validatedRatings.clarity +
-        validatedRatings.complexity
-      ) / RATING_FIELDS_COUNT;
+      // overallRating 계산 (축 값들의 평균)
+      const values = axisValuesArray.map(av => av.value);
+      const calculatedOverallRating = values.length > 0
+        ? values.reduce((sum, val) => sum + val, 0) / values.length
+        : null;
 
       await notesApi.update(noteId, {
         teaId: selectedTea,
-        rating: averageRating,
-        ratings: validatedRatings,
-        memo: memo.trim() || undefined,
-        images: images.length > 0 ? images : undefined,
+        schemaId: schema.id,
+        overallRating: overallRating !== null ? overallRating : calculatedOverallRating,
+        isRatingIncluded: true,
+        axisValues: axisValuesArray,
+        memo: memo.trim() || null,
+        images: images.length > 0 ? images : null,
         tags: tags.length > 0 ? tags : undefined,
         isPublic,
       });
@@ -337,17 +369,19 @@ export function EditNote() {
         {/* 평점 슬라이더 */}
         <section className="bg-white rounded-lg p-4 space-y-4">
           <h3>평가</h3>
-          {ratingFields.map(({ key, label }) => (
-            <React.Fragment key={key}>
-              <RatingSlider
-                label={label}
-                value={ratings[key]}
-                onChange={(value) =>
-                  setRatings(prev => ({ ...prev, [key]: value }))
-                }
-              />
-            </React.Fragment>
-          ))}
+          {axes
+            .sort((a, b) => a.displayOrder - b.displayOrder)
+            .map((axis) => (
+              <React.Fragment key={axis.id}>
+                <RatingSlider
+                  label={axis.nameKo}
+                  value={axisValues[axis.id] ?? RATING_DEFAULT}
+                  onChange={(value) =>
+                    setAxisValues(prev => ({ ...prev, [axis.id]: value }))
+                  }
+                />
+              </React.Fragment>
+            ))}
         </section>
 
         {/* 사진 업로드 */}
