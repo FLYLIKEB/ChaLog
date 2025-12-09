@@ -274,6 +274,7 @@ describe('NotesService', () => {
     beforeEach(() => {
       mockTeasService.findOne.mockResolvedValue(mockTea);
       mockRatingSchemaRepository.findOne.mockResolvedValue(mockSchema);
+      // setNoteAxisValues에서 스키마 검증을 위해 축들을 조회할 때 사용
       mockRatingAxisRepository.find.mockResolvedValue(mockAxes);
       mockNotesRepository.create.mockReturnValue(mockNote);
       mockNotesRepository.save.mockResolvedValue(mockNote);
@@ -287,6 +288,7 @@ describe('NotesService', () => {
       });
       mockNotesRepository.find.mockResolvedValue([mockNote]);
       mockTeasService.updateRating.mockResolvedValue(undefined);
+      mockNoteAxisValueRepository.delete.mockResolvedValue(undefined);
       mockNoteAxisValueRepository.create.mockImplementation((av) => av);
       mockNoteAxisValueRepository.save.mockResolvedValue([]);
     });
@@ -315,6 +317,17 @@ describe('NotesService', () => {
 
     it('유효하지 않은 축 ID가 포함되어 있을 때 BadRequestException을 던져야 함', async () => {
       mockRatingAxisRepository.find.mockResolvedValue([mockAxes[0]]); // 하나만 반환
+
+      await expect(service.create(userId, createNoteDto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('다른 스키마의 축 ID가 포함되어 있을 때 BadRequestException을 던져야 함', async () => {
+      // 다른 스키마의 축을 반환하도록 모킹
+      const wrongSchemaAxes = [
+        { id: 1, schemaId: 999, code: 'RICHNESS' }, // 다른 스키마
+        { id: 2, schemaId: 999, code: 'STRENGTH' }, // 다른 스키마
+      ];
+      mockRatingAxisRepository.find.mockResolvedValue(wrongSchemaAxes);
 
       await expect(service.create(userId, createNoteDto)).rejects.toThrow(BadRequestException);
     });
@@ -377,6 +390,10 @@ describe('NotesService', () => {
       mockNotesRepository.save.mockResolvedValue(mockNote);
       mockNotesRepository.find.mockResolvedValue([mockNote]);
       mockTeasService.updateRating.mockResolvedValue(undefined);
+      mockNoteAxisValueRepository.delete.mockResolvedValue(undefined);
+      mockNoteAxisValueRepository.create.mockImplementation((av) => av);
+      mockNoteAxisValueRepository.save.mockResolvedValue([]);
+      mockRatingAxisRepository.find.mockResolvedValue(mockAxes);
     });
 
     it('축 값을 업데이트해야 함', async () => {
@@ -439,6 +456,25 @@ describe('NotesService', () => {
       await service.update(noteId, userId, updateNoteDto);
 
       expect(mockNoteAxisValueRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('다른 스키마의 축 ID가 포함되어 있을 때 BadRequestException을 던져야 함', async () => {
+      const updateNoteDto: UpdateNoteDto = {
+        axisValues: [
+          { axisId: 1, value: 5 },
+          { axisId: 2, value: 4 },
+        ],
+      };
+
+      // 다른 스키마의 축을 반환하도록 모킹
+      const wrongSchemaAxes = [
+        { id: 1, schemaId: 999, code: 'RICHNESS' }, // 다른 스키마
+        { id: 2, schemaId: 999, code: 'STRENGTH' }, // 다른 스키마
+      ];
+      mockRatingAxisRepository.find.mockResolvedValue(wrongSchemaAxes);
+      mockNoteAxisValueRepository.delete.mockResolvedValue(undefined);
+
+      await expect(service.update(noteId, userId, updateNoteDto)).rejects.toThrow(BadRequestException);
     });
   });
 

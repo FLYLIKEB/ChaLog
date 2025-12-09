@@ -72,7 +72,7 @@ export class NotesService {
     
     // 축 값 처리
     if (axisValues && axisValues.length > 0) {
-      await this.setNoteAxisValues(savedNote.id, axisValues);
+      await this.setNoteAxisValues(savedNote.id, schema.id, axisValues);
     }
     
     // 태그 처리
@@ -170,9 +170,12 @@ export class NotesService {
     Object.assign(note, noteData);
     const updatedNote = await this.notesRepository.save(note);
 
+    // 업데이트된 스키마 ID 확인 (변경되었을 수 있음)
+    const finalSchemaId = updateNoteDto.schemaId !== undefined ? updateNoteDto.schemaId : note.schemaId;
+
     // 축 값 업데이트 (axisValues가 제공된 경우에만)
     if (axisValues !== undefined) {
-      await this.setNoteAxisValues(id, axisValues);
+      await this.setNoteAxisValues(id, finalSchemaId, axisValues);
     }
 
     // 태그 업데이트 (tags가 제공된 경우에만)
@@ -484,7 +487,7 @@ export class NotesService {
    * 노트의 축 값을 설정합니다.
    * 기존 축 값을 삭제하고 새로운 축 값을 추가합니다.
    */
-  private async setNoteAxisValues(noteId: number, axisValues: Array<{ axisId: number; value: number }>): Promise<void> {
+  private async setNoteAxisValues(noteId: number, schemaId: number, axisValues: Array<{ axisId: number; value: number }>): Promise<void> {
     // 기존 축 값 삭제
     await this.noteAxisValueRepository.delete({ noteId });
 
@@ -492,7 +495,7 @@ export class NotesService {
       return;
     }
 
-    // 축 ID 유효성 검증
+    // 축 ID 유효성 검증 및 스키마 일치 확인
     const axisIds = axisValues.map(av => av.axisId);
     const axes = await this.ratingAxisRepository.find({
       where: { id: In(axisIds) },
@@ -500,6 +503,12 @@ export class NotesService {
 
     if (axes.length !== axisIds.length) {
       throw new BadRequestException('유효하지 않은 축 ID가 포함되어 있습니다.');
+    }
+
+    // 모든 축이 노트의 스키마에 속하는지 확인
+    const invalidAxes = axes.filter(axis => axis.schemaId !== schemaId);
+    if (invalidAxes.length > 0) {
+      throw new BadRequestException('제공된 축 중 일부가 노트의 스키마에 속하지 않습니다.');
     }
 
     // NoteAxisValue 생성
