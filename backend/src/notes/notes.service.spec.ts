@@ -532,18 +532,13 @@ describe('NotesService', () => {
     const teaId = 1;
 
     it('isRatingIncluded가 true인 노트만 평점 계산에 포함해야 함', async () => {
-      const notes = [
+      // DB 레벨에서 필터링된 것처럼 isRatingIncluded가 true인 노트만 반환
+      const filteredNotes = [
         {
           id: 1,
           teaId,
           overallRating: 4.0,
           isRatingIncluded: true,
-        },
-        {
-          id: 2,
-          teaId,
-          overallRating: 5.0,
-          isRatingIncluded: false, // 제외됨
         },
         {
           id: 3,
@@ -552,9 +547,6 @@ describe('NotesService', () => {
           isRatingIncluded: true,
         },
       ];
-
-      // isRatingIncluded가 true인 노트만 반환하도록 필터링
-      const filteredNotes = notes.filter(note => note.isRatingIncluded === true);
       mockNotesRepository.find.mockResolvedValue(filteredNotes);
       mockTeasService.updateRating.mockResolvedValue(undefined);
 
