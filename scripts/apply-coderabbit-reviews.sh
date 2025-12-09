@@ -62,6 +62,7 @@ query {
           comments(first: 10) {
             nodes {
               id
+              databaseId
               bodyText
               author {
                 login
@@ -81,6 +82,7 @@ EOF
     .data.repository.pullRequest.reviewThreads.nodes[] 
     | select(.isResolved == false) 
     | select(.comments.nodes[0].author.login as $author | $bots | index($author) != null)
+    | {id: .id, path: .path, line: .line, startLine: .startLine, firstCommentId: .comments.nodes[0].id, firstCommentDatabaseId: .comments.nodes[0].databaseId, comment: .comments.nodes[0].bodyText, author: .comments.nodes[0].author.login}
   '
 }
 
@@ -108,27 +110,18 @@ EOF
   gh api graphql -f query="$mutation" > /dev/null 2>&1
 }
 
-# 리뷰 코멘트에 답글 작성
+# 리뷰 코멘트에 답글 작성 (REST API 사용)
 add_comment_to_thread() {
-  local thread_id=$1
+  local comment_database_id=$1
   local comment_body=$2
   local pr_number=$3
   
-  # 변수를 사용한 GraphQL mutation
-  local mutation='mutation($threadId: ID!, $body: String!) {
-    addComment(input: { subjectId: $threadId, body: $body }) {
-      commentEdge {
-        node {
-          id
-        }
-      }
-    }
-  }'
-  
-  local variables=$(jq -n --arg threadId "$thread_id" --arg body "$comment_body" '{threadId: $threadId, body: $body}')
-  
-  if ! gh api graphql -f query="$mutation" -f variables="$variables" > /dev/null 2>&1; then
-    # addComment이 실패하면 일반 PR 코멘트로 작성
+  # REST API를 사용하여 리뷰 코멘트에 답글 작성
+  # POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies
+  if ! gh api "repos/$REPO_OWNER/$REPO_NAME/pulls/$pr_number/comments/$comment_database_id/replies" \
+    -X POST \
+    -f body="$comment_body" > /dev/null 2>&1; then
+    log "⚠️  리뷰 코멘트에 답글 작성 실패, 일반 PR 코멘트로 작성합니다."
     gh pr comment "$pr_number" --body "$comment_body" > /dev/null 2>&1
   fi
 }
@@ -299,8 +292,10 @@ EOF
       local thread_id=$(echo "$thread" | jq -r '.id')
       local file_path=$(echo "$thread" | jq -r '.path')
       local line=$(echo "$thread" | jq -r '.line // .startLine // "N/A"')
-      local comment=$(echo "$thread" | jq -r '.comments.nodes[0].bodyText')
-      local author=$(echo "$thread" | jq -r '.comments.nodes[0].author.login')
+      local first_comment_id=$(echo "$thread" | jq -r '.firstCommentId // empty')
+      local first_comment_database_id=$(echo "$thread" | jq -r '.firstCommentDatabaseId // empty')
+      local comment=$(echo "$thread" | jq -r '.comment // .comments.nodes[0].bodyText // ""')
+      local author=$(echo "$thread" | jq -r '.author // .comments.nodes[0].author.login // ""')
       
       log ""
       log "📝 리뷰 스레드: $thread_id"
@@ -391,7 +386,7 @@ EOF
       log "푸시 중..."
       git push origin "$pr_branch" || error "푸시 실패"
       
-      # 리뷰에 댓글 작성
+      # 리뷰에 댓글 작성 (리뷰 스레드의 첫 번째 코멘트에 답글)
       local comment_body="✅ 리뷰 반영 완료
 
 \`\`\`
@@ -400,8 +395,13 @@ $file_path:$line
 
 변경사항을 커밋했습니다."
       
-      log "리뷰에 댓글 작성 중..."
-      add_comment_to_thread "$thread_id" "$comment_body" "$pr_number"
+      log "리뷰 스레드에 답글 작성 중..."
+      if [ -n "$first_comment_database_id" ] && [ "$first_comment_database_id" != "null" ]; then
+        add_comment_to_thread "$first_comment_database_id" "$comment_body" "$pr_number"
+      else
+        log "⚠️  코멘트 ID를 찾을 수 없어 일반 PR 코멘트로 작성합니다."
+        gh pr comment "$pr_number" --body "$comment_body" > /dev/null 2>&1
+      fi
       
       # 리뷰 스레드 resolve
       log "리뷰 스레드 resolve 중..."
