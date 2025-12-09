@@ -99,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const script = document.createElement('script');
           script.src = 'https://developers.kakao.com/sdk/js/kakao.js';
           script.async = true;
-          script.crossOrigin = 'anonymous';
+          // crossOrigin 속성 제거 (카카오 SDK는 CORS 문제 없음)
           
           script.onerror = () => {
             logger.error('[SDK 초기화] 카카오 SDK 스크립트 로드 실패');
@@ -252,7 +252,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const script = document.createElement('script');
           script.src = 'https://developers.kakao.com/sdk/js/kakao.js';
           script.async = true;
-          script.crossOrigin = 'anonymous';
+          // crossOrigin 속성 제거 (카카오 SDK는 CORS 문제 없음)
           
           script.onerror = () => {
             logger.error('[3/7] 카카오 SDK 스크립트 로드 실패');
