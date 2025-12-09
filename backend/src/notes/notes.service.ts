@@ -445,7 +445,18 @@ export class NotesService {
         return [];
       }
 
-      const noteIds = notes.map((note) => note.id);
+      const noteIds = notes.map((note) => note.id).filter((id) => id != null);
+      
+      if (noteIds.length === 0) {
+        this.logger.warn('enrichNotesWithLikesAndBookmarks: No valid note IDs found');
+        return notes.map((note) => {
+          const noteObj = note as any;
+          noteObj.likeCount = 0;
+          noteObj.isLiked = false;
+          noteObj.isBookmarked = false;
+          return noteObj;
+        });
+      }
 
       // 좋아요 수 조회
       const likeCounts = await this.noteLikesRepository
@@ -458,7 +469,22 @@ export class NotesService {
 
       const likeCountMap = new Map<number, number>();
       likeCounts.forEach((item) => {
-        likeCountMap.set(item.noteId, parseInt(item.count, 10));
+        try {
+          // TypeORM의 getRawMany()는 alias를 사용할 때 지정한 alias를 키로 사용
+          // 하지만 때때로 다른 형식으로 반환될 수 있으므로 안전하게 처리
+          const noteId = item.noteId ?? item.like_noteId ?? item.note_id;
+          const count = item.count ?? item.COUNT_like_id;
+          
+          if (noteId !== undefined && count !== undefined) {
+            const parsedCount = typeof count === 'string' ? parseInt(count, 10) : Number(count);
+            const parsedNoteId = typeof noteId === 'string' ? parseInt(noteId, 10) : Number(noteId);
+            if (!isNaN(parsedCount) && !isNaN(parsedNoteId)) {
+              likeCountMap.set(parsedNoteId, parsedCount);
+            }
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to process like count item: ${JSON.stringify(item)}`, error);
+        }
       });
 
       // 현재 사용자의 좋아요 여부 조회
@@ -488,7 +514,15 @@ export class NotesService {
         return noteObj;
       });
     } catch (error) {
-      this.logger.error(`Failed to enrich notes with likes and bookmarks: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to enrich notes with likes and bookmarks: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      this.logger.error(`Error details: ${JSON.stringify({
+        notesCount: notes.length,
+        noteIds: notes.map(n => n.id),
+        currentUserId,
+      })}`);
       throw error;
     }
   }

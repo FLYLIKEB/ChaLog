@@ -251,25 +251,33 @@ export class RatingSchemaVersioning1700000000007 implements MigrationInterface {
       }
     }
 
-    // 3. rating과 ratings를 NOT NULL로 변경
+    // 3. NULL 값을 기본값으로 업데이트 (NOT NULL 제약 추가 전)
+    await queryRunner.query(`
+      UPDATE \`notes\` SET \`rating\` = COALESCE(\`overallRating\`, 0.00) WHERE \`rating\` IS NULL
+    `);
+    await queryRunner.query(`
+      UPDATE \`notes\` SET \`ratings\` = '{}' WHERE \`ratings\` IS NULL
+    `);
+
+    // 4. rating과 ratings를 NOT NULL로 변경
     await queryRunner.query(`
       ALTER TABLE \`notes\`
       MODIFY COLUMN \`rating\` DECIMAL(3,2) NOT NULL,
       MODIFY COLUMN \`ratings\` JSON NOT NULL
     `);
 
-    // 4. 외래키 제거
+    // 5. 외래키 제거
     await queryRunner.query(`
       ALTER TABLE \`notes\`
       DROP FOREIGN KEY \`FK_notes_rating_schema\`
     `);
 
-    // 5. 인덱스 제거
+    // 6. 인덱스 제거
     await queryRunner.query(`
       DROP INDEX \`IDX_notes_schemaId\` ON \`notes\`
     `);
 
-    // 6. 새 컬럼 제거
+    // 7. 새 컬럼 제거
     await queryRunner.query(`
       ALTER TABLE \`notes\`
       DROP COLUMN \`schemaId\`,
@@ -277,7 +285,7 @@ export class RatingSchemaVersioning1700000000007 implements MigrationInterface {
       DROP COLUMN \`isRatingIncluded\`
     `);
 
-    // 7. 테이블 삭제 (역순)
+    // 8. 테이블 삭제 (역순)
     await queryRunner.query(`DROP TABLE IF EXISTS \`note_axis_value\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`rating_axis\``);
     await queryRunner.query(`DROP TABLE IF EXISTS \`rating_schema\``);

@@ -1320,11 +1320,11 @@ describe('AppController (e2e)', () => {
   describe('/notes/schemas - 평가 스키마 API', () => {
     beforeEach(async () => {
       // 테스트 격리를 위해 각 테스트 전에 관련 데이터 정리
+      // 스키마와 축은 삭제하지 않음 - 마이그레이션에서 생성된 기본 데이터 유지
       await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
       await dataSource.query('DELETE FROM note_axis_value');
       await dataSource.query('DELETE FROM notes');
-      await dataSource.query('DELETE FROM rating_axis');
-      await dataSource.query('DELETE FROM rating_schema');
+      // rating_axis와 rating_schema는 삭제하지 않음 (기본 스키마 유지)
       await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
     });
 
