@@ -285,10 +285,17 @@ export function NoteDetail() {
                 </button>
               </div>
             )}
+
           </div>
           
           <p className="text-xs text-gray-500 mb-4">
-            {note.createdAt.toLocaleDateString('ko-KR')} · {note.userName}
+            {note.createdAt.toLocaleDateString('ko-KR')} ·{' '}
+            <button
+              onClick={() => navigate(`/user/${note.userId}`)}
+              className="hover:text-[#030213] cursor-pointer transition-colors"
+            >
+              {note.userName}
+            </button>
           </p>
 
           <RatingVisualization ratings={note.ratings} />

@@ -146,7 +146,16 @@ export const NoteCard: FC<NoteCardProps> = ({ note, showTeaName = false }) => {
               </div>
             )}
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-gray-500">{note.userName}</span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigate(`/user/${note.userId}`);
+                }}
+                className="text-xs text-gray-500 hover:text-[#030213] cursor-pointer transition-colors"
+              >
+                {note.userName}
+              </button>
               <span className="text-xs text-gray-400">·</span>
               <span className="text-xs text-gray-500">
                 {note.createdAt.toLocaleDateString('ko-KR')}

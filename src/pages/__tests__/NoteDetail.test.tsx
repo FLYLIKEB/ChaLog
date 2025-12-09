@@ -1,9 +1,12 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { NoteDetail } from '../NoteDetail';
 import { MemoryRouter } from 'react-router-dom';
 import { notesApi } from '../../lib/api';
 import { Note } from '../../types';
+
+const mockNavigate = vi.fn();
 
 vi.mock('../../lib/api', async () => {
   const actual = await vi.importActual<typeof import('../../lib/api')>('../../lib/api');
@@ -27,7 +30,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useParams: () => ({ id: '1' }),
-    useNavigate: () => vi.fn(),
+    useNavigate: () => mockNavigate,
   };
 });
 
@@ -83,6 +86,37 @@ describe('NoteDetail - 이미지 가운데 정렬', () => {
         const container = img.parentElement;
         expect(container).toHaveClass('max-w-xs');
       });
+    });
+  });
+
+  it('작성자 이름을 클릭하면 프로필 페이지로 이동해야 함', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <NoteDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('테스트 사용자')).toBeInTheDocument();
+    });
+
+    const authorName = screen.getByText('테스트 사용자');
+    await user.click(authorName);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/user/1');
+  });
+
+  it('작성자 이름에 호버 효과가 있어야 함', async () => {
+    render(
+      <MemoryRouter>
+        <NoteDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      const authorName = screen.getByText('테스트 사용자');
+      expect(authorName).toHaveClass('hover:text-[#030213]', 'cursor-pointer');
     });
   });
 });

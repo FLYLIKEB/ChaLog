@@ -632,3 +632,7 @@ export const notesApi = {
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
 };
 
+export const usersApi = {
+  getById: (id: number) => apiClient.get<User>(`/users/${id}`),
+};
+

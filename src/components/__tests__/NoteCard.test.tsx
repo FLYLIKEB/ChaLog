@@ -1,8 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { vi, describe, it, expect } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { NoteCard } from '../NoteCard';
 import { MemoryRouter } from 'react-router-dom';
 import { Note } from '../../types';
+
+const mockNavigate = vi.fn();
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
@@ -15,6 +18,14 @@ vi.mock('sonner', () => ({
     error: vi.fn(),
   },
 }));
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 const mockNote: Note = {
   id: 1,
@@ -58,6 +69,31 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
     );
 
     expect(screen.queryByAltText('Note image')).not.toBeInTheDocument();
+  });
+
+  it('작성자 이름을 클릭하면 프로필 페이지로 이동해야 함', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <NoteCard note={mockNote} />
+      </MemoryRouter>,
+    );
+
+    const authorName = screen.getByText('테스트 사용자');
+    await user.click(authorName);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/user/1');
+  });
+
+  it('작성자 이름에 호버 효과가 있어야 함', () => {
+    render(
+      <MemoryRouter>
+        <NoteCard note={mockNote} />
+      </MemoryRouter>,
+    );
+
+    const authorName = screen.getByText('테스트 사용자');
+    expect(authorName).toHaveClass('hover:text-[#030213]', 'cursor-pointer');
   });
 });
 

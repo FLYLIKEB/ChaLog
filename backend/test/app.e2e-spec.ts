@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 describe('AppController (e2e)', () => {
@@ -964,6 +964,122 @@ describe('AppController (e2e)', () => {
             expect(res.body.bookmarked).toBe(false);
           });
       }
+    });
+  });
+
+  describe('/users/:id - 사용자 프로필 조회 API', () => {
+    let authToken: string;
+    let userId: number;
+    let otherUserId: number;
+    let otherAuthToken: string;
+
+    beforeAll(async () => {
+      // 테스트용 사용자 2명 등록
+      const uniqueEmail1 = `profileuser1-${Date.now()}@example.com`;
+      const uniqueEmail2 = `profileuser2-${Date.now()}@example.com`;
+
+      // 사용자 1 등록
+      const registerResponse1 = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: uniqueEmail1,
+          name: 'Profile Test User 1',
+          password: 'password123',
+        })
+        .expect(201);
+      authToken = registerResponse1.body.access_token;
+
+      // 사용자 1 프로필 조회로 userId 얻기
+      const profileResponse1 = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(201);
+      userId = profileResponse1.body.userId;
+
+      // 사용자 2 등록
+      const registerResponse2 = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({
+          email: uniqueEmail2,
+          name: 'Profile Test User 2',
+          password: 'password123',
+        })
+        .expect(201);
+      otherAuthToken = registerResponse2.body.access_token;
+
+      // 사용자 2 프로필 조회로 userId 얻기
+      const profileResponse2 = await request(app.getHttpServer())
+        .post('/auth/profile')
+        .set('Authorization', `Bearer ${otherAuthToken}`)
+        .expect(201);
+      otherUserId = profileResponse2.body.userId;
+    });
+
+    beforeEach(async () => {
+      // 테스트 격리를 위해 각 테스트 전에 노트 데이터만 정리
+      await dataSource.query('DELETE FROM notes');
+    });
+
+    it('GET /users/:id - 사용자 프로필 조회 성공', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${userId}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('name');
+      expect(response.body.id).toBe(userId);
+      expect(response.body.name).toBe('Profile Test User 1');
+    });
+
+    it('GET /users/:id - 인증 없이 사용자 프로필 조회 성공', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${userId}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('name');
+      expect(response.body.id).toBe(userId);
+    });
+
+    it('GET /users/:id - 인증된 사용자가 다른 사용자 프로필 조회 성공', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${otherUserId}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('id');
+      expect(response.body).toHaveProperty('name');
+      expect(response.body.id).toBe(otherUserId);
+      expect(response.body.name).toBe('Profile Test User 2');
+    });
+
+    it('GET /users/:id - 존재하지 않는 사용자 조회 시 404 에러', async () => {
+      const nonExistentUserId = 999999;
+      const response = await request(app.getHttpServer())
+        .get(`/users/${nonExistentUserId}`)
+        .expect(404);
+
+      expect(response.body).toHaveProperty('message');
+      expect(response.body.message).toContain('사용자를 찾을 수 없습니다');
+    });
+
+    it('GET /users/:id - 잘못된 사용자 ID 형식으로 조회 시 400 에러', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/users/invalid-id')
+        .expect(400);
+
+      expect(response.body).toHaveProperty('message');
+    });
+
+    it('GET /users/:id - 사용자 프로필 응답에 불필요한 정보 제외', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/users/${userId}`)
+        .expect(200);
+
+      // 민감한 정보가 포함되지 않았는지 확인
+      expect(response.body).not.toHaveProperty('password');
+      expect(response.body).not.toHaveProperty('credential');
+      expect(response.body).not.toHaveProperty('authentications');
     });
   });
 });
