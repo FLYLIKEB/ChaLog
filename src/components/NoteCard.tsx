@@ -29,7 +29,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(note.isBookmarked ?? false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
+  const [isSwiped, setIsSwiped] = useState(false);
+  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
+  const [translateX, setTranslateX] = useState(0);
 
   const handleClick = () => {
     if (!canView) {
@@ -90,6 +92,8 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
       if (onBookmarkToggle) {
         onBookmarkToggle(result.bookmarked);
       }
+      // 북마크 후 스와이프 상태 해제
+      setIsSwiped(false);
     } catch (error: any) {
       logger.error('Failed to toggle bookmark:', error);
       toast.error('북마크 처리에 실패했습니다.');
@@ -98,25 +102,128 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
     }
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setTouchStart({ x: touch.clientX, y: touch.clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStart.x;
+    const deltaY = touch.clientY - touchStart.y;
+    
+    // 수평 스와이프가 수직 스와이프보다 큰 경우
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // 왼쪽으로 스와이프 (음수)
+      if (deltaX < 0) {
+        const swipeAmount = Math.max(deltaX, -80); // 최대 -80px
+        setTranslateX(swipeAmount);
+        
+        // 스와이프가 충분히 멀리 갔을 때 북마크 표시
+        if (deltaX < -50) {
+          setIsSwiped(true);
+        }
+      } else {
+        // 오른쪽으로 스와이프하면 원래 위치로
+        setTranslateX(0);
+        setIsSwiped(false);
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setTouchStart(null);
+    
+    // 스와이프가 충분히 멀리 갔으면 북마크 표시 상태 유지
+    if (translateX < -50) {
+      setIsSwiped(true);
+      setTranslateX(-80); // 북마크 버튼이 보이도록 고정
+    } else {
+      // 충분히 멀리 가지 않았으면 원래 위치로 복귀
+      setIsSwiped(false);
+      setTranslateX(0);
+    }
+    
+    // 스와이프 후 일정 시간 후 자동으로 원래 상태로 복귀
+    if (isSwiped && translateX < -50) {
+      setTimeout(() => {
+        setIsSwiped(false);
+        setTranslateX(0);
+      }, 3000);
+    }
+  };
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 북마크 버튼이 표시된 상태에서 카드 클릭 시 스와이프 해제
+    if (isSwiped) {
+      setIsSwiped(false);
+      setTranslateX(0);
+      return;
+    }
+    handleClick();
+  };
+
   return (
-    <div
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onTouchStart={() => setIsHovered(true)}
-      role={canView ? 'button' : undefined}
-      tabIndex={canView ? 0 : undefined}
-      className={cn(
-        "w-full text-left py-1 px-0 transition-colors cursor-pointer",
-        "bg-card text-card-foreground",
-        "border-b border-border/50 last:border-b-0",
-        canView ? 'hover:bg-muted/20' : 'opacity-60 cursor-not-allowed'
+    <div className="relative overflow-hidden">
+      {/* 북마크 버튼 배경 (스와이프 시 보임) */}
+      {user && (
+        <div 
+          className={cn(
+            "absolute right-0 top-0 bottom-0 flex items-center justify-center bg-primary/10 transition-opacity duration-200 z-10",
+            isSwiped ? 'opacity-100' : 'opacity-0'
+          )}
+          style={{ width: '80px' }}
+        >
+          <button
+            type="button"
+            onClick={handleBookmarkClick}
+            disabled={isTogglingBookmark}
+            className={cn(
+              "min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors disabled:opacity-50 rounded-md",
+              isBookmarked 
+                ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
+                : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
+            )}
+            title={isBookmarked ? '북마크 해제' : '북마크 추가'}
+            aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
+          >
+            {isTogglingBookmark ? (
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : (
+              <Bookmark
+                className={cn(
+                  "w-4 h-4 transition-all",
+                  isBookmarked 
+                    ? 'fill-primary text-primary stroke-primary' 
+                    : 'fill-none text-muted-foreground stroke-muted-foreground'
+                )}
+              />
+            )}
+          </button>
+        </div>
       )}
-    >
+      
+      <div
+        onClick={handleCardClick}
+        onKeyDown={handleKeyDown}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        role={canView ? 'button' : undefined}
+        tabIndex={canView ? 0 : undefined}
+        className={cn(
+          "w-full text-left py-1 px-0 transition-transform duration-200 cursor-pointer relative",
+          "bg-card text-card-foreground",
+          "border-b border-border/50 last:border-b-0",
+          canView ? 'hover:bg-muted/20' : 'opacity-60 cursor-not-allowed'
+        )}
+        style={{ transform: `translateX(${translateX}px)` }}
+      >
       <div className="flex items-start gap-3 sm:gap-4">
         {/* 이미지 썸네일 */}
-        <div className="shrink-0 rounded-lg overflow-hidden bg-gray-100 w-28 h-28 sm:w-32 sm:h-32 mt-3">
+        <div className="shrink-0 rounded-lg overflow-hidden bg-gray-100 w-28 h-auto sm:w-32 sm:h-auto mt-3 self-stretch">
           {hasImage && firstImage ? (
             <ImageWithFallback
               src={firstImage}
@@ -170,7 +277,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           )}
 
           {/* 하단: 사용자 정보와 액션 버튼 */}
-          <div className="flex items-center justify-between gap-3 -mt-3">
+          <div className="flex items-center justify-between gap-3 mt-2">
             <div className="flex items-center gap-1 flex-1 min-w-0">
               <button
                 onClick={(e) => {
@@ -195,71 +302,8 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
               )}
             </div>
             
-            {/* 좋아요/북마크 버튼 */}
-            {user && (
-              <div className={cn(
-                "flex items-center gap-1.5 shrink-0 transition-opacity duration-200",
-                isHovered ? 'opacity-100' : 'opacity-0'
-              )}>
-                <button
-                  type="button"
-                  onClick={handleLikeClick}
-                  disabled={isTogglingLike}
-                  className={cn(
-                    "min-h-[40px] min-w-[40px] flex items-center justify-center gap-1.5 px-1 transition-colors disabled:opacity-50 rounded-md",
-                    isLiked 
-                      ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
-                      : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
-                  )}
-                  title={isLiked ? '좋아요 취소' : '좋아요'}
-                  aria-label={isLiked ? '좋아요 취소' : '좋아요'}
-                >
-                  {isTogglingLike ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <>
-                      <Heart
-                        className={cn(
-                          "w-4 h-4 transition-all",
-                          isLiked 
-                            ? 'fill-primary text-primary stroke-primary' 
-                            : 'fill-none text-muted-foreground stroke-muted-foreground'
-                        )}
-                      />
-                      {likeCount > 0 && <span className="text-xs font-medium min-w-[1rem] text-center">{likeCount}</span>}
-                    </>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBookmarkClick}
-                  disabled={isTogglingBookmark}
-                  className={cn(
-                    "min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors disabled:opacity-50 rounded-md",
-                    isBookmarked 
-                      ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
-                      : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
-                  )}
-                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
-                  aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
-                >
-                  {isTogglingBookmark ? (
-                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                  ) : (
-                    <Bookmark
-                      className={cn(
-                        "w-4 h-4 transition-all",
-                        isBookmarked 
-                          ? 'fill-primary text-primary stroke-primary' 
-                          : 'fill-none text-muted-foreground stroke-muted-foreground'
-                      )}
-                    />
-                  )}
-                </button>
-              </div>
-            )}
-            {/* 좋아요 수만 표시 (호버되지 않았을 때) */}
-            {user && !isHovered && likeCount > 0 && (
+            {/* 좋아요 수만 표시 */}
+            {user && likeCount > 0 && (
               <div className="flex items-center shrink-0">
                 <span className="text-xs text-muted-foreground">
                   <Heart className="w-3 h-3 inline fill-none stroke-muted-foreground mr-0.5" />
@@ -270,6 +314,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
