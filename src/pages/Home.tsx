@@ -82,7 +82,7 @@ export function Home() {
     <div className="min-h-screen bg-background pb-20">
       <Header showProfile />
       
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+      <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* 오늘의 차 섹션 */}
         <Section title="오늘의 차" spacing="lg">
           {todayTea ? (
@@ -95,7 +95,7 @@ export function Home() {
         {/* 공개 노트 섹션 */}
         <Section title="공개 노트" spacing="lg">
           {publicNotes.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-0">
               {publicNotes.map(note => (
                 <NoteCard 
                   key={note.id} 

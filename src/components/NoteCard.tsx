@@ -29,6 +29,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(note.isBookmarked ?? false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
     if (!canView) {
@@ -101,18 +102,21 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
     <div
       onClick={handleClick}
       onKeyDown={handleKeyDown}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
       role={canView ? 'button' : undefined}
       tabIndex={canView ? 0 : undefined}
       className={cn(
-        "w-full text-left pt-0 pb-4 transition-colors cursor-pointer",
+        "w-full text-left py-1 px-0 transition-colors cursor-pointer",
         "bg-card text-card-foreground",
         "border-b border-border/50 last:border-b-0",
         canView ? 'hover:bg-muted/20' : 'opacity-60 cursor-not-allowed'
       )}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-3 sm:gap-4">
         {/* 이미지 썸네일 */}
-        <div className="shrink-0 rounded-lg overflow-hidden bg-gray-100 w-20 h-20 sm:w-24 sm:h-24">
+        <div className="shrink-0 rounded-lg overflow-hidden bg-gray-100 w-28 h-28 sm:w-32 sm:h-32 mt-3">
           {hasImage && firstImage ? (
             <ImageWithFallback
               src={firstImage}
@@ -127,20 +131,20 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
         </div>
         
         {/* 내용 영역 */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2">
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
           {/* 상단: 제목/메모 */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 mt-3">
             {showTeaName && (
-              <h3 className="truncate mb-1 text-primary font-medium">{note.teaName}</h3>
+              <h3 className="truncate mb-1.5 text-primary font-medium text-base">{note.teaName}</h3>
             )}
             {note.memo && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{note.memo}</p>
+              <p className="text-sm text-muted-foreground line-clamp-1 leading-relaxed">{note.memo}</p>
             )}
           </div>
 
           {/* 별점 */}
           {note.overallRating !== null && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5 -mt-0.5">
               <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               <span className="text-sm font-medium">{Number(note.overallRating).toFixed(1)}</span>
             </div>
@@ -148,17 +152,17 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
 
           {/* 태그 */}
           {note.tags && note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 mb-0">
               {note.tags.slice(0, 5).map((tag, index) => (
                 <span
                   key={index}
-                  className="text-xs px-2 py-0.5 bg-muted text-foreground rounded-full font-medium"
+                  className="text-xs px-2.5 py-1 bg-muted text-foreground rounded-full font-medium"
                 >
                   {tag}
                 </span>
               ))}
               {note.tags.length > 5 && (
-                <span className="text-xs px-2 py-0.5 text-muted-foreground font-medium">
+                <span className="text-xs px-2.5 py-1 text-muted-foreground font-medium">
                   +{note.tags.length - 5}
                 </span>
               )}
@@ -166,8 +170,8 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           )}
 
           {/* 하단: 사용자 정보와 액션 버튼 */}
-          <div className="flex items-center justify-between gap-2 mt-1">
-            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-3 -mt-3">
+            <div className="flex items-center gap-1 flex-1 min-w-0">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -193,16 +197,19 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             
             {/* 좋아요/북마크 버튼 */}
             {user && (
-              <div className="flex items-center gap-2 shrink-0">
+              <div className={cn(
+                "flex items-center gap-1.5 shrink-0 transition-opacity duration-200",
+                isHovered ? 'opacity-100' : 'opacity-0'
+              )}>
                 <button
                   type="button"
                   onClick={handleLikeClick}
                   disabled={isTogglingLike}
                   className={cn(
-                    "min-h-[36px] min-w-[36px] flex items-center justify-center gap-1 transition-colors disabled:opacity-50",
+                    "min-h-[40px] min-w-[40px] flex items-center justify-center gap-1.5 px-1 transition-colors disabled:opacity-50 rounded-md",
                     isLiked 
-                      ? 'text-primary hover:text-primary/80' 
-                      : 'text-muted-foreground hover:text-primary'
+                      ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
+                      : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
                   )}
                   title={isLiked ? '좋아요 취소' : '좋아요'}
                   aria-label={isLiked ? '좋아요 취소' : '좋아요'}
@@ -219,7 +226,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
                             : 'fill-none text-muted-foreground stroke-muted-foreground'
                         )}
                       />
-                      {likeCount > 0 && <span className="text-xs font-medium">{likeCount}</span>}
+                      {likeCount > 0 && <span className="text-xs font-medium min-w-[1rem] text-center">{likeCount}</span>}
                     </>
                   )}
                 </button>
@@ -228,10 +235,10 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
                   onClick={handleBookmarkClick}
                   disabled={isTogglingBookmark}
                   className={cn(
-                    "min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors disabled:opacity-50",
+                    "min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors disabled:opacity-50 rounded-md",
                     isBookmarked 
-                      ? 'text-primary hover:text-primary/80' 
-                      : 'text-muted-foreground hover:text-primary'
+                      ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
+                      : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
                   )}
                   title={isBookmarked ? '북마크 해제' : '북마크 추가'}
                   aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
@@ -249,6 +256,15 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
                     />
                   )}
                 </button>
+              </div>
+            )}
+            {/* 좋아요 수만 표시 (호버되지 않았을 때) */}
+            {user && !isHovered && likeCount > 0 && (
+              <div className="flex items-center shrink-0">
+                <span className="text-xs text-muted-foreground">
+                  <Heart className="w-3 h-3 inline fill-none stroke-muted-foreground mr-0.5" />
+                  {likeCount}
+                </span>
               </div>
             )}
           </div>
