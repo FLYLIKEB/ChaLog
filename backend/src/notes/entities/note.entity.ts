@@ -52,10 +52,10 @@ export class Note {
   @OneToMany(() => NoteAxisValue, (axisValue) => axisValue.note, { cascade: true })
   axisValues: NoteAxisValue[];
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

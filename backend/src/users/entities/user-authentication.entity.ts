@@ -41,10 +41,10 @@ export class UserAuthentication {
   @Column({ type: 'varchar', length: 255, nullable: true })
   credential: string | null; // password hash (email인 경우만)
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

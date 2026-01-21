@@ -30,10 +30,10 @@ export class Tea {
   @OneToMany(() => Note, (note) => note.tea)
   notes: Note[];
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

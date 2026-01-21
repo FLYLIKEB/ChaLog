@@ -39,10 +39,10 @@ export class RatingSchema {
   @OneToMany(() => RatingAxis, (axis) => axis.schema)
   axes: RatingAxis[];
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

@@ -22,10 +22,10 @@ export class User {
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

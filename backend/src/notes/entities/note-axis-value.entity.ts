@@ -27,10 +27,10 @@ export class NoteAxisValue {
   @Column({ type: 'decimal', precision: 3, scale: 1 })
   valueNumeric: number;
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

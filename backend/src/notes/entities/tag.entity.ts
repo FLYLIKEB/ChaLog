@@ -13,10 +13,10 @@ export class Tag {
   @OneToMany(() => NoteTag, (noteTag) => noteTag.tag)
   noteTags: NoteTag[];
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

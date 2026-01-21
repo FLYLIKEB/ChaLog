@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOptions => {
   // 테스트 환경에서는 TEST_DATABASE_URL만 사용 (필수), 프로덕션에서는 DATABASE_URL 사용
   const isTest = configService.get<string>('NODE_ENV') === 'test' || process.env.NODE_ENV === 'test';
+  const isDevelopment = configService.get<string>('NODE_ENV') === 'development';
+  
   const databaseUrl = isTest 
     ? (() => {
         const testDbUrl = configService.get<string>('TEST_DATABASE_URL');
@@ -16,10 +18,19 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
         }
         return testDbUrl;
       })()
-    : configService.get<string>('DATABASE_URL');
+    : (() => {
+        // 개발 환경에서는 LOCAL_DATABASE_URL을 우선 사용, 없으면 DATABASE_URL 사용
+        if (isDevelopment) {
+          const localDbUrl = configService.get<string>('LOCAL_DATABASE_URL');
+          if (localDbUrl) {
+            return localDbUrl;
+          }
+        }
+        return configService.get<string>('DATABASE_URL');
+      })();
   
   if (!databaseUrl) {
-    throw new Error('DATABASE_URL environment variable is not set');
+    throw new Error('DATABASE_URL or LOCAL_DATABASE_URL environment variable is not set');
   }
 
   // Node.js 내장 URL 클래스를 사용하여 견고한 파싱

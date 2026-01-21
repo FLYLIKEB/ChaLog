@@ -24,7 +24,7 @@ export class NoteTag {
   @JoinColumn({ name: 'tagId' })
   tag: Tag;
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 }
 

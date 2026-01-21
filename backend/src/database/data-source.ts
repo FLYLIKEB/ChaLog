@@ -10,6 +10,8 @@ const configService = new ConfigService();
 
 // DATABASE_URL 파싱 (테스트 환경에서는 TEST_DATABASE_URL만 사용, 필수)
 const isTest = process.env.NODE_ENV === 'test' || process.argv.includes('--test-db');
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 const databaseUrl = isTest 
   ? (() => {
       const testDbUrl = configService.get<string>('TEST_DATABASE_URL');
@@ -22,10 +24,19 @@ const databaseUrl = isTest
       }
       return testDbUrl;
     })()
-  : configService.get<string>('DATABASE_URL');
+  : (() => {
+      // 개발 환경에서는 LOCAL_DATABASE_URL을 우선 사용, 없으면 DATABASE_URL 사용
+      if (isDevelopment) {
+        const localDbUrl = configService.get<string>('LOCAL_DATABASE_URL');
+        if (localDbUrl) {
+          return localDbUrl;
+        }
+      }
+      return configService.get<string>('DATABASE_URL');
+    })();
 
 if (!databaseUrl) {
-  throw new Error('DATABASE_URL environment variable is not set');
+  throw new Error('DATABASE_URL or LOCAL_DATABASE_URL environment variable is not set');
 }
 
 // DATABASE_URL 파싱 (에러 핸들링 및 프로토콜 검증)

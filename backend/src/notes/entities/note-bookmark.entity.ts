@@ -33,7 +33,7 @@ export class NoteBookmark {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 }
 

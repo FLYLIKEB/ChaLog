@@ -50,10 +50,10 @@ export class RatingAxis {
   @OneToMany(() => NoteAxisValue, (value) => value.axis)
   noteAxisValues: NoteAxisValue[];
 
-  @CreateDateColumn({ precision: 0 })
+  @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn({ precision: 0 })
+  @UpdateDateColumn()
   updatedAt: Date;
 }
 

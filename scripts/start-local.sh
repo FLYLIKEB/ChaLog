@@ -60,13 +60,17 @@ echo ""
 echo -e "${BLUE}🔗 SSH 터널 시작 중...${NC}"
 cd "$BACKEND_DIR"
 if [ -f scripts/start-ssh-tunnel.sh ]; then
+    set +e  # SSH 터널 실패해도 계속 진행
     bash scripts/start-ssh-tunnel.sh
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}❌ SSH 터널 시작 실패${NC}"
-        exit 1
+    SSH_TUNNEL_EXIT_CODE=$?
+    set -e  # 다시 에러 시 종료 모드로 복원
+    if [ $SSH_TUNNEL_EXIT_CODE -ne 0 ]; then
+        echo -e "${YELLOW}⚠️  SSH 터널 시작 실패 (계속 진행합니다)${NC}"
+        echo ""
+    else
+        echo ""
+        sleep 2
     fi
-    echo ""
-    sleep 2
 else
     echo -e "${YELLOW}⚠️  SSH 터널 스크립트를 찾을 수 없습니다. 건너뜁니다.${NC}"
     echo ""
@@ -75,6 +79,8 @@ fi
 # 3. 백엔드 서버 시작
 echo -e "${BLUE}🔧 백엔드 서버 시작 중...${NC}"
 cd "$BACKEND_DIR"
+# 로컬 개발 환경으로 설정
+export NODE_ENV=development
 npm run start:dev > /tmp/chalog-backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ 백엔드 서버 시작됨 (PID: $BACKEND_PID)${NC}"
@@ -100,6 +106,8 @@ done
 # 5. 프론트엔드 서버 시작
 echo -e "${BLUE}🎨 프론트엔드 서버 시작 중...${NC}"
 cd "$PROJECT_ROOT"
+# 로컬 개발 환경으로 설정
+export NODE_ENV=development
 npm run dev > /tmp/chalog-frontend.log 2>&1 &
 FRONTEND_PID=$!
 echo -e "${GREEN}✅ 프론트엔드 서버 시작됨 (PID: $FRONTEND_PID)${NC}"
