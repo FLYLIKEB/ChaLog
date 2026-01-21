@@ -450,32 +450,37 @@ class ApiClient {
       }
     }
 
-    // AbortController를 사용한 타임아웃 설정
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      logger.error(`[API Request ${requestId}] 타임아웃 발생`, {
-        timeout,
-        elapsedTime: Date.now() - startTime,
-      });
-      controller.abort();
-    }, timeout);
-    
-    logger.debug(`[API Request ${requestId}] fetch 옵션`, {
-      method: fetchOptionsWithAddressSpace.method || 'GET',
-      headers: Object.keys(headers),
-      hasBody: !!fetchOptionsWithAddressSpace.body,
-      bodySize: fetchOptionsWithAddressSpace.body ? String(fetchOptionsWithAddressSpace.body).length : 0,
-      hasSignal: !!controller.signal,
-      targetAddressSpace: (fetchOptionsWithAddressSpace as any).targetAddressSpace,
-    });
-
     const requestPromise = (async () => {
-      try {
-      logger.info(`[API Request ${requestId}] fetch 호출 시작`);
-      const response = await fetch(url, {
-        ...fetchOptionsWithAddressSpace,
-        signal: controller.signal,
-      });
+      const maxRetries = method === 'GET' ? MAX_RETRY_ATTEMPTS : 0;
+      let attempt = 0;
+
+      while (true) {
+        // AbortController를 사용한 타임아웃 설정
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          logger.error(`[API Request ${requestId}] 타임아웃 발생`, {
+            timeout,
+            elapsedTime: Date.now() - startTime,
+          });
+          controller.abort();
+        }, timeout);
+
+        logger.debug(`[API Request ${requestId}] fetch 옵션`, {
+          method: fetchOptionsWithAddressSpace.method || 'GET',
+          headers: Object.keys(headers),
+          hasBody: !!fetchOptionsWithAddressSpace.body,
+          bodySize: fetchOptionsWithAddressSpace.body ? String(fetchOptionsWithAddressSpace.body).length : 0,
+          hasSignal: !!controller.signal,
+          targetAddressSpace: (fetchOptionsWithAddressSpace as any).targetAddressSpace,
+          attempt,
+        });
+
+        try {
+        logger.info(`[API Request ${requestId}] fetch 호출 시작`, { attempt });
+        const response = await fetch(url, {
+          ...fetchOptionsWithAddressSpace,
+          signal: controller.signal,
+        });
       
       const responseTime = Date.now() - startTime;
       logger.info(`[API Request ${requestId}] 응답 수신`, {
@@ -487,6 +492,20 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        if (response.status === 429 && attempt < maxRetries) {
+          const retryAfter = parseRetryAfter(response.headers.get('retry-after'));
+          const baseDelay = Math.min(RETRY_BASE_DELAY_MS * 2 ** attempt, RETRY_MAX_DELAY_MS);
+          const jitter = Math.floor(Math.random() * 100);
+          const delay = retryAfter ?? (baseDelay + jitter);
+          logger.warn(`[API Request ${requestId}] 429 재시도 대기`, {
+            attempt,
+            delay,
+            retryAfter: response.headers.get('retry-after'),
+          });
+          await sleep(delay);
+          attempt += 1;
+          continue;
+        }
         logger.error(`[API Request ${requestId}] 응답 오류`, {
           status: response.status,
           statusText: response.statusText,
@@ -717,6 +736,7 @@ class ApiClient {
       const totalTime = Date.now() - startTime;
       logger.debug(`[API Request ${requestId}] 완료 (총 소요 시간: ${totalTime}ms)`);
     }
+      }
     })();
 
     if (method === 'GET') {

@@ -22,10 +22,11 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
       useFactory: (configService: ConfigService) => {
         // 테스트 환경에서는 rate limiting 비활성화 (매우 높은 제한)
         const isTest = process.env.NODE_ENV === 'test';
+        const isDevelopment = process.env.NODE_ENV !== 'production';
         return [
           {
             ttl: 60000, // 1분
-            limit: isTest ? 10000 : 10, // 테스트 환경에서는 10000회, 프로덕션에서는 10회
+            limit: isTest ? 10000 : (isDevelopment ? 300 : 10), // 개발 환경은 300회, 프로덕션은 10회
           },
         ];
       },

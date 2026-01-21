@@ -13,7 +13,7 @@ export const RATING_FIELDS_COUNT = 5;
 
 // UI 관련 상수
 export const NAVIGATION_DELAY = 500; // 밀리초
-export const SEARCH_DEBOUNCE_DELAY = 300; // 밀리초
+export const SEARCH_DEBOUNCE_DELAY = 600; // 밀리초
 
 // 리뷰 관련 상수
 export const MIN_REVIEWS_FOR_TAGS = 3;

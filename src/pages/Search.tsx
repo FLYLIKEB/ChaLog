@@ -35,7 +35,7 @@ export function Search() {
   }, []);
 
   const handleSearch = useCallback(async (query: string) => {
-    if (!query.trim()) return;
+    if (query.trim().length < 2) return;
 
     try {
       setIsLoading(true);
@@ -51,19 +51,16 @@ export function Search() {
   }, []);
 
   useEffect(() => {
-    // 초기 로드 시 모든 차 목록 가져오기
-    fetchAllTeas();
-  }, [fetchAllTeas]);
-
-  useEffect(() => {
     // 검색어가 변경될 때마다 검색 실행
-    if (searchQuery.trim()) {
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery.length >= 2) {
       const timeoutId = setTimeout(() => {
         handleSearch(searchQuery);
       }, SEARCH_DEBOUNCE_DELAY);
 
       return () => clearTimeout(timeoutId);
-    } else {
+    }
+    if (trimmedQuery.length === 0) {
       // 검색어가 비어있으면 전체 목록 표시
       fetchAllTeas();
     }
