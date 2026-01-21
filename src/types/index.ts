@@ -75,3 +75,9 @@ export interface User {
   email: string | null;
   profileImageUrl?: string | null;
 }
+
+export interface UserOnboardingPreference {
+  preferredTeaTypes: string[];
+  preferredFlavorTags: string[];
+  hasCompletedOnboarding: boolean;
+}

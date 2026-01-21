@@ -5,8 +5,10 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { UserAuthentication } from './user-authentication.entity';
+import { UserOnboardingPreference } from './user-onboarding-preference.entity';
 
 @Entity('users')
 export class User {
@@ -21,6 +23,9 @@ export class User {
 
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];
+
+  @OneToOne(() => UserOnboardingPreference, (preference) => preference.user)
+  onboardingPreference?: UserOnboardingPreference;
 
   @CreateDateColumn()
   createdAt: Date;

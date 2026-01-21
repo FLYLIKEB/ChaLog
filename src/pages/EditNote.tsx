@@ -283,7 +283,7 @@ export function EditNote() {
       });
 
       toast.success('노트가 수정되었습니다.');
-      setTimeout(() => navigate(`/note/${noteId}`), NAVIGATION_DELAY);
+      setTimeout(() => navigate(`/note/${noteId}`, { replace: true }), NAVIGATION_DELAY);
     } catch (error: any) {
       logger.error('Failed to update note:', error);
       if (error?.statusCode === 403) {

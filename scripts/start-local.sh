@@ -16,6 +16,18 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$PROJECT_ROOT/backend"
 
+# 백엔드 환경 변수 로드 및 로컬 DB 강제 설정
+if [ -f "$BACKEND_DIR/.env" ]; then
+    set -a
+    source "$BACKEND_DIR/.env"
+    set +a
+fi
+
+if [ -z "$LOCAL_DATABASE_URL" ] && [ -n "$DATABASE_URL" ]; then
+    LOCAL_DATABASE_URL="${DATABASE_URL/_test/}"
+    export LOCAL_DATABASE_URL
+fi
+
 # 필수 도구 확인
 if ! command -v curl > /dev/null 2>&1; then
     echo -e "${RED}❌ curl이 설치되어 있지 않습니다.${NC}"

@@ -1,5 +1,5 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User } from '../types';
+import { Tea, User, UserOnboardingPreference } from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -1064,5 +1064,10 @@ export const usersApi = {
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
   updateProfile: (id: number, data: { profileImageUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
+  getOnboardingPreference: (id: number) => apiClient.get<UserOnboardingPreference>(`/users/${id}/onboarding`),
+  updateOnboardingPreference: (
+    id: number,
+    data: { preferredTeaTypes: string[]; preferredFlavorTags: string[] },
+  ) => apiClient.patch<UserOnboardingPreference>(`/users/${id}/onboarding`, data),
 };
 

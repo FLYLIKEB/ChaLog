@@ -40,9 +40,10 @@ export function Login() {
     try {
       setIsKakaoLoading(true);
       // 인증 코드를 사용하여 로그인 처리
-      await loginWithKakao(code);
-      // URL에서 code 파라미터 제거하고 홈으로 이동
-      navigate('/', { replace: true });
+      const onboardingCompleted = await loginWithKakao(code);
+      const shouldGoOnboarding = onboardingCompleted === false;
+      // URL에서 code 파라미터 제거하고 이동
+      navigate(shouldGoOnboarding ? '/onboarding' : '/', { replace: true });
     } catch (error) {
       // 에러는 AuthContext에서 이미 처리됨
       // URL에서 code 파라미터 제거
@@ -62,8 +63,8 @@ export function Login() {
 
     try {
       setIsLoading(true);
-      await login(email, password);
-      navigate('/');
+      const onboardingCompleted = await login(email, password);
+      navigate(onboardingCompleted === false ? '/onboarding' : '/');
     } catch (error) {
       // 에러는 AuthContext에서 이미 처리됨
     } finally {
@@ -74,8 +75,11 @@ export function Login() {
   const handleKakaoLogin = async () => {
     try {
       setIsKakaoLoading(true);
-      await loginWithKakao();
-      navigate('/');
+      const onboardingCompleted = await loginWithKakao();
+      if (onboardingCompleted === null) {
+        return;
+      }
+      navigate(onboardingCompleted === false ? '/onboarding' : '/');
     } catch (error) {
       // 에러는 AuthContext에서 이미 처리됨
     } finally {
