@@ -271,21 +271,26 @@ export function NewNote() {
         </section>
 
         {/* 평점 슬라이더 */}
-        <section className="bg-white rounded-lg p-4 space-y-4">
-          <h3>평가</h3>
-          {axes
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((axis) => (
-              <React.Fragment key={axis.id}>
-                <RatingSlider
-                  label={axis.nameKo}
-                  value={axisValues[axis.id] ?? RATING_DEFAULT}
-                  onChange={(value) =>
-                    setAxisValues(prev => ({ ...prev, [axis.id]: value }))
-                  }
-                />
-              </React.Fragment>
-            ))}
+        <section className="bg-white rounded-lg p-4">
+          <h3 className="text-base font-semibold text-gray-900 mb-4">평가</h3>
+          <div className="space-y-0">
+            {axes
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((axis, index) => (
+                <React.Fragment key={axis.id}>
+                  <RatingSlider
+                    label={axis.nameKo}
+                    value={axisValues[axis.id] ?? RATING_DEFAULT}
+                    onChange={(value) =>
+                      setAxisValues(prev => ({ ...prev, [axis.id]: value }))
+                    }
+                  />
+                  {index < axes.length - 1 && (
+                    <div className="border-t border-gray-100" />
+                  )}
+                </React.Fragment>
+              ))}
+          </div>
         </section>
 
         {/* 사진 업로드 */}
