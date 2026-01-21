@@ -1,5 +1,6 @@
-import React, { type FC, useState, memo, useEffect } from 'react';
+import React, { type FC, useState, memo } from 'react';
 import { Star, Lock, Heart, Bookmark } from 'lucide-react';
+import teaCupSvg from '../assets/tea-cup.svg';
 import { Note } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
@@ -7,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { notesApi } from '../lib/api';
 import { logger } from '../lib/logger';
-import { Card } from './ui/card';
 import { cn } from './ui/utils';
 
 interface NoteCardProps {
@@ -29,16 +29,6 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(note.isBookmarked ?? false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
-  const [thumbnailSize, setThumbnailSize] = useState(80);
-
-  useEffect(() => {
-    const updateSize = () => {
-      setThumbnailSize(window.innerWidth >= 640 ? 96 : 80);
-    };
-    updateSize();
-    window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
 
   const handleClick = () => {
     if (!canView) {
@@ -108,36 +98,33 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   };
 
   return (
-    <Card
+    <div
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       role={canView ? 'button' : undefined}
       tabIndex={canView ? 0 : undefined}
       className={cn(
-        "w-full text-left p-3 transition-shadow cursor-pointer",
-        canView ? 'hover:shadow-md' : 'opacity-60 cursor-not-allowed'
+        "w-full text-left pt-0 pb-4 transition-colors cursor-pointer",
+        "bg-card text-card-foreground",
+        "border-b border-border/50 last:border-b-0",
+        canView ? 'hover:bg-muted/20' : 'opacity-60 cursor-not-allowed'
       )}
     >
       <div className="flex items-start gap-3">
         {/* 이미지 썸네일 */}
-        {hasImage && firstImage && (
-          <div 
-            className="shrink-0 rounded-lg overflow-hidden bg-gray-100"
-            style={{ 
-              width: `${thumbnailSize}px`,
-              height: `${thumbnailSize}px`,
-              minWidth: `${thumbnailSize}px`,
-              minHeight: `${thumbnailSize}px`,
-              flexShrink: 0
-            }}
-          >
+        <div className="shrink-0 rounded-lg overflow-hidden bg-gray-100 w-20 h-20 sm:w-24 sm:h-24">
+          {hasImage && firstImage ? (
             <ImageWithFallback
               src={firstImage}
               alt="Note image"
               className="w-full h-full object-cover"
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <img src={teaCupSvg} alt="Tea cup" className="w-6 h-6" />
+            </div>
+          )}
+        </div>
         
         {/* 내용 영역 */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
@@ -252,7 +239,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 

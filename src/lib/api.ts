@@ -46,6 +46,27 @@ const API_BASE_URL = (() => {
   return baseURL;
 })();
 
+// 동일한 GET 요청 중복 방지 (단기간 내 중복 호출 병합)
+const inFlightRequests = new Map<string, Promise<unknown>>();
+const RETRY_BASE_DELAY_MS = 300;
+const RETRY_MAX_DELAY_MS = 2000;
+const MAX_RETRY_ATTEMPTS = 2;
+
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const parseRetryAfter = (retryAfter: string | null): number | null => {
+  if (!retryAfter) return null;
+  const seconds = Number(retryAfter);
+  if (!Number.isNaN(seconds)) {
+    return Math.max(0, Math.round(seconds * 1000));
+  }
+  const retryDate = new Date(retryAfter);
+  if (!Number.isNaN(retryDate.getTime())) {
+    return Math.max(0, retryDate.getTime() - Date.now());
+  }
+  return null;
+};
+
 export interface ApiError {
   message: string;
   statusCode: number;
@@ -402,7 +423,6 @@ class ApiClient {
       ...fetchOptions,
       headers,
     };
-    
     // 로컬 네트워크 요청이고 브라우저가 targetAddressSpace를 지원하는 경우 설정
     if (isLocalNetworkRequest(url) && supportsTargetAddressSpace()) {
       // localhost(loopback)는 'local', private IP는 'private' 사용
@@ -420,6 +440,16 @@ class ApiClient {
       });
     }
     
+    const method = (fetchOptionsWithAddressSpace.method || 'GET').toUpperCase();
+    const requestKey = `${method}:${url}`;
+    if (method === 'GET') {
+      const existingRequest = inFlightRequests.get(requestKey);
+      if (existingRequest) {
+        logger.debug(`[API Request ${requestId}] 중복 GET 요청 공유`, { requestKey });
+        return existingRequest as Promise<T>;
+      }
+    }
+
     // AbortController를 사용한 타임아웃 설정
     const controller = new AbortController();
     const timeoutId = setTimeout(() => {
@@ -438,8 +468,9 @@ class ApiClient {
       hasSignal: !!controller.signal,
       targetAddressSpace: (fetchOptionsWithAddressSpace as any).targetAddressSpace,
     });
-    
-    try {
+
+    const requestPromise = (async () => {
+      try {
       logger.info(`[API Request ${requestId}] fetch 호출 시작`);
       const response = await fetch(url, {
         ...fetchOptionsWithAddressSpace,
@@ -544,6 +575,9 @@ class ApiClient {
           if (errorMessage.includes('already exists') || errorMessage.includes('exists')) {
             errorMessage = '이미 존재하는 이메일입니다.';
           }
+        } else if (response.status === 429) {
+          // Rate limit 에러 처리
+          errorMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
         } else if (response.status === 500 || response.status === 502 || response.status === 504) {
           // 500, 502, 504 에러는 백엔드 메시지를 그대로 전달 (이미 한글이거나 상세 정보 포함)
           // 한글이 없으면 기본 메시지 사용
@@ -683,6 +717,18 @@ class ApiClient {
       const totalTime = Date.now() - startTime;
       logger.debug(`[API Request ${requestId}] 완료 (총 소요 시간: ${totalTime}ms)`);
     }
+    })();
+
+    if (method === 'GET') {
+      inFlightRequests.set(requestKey, requestPromise);
+      requestPromise.finally(() => {
+        if (inFlightRequests.get(requestKey) === requestPromise) {
+          inFlightRequests.delete(requestKey);
+        }
+      });
+    }
+
+    return requestPromise;
   }
 
   async get<T>(endpoint: string): Promise<T> {

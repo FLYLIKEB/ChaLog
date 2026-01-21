@@ -57,6 +57,7 @@
             "vaul": "^1.1.2"
       },
       "devDependencies": {
+            "@tailwindcss/vite": "^4.1.18",
             "@testing-library/jest-dom": "^6.9.1",
             "@testing-library/react": "^16.3.0",
             "@testing-library/user-event": "^14.6.1",
@@ -65,6 +66,7 @@
             "@types/react-dom": "^19.2.3",
             "@vitejs/plugin-react-swc": "^3.10.2",
             "jsdom": "^27.0.1",
+            "tailwindcss": "^4.1.18",
             "vite": "^6.4.1",
             "vitest": "^3.2.4"
       },

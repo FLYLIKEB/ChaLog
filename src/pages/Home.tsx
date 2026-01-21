@@ -20,22 +20,45 @@ export function Home() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [teas, notes] = await Promise.all([
+        
+        // Promise.allSettled를 사용하여 일부 API가 실패해도 다른 데이터는 표시
+        const [teasResult, notesResult] = await Promise.allSettled([
           teasApi.getAll(),
           notesApi.getAll(undefined, true),
         ]);
 
-        const teasArray = Array.isArray(teas) ? teas : [];
-        const notesArray = Array.isArray(notes) ? notes : [];
-
-        // 랜덤 차 선택
-        if (teasArray.length > 0) {
-          const randomIndex = Math.floor(Math.random() * teasArray.length);
-          setTodayTea(teasArray[randomIndex]);
+        // Teas 처리
+        if (teasResult.status === 'fulfilled') {
+          const teasArray = Array.isArray(teasResult.value) ? teasResult.value : [];
+          if (teasArray.length > 0) {
+            const randomIndex = Math.floor(Math.random() * teasArray.length);
+            setTodayTea(teasArray[randomIndex]);
+          }
+        } else {
+          const error = teasResult.reason;
+          logger.error('Failed to fetch teas:', error);
+          // 429 에러는 특별한 메시지 표시
+          if (error?.statusCode === 429) {
+            toast.error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+          } else {
+            toast.error('차 정보를 불러오는데 실패했습니다.');
+          }
         }
 
-        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
-        setPublicNotes(notesArray as Note[]);
+        // Notes 처리
+        if (notesResult.status === 'fulfilled') {
+          const notesArray = Array.isArray(notesResult.value) ? notesResult.value : [];
+          setPublicNotes(notesArray as Note[]);
+        } else {
+          const error = notesResult.reason;
+          logger.error('Failed to fetch notes:', error);
+          // 429 에러는 특별한 메시지 표시
+          if (error?.statusCode === 429) {
+            toast.error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
+          } else {
+            toast.error('노트 정보를 불러오는데 실패했습니다.');
+          }
+        }
       } catch (error) {
         logger.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');
@@ -72,9 +95,13 @@ export function Home() {
         {/* 공개 노트 섹션 */}
         <Section title="공개 노트" spacing="lg">
           {publicNotes.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {publicNotes.map(note => (
-                <NoteCard key={note.id} note={note} showTeaName />
+                <NoteCard 
+                  key={note.id} 
+                  note={note} 
+                  showTeaName 
+                />
               ))}
             </div>
           ) : (

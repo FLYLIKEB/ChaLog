@@ -188,16 +188,3 @@ html {
   font-size: var(--font-size);
 }
 
-/* NoteCard 썸네일 이미지 반응형 크기 */
-.note-card-thumbnail {
-  width: 80px !important;
-  height: 80px !important;
-  flex-shrink: 0 !important;
-}
-
-@media (min-width: 640px) {
-  .note-card-thumbnail {
-    width: 96px !important;
-    height: 96px !important;
-  }
-}
