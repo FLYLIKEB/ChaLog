@@ -1,5 +1,5 @@
 import React, { type FC, useState, memo } from 'react';
-import { Star, Lock, Heart, Bookmark } from 'lucide-react';
+import { Star, Lock, Heart, Bookmark, Loader2 } from 'lucide-react';
 import teaCupSvg from '../assets/tea-cup.svg';
 import { Note } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -121,66 +121,124 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <img src={teaCupSvg} alt="Tea cup" className="w-6 h-6" />
+              <img src={teaCupSvg} alt="Tea cup" className="w-10 h-10 opacity-40" />
             </div>
           )}
         </div>
         
         {/* 내용 영역 */}
         <div className="flex-1 min-w-0 flex flex-col gap-2">
-          {/* 상단: 제목/메모와 평점/버튼 */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              {showTeaName && (
-                <h3 className="truncate mb-1 text-primary font-medium">{note.teaName}</h3>
-              )}
-              {note.memo && (
-                <p className="text-sm text-muted-foreground line-clamp-2">{note.memo}</p>
+          {/* 상단: 제목/메모 */}
+          <div className="flex-1 min-w-0">
+            {showTeaName && (
+              <h3 className="truncate mb-1 text-primary font-medium">{note.teaName}</h3>
+            )}
+            {note.memo && (
+              <p className="text-sm text-muted-foreground line-clamp-2">{note.memo}</p>
+            )}
+          </div>
+
+          {/* 별점 */}
+          {note.overallRating !== null && (
+            <div className="flex items-center gap-1">
+              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <span className="text-sm font-medium">{Number(note.overallRating).toFixed(1)}</span>
+            </div>
+          )}
+
+          {/* 태그 */}
+          {note.tags && note.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {note.tags.slice(0, 5).map((tag, index) => (
+                <span
+                  key={index}
+                  className="text-xs px-2 py-0.5 bg-muted text-foreground rounded-full font-medium"
+                >
+                  {tag}
+                </span>
+              ))}
+              {note.tags.length > 5 && (
+                <span className="text-xs px-2 py-0.5 text-muted-foreground font-medium">
+                  +{note.tags.length - 5}
+                </span>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {note.overallRating !== null && (
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="text-sm font-medium">{Number(note.overallRating).toFixed(1)}</span>
-                </div>
-              )}
-              {user && (
+          )}
+
+          {/* 하단: 사용자 정보와 액션 버튼 */}
+          <div className="flex items-center justify-between gap-2 mt-1">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  navigate(`/user/${note.userId}`);
+                }}
+                className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors font-medium underline-offset-2 hover:underline"
+                aria-label={`${note.userName}의 프로필 보기`}
+              >
+                {note.userName}
+              </button>
+              <span className="text-xs text-muted-foreground">·</span>
+              <span className="text-xs text-muted-foreground">
+                {note.createdAt.toLocaleDateString('ko-KR')}
+              </span>
+              {!note.isPublic && (
                 <>
-                  <button
-                    type="button"
-                    onClick={handleLikeClick}
-                    disabled={isTogglingLike}
-                    className={cn(
-                      "min-h-[32px] min-w-[32px] flex items-center justify-center gap-1 transition-colors disabled:opacity-50",
-                      isLiked 
-                        ? 'text-primary hover:text-primary/80' 
-                        : 'text-muted-foreground hover:text-primary'
-                    )}
-                    title={isLiked ? '좋아요 취소' : '좋아요'}
-                  >
-                    <Heart
-                      className={cn(
-                        "w-4 h-4 transition-all",
-                        isLiked 
-                          ? 'fill-primary text-primary stroke-primary' 
-                          : 'fill-none text-muted-foreground stroke-muted-foreground'
-                      )}
-                    />
-                    {likeCount > 0 && <span className="text-xs">{likeCount}</span>}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleBookmarkClick}
-                    disabled={isTogglingBookmark}
-                    className={cn(
-                      "min-h-[32px] min-w-[32px] flex items-center justify-center transition-colors disabled:opacity-50",
-                      isBookmarked 
-                        ? 'text-primary hover:text-primary/80' 
-                        : 'text-muted-foreground hover:text-primary'
-                    )}
-                    title={isBookmarked ? '북마크 해제' : '북마크 추가'}
-                  >
+                  <span className="text-xs text-muted-foreground">·</span>
+                  <Lock className="w-3 h-3 text-muted-foreground" />
+                </>
+              )}
+            </div>
+            
+            {/* 좋아요/북마크 버튼 */}
+            {user && (
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleLikeClick}
+                  disabled={isTogglingLike}
+                  className={cn(
+                    "min-h-[36px] min-w-[36px] flex items-center justify-center gap-1 transition-colors disabled:opacity-50",
+                    isLiked 
+                      ? 'text-primary hover:text-primary/80' 
+                      : 'text-muted-foreground hover:text-primary'
+                  )}
+                  title={isLiked ? '좋아요 취소' : '좋아요'}
+                  aria-label={isLiked ? '좋아요 취소' : '좋아요'}
+                >
+                  {isTogglingLike ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      <Heart
+                        className={cn(
+                          "w-4 h-4 transition-all",
+                          isLiked 
+                            ? 'fill-primary text-primary stroke-primary' 
+                            : 'fill-none text-muted-foreground stroke-muted-foreground'
+                        )}
+                      />
+                      {likeCount > 0 && <span className="text-xs font-medium">{likeCount}</span>}
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBookmarkClick}
+                  disabled={isTogglingBookmark}
+                  className={cn(
+                    "min-h-[36px] min-w-[36px] flex items-center justify-center transition-colors disabled:opacity-50",
+                    isBookmarked 
+                      ? 'text-primary hover:text-primary/80' 
+                      : 'text-muted-foreground hover:text-primary'
+                  )}
+                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                  aria-label={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                >
+                  {isTogglingBookmark ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : (
                     <Bookmark
                       className={cn(
                         "w-4 h-4 transition-all",
@@ -189,52 +247,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
                           : 'fill-none text-muted-foreground stroke-muted-foreground'
                       )}
                     />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* 태그 */}
-          {note.tags && note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {note.tags.slice(0, 3).map((tag, index) => (
-                <span
-                  key={index}
-                  className="text-xs px-2 py-0.5 bg-muted text-foreground rounded-full font-medium"
-                >
-                  {tag}
-                </span>
-              ))}
-              {note.tags.length > 3 && (
-                <span className="text-xs px-2 py-0.5 text-muted-foreground font-medium">
-                  +{note.tags.length - 3}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* 하단: 사용자명, 날짜, 공개 여부 */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                navigate(`/user/${note.userId}`);
-              }}
-              className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors"
-            >
-              {note.userName}
-            </button>
-            <span className="text-xs text-muted-foreground">·</span>
-            <span className="text-xs text-muted-foreground">
-              {note.createdAt.toLocaleDateString('ko-KR')}
-            </span>
-            {!note.isPublic && (
-              <>
-                <span className="text-xs text-muted-foreground">·</span>
-                <Lock className="w-3 h-3 text-muted-foreground" />
-              </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </div>

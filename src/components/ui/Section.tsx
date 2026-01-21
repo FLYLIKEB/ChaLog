@@ -16,7 +16,7 @@ export function Section({ title, spacing = "md", className, children, ...props }
   return (
     <section className={cn(spacingClasses[spacing], className)} {...props}>
       {title && (
-        <h2 className="text-lg font-semibold text-primary">{title}</h2>
+        <h2 className="text-xl font-bold text-primary mb-4">{title}</h2>
       )}
       {children}
     </section>
