@@ -10,8 +10,8 @@ type FloatingActionButtonProps = {
 };
 
 const positionClasses: Record<NonNullable<FloatingActionButtonProps['position']>, string> = {
-  default: 'bottom-[calc(1.5rem+env(safe-area-inset-bottom))]', // 1.5rem = 24px (bottom-6)
-  aboveNav: 'bottom-[calc(5rem+env(safe-area-inset-bottom))]', // 5rem = 80px (bottom-20)
+  default: 'bottom-6', // 1.5rem = 24px
+  aboveNav: 'bottom-20', // 5rem = 80px
 };
 
 export function FloatingActionButton({
@@ -27,7 +27,7 @@ export function FloatingActionButton({
       aria-label={ariaLabel}
       onClick={onClick}
       className={cn(
-        'fixed right-6 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+        'fixed right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
         positionClasses[position],
         className
       )}
