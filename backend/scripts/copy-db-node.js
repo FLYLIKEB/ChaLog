@@ -106,6 +106,9 @@ async function copyDatabase() {
       const [createTable] = await remoteConn.query(`SHOW CREATE TABLE \`${tableName}\``);
       const createTableSql = createTable[0]['Create Table'];
       
+      // 외래키 제약 조건 비활성화
+      await localConn.query('SET FOREIGN_KEY_CHECKS = 0');
+      
       // 로컬에 테이블 생성 (기존 테이블 삭제)
       await localConn.query(`DROP TABLE IF EXISTS \`${tableName}\``);
       await localConn.query(createTableSql);
@@ -118,10 +121,6 @@ async function copyDatabase() {
         const columns = Object.keys(rows[0]);
         const columnsStr = columns.map(col => `\`${col}\``).join(', ');
         
-        // 배치로 INSERT
-        const placeholders = columns.map(() => '?').join(', ');
-        const insertSql = `INSERT INTO \`${tableName}\` (${columnsStr}) VALUES (${placeholders})`;
-        
         // 데이터 변환 (Date 객체 등 처리)
         const values = rows.map(row => 
           columns.map(col => {
@@ -129,21 +128,33 @@ async function copyDatabase() {
             if (val instanceof Date) {
               return val.toISOString().slice(0, 19).replace('T', ' ');
             }
+            if (val === null || val === undefined) {
+              return null;
+            }
             return val;
           })
         );
         
-        // 배치 INSERT (1000개씩)
+        // 배치 INSERT (한 번에 여러 행)
         const batchSize = 1000;
         for (let i = 0; i < values.length; i += batchSize) {
           const batch = values.slice(i, i + batchSize);
-          await localConn.query(insertSql, batch);
+          // 각 행에 대한 placeholders 생성
+          const placeholders = batch.map(() => `(${columns.map(() => '?').join(', ')})`).join(', ');
+          const insertSql = `INSERT INTO \`${tableName}\` (${columnsStr}) VALUES ${placeholders}`;
+          
+          // 평탄화된 값 배열 생성
+          const flatValues = batch.flat();
+          await localConn.query(insertSql, flatValues);
         }
         
         console.log(`   ✅ ${rows.length}개 행 복사 완료`);
       } else {
         console.log(`   ✅ 테이블 구조만 복사 (데이터 없음)`);
       }
+      
+      // 외래키 제약 조건 재활성화
+      await localConn.query('SET FOREIGN_KEY_CHECKS = 1');
     } catch (error) {
       console.error(`   ❌ 오류: ${error.message}`);
     }
