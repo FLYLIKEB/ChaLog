@@ -85,4 +85,3 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
     </nav>
   );
 }
-
