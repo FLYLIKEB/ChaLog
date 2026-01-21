@@ -1,12 +1,16 @@
 #!/bin/bash
 
 # 테스트 DB에서 마이그레이션 테스트 스크립트
-# 사용법: ./scripts/test-migration.sh
+# 사용법: ./backend/scripts/test-migration.sh
 
 set -e
 
 echo "🧪 테스트 DB 마이그레이션 테스트 시작"
 echo ""
+
+# 스크립트 경로 기준으로 backend 디렉터리 설정
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BACKEND_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # 환경 변수 확인
 if [ -z "$TEST_DATABASE_URL" ]; then
@@ -14,7 +18,7 @@ if [ -z "$TEST_DATABASE_URL" ]; then
   echo ""
   echo "사용 예시:"
   echo "  export TEST_DATABASE_URL=mysql://username:password@localhost:3306/chalog_test"
-  echo "  ./scripts/test-migration.sh"
+  echo "  ./backend/scripts/test-migration.sh"
   echo ""
   echo "또는 .env.test 파일을 생성하세요:"
   echo "  TEST_DATABASE_URL=mysql://username:password@localhost:3306/chalog_test"
@@ -38,7 +42,7 @@ echo ""
 
 # 1. 마이그레이션 상태 확인
 echo "1️⃣  마이그레이션 상태 확인 중..."
-NODE_ENV=test npm run migration:show || {
+NODE_ENV=test npm --prefix "$BACKEND_DIR" run migration:show || {
   echo "❌ 마이그레이션 상태 확인 실패"
   echo "   MySQL 서버가 실행 중인지 확인하세요."
   exit 1
@@ -47,7 +51,7 @@ echo ""
 
 # 2. 마이그레이션 실행
 echo "2️⃣  마이그레이션 실행 중..."
-NODE_ENV=test npm run migration:run || {
+NODE_ENV=test npm --prefix "$BACKEND_DIR" run migration:run || {
   echo "❌ 마이그레이션 실행 실패"
   exit 1
 }
@@ -55,7 +59,7 @@ echo ""
 
 # 3. 마이그레이션 상태 재확인
 echo "3️⃣  마이그레이션 상태 재확인 중..."
-NODE_ENV=test npm run migration:show
+NODE_ENV=test npm --prefix "$BACKEND_DIR" run migration:show
 echo ""
 
 # 4. 테이블 생성 확인
@@ -67,13 +71,17 @@ echo "   - notes 테이블 스키마 변경 확인"
 echo ""
 
 # 5. E2E 테스트 실행 (선택사항)
-read -p "E2E 테스트를 실행하시겠습니까? (y/N): " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-  echo "5️⃣  E2E 테스트 실행 중..."
-  npm run test:e2e || {
-    echo "⚠️  E2E 테스트 실패 (마이그레이션은 성공했을 수 있음)"
-  }
+if [ -t 0 ]; then
+  read -p "E2E 테스트를 실행하시겠습니까? (y/N): " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "5️⃣  E2E 테스트 실행 중..."
+    npm --prefix "$BACKEND_DIR" run test:e2e || {
+      echo "⚠️  E2E 테스트 실패 (마이그레이션은 성공했을 수 있음)"
+    }
+  fi
+else
+  echo "5️⃣  E2E 테스트는 비대화형 환경에서 건너뜁니다."
 fi
 
 echo ""

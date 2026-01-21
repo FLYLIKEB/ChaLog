@@ -12,6 +12,7 @@ import {
   Request,
   InternalServerErrorException,
   Logger,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -21,6 +22,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { S3Service } from '../common/storage/s3.service';
 import { ImageProcessorService } from '../common/storage/image-processor.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 
 @Controller('users')
 export class UsersController {
@@ -114,5 +116,57 @@ export class UsersController {
     }
     
     return this.usersService.update(parsedId, parsedUserId, updateUserDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id/onboarding')
+  async getOnboardingPreference(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    if (parsedId !== parsedUserId) {
+      throw new ForbiddenException('이 온보딩 정보를 조회할 권한이 없습니다.');
+    }
+
+    return this.usersService.getOnboardingPreference(parsedUserId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id/onboarding')
+  async updateOnboardingPreference(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() updateOnboardingDto: UpdateOnboardingDto,
+  ) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    if (parsedId !== parsedUserId) {
+      throw new ForbiddenException('이 온보딩 정보를 수정할 권한이 없습니다.');
+    }
+
+    return this.usersService.updateOnboardingPreference(parsedUserId, updateOnboardingDto);
   }
 }

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
-import { authApi, AuthResponse } from '../lib/api';
+import { authApi, usersApi } from '../lib/api';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 
@@ -29,9 +29,11 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, name: string, password: string) => Promise<void>;
-  loginWithKakao: (code?: string) => Promise<void>;
+  hasCompletedOnboarding: boolean | null;
+  isOnboardingLoading: boolean;
+  login: (email: string, password: string) => Promise<boolean | null>;
+  register: (email: string, name: string, password: string) => Promise<boolean | null>;
+  loginWithKakao: (code?: string) => Promise<boolean | null>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -42,6 +44,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
+  const [isOnboardingLoading, setIsOnboardingLoading] = useState(false);
 
   useEffect(() => {
     // 로컬 스토리지에서 토큰과 사용자 정보 복원
@@ -245,6 +249,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const refreshOnboardingStatus = useCallback(async (userId: number) => {
+    setIsOnboardingLoading(true);
+    try {
+      const preference = await usersApi.getOnboardingPreference(userId);
+      setHasCompletedOnboarding(preference.hasCompletedOnboarding);
+      return preference.hasCompletedOnboarding;
+    } catch (error) {
+      logger.error('Failed to load onboarding status:', error);
+      setHasCompletedOnboarding(null);
+      return null;
+    } finally {
+      setIsOnboardingLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user || !token) {
+      return;
+    }
+    refreshOnboardingStatus(user.id);
+  }, [refreshOnboardingStatus, token, user]);
+
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await authApi.login({ email, password });
@@ -252,12 +278,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user);
       localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
       toast.success('로그인되었습니다.');
+      return onboardingCompleted;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '로그인에 실패했습니다.');
       throw error;
     }
-  }, []);
+  }, [refreshOnboardingStatus]);
 
   const register = useCallback(async (email: string, name: string, password: string) => {
     try {
@@ -266,12 +294,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user);
       localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
       toast.success('회원가입이 완료되었습니다.');
+      return onboardingCompleted;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '회원가입에 실패했습니다.');
       throw error;
     }
-  }, []);
+  }, [refreshOnboardingStatus]);
 
   const loginWithKakao = useCallback(async (code?: string) => {
     const startTime = Date.now();
@@ -282,7 +312,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (typeof window === 'undefined') {
         logger.error('[1/7] 브라우저 환경 확인 실패: window 객체가 없습니다.');
         toast.error('브라우저 환경에서만 사용할 수 있습니다.');
-        return;
+        return null;
       }
       logger.info('[1/7] 브라우저 환경 확인 완료');
 
@@ -339,12 +369,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(response.user);
           localStorage.setItem('access_token', response.access_token);
           localStorage.setItem('user', JSON.stringify(response.user));
+          const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
           
           const elapsedTime = Date.now() - startTime;
           logger.info(`=== 카카오 로그인 완료 (소요 시간: ${elapsedTime}ms) ===`);
           
           toast.success('카카오 로그인되었습니다.');
-          return;
+          return onboardingCompleted;
         } catch (error) {
           logger.error('[리다이렉트 후 처리] 토큰 교환 실패:', error);
           throw error;
@@ -365,7 +396,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const errorMsg = '카카오 앱 키가 설정되지 않았습니다. 환경 변수 VITE_KAKAO_APP_KEY를 확인해주세요.';
         logger.error('[2/7] 환경 변수 확인 실패:', errorMsg);
         toast.error(errorMsg);
-        return;
+        return null;
       }
 
       // 3. 카카오 SDK 로드 확인 및 동적 로드
@@ -538,7 +569,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           throughTalk: false,
         });
         // authorize는 리다이렉트 방식이므로 여기서 종료
-        return;
+        return null;
       }
 
       // 구버전 SDK 호환 (login 방식)
@@ -638,11 +669,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user);
       localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
+      const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
       
       const elapsedTime = Date.now() - startTime;
       logger.info(`=== 카카오 로그인 완료 (소요 시간: ${elapsedTime}ms) ===`);
       
       toast.success('카카오 로그인되었습니다.');
+      return onboardingCompleted;
     } catch (error) {
       const elapsedTime = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : '카카오 로그인에 실패했습니다.';
@@ -656,11 +689,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.error(errorMessage);
       throw error;
     }
-  }, []);
+  }, [refreshOnboardingStatus]);
 
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
+    setHasCompletedOnboarding(null);
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     
@@ -688,13 +722,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       token,
       isLoading,
+      hasCompletedOnboarding,
+      isOnboardingLoading,
       login,
       register,
       loginWithKakao,
       logout,
       isAuthenticated,
     }),
-    [user, token, isLoading, login, register, loginWithKakao, logout, isAuthenticated]
+    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, logout, isAuthenticated]
   );
 
   return (

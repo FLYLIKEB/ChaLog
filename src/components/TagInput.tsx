@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -18,41 +17,25 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 입력값에 따라 추천 태그 필터링
-  const filteredSuggestions = RECOMMENDED_NOTE_TAGS.filter(
-    tag => 
-      tag.toLowerCase().includes(inputValue.toLowerCase()) &&
-      !tags.includes(tag)
-  );
-
-  // 드롭다운 위치 계산
-  useEffect(() => {
-    const updatePosition = () => {
-      if (inputRef.current && showSuggestions) {
-        const rect = inputRef.current.getBoundingClientRect();
-        setDropdownPosition({
-          top: rect.bottom + window.scrollY + 4,
-          left: rect.left + window.scrollX,
-          width: rect.width,
-        });
+  const filteredSuggestions = useMemo(() => {
+    const normalizedInput = inputValue.trim().replace(/\s+/g, '').toLowerCase();
+    return RECOMMENDED_NOTE_TAGS.filter((tag) => {
+      if (tags.includes(tag)) {
+        return false;
       }
-    };
+      if (!normalizedInput) {
+        return true;
+      }
+      const normalizedTag = tag.replace(/\s+/g, '').toLowerCase();
+      return normalizedTag.includes(normalizedInput);
+    });
+  }, [inputValue, tags]);
 
-    if (showSuggestions) {
-      updatePosition();
-      window.addEventListener('scroll', updatePosition, true);
-      window.addEventListener('resize', updatePosition);
-    }
-
-    return () => {
-      window.removeEventListener('scroll', updatePosition, true);
-      window.removeEventListener('resize', updatePosition);
-    };
-  }, [showSuggestions]);
+  // 위치 계산 대신 입력창 바로 아래에 고정 표시
 
   // 외부 클릭 시 추천 목록 닫기
   useEffect(() => {
@@ -73,7 +56,6 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setInputValue(value);
-    setShowSuggestions(value.length > 0);
   };
 
   const handleCompositionStart = () => {
@@ -167,8 +149,14 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
     addTag(tag);
   };
 
+  const shouldShowSuggestions = showSuggestions && filteredSuggestions.length > 0;
+
   return (
-    <div ref={containerRef} className="space-y-2">
+    <div
+      ref={containerRef}
+      className="space-y-2"
+      onTouchStart={() => setShowSuggestions(true)}
+    >
       <Label>태그</Label>
       
       {/* 입력된 태그 표시 */}
@@ -206,23 +194,27 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
           onFocus={() => {
-            if (inputValue.length > 0) {
-              setShowSuggestions(true);
+            setShowSuggestions(true);
+          }}
+          onBlur={(e) => {
+            const nextTarget = e.relatedTarget as HTMLElement | null;
+            if (
+              nextTarget &&
+              (containerRef.current?.contains(nextTarget) ||
+                nextTarget.closest('[data-tag-suggestions]'))
+            ) {
+              return;
             }
+            setShowSuggestions(false);
           }}
           disabled={tags.length >= maxTags}
         />
 
-        {/* 추천 태그 목록 - Portal 사용하여 키보드 위에 표시 */}
-        {showSuggestions && filteredSuggestions.length > 0 && typeof document !== 'undefined' && createPortal(
+        {/* 추천 태그 목록 - 입력창 바로 아래 */}
+        {shouldShowSuggestions && (
           <div
             data-tag-suggestions
-            className="fixed z-50 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto"
-            style={{
-              top: `${dropdownPosition.top}px`,
-              left: `${dropdownPosition.left}px`,
-              width: `${dropdownPosition.width}px`,
-            }}
+            className="absolute z-50 mt-2 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto"
           >
             <div className="p-2">
               <p className="text-xs text-gray-500 mb-2 px-2">추천 태그</p>
@@ -233,7 +225,9 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="min-h-[44px] h-auto py-2 px-3 text-xs"
+                    className="min-h-[32px] h-auto py-1 px-2 text-[11px] leading-none"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onTouchStart={() => setShowSuggestions(true)}
                     onClick={() => handleSuggestionClick(tag)}
                   >
                     <Plus className="w-4 h-4 mr-1" />
@@ -242,8 +236,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
                 ))}
               </div>
             </div>
-          </div>,
-          document.body
+          </div>
         )}
       </div>
 

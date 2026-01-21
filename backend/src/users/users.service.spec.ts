@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
+import { UserOnboardingPreference } from './entities/user-onboarding-preference.entity';
 import { UserAuthentication, AuthProvider } from './entities/user-authentication.entity';
 import { ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -33,6 +34,7 @@ describe('UsersService', () => {
   let service: UsersService;
   let userRepository: Repository<User>;
   let authRepository: Repository<UserAuthentication>;
+  let onboardingRepository: Repository<UserOnboardingPreference>;
   let dataSource: DataSource;
 
   const mockUserRepository = {
@@ -51,6 +53,12 @@ describe('UsersService', () => {
     transaction: jest.fn(),
   };
 
+  const mockOnboardingRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -64,6 +72,10 @@ describe('UsersService', () => {
           useValue: mockAuthRepository,
         },
         {
+          provide: getRepositoryToken(UserOnboardingPreference),
+          useValue: mockOnboardingRepository,
+        },
+        {
           provide: DataSource,
           useValue: mockDataSource,
         },
@@ -74,6 +86,9 @@ describe('UsersService', () => {
     userRepository = module.get<Repository<User>>(getRepositoryToken(User));
     authRepository = module.get<Repository<UserAuthentication>>(
       getRepositoryToken(UserAuthentication),
+    );
+    onboardingRepository = module.get<Repository<UserOnboardingPreference>>(
+      getRepositoryToken(UserOnboardingPreference),
     );
     dataSource = module.get<DataSource>(DataSource);
 
@@ -106,6 +121,12 @@ describe('UsersService', () => {
         where: { provider: AuthProvider.EMAIL, providerId: email },
       });
       expect(mockManager.create).toHaveBeenCalledWith(User, { name });
+      expect(mockManager.create).toHaveBeenCalledWith(UserOnboardingPreference, {
+        userId: mockUser.id,
+        preferredTeaTypes: [],
+        preferredFlavorTags: [],
+        hasCompletedOnboarding: false,
+      });
       expect(bcrypt.hash).toHaveBeenCalledWith(password, 10);
       expect(mockManager.create).toHaveBeenCalledWith(UserAuthentication, {
         userId: mockUser.id,

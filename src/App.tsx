@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Home } from './pages/Home';
 import { Search } from './pages/Search';
 import { TeaDetail } from './pages/TeaDetail';
@@ -16,6 +16,7 @@ import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
+import { Onboarding } from './pages/Onboarding';
 import { FloatingActionButton } from './components/FloatingActionButton';
 
 type FloatingActionRouteConfig = {
@@ -34,6 +35,7 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/note/new': { hidden: true },
   '/note/:id/edit': { hidden: true },
   '/tea/new': { hidden: true },
+  '/onboarding': { hidden: true },
 };
 
 function FloatingActionButtonSwitcher() {
@@ -44,7 +46,8 @@ function FloatingActionButtonSwitcher() {
   const shouldHide = 
     location.pathname === '/note/new' ||
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
-    location.pathname === '/tea/new';
+    location.pathname === '/tea/new' ||
+    location.pathname === '/onboarding';
   
   const override = floatingActionRouteOverrides[location.pathname];
   const config = {
@@ -67,28 +70,51 @@ function FloatingActionButtonSwitcher() {
   );
 }
 
+function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const { user, isLoading, hasCompletedOnboarding, isOnboardingLoading } = useAuth();
+  const publicPaths = ['/login', '/register', '/onboarding'];
+
+  if (isLoading || isOnboardingLoading) {
+    return null;
+  }
+
+  if (user && hasCompletedOnboarding === false && !publicPaths.includes(location.pathname)) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (user && hasCompletedOnboarding === true && location.pathname === '/onboarding') {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <div className="max-w-2xl mx-auto bg-white min-h-screen px-4 sm:px-6">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/tea/new" element={<NewTea />} />
-            <Route path="/tea/:id" element={<TeaDetail />} />
-            <Route path="/note/new" element={<NewNote />} />
-            <Route path="/note/:id/edit" element={<EditNote />} />
-            <Route path="/note/:id" element={<NoteDetail />} />
-            <Route path="/user/:id" element={<UserProfile />} />
-            <Route path="/my-notes" element={<MyNotes />} />
-            <Route path="/saved" element={<Saved />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <OnboardingRouteGuard>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
+              <Route path="/search" element={<Search />} />
+              <Route path="/tea/new" element={<NewTea />} />
+              <Route path="/tea/:id" element={<TeaDetail />} />
+              <Route path="/note/new" element={<NewNote />} />
+              <Route path="/note/:id/edit" element={<EditNote />} />
+              <Route path="/note/:id" element={<NoteDetail />} />
+              <Route path="/user/:id" element={<UserProfile />} />
+              <Route path="/my-notes" element={<MyNotes />} />
+              <Route path="/saved" element={<Saved />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </OnboardingRouteGuard>
           <FloatingActionButtonSwitcher />
           <Toaster />
         </div>

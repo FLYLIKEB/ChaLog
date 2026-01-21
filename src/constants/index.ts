@@ -38,3 +38,16 @@ export const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '
 
 export type TeaType = typeof TEA_TYPES[number];
 
+export const ONBOARDING_TEA_TYPES = TEA_TYPES;
+
+export const ONBOARDING_FLAVOR_TAGS = [
+  '꽃향',
+  '과일향',
+  '허브향',
+  '스모키',
+  '꿀향',
+  '견과향',
+  '초콜릿향',
+  '바닐라향',
+] as const;
+

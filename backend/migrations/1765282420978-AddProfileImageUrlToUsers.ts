@@ -4,82 +4,110 @@ export class AddProfileImageUrlToUsers1765282420978 implements MigrationInterfac
     name = 'AddProfileImageUrlToUsers1765282420978'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`ALTER TABLE \`user_authentications\` DROP FOREIGN KEY \`user_authentications_ibfk_1\``);
-        await queryRunner.query(`ALTER TABLE \`note_tags\` DROP FOREIGN KEY \`note_tags_ibfk_1\``);
-        await queryRunner.query(`ALTER TABLE \`note_tags\` DROP FOREIGN KEY \`note_tags_ibfk_2\``);
-        await queryRunner.query(`ALTER TABLE \`note_axis_value\` DROP FOREIGN KEY \`note_axis_value_ibfk_1\``);
-        await queryRunner.query(`ALTER TABLE \`note_axis_value\` DROP FOREIGN KEY \`note_axis_value_ibfk_2\``);
-        await queryRunner.query(`ALTER TABLE \`rating_axis\` DROP FOREIGN KEY \`rating_axis_ibfk_1\``);
-        await queryRunner.query(`ALTER TABLE \`notes\` DROP FOREIGN KEY \`FK_notes_rating_schema\``);
-        await queryRunner.query(`ALTER TABLE \`notes\` DROP FOREIGN KEY \`FK_notes_tea\``);
-        await queryRunner.query(`ALTER TABLE \`notes\` DROP FOREIGN KEY \`FK_notes_user\``);
-        await queryRunner.query(`ALTER TABLE \`note_likes\` DROP FOREIGN KEY \`note_likes_ibfk_1\``);
-        await queryRunner.query(`ALTER TABLE \`note_likes\` DROP FOREIGN KEY \`note_likes_ibfk_2\``);
-        await queryRunner.query(`ALTER TABLE \`note_bookmarks\` DROP FOREIGN KEY \`note_bookmarks_ibfk_1\``);
-        await queryRunner.query(`ALTER TABLE \`note_bookmarks\` DROP FOREIGN KEY \`note_bookmarks_ibfk_2\``);
-        await queryRunner.query(`DROP INDEX \`UNIQUE_provider_providerId\` ON \`user_authentications\``);
-        await queryRunner.query(`DROP INDEX \`IDX_user_authentications_userId\` ON \`user_authentications\``);
-        await queryRunner.query(`DROP INDEX \`IDX_user_authentications_provider\` ON \`user_authentications\``);
-        await queryRunner.query(`DROP INDEX \`name\` ON \`tags\``);
-        await queryRunner.query(`DROP INDEX \`idx_name\` ON \`tags\``);
-        await queryRunner.query(`DROP INDEX \`unique_note_tag\` ON \`note_tags\``);
-        await queryRunner.query(`DROP INDEX \`idx_noteId\` ON \`note_tags\``);
-        await queryRunner.query(`DROP INDEX \`idx_tagId\` ON \`note_tags\``);
-        await queryRunner.query(`DROP INDEX \`unique_note_axis\` ON \`note_axis_value\``);
-        await queryRunner.query(`DROP INDEX \`IDX_note_axis_value_axisId\` ON \`note_axis_value\``);
-        await queryRunner.query(`DROP INDEX \`IDX_note_axis_value_axis_value\` ON \`note_axis_value\``);
-        await queryRunner.query(`DROP INDEX \`IDX_rating_axis_schemaId\` ON \`rating_axis\``);
-        await queryRunner.query(`DROP INDEX \`IDX_rating_axis_code\` ON \`rating_axis\``);
-        await queryRunner.query(`DROP INDEX \`IDX_rating_schema_code_version\` ON \`rating_schema\``);
-        await queryRunner.query(`DROP INDEX \`IDX_rating_schema_isActive\` ON \`rating_schema\``);
-        await queryRunner.query(`DROP INDEX \`new_id\` ON \`notes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_notes_isPublic\` ON \`notes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_notes_createdAt\` ON \`notes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_notes_teaId\` ON \`notes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_notes_userId\` ON \`notes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_notes_schemaId\` ON \`notes\``);
-        await queryRunner.query(`DROP INDEX \`new_id\` ON \`teas\``);
-        await queryRunner.query(`DROP INDEX \`IDX_teas_name\` ON \`teas\``);
-        await queryRunner.query(`DROP INDEX \`IDX_teas_type\` ON \`teas\``);
-        await queryRunner.query(`DROP INDEX \`unique_note_user\` ON \`note_likes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_note_likes_noteId\` ON \`note_likes\``);
-        await queryRunner.query(`DROP INDEX \`IDX_note_likes_userId\` ON \`note_likes\``);
-        await queryRunner.query(`DROP INDEX \`unique_note_user_bookmark\` ON \`note_bookmarks\``);
-        await queryRunner.query(`DROP INDEX \`IDX_note_bookmarks_noteId\` ON \`note_bookmarks\``);
-        await queryRunner.query(`DROP INDEX \`IDX_note_bookmarks_userId\` ON \`note_bookmarks\``);
-        await queryRunner.query(`ALTER TABLE \`users\` ADD \`profileImageUrl\` varchar(500) NULL`);
+        const dropForeignKeysByColumn = async (table: string, column: string) => {
+            const rows: Array<Record<string, string>> = await queryRunner.query(
+                `SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}' AND COLUMN_NAME = '${column}' AND REFERENCED_TABLE_NAME IS NOT NULL`
+            );
+            for (const row of rows) {
+                const constraintName = row.CONSTRAINT_NAME ?? row.constraint_name ?? row.name;
+                if (constraintName) {
+                    await queryRunner.query(`ALTER TABLE \`${table}\` DROP FOREIGN KEY \`${constraintName}\``);
+                }
+            }
+        };
+        const dropIndexIfExists = async (table: string, index: string) => {
+            const rows: Array<Record<string, number>> = await queryRunner.query(
+                `SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}' AND INDEX_NAME = '${index}' LIMIT 1`
+            );
+            if (rows.length > 0) {
+                await queryRunner.query(`DROP INDEX \`${index}\` ON \`${table}\``);
+            }
+        };
+        const addColumnIfNotExists = async (table: string, column: string, definition: string) => {
+            const rows: Array<Record<string, number>> = await queryRunner.query(
+                `SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}' AND COLUMN_NAME = '${column}' LIMIT 1`
+            );
+            if (rows.length === 0) {
+                await queryRunner.query(`ALTER TABLE \`${table}\` ADD \`${column}\` ${definition}`);
+            }
+        };
+
+        await dropForeignKeysByColumn('user_authentications', 'userId');
+        await dropForeignKeysByColumn('note_tags', 'noteId');
+        await dropForeignKeysByColumn('note_tags', 'tagId');
+        await dropForeignKeysByColumn('note_axis_value', 'noteId');
+        await dropForeignKeysByColumn('note_axis_value', 'axisId');
+        await dropForeignKeysByColumn('rating_axis', 'schemaId');
+        await dropForeignKeysByColumn('notes', 'schemaId');
+        await dropForeignKeysByColumn('notes', 'teaId');
+        await dropForeignKeysByColumn('notes', 'userId');
+        await dropForeignKeysByColumn('note_likes', 'noteId');
+        await dropForeignKeysByColumn('note_likes', 'userId');
+        await dropForeignKeysByColumn('note_bookmarks', 'noteId');
+        await dropForeignKeysByColumn('note_bookmarks', 'userId');
+        await dropIndexIfExists('user_authentications', 'UNIQUE_provider_providerId');
+        await dropIndexIfExists('user_authentications', 'IDX_user_authentications_userId');
+        await dropIndexIfExists('user_authentications', 'IDX_user_authentications_provider');
+        await dropIndexIfExists('tags', 'name');
+        await dropIndexIfExists('tags', 'idx_name');
+        await dropIndexIfExists('note_tags', 'unique_note_tag');
+        await dropIndexIfExists('note_tags', 'idx_noteId');
+        await dropIndexIfExists('note_tags', 'idx_tagId');
+        await dropIndexIfExists('note_axis_value', 'unique_note_axis');
+        await dropIndexIfExists('note_axis_value', 'IDX_note_axis_value_axisId');
+        await dropIndexIfExists('note_axis_value', 'IDX_note_axis_value_axis_value');
+        await dropIndexIfExists('rating_axis', 'IDX_rating_axis_schemaId');
+        await dropIndexIfExists('rating_axis', 'IDX_rating_axis_code');
+        await dropIndexIfExists('rating_schema', 'IDX_rating_schema_code_version');
+        await dropIndexIfExists('rating_schema', 'IDX_rating_schema_isActive');
+        await dropIndexIfExists('notes', 'new_id');
+        await dropIndexIfExists('notes', 'IDX_notes_isPublic');
+        await dropIndexIfExists('notes', 'IDX_notes_createdAt');
+        await dropIndexIfExists('notes', 'IDX_notes_teaId');
+        await dropIndexIfExists('notes', 'IDX_notes_userId');
+        await dropIndexIfExists('notes', 'IDX_notes_schemaId');
+        await dropIndexIfExists('teas', 'new_id');
+        await dropIndexIfExists('teas', 'IDX_teas_name');
+        await dropIndexIfExists('teas', 'IDX_teas_type');
+        await dropIndexIfExists('note_likes', 'unique_note_user');
+        await dropIndexIfExists('note_likes', 'IDX_note_likes_noteId');
+        await dropIndexIfExists('note_likes', 'IDX_note_likes_userId');
+        await dropIndexIfExists('note_bookmarks', 'unique_note_user_bookmark');
+        await dropIndexIfExists('note_bookmarks', 'IDX_note_bookmarks_noteId');
+        await dropIndexIfExists('note_bookmarks', 'IDX_note_bookmarks_userId');
+        await addColumnIfNotExists('users', 'profileImageUrl', 'varchar(500) NULL');
         await queryRunner.query(`ALTER TABLE \`user_authentications\` CHANGE \`credential\` \`credential\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`user_authentications\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`user_authentications\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`tags\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`tags\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`note_tags\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`note_axis_value\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`note_axis_value\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
+        await queryRunner.query(`ALTER TABLE \`user_authentications\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`user_authentications\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`tags\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`tags\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`note_tags\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`note_axis_value\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`note_axis_value\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`descriptionKo\` \`descriptionKo\` text NULL`);
         await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`descriptionEn\` \`descriptionEn\` text NULL`);
         await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`teaType\` \`teaType\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
+        await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`rating_axis\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE \`rating_schema\` CHANGE \`descriptionKo\` \`descriptionKo\` text NULL`);
         await queryRunner.query(`ALTER TABLE \`rating_schema\` CHANGE \`descriptionEn\` \`descriptionEn\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`rating_schema\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`rating_schema\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
+        await queryRunner.query(`ALTER TABLE \`rating_schema\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`rating_schema\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE \`notes\` CHANGE \`overallRating\` \`overallRating\` decimal(3,1) NULL`);
         await queryRunner.query(`ALTER TABLE \`notes\` CHANGE \`memo\` \`memo\` text NULL`);
         await queryRunner.query(`ALTER TABLE \`notes\` DROP COLUMN \`images\``);
         await queryRunner.query(`ALTER TABLE \`notes\` ADD \`images\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`notes\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`notes\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
+        await queryRunner.query(`ALTER TABLE \`notes\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`notes\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`year\` \`year\` int NULL`);
         await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`seller\` \`seller\` varchar(255) NULL`);
         await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`origin\` \`origin\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`note_likes\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
-        await queryRunner.query(`ALTER TABLE \`note_bookmarks\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
+        await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`note_likes\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+        await queryRunner.query(`ALTER TABLE \`note_bookmarks\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
         await queryRunner.query(`CREATE INDEX \`IDX_39490b22fdf310ad4d45593c41\` ON \`user_authentications\` (\`userId\`)`);
         await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_b453cba486c3bdf31046376d9c\` ON \`user_authentications\` (\`provider\`, \`providerId\`)`);
         await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_d90243459a697eadb8ad56e909\` ON \`tags\` (\`name\`)`);

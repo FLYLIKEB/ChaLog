@@ -3,11 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { UserOnboardingPreference } from './entities/user-onboarding-preference.entity';
 import {
   UserAuthentication,
   AuthProvider,
 } from './entities/user-authentication.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import * as bcrypt from 'bcrypt';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -19,6 +21,8 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(UserAuthentication)
     private authRepository: Repository<UserAuthentication>,
+    @InjectRepository(UserOnboardingPreference)
+    private onboardingPreferencesRepository: Repository<UserOnboardingPreference>,
     @InjectDataSource()
     private dataSource: DataSource,
   ) {}
@@ -37,6 +41,14 @@ export class UsersService {
       // 사용자 생성
       const user = manager.create(User, { name });
       const savedUser = await manager.save(User, user);
+
+      const onboardingPreference = manager.create(UserOnboardingPreference, {
+        userId: savedUser.id,
+        preferredTeaTypes: [],
+        preferredFlavorTags: [],
+        hasCompletedOnboarding: false,
+      });
+      await manager.save(UserOnboardingPreference, onboardingPreference);
 
       // 인증 정보 생성
       const hashedPassword = await bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -142,6 +154,14 @@ export class UsersService {
       const user = manager.create(User, { name });
       const savedUser = await manager.save(User, user);
 
+      const onboardingPreference = manager.create(UserOnboardingPreference, {
+        userId: savedUser.id,
+        preferredTeaTypes: [],
+        preferredFlavorTags: [],
+        hasCompletedOnboarding: false,
+      });
+      await manager.save(UserOnboardingPreference, onboardingPreference);
+
       // 카카오 인증 정보 생성
       const kakaoAuth = manager.create(UserAuthentication, {
         userId: savedUser.id,
@@ -223,5 +243,49 @@ export class UsersService {
     }
 
     return await this.usersRepository.save(user);
+  }
+
+  async getOnboardingPreference(userId: number): Promise<UserOnboardingPreference> {
+    const existing = await this.onboardingPreferencesRepository.findOne({ where: { userId } });
+    if (existing) {
+      return existing;
+    }
+
+    const created = this.onboardingPreferencesRepository.create({
+      userId,
+      preferredTeaTypes: [],
+      preferredFlavorTags: [],
+      hasCompletedOnboarding: false,
+    });
+    return await this.onboardingPreferencesRepository.save(created);
+  }
+
+  async updateOnboardingPreference(
+    userId: number,
+    updateOnboardingDto: UpdateOnboardingDto,
+  ): Promise<UserOnboardingPreference> {
+    const preference = await this.getOnboardingPreference(userId);
+
+    if (updateOnboardingDto.preferredTeaTypes !== undefined) {
+      preference.preferredTeaTypes = updateOnboardingDto.preferredTeaTypes;
+    }
+
+    if (updateOnboardingDto.preferredFlavorTags !== undefined) {
+      preference.preferredFlavorTags = updateOnboardingDto.preferredFlavorTags;
+    }
+
+    if (
+      updateOnboardingDto.preferredTeaTypes !== undefined &&
+      updateOnboardingDto.preferredFlavorTags !== undefined
+    ) {
+      preference.hasCompletedOnboarding = true;
+    }
+
+    return await this.onboardingPreferencesRepository.save(preference);
+  }
+
+  async hasCompletedOnboarding(userId: number): Promise<boolean> {
+    const preference = await this.getOnboardingPreference(userId);
+    return preference.hasCompletedOnboarding;
   }
 }
