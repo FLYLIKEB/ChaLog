@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-LIGHTSAIL_IP="${1:-54.116.108.157}"
+LIGHTSAIL_IP="${1:-3.39.48.139}"
 SSH_KEY="${SSH_KEY_PATH:-LightsailDefaultKey-ap-northeast-2.pem}"
 
 echo -e "${BLUE}🐳 Lightsail Docker MySQL 설정${NC}"

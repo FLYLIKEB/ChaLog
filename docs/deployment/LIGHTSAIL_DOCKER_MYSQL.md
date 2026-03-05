@@ -144,10 +144,10 @@ mysqldump -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com \
 # Lightsail로 전송
 scp -i LightsailDefaultKey-ap-northeast-2.pem \
   chalog_backup.sql \
-  ubuntu@54.116.108.157:/tmp/
+  ubuntu@3.39.48.139:/tmp/
 
 # Lightsail에서 복원
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@54.116.108.157
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
 docker exec -i chalog-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} chalog < /tmp/chalog_backup.sql
 ```
 

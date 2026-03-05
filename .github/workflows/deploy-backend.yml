@@ -402,7 +402,7 @@ jobs:
               "mkdir -p /home/ubuntu/chalog-backend && \
                echo 'DATABASE_URL=${EC2_DATABASE_URL}' > /home/ubuntu/chalog-backend/.env && \
                echo 'DB_SYNCHRONIZE=false' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'DB_SSL_ENABLED=true' >> /home/ubuntu/chalog-backend/.env && \
+               echo 'DB_SSL_ENABLED=false' >> /home/ubuntu/chalog-backend/.env && \
                echo 'DB_SSL_REJECT_UNAUTHORIZED=false' >> /home/ubuntu/chalog-backend/.env && \
                echo 'JWT_SECRET=${EC2_JWT_SECRET}' >> /home/ubuntu/chalog-backend/.env && \
                echo 'JWT_EXPIRES_IN=7d' >> /home/ubuntu/chalog-backend/.env && \

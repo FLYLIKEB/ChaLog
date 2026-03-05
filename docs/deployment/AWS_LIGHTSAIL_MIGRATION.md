@@ -250,7 +250,7 @@ aws ec2 authorize-security-group-ingress \
 2. **인바운드 규칙 추가**
    - 유형: MySQL/Aurora (3306)
    - 소스: `172.26.15.5/32` (Lightsail Private IP - 권장)
-   - 또는 `54.116.108.157/32` (Lightsail Public IP - 테스트용)
+   - 또는 `3.39.48.139/32` (Lightsail Public IP - 테스트용)
 
 ### 3. 애플리케이션 디렉토리 생성
 
