@@ -13,6 +13,7 @@ import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
+import { DEFAULT_RATING_SCHEMA, DEFAULT_RATING_AXES } from './constants/default-rating-schema';
 
 @Injectable()
 export class NotesService {
@@ -621,10 +622,36 @@ export class NotesService {
   }
 
   async getActiveSchemas(): Promise<RatingSchema[]> {
-    return await this.ratingSchemaRepository.find({
+    const activeSchemas = await this.ratingSchemaRepository.find({
       where: { isActive: true },
       order: { createdAt: 'DESC' },
     });
+
+    // 활성 스키마가 없으면 기본 스키마 생성
+    if (activeSchemas.length === 0) {
+      this.logger.warn('No active schema found. Creating default schema...');
+      
+      // 기본 스키마 생성
+      const defaultSchema = this.ratingSchemaRepository.create(DEFAULT_RATING_SCHEMA);
+      const savedSchema = await this.ratingSchemaRepository.save(defaultSchema);
+      
+      // 기본 축들 생성
+      const defaultAxes = DEFAULT_RATING_AXES.map(axis => ({
+        ...axis,
+        schemaId: savedSchema.id,
+      }));
+
+      await this.ratingAxisRepository.save(
+        defaultAxes.map(axis => this.ratingAxisRepository.create(axis))
+      );
+
+      this.logger.log('Default schema created successfully');
+      
+      // 생성된 스키마 반환
+      return [savedSchema];
+    }
+
+    return activeSchemas;
   }
 
   async getSchemaAxes(schemaId: number): Promise<RatingAxis[]> {

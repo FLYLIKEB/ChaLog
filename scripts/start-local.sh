@@ -93,6 +93,7 @@ echo -e "${BLUE}🔧 백엔드 서버 시작 중...${NC}"
 cd "$BACKEND_DIR"
 # 로컬 개발 환경으로 설정
 export NODE_ENV=development
+export DB_SYNCHRONIZE=false
 npm run start:dev > /tmp/chalog-backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ 백엔드 서버 시작됨 (PID: $BACKEND_PID)${NC}"

@@ -77,7 +77,7 @@ curl https://cha-log-gilt.vercel.app/api/test
 
 ```bash
 # EC2에 SSH 접속
-ssh -i ~/.ssh/summy.pem ubuntu@52.78.150.124
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@52.78.150.124
 
 # 포트 3000 리스닝 확인
 sudo netstat -tlnp | grep 3000

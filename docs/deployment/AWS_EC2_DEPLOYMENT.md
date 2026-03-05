@@ -232,7 +232,7 @@ sudo journalctl -u nginx -f
 ### 방법 2: SSH 클라이언트
 
 ```bash
-ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
 ```
 
 ## 문제 해결

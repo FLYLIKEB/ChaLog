@@ -167,7 +167,7 @@ nano .env
 **수동 수정** (필요 시):
 ```bash
 # EC2에 SSH 접속
-ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
 
 # .env 파일 편집
 nano /home/ubuntu/chalog-backend/.env

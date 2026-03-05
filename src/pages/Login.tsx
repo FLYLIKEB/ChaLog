@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -11,11 +11,54 @@ import { toast } from 'sonner';
 export function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, loginWithKakao } = useAuth();
+  const { login, loginWithKakao, isAuthenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isKakaoLoading, setIsKakaoLoading] = useState(false);
+  const processedCodeRef = useRef<string | null>(null);
+
+  const handleKakaoCallback = useCallback(async (code: string) => {
+    // 이미 처리된 코드인지 확인
+    if (processedCodeRef.current === code) {
+      return;
+    }
+
+    try {
+      processedCodeRef.current = code;
+      setIsKakaoLoading(true);
+      // 인증 코드를 사용하여 로그인 처리
+      const onboardingCompleted = await loginWithKakao(code);
+      
+      // null이 반환되면 이미 처리된 코드이지만, 로그인 상태 확인
+      if (onboardingCompleted === null) {
+        // 사용자가 이미 로그인되어 있다면 홈으로 리다이렉트
+        if (isAuthenticated) {
+          navigate('/', { replace: true });
+        } else {
+          navigate('/login', { replace: true });
+        }
+        return;
+      }
+      
+      const shouldGoOnboarding = onboardingCompleted === false;
+      // URL에서 code 파라미터 제거하고 이동
+      navigate(shouldGoOnboarding ? '/onboarding' : '/', { replace: true });
+    } catch (error) {
+      // 에러는 AuthContext에서 이미 처리됨
+      // 처리 실패 시 processedCode 초기화하여 재시도 가능하도록
+      processedCodeRef.current = null;
+      // 사용자가 이미 로그인되어 있다면 홈으로 리다이렉트
+      if (isAuthenticated) {
+        navigate('/', { replace: true });
+      } else {
+        // URL에서 code 파라미터 제거
+        navigate('/login', { replace: true });
+      }
+    } finally {
+      setIsKakaoLoading(false);
+    }
+  }, [loginWithKakao, navigate, isAuthenticated]);
 
   // 카카오 로그인 리다이렉트 후 인증 코드 처리
   useEffect(() => {
@@ -30,28 +73,11 @@ export function Login() {
       return;
     }
 
-    if (code) {
-      // 인증 코드가 있으면 처리
+    if (code && code !== processedCodeRef.current) {
+      // 인증 코드가 있고 아직 처리되지 않은 경우에만 처리
       handleKakaoCallback(code);
     }
-  }, [searchParams, navigate]);
-
-  const handleKakaoCallback = async (code: string) => {
-    try {
-      setIsKakaoLoading(true);
-      // 인증 코드를 사용하여 로그인 처리
-      const onboardingCompleted = await loginWithKakao(code);
-      const shouldGoOnboarding = onboardingCompleted === false;
-      // URL에서 code 파라미터 제거하고 이동
-      navigate(shouldGoOnboarding ? '/onboarding' : '/', { replace: true });
-    } catch (error) {
-      // 에러는 AuthContext에서 이미 처리됨
-      // URL에서 code 파라미터 제거
-      navigate('/login', { replace: true });
-    } finally {
-      setIsKakaoLoading(false);
-    }
-  };
+  }, [searchParams, navigate, handleKakaoCallback]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

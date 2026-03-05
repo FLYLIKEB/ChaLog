@@ -35,7 +35,15 @@ if [ -f "$CONFIG_FILE" ]; then
 fi
 
 # 기본 설정 (환경 변수나 설정 파일에서 설정되지 않은 경우)
-SSH_KEY_PATH="${SSH_KEY_PATH:-~/.ssh/summy.pem}"
+# Lightsail 키 경로 확인 (프로젝트 루트 또는 기본값)
+if [ -f "$PROJECT_ROOT/LightsailDefaultKey-ap-northeast-2.pem" ]; then
+    DEFAULT_KEY="$PROJECT_ROOT/LightsailDefaultKey-ap-northeast-2.pem"
+elif [ -f "$HOME/.ssh/LightsailDefaultKey-ap-northeast-2.pem" ]; then
+    DEFAULT_KEY="$HOME/.ssh/LightsailDefaultKey-ap-northeast-2.pem"
+else
+    DEFAULT_KEY="~/.ssh/LightsailDefaultKey-ap-northeast-2.pem"
+fi
+SSH_KEY_PATH="${SSH_KEY_PATH:-$DEFAULT_KEY}"
 EC2_HOST="${EC2_HOST:-your-ec2-ip}"
 EC2_USER="${EC2_USER:-ubuntu}"
 LOG_LINES="${LOG_LINES:-100}"
@@ -66,7 +74,7 @@ show_help() {
     echo "  -h, --help        도움말 출력"
     echo ""
     echo "환경 변수:"
-    echo "  SSH_KEY_PATH      SSH 키 경로 (기본값: ~/.ssh/summy.pem)"
+    echo "  SSH_KEY_PATH      SSH 키 경로 (기본값: LightsailDefaultKey-ap-northeast-2.pem)"
     echo "  EC2_HOST          EC2 호스트 IP 또는 도메인"
     echo "  EC2_USER          EC2 사용자명 (기본값: ubuntu)"
     echo ""
