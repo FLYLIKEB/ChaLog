@@ -667,12 +667,20 @@ class ApiClient {
         arrayLength: Array.isArray(data) ? data.length : undefined,
       });
       
+      // 응답 본문이 없으면 null 반환 (DELETE 요청 등)
+      if (data === null) {
+        logger.info(`[API Request ${requestId}] 성공 (빈 응답 본문)`, {
+          responseTime: `${Date.now() - startTime}ms`,
+        });
+        return null as T;
+      }
+      
       // 날짜 문자열을 Date 객체로 자동 변환
       const parsedData = parseDates(data);
       
       // Note 관련 응답인 경우 정규화 (tea/user 객체에서 teaName/userName 추출)
       const isNoteEndpoint = endpoint.startsWith('/notes');
-      if (isNoteEndpoint) {
+      if (isNoteEndpoint && parsedData !== null) {
         logger.debug(`[API Request ${requestId}] Note 정규화 수행`);
         const normalized = normalizeNotes(parsedData as BackendNote | BackendNote[]) as T;
         logger.info(`[API Request ${requestId}] 성공 (Note 정규화 완료)`, {

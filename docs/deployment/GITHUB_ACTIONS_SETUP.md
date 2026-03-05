@@ -139,7 +139,7 @@ git push origin main
 
 ```bash
 # SSH 접속
-ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
 
 # PM2 상태 확인
 pm2 status

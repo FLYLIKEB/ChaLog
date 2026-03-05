@@ -54,10 +54,10 @@ export class S3Service {
     const endpoint = this.configService.get<string>('AWS_S3_ENDPOINT');
     
     if (endpoint) {
-      // 커스텀 엔드포인트 사용 (로컬 개발용)
+      // 커스텀 엔드포인트 사용 (로컬 개발용 MinIO 등)
       return `${endpoint}/${this.bucketName}/${key}`;
     } else {
-      // 표준 S3 URL
+      // 표준 S3 URL (원격 S3 버킷 사용)
       return `https://${this.bucketName}.s3.${region}.amazonaws.com/${key}`;
     }
   }

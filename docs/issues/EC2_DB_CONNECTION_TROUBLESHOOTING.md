@@ -31,7 +31,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 
 ```bash
 # EC2에 SSH 접속
-ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
 
 # .env 파일 확인
 cat /home/ubuntu/chalog-backend/.env
@@ -80,7 +80,7 @@ DATABASE_URL=mysql://admin:password@localhost:3307/chalog
 
 ```bash
 # EC2에 SSH 접속
-ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
 
 # MySQL 클라이언트 설치 (없는 경우)
 sudo apt-get update
@@ -137,7 +137,7 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com \
 1. **EC2 보안 그룹 ID 확인**
    ```bash
    # EC2에 SSH 접속
-   ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+   ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
    
    # EC2 인스턴스 ID 확인
    curl -s http://169.254.169.254/latest/meta-data/instance-id
@@ -165,7 +165,7 @@ mysql -h database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com \
 
 ```bash
 # EC2에 SSH 접속
-ssh -i ~/.ssh/summy.pem ubuntu@your-ec2-ip
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
 
 # .env 파일 편집
 nano /home/ubuntu/chalog-backend/.env

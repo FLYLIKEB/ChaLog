@@ -51,4 +51,3 @@ tail -f /tmp/chalog-backend.log | grep "error"
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:3000
 - Health Check: http://localhost:3000/health
-

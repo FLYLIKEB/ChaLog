@@ -69,10 +69,19 @@ export function EditNote() {
           
           // 스키마의 축 정보 가져오기
           const axesData = (await notesApi.getSchemaAxes(firstSchema.id)) as RatingAxis[];
-          setAxes(axesData);
+          if (Array.isArray(axesData)) {
+            setAxes(axesData);
+          } else {
+            logger.error('Failed to fetch schema axes: axes data is not an array');
+            toast.error('평가 스키마의 축 정보를 불러오는데 실패했습니다.');
+          }
+        } else {
+          logger.error('No active schema found');
+          toast.error('활성 평가 스키마를 찾을 수 없습니다.');
         }
       } catch (error) {
         logger.error('Failed to fetch schema:', error);
+        toast.error('평가 스키마를 불러오는데 실패했습니다.');
       }
     };
     fetchSchema();

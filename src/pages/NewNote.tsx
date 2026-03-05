@@ -73,7 +73,13 @@ export function NewNote() {
               initialValues[axis.id] = RATING_DEFAULT;
             });
             setAxisValues(initialValues);
+          } else {
+            logger.error('Failed to fetch schema axes: axes data is not an array');
+            toast.error('평가 스키마의 축 정보를 불러오는데 실패했습니다.');
           }
+        } else {
+          logger.error('No active schema found');
+          toast.error('활성 평가 스키마를 찾을 수 없습니다.');
         }
       } catch (error) {
         logger.error('Failed to fetch schema:', error);
