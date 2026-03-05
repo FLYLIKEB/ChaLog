@@ -217,4 +217,3 @@ export function Login() {
     </div>
   );
 }
-
