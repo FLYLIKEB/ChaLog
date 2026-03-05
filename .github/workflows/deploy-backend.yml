@@ -9,6 +9,10 @@ on:
       - '.github/workflows/deploy-backend.yml'
   workflow_dispatch: # 수동 실행 가능
 
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Deploy to EC2
@@ -83,11 +87,6 @@ jobs:
           cp -r migrations deploy-package/  # Migration 파일 포함
           cp src/database/data-source.ts deploy-package/dist/src/database/ 2>/dev/null || cp src/database/data-source.ts deploy-package/  # data-source.ts 포함 (Migration 실행용)
           cp package.json package-lock.json ecosystem.config.js deploy-package/
-          # package-lock.json이 없으면 생성
-          if [ ! -f package-lock.json ]; then
-            echo "⚠️ package-lock.json이 없습니다. 생성 중..."
-            npm install --package-lock-only
-          fi
           tar -czf deploy.tar.gz -C deploy-package .
 
       - name: Configure SSH
@@ -161,83 +160,56 @@ jobs:
           
           echo "✅ SSH 키 형식 검증 통과"
           
+          # DNS 해석 (IPv4/IPv6 구분)
+          echo "🔍 DNS 해석:"
+          echo "  IPv4: $(getent ahostsv4 "$EC2_HOST" 2>/dev/null | head -1 | awk '{print $1}' || echo '해석 실패')"
+          echo "  IPv6: $(getent ahostsv6 "$EC2_HOST" 2>/dev/null | head -1 | awk '{print $1}' || echo '해석 실패/없음')"
+          EC2_IPV4=$(getent ahostsv4 "$EC2_HOST" 2>/dev/null | head -1 | awk '{print $1}')
+          if [ -z "$EC2_IPV4" ]; then
+            EC2_IPV4="$EC2_HOST"
+            echo "  (호스트명이 IP이거나 IPv4 해석 실패, $EC2_HOST 사용)"
+          fi
+          echo ""
+          
+          # 포트 22 연결 테스트 (IPv4 우선, 타임아웃 15초)
+          echo "🔍 포트 22 연결 테스트 중 (IPv4: $EC2_IPV4)..."
+          if timeout 15 bash -c "</dev/tcp/$EC2_IPV4/22" 2>/dev/null; then
+            echo "✅ 포트 22 열림"
+          else
+            echo "❌ 포트 22 닫힘 또는 타임아웃"
+            echo "⚠️ Lightsail 방화벽에서 SSH(22번 포트)가 GitHub Actions IP에서 접근 가능한지 확인하세요."
+            echo "   자세한 내용: docs/SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md"
+            exit 1
+          fi
+          echo ""
+          
           # EC2 호스트 키 추가
           echo "🔐 EC2 호스트 키 추가 중..."
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>&1 || true
           chmod 644 ~/.ssh/known_hosts
           
-          # SSH 연결 테스트 (상세 로그)
+          # SSH 연결 테스트 (실패 시 즉시 종료)
           echo "🔍 SSH 연결 테스트 중..."
-          echo "테스트 명령어: ssh -i ~/.ssh/deploy_key $EC2_USER@$EC2_HOST 'echo 연결 성공'"
-          echo ""
-          
-          # SSH 키에서 공개 키 추출 시도 (디버깅용)
-          echo "📋 SSH 키 정보:"
-          echo "   키 파일 크기: $(wc -c < ~/.ssh/deploy_key) bytes"
-          echo "   키 파일 줄 수: $(wc -l < ~/.ssh/deploy_key) lines"
-          echo ""
-          
-          # 공개 키 추출 시도 (실패해도 계속 진행)
-          echo "🔑 공개 키 추출 시도 중..."
-          PUBLIC_KEY=$(ssh-keygen -y -f ~/.ssh/deploy_key 2>&1) || PUBLIC_KEY="공개 키 추출 실패: $PUBLIC_KEY"
-          echo "   공개 키 (처음 100자): ${PUBLIC_KEY:0:100}..."
-          echo ""
-          
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "SSH 연결 테스트 (DEBUG 모드)..."
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          
-          # SSH 연결 테스트 (직접 실행하여 즉시 출력)
-          if ssh -i ~/.ssh/deploy_key \
+          if ! ssh -i ~/.ssh/deploy_key \
               -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=10 \
+              -o ConnectTimeout=15 \
               -o BatchMode=yes \
-              -o LogLevel=DEBUG3 \
-              -vvv \
               "$EC2_USER@$EC2_HOST" \
               "echo 'SSH 연결 성공!'" 2>&1; then
             echo ""
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "✅ SSH 연결 테스트 성공!"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          else
-            SSH_EXIT=$?
-            echo ""
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "❌ SSH 연결 테스트 실패 (exit code: $SSH_EXIT)"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "❌ SSH 연결 실패!"
             echo ""
             echo "🔍 문제 진단:"
+            echo "1. EC2_SSH_KEY Secret 확인: GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY"
+            echo "2. 인스턴스 authorized_keys에 해당 공개 키가 있는지 확인"
+            echo "3. EC2 사용자명 확인: Ubuntu=ubuntu, Amazon Linux=ec2-user"
             echo ""
-            echo "1. EC2_SSH_KEY Secret 확인:"
-            echo "   - GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY"
-            echo "   - 첫 줄: '-----BEGIN RSA PRIVATE KEY-----' 또는 '-----BEGIN OPENSSH PRIVATE KEY-----'"
-            echo "   - 마지막 줄: '-----END RSA PRIVATE KEY-----' 또는 '-----END OPENSSH PRIVATE KEY-----'"
-            echo ""
-            echo "2. EC2 인스턴스에 공개 키 추가 필요:"
-            echo "   Lightsail 키: LightsailDefaultKey-ap-northeast-2.pem"
-            echo "   Public IP: $EC2_HOST"
-            echo ""
-            echo "   로컬에서 실행:"
-            echo "   # 1. Lightsail 키로 서버 접속"
-            echo "   ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@$EC2_HOST"
-            echo ""
-            echo "   # 2. 서버에서 공개 키 확인"
-            echo "   cat ~/.ssh/authorized_keys"
-            echo ""
-            echo "   # 3. GitHub Actions용 공개 키 추가 (로컬에서)"
-            echo "   ssh-keygen -y -f ~/.ssh/deploy_key.pem | ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@$EC2_HOST 'cat >> ~/.ssh/authorized_keys'"
-            echo ""
-            echo "3. EC2 사용자명 확인:"
-            echo "   현재 설정: $EC2_USER"
-            echo "   Ubuntu: ubuntu"
-            echo "   Amazon Linux: ec2-user"
-            echo ""
-            echo "⚠️ 이 단계는 계속 진행되지만, 배포 단계에서 실패할 수 있습니다."
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "자세한 내용: docs/deployment/SSH_CONNECTION_TROUBLESHOOTING.md"
+            exit 1
           fi
+          echo "✅ SSH 연결 테스트 성공!"
 
-      - name: Deploy to EC2
+      - name: Upload deployment files
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -246,131 +218,12 @@ jobs:
           EC2_FRONTEND_URL: ${{ secrets.EC2_FRONTEND_URL }}
           EC2_FRONTEND_URLS: ${{ secrets.EC2_FRONTEND_URLS }}
         run: |
-          # 환경 변수 확인
           if [ -z "${EC2_HOST:-}" ] || [ -z "${EC2_USER:-}" ]; then
             echo "❌ EC2_HOST 또는 EC2_USER가 설정되지 않았습니다!"
-            echo "EC2_HOST: ${EC2_HOST:-❌ 없음}"
-            echo "EC2_USER: ${EC2_USER:-❌ 없음}"
             exit 1
           fi
           
           echo "🔍 배포 대상: $EC2_USER@$EC2_HOST"
-          
-          # 진단 정보 출력
-          echo "🔍 진단 정보:"
-          echo "  - GitHub Actions IP: $(curl -s https://api.ipify.org || echo '확인 실패')"
-          echo "  - EC2 호스트: $EC2_HOST"
-          echo "  - EC2 사용자: $EC2_USER"
-          echo ""
-          
-          # DNS 해석 테스트
-          echo "🔍 DNS 해석 테스트 중..."
-          if nslookup "$EC2_HOST" > /dev/null 2>&1; then
-            echo "✅ DNS 해석 성공"
-          else
-            echo "⚠️ DNS 해석 실패 (계속 진행)"
-          fi
-          echo ""
-          
-          # 포트 연결 테스트
-          echo "🔍 포트 22 연결 테스트 중..."
-          if timeout 5 bash -c "</dev/tcp/$EC2_HOST/22" 2>/dev/null; then
-            echo "✅ 포트 22 열림"
-          else
-            echo "❌ 포트 22 닫힘 또는 타임아웃"
-            echo "⚠️ EC2 보안 그룹에서 SSH(22번 포트)가 GitHub Actions IP에서 접근 가능한지 확인하세요."
-            echo "   자세한 내용: docs/SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md"
-          fi
-          echo ""
-          
-          # SSH 키 상세 확인
-          echo "🔑 SSH 키 상세 확인:"
-          if [ -f ~/.ssh/deploy_key ]; then
-            echo "✅ 키 파일 존재"
-            echo "키 파일 권한: $(ls -l ~/.ssh/deploy_key | awk '{print $1}')"
-            echo "키 파일 크기: $(wc -c < ~/.ssh/deploy_key) bytes"
-            echo "키 파일 줄 수: $(wc -l < ~/.ssh/deploy_key) 줄"
-            echo "키 첫 줄: $(head -1 ~/.ssh/deploy_key)"
-            echo "키 마지막 줄: $(tail -1 ~/.ssh/deploy_key)"
-          else
-            echo "❌ 키 파일이 없습니다!"
-            exit 1
-          fi
-          echo ""
-          
-          # SSH 키 형식 검증
-          if ! grep -q "BEGIN.*PRIVATE KEY" ~/.ssh/deploy_key; then
-            echo "❌ SSH 키 형식 오류: 'BEGIN PRIVATE KEY'를 찾을 수 없습니다!"
-            echo "EC2_SSH_KEY Secret이 올바른 형식인지 확인하세요."
-            exit 1
-          fi
-          
-          if ! grep -q "END.*PRIVATE KEY" ~/.ssh/deploy_key; then
-            echo "❌ SSH 키 형식 오류: 'END PRIVATE KEY'를 찾을 수 없습니다!"
-            echo "EC2_SSH_KEY Secret이 올바른 형식인지 확인하세요."
-            exit 1
-          fi
-          
-          echo "✅ SSH 키 형식 검증 통과"
-          echo ""
-          
-          # SSH 연결 테스트
-          echo "🔍 SSH 연결 테스트 중..."
-          echo "연결 대상: $EC2_USER@$EC2_HOST"
-          echo ""
-          
-          SSH_OUTPUT=$(ssh -i ~/.ssh/deploy_key \
-              -o StrictHostKeyChecking=no \
-              -o ConnectTimeout=10 \
-              -o BatchMode=yes \
-              -o LogLevel=DEBUG \
-              -o UserKnownHostsFile=~/.ssh/known_hosts \
-              -v \
-              "$EC2_USER@$EC2_HOST" \
-              "echo 'SSH 연결 성공!'" 2>&1)
-          SSH_EXIT_CODE=$?
-          
-          echo ""
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          if [ $SSH_EXIT_CODE -eq 0 ]; then
-            echo "✅ SSH 연결 성공!"
-          else
-            echo "❌ SSH 연결 실패! (exit code: $SSH_EXIT_CODE)"
-            echo ""
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo "오류 상세 (전체):"
-            echo "$SSH_OUTPUT"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo ""
-            echo "가능한 원인:"
-            echo "1. EC2_SSH_KEY Secret이 올바르지 않음 (키 형식 오류 또는 잘못된 키)"
-            echo "2. EC2 인스턴스의 authorized_keys에 해당 공개 키가 없음"
-            echo "3. EC2 사용자명(EC2_USER)이 잘못됨"
-            echo "4. SSH 키 권한 문제"
-            echo ""
-            echo "해결 방법:"
-            echo "1. EC2_SSH_KEY Secret 확인:"
-            echo "   - GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY"
-            echo "   - 첫 줄이 '-----BEGIN RSA PRIVATE KEY-----' 또는 '-----BEGIN OPENSSH PRIVATE KEY-----'로 시작하는지 확인"
-            echo "   - 마지막 줄이 '-----END RSA PRIVATE KEY-----' 또는 '-----END OPENSSH PRIVATE KEY-----'로 끝나는지 확인"
-            echo "   - 전체 키 내용이 복사되었는지 확인 (줄바꿈 포함)"
-            echo ""
-            echo "2. EC2에서 공개 키 확인 및 추가:"
-            echo "   # 로컬에서 공개 키 추출:"
-            echo "   ssh-keygen -y -f ~/.ssh/your-key.pem"
-            echo "   # EC2에 접속하여 authorized_keys 확인:"
-            echo "   ssh -i ~/.ssh/your-key.pem ubuntu@your-ec2-ip"
-            echo "   cat ~/.ssh/authorized_keys"
-            echo "   # 공개 키가 없으면 추가:"
-            echo "   echo '공개-키-내용' >> ~/.ssh/authorized_keys"
-            echo ""
-            echo "3. 로컬에서 SSH 연결 테스트:"
-            echo "   ssh -i ~/.ssh/your-key.pem $EC2_USER@$EC2_HOST 'echo 연결 성공'"
-            echo ""
-            echo "자세한 내용: docs/SSH_KEY_TROUBLESHOOTING.md"
-            exit 1
-          fi
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           
           # 배포 파일 전송
           echo "📤 배포 파일 전송 중..."
@@ -380,40 +233,39 @@ jobs:
               backend/deploy.tar.gz \
               "$EC2_USER@$EC2_HOST:/tmp/"
 
-          # .env 파일 업로드 (GitHub Secrets 사용)
+          # .env 파일 생성 및 업로드 (특수문자 안전 처리)
           echo "📤 .env 파일 생성 중..."
           
-          # 필수 환경 변수 확인
           if [ -z "${EC2_DATABASE_URL:-}" ]; then
             echo "⚠️ EC2_DATABASE_URL이 설정되지 않았습니다. GitHub Secrets에 설정하세요."
-            echo "   기본값을 사용하지 않습니다. 배포를 중단합니다."
             exit 1
           fi
           
           if [ -z "${EC2_JWT_SECRET:-}" ]; then
             echo "⚠️ EC2_JWT_SECRET이 설정되지 않았습니다. GitHub Secrets에 설정하세요."
-            echo "   기본값을 사용하지 않습니다. 배포를 중단합니다."
             exit 1
           fi
           
-          ssh -i ~/.ssh/deploy_key \
-              -o StrictHostKeyChecking=no \
-              "$EC2_USER@$EC2_HOST" \
-              "mkdir -p /home/ubuntu/chalog-backend && \
-               echo 'DATABASE_URL=${EC2_DATABASE_URL}' > /home/ubuntu/chalog-backend/.env && \
-               echo 'DB_SYNCHRONIZE=false' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'DB_SSL_ENABLED=false' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'DB_SSL_REJECT_UNAUTHORIZED=false' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'JWT_SECRET=${EC2_JWT_SECRET}' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'JWT_EXPIRES_IN=7d' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'PORT=3000' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'NODE_ENV=production' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'FRONTEND_URL=${EC2_FRONTEND_URL:-https://cha-log-gilt.vercel.app}' >> /home/ubuntu/chalog-backend/.env && \
-               echo 'FRONTEND_URLS=${EC2_FRONTEND_URLS:-https://cha-log-gilt.vercel.app,http://localhost:5173,http://localhost:5174}' >> /home/ubuntu/chalog-backend/.env && \
-               chmod 600 /home/ubuntu/chalog-backend/.env && \
-               echo '✅ .env 파일 생성 완료'"
+          mkdir -p /tmp/deploy_env
+          {
+            printf 'DATABASE_URL=%s\n' "$EC2_DATABASE_URL"
+            printf 'DB_SYNCHRONIZE=false\n'
+            printf 'DB_SSL_ENABLED=false\n'
+            printf 'DB_SSL_REJECT_UNAUTHORIZED=false\n'
+            printf 'JWT_SECRET=%s\n' "$EC2_JWT_SECRET"
+            printf 'JWT_EXPIRES_IN=7d\n'
+            printf 'PORT=3000\n'
+            printf 'NODE_ENV=production\n'
+            printf 'FRONTEND_URL=%s\n' "${EC2_FRONTEND_URL:-https://cha-log-gilt.vercel.app}"
+            printf 'FRONTEND_URLS=%s\n' "${EC2_FRONTEND_URLS:-https://cha-log-gilt.vercel.app,http://localhost:5173,http://localhost:5174}"
+          } > /tmp/deploy_env/.env
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "mkdir -p /home/ubuntu/chalog-backend"
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no /tmp/deploy_env/.env "$EC2_USER@$EC2_HOST:/home/ubuntu/chalog-backend/.env"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "chmod 600 /home/ubuntu/chalog-backend/.env"
+          rm -rf /tmp/deploy_env
+          echo "✅ .env 파일 업로드 완료"
 
-      - name: Deploy to EC2
+      - name: Run deployment on server
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
@@ -598,19 +450,24 @@ jobs:
             PM2_STATUS=$($PM2_CMD status | grep chalog-backend | awk '{print $10}')
             echo "📊 PM2 초기 상태: $PM2_STATUS"
             
-            # Health check
+            # Health check (최대 5회, 5초 간격 재시도)
             echo "🏥 Health check..."
-            sleep 10  # 앱 시작 시간 확보
             PM2_CMD=$(command -v pm2 || echo "/usr/local/bin/pm2")
-            
-            # PM2 상태 확인
             echo "📊 PM2 상태:"
             $PM2_CMD status || true
             
-            # Health check 시도
-            if curl -f http://localhost:3000/health > /dev/null 2>&1; then
-              echo "✅ 배포 성공! Health check 통과"
-            else
+            HEALTH_OK=false
+            for i in 1 2 3 4 5; do
+              sleep 5
+              if curl -f http://localhost:3000/health > /dev/null 2>&1; then
+                echo "✅ 배포 성공! Health check 통과"
+                HEALTH_OK=true
+                break
+              fi
+              echo "  시도 $i/5: Health check 대기 중..."
+            done
+            
+            if [ "$HEALTH_OK" != "true" ]; then
               echo "⚠️ Health check 실패. 상세 정보 확인:"
               echo "PM2 상태:"
               $PM2_CMD status || true
@@ -634,7 +491,7 @@ jobs:
         if: always()
         run: |
           rm -f ~/.ssh/deploy_key
-          rm -rf backend/deploy-package backend/deploy.tar.gz
+          rm -rf backend/deploy-package backend/deploy.tar.gz /tmp/deploy_env
 
       - name: Deployment Summary
         if: success()
