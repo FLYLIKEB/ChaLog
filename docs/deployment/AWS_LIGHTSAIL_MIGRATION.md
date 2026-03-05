@@ -225,14 +225,32 @@ mysql -h your-rds-endpoint.rds.amazonaws.com \
 
 ### 2. RDS 보안 그룹 설정
 
+**AWS CLI로 자동 설정:**
+```bash
+# RDS 인스턴스의 보안 그룹 ID 확인
+aws rds describe-db-instances \
+    --query "DBInstances[?contains(Endpoint.Address, 'database-1')].VpcSecurityGroups[*].VpcSecurityGroupId" \
+    --output text \
+    --region ap-northeast-2
+
+# 보안 그룹에 Lightsail Private IP 추가
+aws ec2 authorize-security-group-ingress \
+    --group-id <보안그룹ID> \
+    --protocol tcp \
+    --port 3306 \
+    --cidr 172.26.15.5/32 \
+    --region ap-northeast-2
+```
+
+**수동 설정:**
 1. **AWS RDS 콘솔**
    - RDS 인스턴스 선택 → "연결 및 보안" 탭
    - VPC 보안 그룹 링크 클릭
 
 2. **인바운드 규칙 추가**
    - 유형: MySQL/Aurora (3306)
-   - 소스: Lightsail 인스턴스의 Private IP 또는 보안 그룹
-   - 또는 임시로 Lightsail Public IP 추가 (테스트용)
+   - 소스: `172.26.15.5/32` (Lightsail Private IP - 권장)
+   - 또는 `54.116.108.157/32` (Lightsail Public IP - 테스트용)
 
 ### 3. 애플리케이션 디렉토리 생성
 
