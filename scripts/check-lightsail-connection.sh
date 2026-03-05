@@ -44,18 +44,9 @@ else
     echo -e "${GREEN}✅ SSH 키 권한 확인됨 (현재: $KEY_PERM)${NC}"
 fi
 
-# 네트워크 연결 테스트
-echo ""
-echo -e "${BLUE}📋 2단계: 네트워크 연결 테스트${NC}"
-if ping -c 1 -W 2 "$LIGHTSAIL_IP" > /dev/null 2>&1; then
-    echo -e "${GREEN}✅ Ping 성공${NC}"
-else
-    echo -e "${YELLOW}⚠️  Ping 실패 (계속 진행)${NC}"
-fi
-
 # 포트 22 연결 테스트
 echo ""
-echo -e "${BLUE}📋 3단계: SSH 포트 (22) 연결 테스트${NC}"
+echo -e "${BLUE}📋 2단계: SSH 포트 (22) 연결 테스트${NC}"
 if timeout 5 bash -c "</dev/tcp/$LIGHTSAIL_IP/22" 2>/dev/null; then
     echo -e "${GREEN}✅ 포트 22 열림${NC}"
 else
@@ -76,7 +67,7 @@ fi
 
 # SSH 연결 테스트
 echo ""
-echo -e "${BLUE}📋 4단계: SSH 연결 테스트${NC}"
+echo -e "${BLUE}📋 3단계: SSH 연결 테스트${NC}"
 echo "연결 시도 중..."
 
 SSH_OUTPUT=$(ssh -i "$SSH_KEY" \

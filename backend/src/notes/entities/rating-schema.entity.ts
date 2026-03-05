@@ -1,7 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Unique } from 'typeorm';
 import { RatingAxis } from './rating-axis.entity';
 
 @Entity('rating_schema')
+@Unique('UQ_rating_schema_code_version', ['code', 'version'])
 export class RatingSchema {
   @PrimaryGeneratedColumn()
   id: number;
