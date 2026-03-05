@@ -61,7 +61,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (() => {
 
 - `.env.example` → `BACKEND_URL`, `BACKEND_TIMEOUT_MS` 추가
 - Vercel 대시보드 → Settings → Environment Variables
-  - `BACKEND_URL` = `http://52.78.150.124:3000`
+  - `BACKEND_URL` = `http://3.39.48.139:3000`
   - `BACKEND_TIMEOUT_MS` (선택, 기본 10000)
   - `LOG_PROXY_REQUESTS` (선택, 기본 true)
 
@@ -88,7 +88,7 @@ Vercel이 자동으로 재배포합니다.
 
 2. **Vercel rewrites**
    ```
-   /api/teas → http://52.78.150.124:3000/teas
+   /api/teas → http://3.39.48.139:3000/teas
    ```
 
 3. **EC2 백엔드 응답**
@@ -100,7 +100,7 @@ Vercel이 자동으로 재배포합니다.
 
 **프로덕션 (Vercel):**
 - 요청: `https://cha-log-gilt.vercel.app/api/teas`
-- Vercel이 `http://52.78.150.124:3000/teas`로 프록시
+- Vercel이 `http://3.39.48.139:3000/teas`로 프록시
 - HTTPS → HTTP (서버 간 통신이므로 Mixed Content 문제 없음)
 
 **개발 환경:**

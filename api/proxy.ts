@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.BACKEND_URL || 'http://52.78.150.124:3000';
+const BACKEND_URL = process.env.BACKEND_URL || 'http://3.39.48.139:3000';
 const LOG_PROXY_REQUESTS =
   (process.env.LOG_PROXY_REQUESTS ?? 'true').toLowerCase() !== 'false';
 

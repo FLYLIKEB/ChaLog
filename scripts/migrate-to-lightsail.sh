@@ -64,7 +64,7 @@ if [ -f "$PROJECT_ROOT/.ec2-config" ]; then
     source "$PROJECT_ROOT/.ec2-config"
 fi
 
-EC2_HOST="${EC2_HOST:-52.78.150.124}"
+EC2_HOST="${EC2_HOST:-3.39.48.139}"
 EC2_USER="${EC2_USER:-ubuntu}"
 
 echo "EC2 호스트: $EC2_USER@$EC2_HOST"
