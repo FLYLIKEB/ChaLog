@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { FollowsService } from './follows.service';
 import { Follow } from './entities/follow.entity';
@@ -30,6 +30,18 @@ describe('FollowsService', () => {
   let followsRepository: Repository<Follow>;
   let usersRepository: Repository<User>;
 
+  const mockDeleteQB = {
+    from: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 1 }),
+  };
+
+  const mockInsertQB = {
+    into: jest.fn().mockReturnThis(),
+    values: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ identifiers: [{ id: 1 }] }),
+  };
+
   const mockFollowsRepository = {
     create: jest.fn(),
     save: jest.fn(),
@@ -37,6 +49,15 @@ describe('FollowsService', () => {
     findOne: jest.fn(),
     find: jest.fn(),
     count: jest.fn(),
+    createQueryBuilder: jest.fn().mockImplementation((alias?: string) => {
+      if (!alias) {
+        return {
+          insert: jest.fn().mockReturnValue(mockInsertQB),
+          delete: jest.fn().mockReturnValue(mockDeleteQB),
+        };
+      }
+      return {};
+    }),
   };
 
   const mockUsersRepository = {
@@ -60,6 +81,10 @@ describe('FollowsService', () => {
   });
 
   describe('toggle', () => {
+    beforeEach(() => {
+      mockInsertQB.execute.mockResolvedValue({ identifiers: [{ id: 1 }] });
+    });
+
     it('자기 자신은 팔로우할 수 없어야 한다', async () => {
       const result = await service.toggle(1, 1);
       expect(result).toEqual({ isFollowing: false });
@@ -71,34 +96,41 @@ describe('FollowsService', () => {
       await expect(service.toggle(1, 999)).rejects.toThrow(NotFoundException);
     });
 
-    it('팔로우하지 않은 상태에서 toggle하면 팔로우된다', async () => {
+    it('팔로우하지 않은 상태에서 toggle하면 팔로우된다 (atomic insert 성공)', async () => {
       const targetUser = createMockUser({ id: 2 });
-      const newFollow = createMockFollow({ followerId: 1, followingId: 2 });
-
       mockUsersRepository.findOne.mockResolvedValue(targetUser);
-      mockFollowsRepository.findOne.mockResolvedValue(null);
-      mockFollowsRepository.create.mockReturnValue(newFollow);
-      mockFollowsRepository.save.mockResolvedValue(newFollow);
+      mockInsertQB.execute.mockResolvedValue({ identifiers: [{ id: 1 }] });
 
       const result = await service.toggle(1, 2);
 
       expect(result).toEqual({ isFollowing: true });
-      expect(mockFollowsRepository.create).toHaveBeenCalledWith({ followerId: 1, followingId: 2 });
-      expect(mockFollowsRepository.save).toHaveBeenCalledWith(newFollow);
+      expect(mockInsertQB.values).toHaveBeenCalledWith({ followerId: 1, followingId: 2 });
     });
 
-    it('팔로우 중인 상태에서 toggle하면 언팔로우된다', async () => {
+    it('팔로우 중인 상태에서 toggle하면 언팔로우된다 (duplicate key → delete)', async () => {
       const targetUser = createMockUser({ id: 2 });
-      const existingFollow = createMockFollow({ followerId: 1, followingId: 2 });
-
       mockUsersRepository.findOne.mockResolvedValue(targetUser);
-      mockFollowsRepository.findOne.mockResolvedValue(existingFollow);
-      mockFollowsRepository.remove.mockResolvedValue(undefined);
+
+      const dupError = Object.assign(new QueryFailedError('', [], new Error()), { code: 'ER_DUP_ENTRY' });
+      mockInsertQB.execute.mockRejectedValue(dupError);
 
       const result = await service.toggle(1, 2);
 
       expect(result).toEqual({ isFollowing: false });
-      expect(mockFollowsRepository.remove).toHaveBeenCalledWith(existingFollow);
+      expect(mockDeleteQB.where).toHaveBeenCalledWith(
+        'followerId = :followerId AND followingId = :followingId',
+        { followerId: 1, followingId: 2 },
+      );
+    });
+
+    it('duplicate 외 에러는 다시 던진다', async () => {
+      const targetUser = createMockUser({ id: 2 });
+      mockUsersRepository.findOne.mockResolvedValue(targetUser);
+
+      const otherError = Object.assign(new QueryFailedError('', [], new Error()), { code: 'ER_OTHER' });
+      mockInsertQB.execute.mockRejectedValue(otherError);
+
+      await expect(service.toggle(1, 2)).rejects.toThrow(QueryFailedError);
     });
   });
 

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, QueryFailedError } from 'typeorm';
 import { Follow } from './entities/follow.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -23,18 +23,30 @@ export class FollowsService {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
-    const existing = await this.followsRepository.findOne({
-      where: { followerId, followingId },
-    });
-
-    if (existing) {
-      await this.followsRepository.remove(existing);
-      return { isFollowing: false };
+    // Atomic insert: absorb duplicate-key errors instead of findOne→save (TOCTOU race)
+    try {
+      await this.followsRepository
+        .createQueryBuilder()
+        .insert()
+        .into(Follow)
+        .values({ followerId, followingId })
+        .execute();
+      return { isFollowing: true };
+    } catch (error) {
+      // Duplicate key → row already exists, so delete (unfollow)
+      const isDuplicate =
+        error instanceof QueryFailedError &&
+        ((error as any).code === 'ER_DUP_ENTRY' || (error as any).code === '23505');
+      if (!isDuplicate) throw error;
     }
 
-    const follow = this.followsRepository.create({ followerId, followingId });
-    await this.followsRepository.save(follow);
-    return { isFollowing: true };
+    await this.followsRepository
+      .createQueryBuilder()
+      .delete()
+      .from(Follow)
+      .where('followerId = :followerId AND followingId = :followingId', { followerId, followingId })
+      .execute();
+    return { isFollowing: false };
   }
 
   async getFollowerCount(userId: number): Promise<number> {

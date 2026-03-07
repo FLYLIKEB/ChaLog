@@ -105,13 +105,10 @@ export function UserProfile() {
 
     try {
       const result = await followsApi.toggle(userId) as { isFollowing: boolean };
+      // optimistic update already adjusted followerCount; only sync isFollowing from server
       setUser((prev) =>
         prev
-          ? {
-              ...prev,
-              isFollowing: result.isFollowing,
-              followerCount: (prev.followerCount ?? 0) + (result.isFollowing ? (prevIsFollowing ? 0 : 1) : (prevIsFollowing ? -1 : 0)),
-            }
+          ? { ...prev, isFollowing: result.isFollowing }
           : prev,
       );
     } catch (error) {

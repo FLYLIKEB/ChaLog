@@ -14,7 +14,8 @@ export class CreateFollowsTable1772900000000 implements MigrationInterface {
         INDEX \`IDX_follows_followerId\` (\`followerId\`),
         INDEX \`IDX_follows_followingId\` (\`followingId\`),
         FOREIGN KEY (\`followerId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE,
-        FOREIGN KEY (\`followingId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE
+        FOREIGN KEY (\`followingId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE,
+        CONSTRAINT \`chk_no_self_follow\` CHECK (\`followerId\` <> \`followingId\`)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
   }
