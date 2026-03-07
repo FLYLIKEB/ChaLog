@@ -12,13 +12,12 @@ import { toast } from 'sonner';
 export function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, loginWithKakao, loginWithGoogle, loginWithApple, isAuthenticated, hasCompletedOnboarding } = useAuth();
+  const { login, loginWithKakao, loginWithGoogle, isAuthenticated, hasCompletedOnboarding } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isKakaoLoading, setIsKakaoLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const processedCodeRef = useRef<string | null>(null);
 
   const handleKakaoCallback = useCallback(async (code: string) => {
@@ -146,59 +145,6 @@ export function Login() {
     googleLogin();
   };
 
-  const handleAppleLogin = async () => {
-    const appleServiceId = import.meta.env.VITE_APPLE_SERVICE_ID;
-    const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI || `${window.location.origin}/login`;
-
-    if (!appleServiceId) {
-      toast.error('Apple 로그인 설정이 완료되지 않았습니다.');
-      return;
-    }
-
-    try {
-      setIsAppleLoading(true);
-
-      if (!window.AppleID) {
-        await new Promise<void>((resolve, reject) => {
-          const existingScript = document.querySelector('script[src*="appleid"]');
-          if (existingScript) {
-            resolve();
-            return;
-          }
-          const script = document.createElement('script');
-          script.src = 'https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js';
-          script.async = true;
-          script.onload = () => resolve();
-          script.onerror = () => reject(new Error('Apple SDK 로드 실패'));
-          document.head.appendChild(script);
-        });
-      }
-
-      window.AppleID.auth.init({
-        clientId: appleServiceId,
-        scope: 'name email',
-        redirectURI: appleRedirectUri,
-        usePopup: true,
-      });
-
-      const result = await window.AppleID.auth.signIn();
-      const idToken = result.authorization.id_token;
-      const firstName = result.user?.name?.firstName || '';
-      const lastName = result.user?.name?.lastName || '';
-      const name = [firstName, lastName].filter(Boolean).join(' ') || undefined;
-
-      const onboardingCompleted = await loginWithApple(idToken, name);
-      if (onboardingCompleted === null) return;
-      navigate(onboardingCompleted === false ? '/onboarding' : '/');
-    } catch (error: any) {
-      if (error?.error !== 'popup_closed_by_user') {
-        toast.error(error instanceof Error ? error.message : '애플 로그인에 실패했습니다.');
-      }
-    } finally {
-      setIsAppleLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header showBack title="로그인" />
@@ -269,7 +215,7 @@ export function Login() {
           <Button
             type="button"
             onClick={handleKakaoLogin}
-            disabled={isLoading || isKakaoLoading || isGoogleLoading || isAppleLoading}
+            disabled={isLoading || isKakaoLoading || isGoogleLoading}
             className="w-full bg-[#FEE500] text-[#000000] hover:bg-[#FEE500]/90"
           >
             {isKakaoLoading ? (
@@ -295,7 +241,7 @@ export function Login() {
           <Button
             type="button"
             onClick={handleGoogleLogin}
-            disabled={isLoading || isKakaoLoading || isGoogleLoading || isAppleLoading}
+            disabled={isLoading || isKakaoLoading || isGoogleLoading}
             className="w-full bg-white text-[#3c4043] border border-[#dadce0] hover:bg-gray-50"
           >
             {isGoogleLoading ? (
@@ -312,27 +258,6 @@ export function Login() {
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                 </svg>
                 구글로 로그인
-              </>
-            )}
-          </Button>
-
-          <Button
-            type="button"
-            onClick={handleAppleLogin}
-            disabled={isLoading || isKakaoLoading || isGoogleLoading || isAppleLoading}
-            className="w-full bg-black text-white hover:bg-gray-900"
-          >
-            {isAppleLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                로그인 중...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.54 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701z"/>
-                </svg>
-                Apple로 로그인
               </>
             )}
           </Button>

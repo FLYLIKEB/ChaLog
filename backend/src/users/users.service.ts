@@ -283,68 +283,6 @@ export class UsersService {
     });
   }
 
-  async createOrUpdateAppleUser(
-    appleId: string,
-    email: string | null,
-    name: string,
-  ): Promise<User> {
-    const existingAuth = await this.authRepository.findOne({
-      where: { provider: AuthProvider.APPLE, providerId: appleId },
-      relations: ['user'],
-    });
-
-    if (existingAuth) {
-      const user = existingAuth.user;
-      // Apple은 이름을 최초 1회만 제공하므로, 이름이 기본값인 경우에만 업데이트
-      if (name && name !== '애플 사용자' && user.name !== name) {
-        user.name = name;
-        await this.usersRepository.save(user);
-      }
-      if (email) {
-        await this.addEmailAuthIfNotExists(user.id, email);
-      }
-      return user;
-    }
-
-    return await this.dataSource.transaction(async (manager) => {
-      const user = manager.create(User, { name });
-      const savedUser = await manager.save(User, user);
-
-      const onboardingPreference = manager.create(UserOnboardingPreference, {
-        userId: savedUser.id,
-        preferredTeaTypes: [],
-        preferredFlavorTags: [],
-        hasCompletedOnboarding: false,
-      });
-      await manager.save(UserOnboardingPreference, onboardingPreference);
-
-      const appleAuth = manager.create(UserAuthentication, {
-        userId: savedUser.id,
-        provider: AuthProvider.APPLE,
-        providerId: appleId,
-        credential: null,
-      });
-      await manager.save(UserAuthentication, appleAuth);
-
-      if (email) {
-        const existingEmailAuth = await manager.findOne(UserAuthentication, {
-          where: { provider: AuthProvider.EMAIL, providerId: email },
-        });
-        if (!existingEmailAuth) {
-          const emailAuth = manager.create(UserAuthentication, {
-            userId: savedUser.id,
-            provider: AuthProvider.EMAIL,
-            providerId: email,
-            credential: null,
-          });
-          await manager.save(UserAuthentication, emailAuth);
-        }
-      }
-
-      return savedUser;
-    });
-  }
-
   async getUserEmail(userId: number): Promise<string | null> {
     const auth = await this.authRepository.findOne({
       where: { userId, provider: AuthProvider.EMAIL },

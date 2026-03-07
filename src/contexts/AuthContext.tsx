@@ -16,20 +16,6 @@ declare global {
         logout?: () => void;
       };
     };
-    AppleID: {
-      auth: {
-        init: (config: {
-          clientId: string;
-          scope: string;
-          redirectURI: string;
-          usePopup: boolean;
-        }) => void;
-        signIn: () => Promise<{
-          authorization: { id_token: string; code: string };
-          user?: { name?: { firstName?: string; lastName?: string }; email?: string };
-        }>;
-      };
-    };
   }
 }
 
@@ -49,7 +35,6 @@ interface AuthContextType {
   register: (email: string, name: string, password: string) => Promise<boolean | null>;
   loginWithKakao: (code?: string) => Promise<boolean | null>;
   loginWithGoogle: (accessToken: string) => Promise<boolean | null>;
-  loginWithApple: (idToken: string, name?: string) => Promise<boolean | null>;
   logout: () => void;
   isAuthenticated: boolean;
   refreshOnboardingStatus: (userId: number) => Promise<boolean | null>;
@@ -731,22 +716,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshOnboardingStatus]);
 
-  const loginWithApple = useCallback(async (idToken: string, name?: string) => {
-    try {
-      const response = await authApi.loginWithApple({ idToken, name });
-      setToken(response.access_token);
-      setUser(response.user);
-      localStorage.setItem('access_token', response.access_token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
-      toast.success('애플 로그인되었습니다.');
-      return onboardingCompleted;
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '애플 로그인에 실패했습니다.');
-      throw error;
-    }
-  }, [refreshOnboardingStatus]);
-
   const logout = useCallback(() => {
     setToken(null);
     setUser(null);
@@ -784,12 +753,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       loginWithKakao,
       loginWithGoogle,
-      loginWithApple,
       logout,
       isAuthenticated,
       refreshOnboardingStatus,
     }),
-    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, loginWithGoogle, loginWithApple, logout, isAuthenticated, refreshOnboardingStatus]
+    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, loginWithGoogle, logout, isAuthenticated, refreshOnboardingStatus]
   );
 
   return (

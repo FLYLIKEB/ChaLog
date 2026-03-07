@@ -1,18 +1,14 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import axios from 'axios';
-import * as jwksRsa from 'jwks-rsa';
-import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -90,29 +86,6 @@ export class AuthService {
     }
   }
 
-  async loginWithApple(idToken: string, name?: string) {
-    try {
-      const appleUserInfo = await this.verifyAppleIdToken(idToken);
-
-      if (!appleUserInfo || !appleUserInfo.sub) {
-        throw new UnauthorizedException('애플 사용자 정보를 가져올 수 없습니다.');
-      }
-
-      const user = await this.usersService.createOrUpdateAppleUser(
-        appleUserInfo.sub,
-        appleUserInfo.email || null,
-        name || '애플 사용자',
-      );
-
-      return this.login(user);
-    } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw error;
-      }
-      throw new UnauthorizedException('애플 로그인에 실패했습니다.');
-    }
-  }
-
   private async getKakaoUserInfo(accessToken: string): Promise<{
     id: number;
     kakao_account?: {
@@ -156,45 +129,4 @@ export class AuthService {
     }
   }
 
-  private async verifyAppleIdToken(idToken: string): Promise<{
-    sub: string;
-    email?: string;
-  }> {
-    const client = jwksRsa({
-      jwksUri: 'https://appleid.apple.com/auth/keys',
-      cache: true,
-      cacheMaxEntries: 5,
-      cacheMaxAge: 600000,
-    });
-
-    const getKey = (header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) => {
-      client.getSigningKey(header.kid, (err, key) => {
-        if (err) {
-          callback(err);
-          return;
-        }
-        const signingKey = key.getPublicKey();
-        callback(null, signingKey);
-      });
-    };
-
-    return new Promise((resolve, reject) => {
-      jwt.verify(
-        idToken,
-        getKey,
-        {
-          algorithms: ['RS256'],
-          issuer: 'https://appleid.apple.com',
-          audience: this.configService.get<string>('APPLE_CLIENT_ID'),
-        },
-        (err, decoded) => {
-          if (err) {
-            reject(new UnauthorizedException('애플 토큰 검증에 실패했습니다.'));
-            return;
-          }
-          resolve(decoded as { sub: string; email?: string });
-        },
-      );
-    });
-  }
 }
