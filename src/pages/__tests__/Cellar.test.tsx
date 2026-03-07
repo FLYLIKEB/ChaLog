@@ -167,8 +167,12 @@ describe('Cellar 페이지', () => {
     renderCellar();
 
     await waitFor(() => {
-      expect(screen.getByText(/개봉일/)).toBeInTheDocument();
-      expect(screen.getByText(/2024.03.01/)).toBeInTheDocument();
+      // 카드 내 "개봉일: 2024.03.01" 문자열 확인 (p 태그)
+      expect(screen.getByText(/2024\.03\.01/)).toBeInTheDocument();
+      // 개봉일 레이블이 포함된 p 태그가 존재하는지 확인
+      const allTexts = screen.getAllByText(/개봉일/);
+      const cardLabel = allTexts.find((el) => el.tagName === 'P');
+      expect(cardLabel).toBeInTheDocument();
     });
   });
 
@@ -190,6 +194,123 @@ describe('Cellar 페이지', () => {
     await userEvent.click(addBtn);
 
     expect(mockNavigate).toHaveBeenCalledWith('/cellar/new');
+  });
+
+  // ── 필터 테스트 ──────────────────────────────────────────────────────────
+
+  it('아이템이 있으면 차 종류 필터 칩이 렌더링된다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '우롱차') as any }),
+      makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    await waitFor(() => {
+      expect(screen.getByRole('group', { name: '차 종류 필터' })).toBeInTheDocument();
+      expect(screen.getByText(/전체 2/)).toBeInTheDocument();
+      expect(screen.getByText(/우롱차 1/)).toBeInTheDocument();
+      expect(screen.getByText(/녹차 1/)).toBeInTheDocument();
+    });
+  });
+
+  it('종류 칩 클릭 시 해당 종류 아이템만 표시된다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '우롱차') as any }),
+      makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    const chip = await screen.findByText(/우롱차 1/);
+    await userEvent.click(chip);
+
+    await waitFor(() => {
+      expect(screen.getByText('동방미인')).toBeInTheDocument();
+      expect(screen.queryByText('보성 녹차')).not.toBeInTheDocument();
+    });
+  });
+
+  it('전체 칩 클릭 시 모든 아이템이 다시 표시된다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '우롱차') as any }),
+      makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    // 먼저 우롱차 필터 적용
+    const chip = await screen.findByText(/우롱차 1/);
+    await userEvent.click(chip);
+
+    // 전체 칩 클릭
+    const allChip = screen.getByText(/전체 2/);
+    await userEvent.click(allChip);
+
+    await waitFor(() => {
+      expect(screen.getByText('동방미인')).toBeInTheDocument();
+      expect(screen.getByText('보성 녹차')).toBeInTheDocument();
+    });
+  });
+
+  it('필터 결과가 없으면 "해당 종류의 차가 없습니다" 메시지를 표시한다', async () => {
+    // 녹차만 있는데 홍차 필터를 칩으로 선택하는 시나리오:
+    // 홍차 칩은 count=0이라 opacity-40이지만 클릭은 가능
+    const items = [makeItem({ id: 1, tea: makeTea(1, '보성 녹차', '녹차') as any })];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    const chip = await screen.findByText(/홍차 0/);
+    await userEvent.click(chip);
+
+    await waitFor(() => {
+      expect(screen.getByText('해당 종류의 차가 없습니다.')).toBeInTheDocument();
+    });
+  });
+
+  // ── 정렬 테스트 ──────────────────────────────────────────────────────────
+
+  it('정렬 드롭다운이 렌더링된다', async () => {
+    const items = [makeItem({ id: 1, tea: makeTea(1, '동방미인') as any })];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    const sortSelect = await screen.findByRole('combobox', { name: '정렬 기준' });
+    expect(sortSelect).toBeInTheDocument();
+  });
+
+  it('잔량 정렬 변경 시 quantity가 적은 아이템이 먼저 표시된다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '많은차') as any, quantity: 100 }),
+      makeItem({ id: 2, teaId: 2, tea: makeTea(2, '적은차') as any, quantity: 10 }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    // 정렬 드롭다운을 "잔량"으로 변경 (기본값 desc → 많은순)
+    const sortSelect = await screen.findByRole('combobox', { name: '정렬 기준' });
+    await userEvent.selectOptions(sortSelect, 'quantity');
+
+    // desc(많은순)일 때 첫 번째 카드가 "많은차"
+    await waitFor(() => {
+      const cards = screen.getAllByRole('heading', { level: 3 });
+      expect(cards[0]).toHaveTextContent('많은차');
+    });
+
+    // 방향 토글 버튼 클릭 → asc(적은순)
+    const dirBtn = screen.getByRole('button', { name: '내림차순' });
+    await userEvent.click(dirBtn);
+
+    await waitFor(() => {
+      const cards = screen.getAllByRole('heading', { level: 3 });
+      expect(cards[0]).toHaveTextContent('적은차');
+    });
   });
 
   it('로그인하지 않은 사용자는 로그인 페이지로 리다이렉트', () => {
