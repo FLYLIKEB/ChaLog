@@ -1,6 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --header-spacer: calc(4.25rem + env(safe-area-inset-top, 0px));
   --font-size: 16px;
   --background: #fafafa;
   --foreground: oklch(0.145 0 0);

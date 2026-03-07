@@ -239,7 +239,7 @@ export function Search() {
         title={showResults ? resultsTitle : '차 탐색'}
         showBack={showResults}
         onBack={showResults ? goBackToExplore : undefined}
-        showLogo={!showResults}
+        showLogo
         showProfile
       />
 

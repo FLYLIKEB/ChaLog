@@ -126,7 +126,7 @@ export function NewCellarItem() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBack title="찻장에 차 추가" showProfile />
+      <Header showBack title="찻장에 차 추가" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 pb-10">
         {/* 차 선택 */}
