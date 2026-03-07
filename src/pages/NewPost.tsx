@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { PostCategory, POST_CATEGORY_LABELS } from '../types';
@@ -6,6 +6,7 @@ import { postsApi, CreatePostRequest } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
@@ -54,8 +55,14 @@ export function NewPost() {
     }
   };
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header showBack title="새 게시글" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">

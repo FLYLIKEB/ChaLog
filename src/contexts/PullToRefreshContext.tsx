@@ -51,20 +51,20 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
             style={{
               minHeight: Math.max(pullDistance, isRefreshing ? 88 : 48),
               paddingTop: 'calc(var(--header-spacer) + 12px)',
-              paddingBottom: 12,
+              paddingBottom: 2,
             }}
           >
             {isRefreshing ? (
               <div className="relative flex flex-col items-center gap-4 py-2 min-w-[200px]">
-                {/* 톡톡 튀는 물방울들 */}
-                <div className="absolute inset-0 pointer-events-none overflow-visible">
-                  <span className="absolute left-8 top-2 w-2 h-2 rounded-full bg-primary/50 animate-droplet" />
-                  <span className="absolute right-8 top-4 w-2.5 h-2.5 rounded-full bg-emerald-400/60 animate-droplet-1" />
-                  <span className="absolute left-12 bottom-8 w-1.5 h-1.5 rounded-full bg-teal-400/60 animate-droplet-2" />
-                  <span className="absolute right-12 bottom-6 w-2 h-2 rounded-full bg-primary/40 animate-droplet-delay" />
-                  <span className="absolute left-1/2 -translate-x-1/2 top-0 w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-droplet-1" />
-                  <span className="absolute right-6 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-green-400/50 animate-droplet-2" />
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-primary/40 animate-droplet" />
+                {/* 찻잎 모양 - 도는 🌿 근처에 배치 */}
+                <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
+                  <span className="absolute left-1/2 top-1/2 w-2.5 h-4 shape-tea-leaf bg-primary/50 animate-droplet -translate-x-12 -translate-y-4 -rotate-12" />
+                  <span className="absolute left-1/2 top-1/2 w-3 h-5 shape-tea-leaf bg-primary/60 animate-droplet-1 translate-x-10 -translate-y-2 rotate-6" />
+                  <span className="absolute left-1/2 top-1/2 w-2 h-3.5 shape-tea-leaf bg-primary/45 animate-droplet-2 -translate-x-8 translate-y-6 -rotate-[8deg]" />
+                  <span className="absolute left-1/2 top-1/2 w-2.5 h-4 shape-tea-leaf bg-primary/40 animate-droplet-delay translate-x-10 translate-y-4 rotate-12" />
+                  <span className="absolute left-1/2 top-1/2 w-2.5 h-4 shape-tea-leaf bg-primary/55 animate-droplet-1 -translate-x-1/2 -translate-y-8 -rotate-6" />
+                  <span className="absolute left-1/2 top-1/2 w-3 h-4 shape-tea-leaf bg-primary/50 animate-droplet-2 translate-x-6 translate-y-0 rotate-12" />
+                  <span className="absolute left-1/2 top-1/2 w-2 h-3.5 shape-tea-leaf bg-primary/40 animate-droplet -translate-x-6 translate-y-0 rotate-[-10deg]" />
                 </div>
                 <span className="inline-block text-3xl animate-teacup-calm relative z-10">🌿</span>
                 <p className="text-sm text-center text-muted-foreground/90 relative z-10">
@@ -74,6 +74,9 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
                   <span>
                     {/^[이처럼의]/.test(refreshMessage.phrase) ? '' : ' '}
                     {refreshMessage.phrase}
+                    <span className="inline-block w-[4ch] overflow-hidden align-bottom">
+                      <span className="animate-ellipsis">....</span>
+                    </span>
                   </span>
                 </p>
               </div>

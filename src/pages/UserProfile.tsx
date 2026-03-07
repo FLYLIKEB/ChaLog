@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -23,6 +23,7 @@ import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 
@@ -44,58 +45,57 @@ export function UserProfile() {
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
 
-  useEffect(() => {
-    if (authLoading) {
+  const fetchData = useCallback(async () => {
+    if (isNaN(userId)) {
+      toast.error('유효하지 않은 사용자 ID입니다.');
+      setIsLoading(false);
       return;
     }
-
-    const fetchData = async () => {
-      if (isNaN(userId)) {
-        toast.error('유효하지 않은 사용자 ID입니다.');
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setOnboardingPreference(null);
-        const isPublicFilter = isOwnProfile ? undefined : true;
-        const [userData, notesData] = await Promise.all([
-          usersApi.getById(userId),
-          notesApi.getAll(userId, isPublicFilter),
-        ]);
-
-        setUser(userData as User);
-        const notesArray = Array.isArray(notesData) ? notesData : [];
-        setNotes(notesArray as Note[]);
-
-        if (isOwnProfile) {
-          try {
-            const pref = await usersApi.getOnboardingPreference(userId);
-            setOnboardingPreference(pref);
-          } catch (error) {
-            setOnboardingPreference(null);
-            if ((error as { statusCode?: number })?.statusCode !== 404) {
-              logger.warn('Failed to fetch onboarding preference:', error);
-            }
+    try {
+      setIsLoading(true);
+      setOnboardingPreference(null);
+      const isPublicFilter = isOwnProfile ? undefined : true;
+      const [userData, notesData] = await Promise.all([
+        usersApi.getById(userId),
+        notesApi.getAll(userId, isPublicFilter),
+      ]);
+      setUser(userData as User);
+      const notesArray = Array.isArray(notesData) ? notesData : [];
+      setNotes(notesArray as Note[]);
+      if (isOwnProfile) {
+        try {
+          const pref = await usersApi.getOnboardingPreference(userId);
+          setOnboardingPreference(pref);
+        } catch (error) {
+          setOnboardingPreference(null);
+          if ((error as { statusCode?: number })?.statusCode !== 404) {
+            logger.warn('Failed to fetch onboarding preference:', error);
           }
         }
-      } catch (error: unknown) {
-        logger.error('Failed to fetch user profile:', error);
-
-        const statusCode = (error as { statusCode?: number })?.statusCode;
-        if (statusCode === 404) {
-          toast.error('사용자를 찾을 수 없습니다.');
-        } else {
-          toast.error('사용자를 불러오는데 실패했습니다.');
-        }
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error: unknown) {
+      logger.error('Failed to fetch user profile:', error);
+      const statusCode = (error as { statusCode?: number })?.statusCode;
+      if (statusCode === 404) {
+        toast.error('사용자를 찾을 수 없습니다.');
+      } else {
+        toast.error('사용자를 불러오는데 실패했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, isOwnProfile]);
 
+  useEffect(() => {
+    if (authLoading) return;
     fetchData();
-  }, [userId, isOwnProfile, authLoading]);
+  }, [authLoading, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchData);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -189,7 +189,7 @@ export function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+      <div className="min-h-screen pb-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
@@ -197,7 +197,7 @@ export function UserProfile() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen pb-20">
         <Header showBack title="사용자 프로필" showProfile />
         <div className="p-4">
           <EmptyState
@@ -212,7 +212,7 @@ export function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       <Header
         showBack={!isOwnProfile}
         showProfile={isOwnProfile}

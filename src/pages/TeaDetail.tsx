@@ -13,6 +13,7 @@ import { Tea, Note, PopularTag } from '../types';
 import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 function StarRating({ value, max = 5 }: { value: number; max?: number }) {
   return (
@@ -97,6 +98,12 @@ export function TeaDetail() {
     fetchData();
   }, [fetchData]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchData);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData]);
+
   if (isLoading) {
     return (
       <DetailFallback title="차 상세">
@@ -126,7 +133,7 @@ export function TeaDetail() {
   const remainingNotes = publicNotes.filter((n) => !topReviewIds.has(n.id));
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen pb-6">
       <Header showBack title="차 상세" showProfile />
 
       <div className="p-4 space-y-6">

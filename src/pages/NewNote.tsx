@@ -17,6 +17,7 @@ import { teasApi, notesApi } from '../lib/api';
 import { Tea, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 
@@ -115,6 +116,12 @@ export function NewNote() {
     };
     fetchAxes();
   }, [selectedSchemaId]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
 
   useEffect(() => {
     if (preselectedTeaId) {
@@ -228,7 +235,7 @@ export function NewNote() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <Header showBack title="새 노트 작성" showProfile showLogo />
       
       <div className="p-4 pb-24 space-y-6">

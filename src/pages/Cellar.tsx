@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -8,6 +8,7 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import { cellarApi } from '../lib/api';
 import { CellarItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { CellarCardSkeleton } from '../components/CellarCardSkeleton';
@@ -131,32 +132,41 @@ export function Cellar() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [sortOpen, setSortOpen] = useState(false);
 
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [allItems, reminderItems] = await Promise.all([
+        cellarApi.getAll(),
+        cellarApi.getReminders(),
+      ]);
+      setItems(Array.isArray(allItems) ? allItems : []);
+      setReminders(Array.isArray(reminderItems) ? reminderItems : []);
+    } catch (error) {
+      logger.error('Failed to fetch cellar items:', error);
+      toast.error('찻장 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated || !user) {
       navigate('/login', { replace: true });
       return;
     }
-
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [allItems, reminderItems] = await Promise.all([
-          cellarApi.getAll(),
-          cellarApi.getReminders(),
-        ]);
-        setItems(Array.isArray(allItems) ? allItems : []);
-        setReminders(Array.isArray(reminderItems) ? reminderItems : []);
-      } catch (error) {
-        logger.error('Failed to fetch cellar items:', error);
-        toast.error('찻장 목록을 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
-  }, [isAuthenticated, user, authLoading, navigate]);
+  }, [isAuthenticated, user, authLoading, navigate, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      registerRefresh(fetchData);
+    } else {
+      registerRefresh(undefined);
+    }
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData, isAuthenticated, user]);
 
   // 차 종류별 아이템 수 집계
   const typeCounts = useMemo(() => {
@@ -223,7 +233,7 @@ export function Cellar() {
 
   if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+      <div className="min-h-screen pb-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
@@ -231,7 +241,7 @@ export function Cellar() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-32">
+      <div className="min-h-screen pb-32">
         <Header showProfile title="📦 내 찻장" showLogo />
         <div className="px-4 sm:px-6 py-4 space-y-4">
           <div className="flex gap-2 overflow-x-hidden py-3">
@@ -251,7 +261,7 @@ export function Cellar() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen pb-32">
       <Header showProfile title="📦 내 찻장" showLogo />
 
       <div className="space-y-0">

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { LogOut, Shield, FileText, Bell, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { usersApi } from '../lib/api';
 import { BottomNav } from '../components/BottomNav';
@@ -17,20 +18,29 @@ export function Settings() {
   const [isNotificationLoaded, setIsNotificationLoaded] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchNotificationSetting = useCallback(async () => {
     const userId = user?.id;
     if (!userId) return;
-    const controller = new AbortController();
-    usersApi.getNotificationSetting(userId).then((setting) => {
-      if (controller.signal.aborted) return;
+    try {
+      const setting = await usersApi.getNotificationSetting(userId);
       setIsNotificationEnabled(setting.isNotificationEnabled);
+    } catch {
+      // ignore
+    } finally {
       setIsNotificationLoaded(true);
-    }).catch(() => {
-      if (controller.signal.aborted) return;
-      setIsNotificationLoaded(true);
-    });
-    return () => controller.abort();
+    }
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetchNotificationSetting();
+  }, [user?.id, fetchNotificationSetting]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchNotificationSetting);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchNotificationSetting]);
 
   const handleNotificationToggle = async (checked: boolean) => {
     if (!user) return;
@@ -57,7 +67,7 @@ export function Settings() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen pb-20">
         <Header showBack title="설정" showProfile />
         <div className="p-4 sm:p-6">
           <Card className="p-6">
@@ -72,7 +82,7 @@ export function Settings() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       <Header showBack title="설정" showProfile />
 
       <div className="p-4 sm:p-6 space-y-4">

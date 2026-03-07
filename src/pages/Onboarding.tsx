@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { usersApi } from '../lib/api';
 import { ONBOARDING_FLAVOR_TAGS, ONBOARDING_TEA_TYPES } from '../constants';
 import { OnboardingTagSelector } from '../components/OnboardingTagSelector';
@@ -46,6 +47,12 @@ export function Onboarding() {
 
     fetchPreference();
   }, [authLoading, navigate, user]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
 
   const toggleTeaType = (tag: string) => {
     setSelectedTeaTypes((prev) =>
@@ -93,7 +100,7 @@ export function Onboarding() {
 
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <Header title="온보딩" showProfile />
         <div className="p-6 text-center text-sm text-gray-500">불러오는 중...</div>
       </div>
@@ -101,7 +108,7 @@ export function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe">
+    <div className="min-h-screen pb-safe">
       <Header title="온보딩" showProfile />
       <div className="px-4 pb-6 pt-4 sm:max-w-md sm:mx-auto">
         <div className="bg-white rounded-lg p-6 space-y-6">

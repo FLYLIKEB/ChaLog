@@ -17,6 +17,7 @@ import { teasApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { NAVIGATION_DELAY, TEA_TYPES, YEAR_OPTIONS, COMMON_ORIGINS } from '../constants';
 
@@ -83,6 +84,12 @@ export function NewTea() {
 
     return () => clearTimeout(timeoutId);
   }, [name]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,7 +176,7 @@ export function NewTea() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header showBack title="새 차 등록" showProfile />
       
       <div className="p-4 sm:max-w-md sm:mx-auto">

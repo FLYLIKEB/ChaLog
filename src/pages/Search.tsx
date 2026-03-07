@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Search as SearchIcon, Plus, Loader2, Store, ChevronRight, Filter } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -151,6 +152,22 @@ export function Search() {
     [],
   );
 
+  const hasFilterParams = urlSort || urlType || urlMinRating;
+  const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
+  const handleRefresh = useCallback(async () => {
+    if (showResults) {
+      await fetchWithFilters({ q: searchQuery || undefined, type: filterType || undefined, minRating: filterMinRating, sort: filterSort });
+    } else {
+      await fetchSections();
+    }
+  }, [showResults, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(handleRefresh);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, handleRefresh]);
+
   useEffect(() => {
     const trimmedQuery = searchQuery.trim();
     if (trimmedQuery.length >= 2) {
@@ -165,7 +182,6 @@ export function Search() {
     }
   }, [searchQuery, fetchAllTeas, handleSearch]);
 
-  const hasFilterParams = urlSort || urlType || urlMinRating;
   useEffect(() => {
     if (hasFilterParams) {
       setHasSearched(true);
@@ -200,8 +216,6 @@ export function Search() {
     });
   }, [filterSort, filterType, filterMinRating, searchQuery, setSearchParams, fetchWithFilters]);
 
-  const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
-
   const SECTION_TITLES: Record<string, string> = {
     popular: '🏆 인기 차 랭킹',
     new: '🆕 신규 차',
@@ -234,7 +248,7 @@ export function Search() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20 flex flex-col overflow-hidden">
+    <div className="min-h-screen pb-20 flex flex-col overflow-hidden">
       <Header
         title={showResults ? resultsTitle : '차 탐색'}
         showBack={showResults}

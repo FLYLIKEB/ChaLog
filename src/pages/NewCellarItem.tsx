@@ -8,6 +8,7 @@ import { Textarea } from '../components/ui/textarea';
 import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { logger } from '../lib/logger';
@@ -71,6 +72,12 @@ export function NewCellarItem() {
     fetchTeas();
   }, [isAuthenticated, authLoading, navigate, returnedTeaId]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   const filteredTeas = teaSearch.trim()
     ? teas.filter(
         (t) =>
@@ -118,14 +125,14 @@ export function NewCellarItem() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header showBack title="찻장에 차 추가" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 pb-10">

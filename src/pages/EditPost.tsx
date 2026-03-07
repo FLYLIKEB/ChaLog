@@ -6,6 +6,7 @@ import { postsApi } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
@@ -57,9 +58,15 @@ export function EditPost() {
     fetchPost();
   }, [postId, user, navigate]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   if (isLoadingPost) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -93,7 +100,7 @@ export function EditPost() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header showBack title="게시글 수정" showProfile />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">

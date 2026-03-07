@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { tagsApi } from '../lib/api';
 import { TagDetail as TagDetailType, TagNoteList, PopularTagItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 
@@ -62,6 +63,12 @@ export function TagDetail() {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(loadInitialData);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, loadInitialData]);
 
   const handleLoadMore = async () => {
     if (isLoadingMore || !hasMore || !decodedName) return;
@@ -119,7 +126,7 @@ export function TagDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <Header title={`#${decodedName}`} showProfile />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -134,7 +141,7 @@ export function TagDetail() {
   const total = noteList?.total ?? 0;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Header title="" showProfile />
 
       {/* 태그 헤더 */}

@@ -94,6 +94,13 @@
             "request": "launch",
             "command": "bash scripts/merge-main-into-current.sh",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📤 원격 .env 동기화 (sync-remote-env.sh)",
+            "request": "launch",
+            "command": "bash scripts/sync-remote-env.sh",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

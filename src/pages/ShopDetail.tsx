@@ -9,6 +9,7 @@ import { Tea } from '../types';
 import { Loader2, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 export function ShopDetail() {
   const { name } = useParams<{ name: string }>();
@@ -35,9 +36,15 @@ export function ShopDetail() {
     fetchBySeller();
   }, [fetchBySeller]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchBySeller);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchBySeller]);
+
   if (!name) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen pb-20">
         <Header title="샵 상세" showBack showProfile />
         <EmptyState
           type="search"
@@ -52,7 +59,7 @@ export function ShopDetail() {
   const displayName = name;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       <Header title="샵 상세" showBack showProfile />
 
       <div className="p-4 space-y-4">

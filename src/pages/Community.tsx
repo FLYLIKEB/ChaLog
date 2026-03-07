@@ -10,6 +10,7 @@ import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/EmptyState';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { cn } from '../components/ui/utils';
 import { toast } from 'sonner';
 
@@ -44,8 +45,14 @@ export function Community() {
     fetchPosts();
   }, [fetchPosts]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchPosts);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchPosts]);
+
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       <Header title="커뮤니티" showLogo showProfile />
 
       {/* 카테고리 탭 - 헤더 높이만큼 아래에서 고정 */}

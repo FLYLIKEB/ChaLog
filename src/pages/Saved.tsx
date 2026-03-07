@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -11,6 +11,7 @@ import { logger } from '../lib/logger';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 export function Saved() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -18,34 +19,39 @@ export function Saved() {
   const [bookmarkedNotes, setBookmarkedNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // 인증 로딩이 완료될 때까지 기다림
-    if (authLoading) {
-      return;
+  const fetchBookmarkedNotes = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      const notes = await notesApi.getAll(undefined, undefined, undefined, true);
+      const notesArray = Array.isArray(notes) ? notes : [];
+      setBookmarkedNotes(notesArray as Note[]);
+    } catch (error) {
+      logger.error('Failed to fetch bookmarked notes:', error);
+      toast.error('저장한 노트를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
     }
+  }, [user]);
 
-    // 로그인하지 않은 경우 로그인 페이지로 리다이렉트
+  useEffect(() => {
+    if (authLoading) return;
     if (!isAuthenticated || !user) {
       navigate('/login', { replace: true });
       return;
     }
-
-    const fetchBookmarkedNotes = async () => {
-      try {
-        setIsLoading(true);
-        const notes = await notesApi.getAll(undefined, undefined, undefined, true);
-        const notesArray = Array.isArray(notes) ? notes : [];
-        setBookmarkedNotes(notesArray as Note[]);
-      } catch (error) {
-        logger.error('Failed to fetch bookmarked notes:', error);
-        toast.error('저장한 노트를 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchBookmarkedNotes();
-  }, [isAuthenticated, user, authLoading, navigate]);
+  }, [isAuthenticated, user, authLoading, navigate, fetchBookmarkedNotes]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      registerRefresh(fetchBookmarkedNotes);
+    } else {
+      registerRefresh(undefined);
+    }
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchBookmarkedNotes, isAuthenticated, user]);
 
   // 북마크 해제 시 리스트에서 제거
   const handleBookmarkRemoved = (noteId: number) => {
@@ -55,7 +61,7 @@ export function Saved() {
   // 인증 로딩 중 또는 리다이렉트 중
   if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+      <div className="min-h-screen pb-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
@@ -63,14 +69,14 @@ export function Saved() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+      <div className="min-h-screen pb-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen pb-20">
       <Header showBack showProfile title="📌 저장함" />
       
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">

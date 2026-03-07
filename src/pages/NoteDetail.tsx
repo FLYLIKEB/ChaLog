@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -24,6 +24,7 @@ import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 export function NoteDetail() {
   const { id } = useParams();
@@ -44,55 +45,55 @@ export function NoteDetail() {
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  useEffect(() => {
-    // 삭제된 노트는 API 호출하지 않음
-    if (isDeleted) {
+  const fetchData = useCallback(async () => {
+    if (isNaN(noteId)) {
+      toast.error('유효하지 않은 노트 ID입니다.');
       return;
     }
-
-    const fetchData = async () => {
-      if (isNaN(noteId)) {
-        toast.error('유효하지 않은 노트 ID입니다.');
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const noteData = await notesApi.getById(noteId);
-        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
-        const normalizedNote = noteData as Note;
-        setNote(normalizedNote);
-        setIsLiked(normalizedNote.isLiked ?? false);
-        setLikeCount(normalizedNote.likeCount ?? 0);
-        setIsBookmarked(normalizedNote.isBookmarked ?? false);
-
-        // 차 정보 가져오기
-        if (normalizedNote.teaId) {
-          try {
-            const teaData = await teasApi.getById(normalizedNote.teaId);
-            setTea(teaData as Tea);
-          } catch (error) {
-            logger.error('Failed to fetch tea:', error);
-          }
+    try {
+      setIsLoading(true);
+      const noteData = await notesApi.getById(noteId);
+      const normalizedNote = noteData as Note;
+      setNote(normalizedNote);
+      setIsLiked(normalizedNote.isLiked ?? false);
+      setLikeCount(normalizedNote.likeCount ?? 0);
+      setIsBookmarked(normalizedNote.isBookmarked ?? false);
+      if (normalizedNote.teaId) {
+        try {
+          const teaData = await teasApi.getById(normalizedNote.teaId);
+          setTea(teaData as Tea);
+        } catch (error) {
+          logger.error('Failed to fetch tea:', error);
         }
-      } catch (error: any) {
-        logger.error('Failed to fetch note:', error);
-        
-        // 403 에러인 경우 권한 없음 메시지 표시
-        if (error?.statusCode === 403) {
-          toast.error('이 노트를 볼 권한이 없습니다.');
-        } else if (error?.statusCode === 404) {
-          toast.error('노트를 찾을 수 없습니다.');
-        } else {
-          toast.error('노트를 불러오는데 실패했습니다.');
-        }
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error: any) {
+      logger.error('Failed to fetch note:', error);
+      if (error?.statusCode === 403) {
+        toast.error('이 노트를 볼 권한이 없습니다.');
+      } else if (error?.statusCode === 404) {
+        toast.error('노트를 찾을 수 없습니다.');
+      } else {
+        toast.error('노트를 불러오는데 실패했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [noteId]);
 
+  useEffect(() => {
+    if (isDeleted) return;
     fetchData();
-  }, [noteId, isDeleted]);
+  }, [noteId, isDeleted, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    if (!isDeleted) {
+      registerRefresh(fetchData);
+    } else {
+      registerRefresh(undefined);
+    }
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData, isDeleted]);
 
   if (isLoading) {
     return (
@@ -206,7 +207,7 @@ export function NoteDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen pb-6">
       <Header showBack title="노트 상세" showProfile />
       
       <div className="p-4 space-y-6">

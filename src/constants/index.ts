@@ -15,6 +15,10 @@ export const RATING_FIELDS_COUNT = 5;
 export const NAVIGATION_DELAY = 500; // 밀리초
 export const SEARCH_DEBOUNCE_DELAY = 600; // 밀리초
 
+/** 앱 전체 페이지 배경 그라데이션 (라이트: 흰색→배경, 다크: 단색) */
+export const PAGE_BG_GRADIENT =
+  'bg-gradient-to-b from-white to-background dark:from-background dark:to-background';
+
 // 리뷰 관련 상수
 export const MIN_REVIEWS_FOR_TAGS = 3;
 
