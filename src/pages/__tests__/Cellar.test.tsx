@@ -67,7 +67,6 @@ const makeTea = (id: number, name: string, type = '녹차') => ({
 
 const makeItem = (overrides: Partial<CellarItem> = {}): CellarItem => ({
   id: 1,
-  userId: 1,
   teaId: 1,
   tea: makeTea(1, '동방미인') as any,
   quantity: 50,
@@ -75,8 +74,8 @@ const makeItem = (overrides: Partial<CellarItem> = {}): CellarItem => ({
   openedAt: null,
   remindAt: null,
   memo: null,
-  createdAt: new Date('2024-01-01T00:00:00.000Z'),
-  updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
   ...overrides,
 });
 
