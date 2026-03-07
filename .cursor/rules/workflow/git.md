@@ -15,6 +15,16 @@
   - Do not create temporary markdown files for issue preparation - create issues directly
   - If temporary markdown files are created, delete them immediately after creating the issue
 
+## 신규 기능 브랜치 워크플로우
+
+이슈 기반 신규 기능 구현 시 반드시 다음 순서를 따른다:
+
+1. 신규 브랜치 생성: `git checkout -b feature/issue-{번호}-{설명}`
+2. 기능 구현 (plan 확인 후 실행)
+3. 빌드/린트/타입체크 통과 확인: `npm run build`, `tsc --noEmit`
+4. 커밋 후 원격 브랜치 push: `git push -u origin HEAD`
+5. `gh pr create`로 PR 생성 — 반드시 `Closes #{번호}` 포함
+
 ## DB Migration Commits
 
 - When committing entity file changes (`*.entity.ts`), always include Migration files (`migrations/*.ts`)

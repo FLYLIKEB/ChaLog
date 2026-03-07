@@ -1153,6 +1153,23 @@ export const postsApi = {
     apiClient.post<{ id: number; message: string }>(`/posts/${id}/report`, { reason }),
 };
 
+export const tagsApi = {
+  getPopularTags: (limit = 20) =>
+    apiClient.get<import('../types').PopularTagItem[]>(`/tags/popular?limit=${limit}`),
+  getRecentTags: (limit = 20) =>
+    apiClient.get<import('../types').PopularTagItem[]>(`/tags/recent?limit=${limit}`),
+  getFollowedTags: () =>
+    apiClient.get<import('../types').PopularTagItem[]>('/tags/followed'),
+  getTagDetail: (name: string) =>
+    apiClient.get<import('../types').TagDetail>(`/tags/${encodeURIComponent(name)}`),
+  getTagNotes: (name: string, page = 1, limit = 20) =>
+    apiClient.get<import('../types').TagNoteList>(`/tags/${encodeURIComponent(name)}/notes?page=${page}&limit=${limit}`),
+  followTag: (name: string) =>
+    apiClient.post<void>(`/tags/${encodeURIComponent(name)}/follow`),
+  unfollowTag: (name: string) =>
+    apiClient.delete(`/tags/${encodeURIComponent(name)}/follow`),
+};
+
 export const commentsApi = {
   getByPost: (postId: number) =>
     apiClient.get<import('../types').Comment[]>(`/posts/${postId}/comments`),

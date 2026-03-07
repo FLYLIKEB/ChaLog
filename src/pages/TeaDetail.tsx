@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Star, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -177,7 +177,9 @@ export function TeaDetail() {
               <p className="text-xs text-gray-500 mb-2">특징 요약</p>
               <div className="flex flex-wrap gap-2">
                 {topTags.map((tag) => (
-                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                  <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-muted/80 transition-colors">{tag}</Badge>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -207,13 +209,14 @@ export function TeaDetail() {
                       ? 'text-sm font-medium'
                       : 'text-xs';
                 return (
-                  <span
+                  <Link
                     key={tag.name}
-                    className={`inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 ${size}`}
+                    to={`/tag/${encodeURIComponent(tag.name)}`}
+                    className={`inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors ${size}`}
                   >
                     {tag.name}
                     <span className="ml-1 text-emerald-400 text-xs">×{tag.count}</span>
-                  </span>
+                  </Link>
                 );
               })}
             </div>
