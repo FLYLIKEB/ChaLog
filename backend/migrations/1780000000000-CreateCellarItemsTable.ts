@@ -3,7 +3,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 export class CreateCellarItemsTable1780000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE \`cellar_items\` (
+      CREATE TABLE IF NOT EXISTS \`cellar_items\` (
         \`id\` int NOT NULL AUTO_INCREMENT,
         \`userId\` int NOT NULL,
         \`teaId\` int NOT NULL,

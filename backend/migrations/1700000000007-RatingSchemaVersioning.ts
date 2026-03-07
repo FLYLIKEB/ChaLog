@@ -66,9 +66,9 @@ export class RatingSchemaVersioning1700000000007 implements MigrationInterface {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
 
-    // 4. v1 스키마 생성 (STANDARD v1.0.0)
+    // 4. v1 스키마 생성 (STANDARD v1.0.0) - 이미 있으면 스킵
     await queryRunner.query(`
-      INSERT INTO \`rating_schema\` (\`code\`, \`version\`, \`nameKo\`, \`nameEn\`, \`descriptionKo\`, \`descriptionEn\`, \`overallMinValue\`, \`overallMaxValue\`, \`overallStep\`, \`isActive\`)
+      INSERT IGNORE INTO \`rating_schema\` (\`code\`, \`version\`, \`nameKo\`, \`nameEn\`, \`descriptionKo\`, \`descriptionEn\`, \`overallMinValue\`, \`overallMaxValue\`, \`overallStep\`, \`isActive\`)
       VALUES ('STANDARD', '1.0.0', '차록 표준 평가', 'ChaLog Standard Rating', '차록의 기본 평가 축 세트', 'ChaLog default rating axis set', 1, 5, 0.5, TRUE)
     `);
 
@@ -90,13 +90,18 @@ export class RatingSchemaVersioning1700000000007 implements MigrationInterface {
       `);
     }
 
-    // 6. notes 테이블에 새 컬럼 추가
-    await queryRunner.query(`
-      ALTER TABLE \`notes\`
-      ADD COLUMN \`schemaId\` INT NULL,
-      ADD COLUMN \`overallRating\` DECIMAL(3,1) NULL,
-      ADD COLUMN \`isRatingIncluded\` BOOLEAN NOT NULL DEFAULT TRUE
-    `);
+    // 6. notes 테이블에 새 컬럼 추가 (없을 때만)
+    const notesColumns = await queryRunner.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notes' AND COLUMN_NAME IN ('schemaId', 'overallRating', 'isRatingIncluded')`,
+    );
+    const existingCols = new Set((notesColumns as { COLUMN_NAME: string }[]).map((r) => r.COLUMN_NAME));
+    const colsToAdd: string[] = [];
+    if (!existingCols.has('schemaId')) colsToAdd.push('ADD COLUMN `schemaId` INT NULL');
+    if (!existingCols.has('overallRating')) colsToAdd.push('ADD COLUMN `overallRating` DECIMAL(3,1) NULL');
+    if (!existingCols.has('isRatingIncluded')) colsToAdd.push('ADD COLUMN `isRatingIncluded` BOOLEAN NOT NULL DEFAULT TRUE');
+    if (colsToAdd.length > 0) {
+      await queryRunner.query(`ALTER TABLE \`notes\` ${colsToAdd.join(', ')}`);
+    }
 
     // 7. 기존 notes 데이터 마이그레이션
     // 7-1. 모든 기존 노트에 schemaId 설정
@@ -104,15 +109,23 @@ export class RatingSchemaVersioning1700000000007 implements MigrationInterface {
       UPDATE \`notes\` SET \`schemaId\` = ${schemaId} WHERE \`schemaId\` IS NULL
     `);
 
-    // 7-2. overallRating을 기존 rating 값으로 설정
-    await queryRunner.query(`
-      UPDATE \`notes\` SET \`overallRating\` = \`rating\` WHERE \`overallRating\` IS NULL
-    `);
+    // 7-2. overallRating을 기존 rating 값으로 설정 (rating 컬럼이 있을 때만)
+    const hasRatingCol = (await queryRunner.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notes' AND COLUMN_NAME = 'rating' LIMIT 1`,
+    )) as unknown[];
+    if (hasRatingCol.length > 0) {
+      await queryRunner.query(`
+        UPDATE \`notes\` SET \`overallRating\` = \`rating\` WHERE \`overallRating\` IS NULL
+      `);
+    }
 
-    // 7-3. 기존 ratings JSON 데이터를 note_axis_value로 마이그레이션
-    const notes = await queryRunner.query(`
-      SELECT \`id\`, \`ratings\` FROM \`notes\` WHERE \`ratings\` IS NOT NULL
-    `);
+    // 7-3. 기존 ratings JSON 데이터를 note_axis_value로 마이그레이션 (ratings 컬럼이 있을 때만)
+    const hasRatingsCol = (await queryRunner.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notes' AND COLUMN_NAME = 'ratings' LIMIT 1`,
+    )) as unknown[];
+    const notes = hasRatingsCol.length > 0
+      ? await queryRunner.query(`SELECT \`id\`, \`ratings\` FROM \`notes\` WHERE \`ratings\` IS NOT NULL`)
+      : [];
 
     // 축 코드와 축 ID 매핑 생성
     const axisMap: Record<string, number> = {};
@@ -160,34 +173,43 @@ export class RatingSchemaVersioning1700000000007 implements MigrationInterface {
       }
     }
 
-    // 8. notes 테이블의 schemaId를 NOT NULL로 변경
-    await queryRunner.query(`
-      ALTER TABLE \`notes\`
-      MODIFY COLUMN \`schemaId\` INT NOT NULL
-    `);
+    // 8. notes 테이블의 schemaId를 NOT NULL로 변경 (아직 NULL 허용일 때만)
+    const schemaIdCol = (await queryRunner.query(
+      `SELECT IS_NULLABLE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notes' AND COLUMN_NAME = 'schemaId' LIMIT 1`,
+    )) as { IS_NULLABLE: string }[];
+    if (schemaIdCol.length > 0 && schemaIdCol[0].IS_NULLABLE === 'YES') {
+      await queryRunner.query(`
+        ALTER TABLE \`notes\` MODIFY COLUMN \`schemaId\` INT NOT NULL
+      `);
+    }
 
-    // 9. 외래키 추가
-    await queryRunner.query(`
-      ALTER TABLE \`notes\`
-      ADD CONSTRAINT \`FK_notes_rating_schema\` FOREIGN KEY (\`schemaId\`) REFERENCES \`rating_schema\`(\`id\`) ON DELETE RESTRICT
-    `);
+    // 9. 외래키 추가 (없을 때만)
+    const fkExists = (await queryRunner.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notes' AND CONSTRAINT_NAME = 'FK_notes_rating_schema' LIMIT 1`,
+    )) as unknown[];
+    if (fkExists.length === 0) {
+      await queryRunner.query(`
+        ALTER TABLE \`notes\` ADD CONSTRAINT \`FK_notes_rating_schema\` FOREIGN KEY (\`schemaId\`) REFERENCES \`rating_schema\`(\`id\`) ON DELETE RESTRICT
+      `);
+    }
 
-    // 10. 인덱스 추가
-    await queryRunner.query(`
-      CREATE INDEX \`IDX_notes_schemaId\` ON \`notes\`(\`schemaId\`)
-    `);
+    // 10. 인덱스 추가 (없을 때만)
+    const idxExists = (await queryRunner.query(
+      `SELECT 1 FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'notes' AND INDEX_NAME = 'IDX_notes_schemaId' LIMIT 1`,
+    )) as unknown[];
+    if (idxExists.length === 0) {
+      await queryRunner.query(`CREATE INDEX \`IDX_notes_schemaId\` ON \`notes\`(\`schemaId\`)`);
+    }
 
-    // 11. 기존 ratings 컬럼 제거 (데이터 마이그레이션 완료 후)
-    await queryRunner.query(`
-      ALTER TABLE \`notes\`
-      DROP COLUMN \`ratings\`
-    `);
+    // 11. 기존 ratings 컬럼 제거 (있을 때만)
+    if (hasRatingsCol.length > 0) {
+      await queryRunner.query(`ALTER TABLE \`notes\` DROP COLUMN \`ratings\``);
+    }
 
-    // 12. 기존 rating 컬럼 제거 (overallRating으로 대체됨)
-    await queryRunner.query(`
-      ALTER TABLE \`notes\`
-      DROP COLUMN \`rating\`
-    `);
+    // 12. 기존 rating 컬럼 제거 (있을 때만)
+    if (hasRatingCol.length > 0) {
+      await queryRunner.query(`ALTER TABLE \`notes\` DROP COLUMN \`rating\``);
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

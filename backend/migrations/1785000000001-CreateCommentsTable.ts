@@ -5,7 +5,7 @@ export class CreateCommentsTable1785000000001 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE \`comments\` (
+      CREATE TABLE IF NOT EXISTS \`comments\` (
         \`id\` int NOT NULL AUTO_INCREMENT,
         \`postId\` int NOT NULL,
         \`userId\` int NOT NULL,

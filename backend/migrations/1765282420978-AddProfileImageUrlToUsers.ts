@@ -31,6 +31,15 @@ export class AddProfileImageUrlToUsers1765282420978 implements MigrationInterfac
                 await queryRunner.query(`ALTER TABLE \`${table}\` ADD \`${column}\` ${definition}`);
             }
         };
+        const createIndexIfNotExists = async (table: string, index: string, columns: string, unique = false) => {
+            const rows: Array<Record<string, number>> = await queryRunner.query(
+                `SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '${table}' AND INDEX_NAME = '${index}' LIMIT 1`
+            );
+            if (rows.length === 0) {
+                const uniqueStr = unique ? 'UNIQUE ' : '';
+                await queryRunner.query(`CREATE ${uniqueStr}INDEX \`${index}\` ON \`${table}\` (${columns})`);
+            }
+        };
 
         await dropForeignKeysByColumn('user_authentications', 'userId');
         await dropForeignKeysByColumn('note_tags', 'noteId');
@@ -108,21 +117,21 @@ export class AddProfileImageUrlToUsers1765282420978 implements MigrationInterfac
         await queryRunner.query(`ALTER TABLE \`teas\` CHANGE \`updatedAt\` \`updatedAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE \`note_likes\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
         await queryRunner.query(`ALTER TABLE \`note_bookmarks\` CHANGE \`createdAt\` \`createdAt\` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
-        await queryRunner.query(`CREATE INDEX \`IDX_39490b22fdf310ad4d45593c41\` ON \`user_authentications\` (\`userId\`)`);
-        await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_b453cba486c3bdf31046376d9c\` ON \`user_authentications\` (\`provider\`, \`providerId\`)`);
-        await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_d90243459a697eadb8ad56e909\` ON \`tags\` (\`name\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_a024216ede3dd087f4900ac8c2\` ON \`note_tags\` (\`tagId\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_5d7069f9ad31c7ff1a85311b64\` ON \`note_tags\` (\`noteId\`)`);
-        await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_1c5b938665506d2382bddbbe47\` ON \`note_tags\` (\`noteId\`, \`tagId\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_0069aefbf7c4bf8075394435f4\` ON \`note_axis_value\` (\`axisId\`, \`valueNumeric\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_94a04d9f1657f29efbbbd65f88\` ON \`note_axis_value\` (\`axisId\`)`);
-        await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_11fc77a23a61107ac66b280174\` ON \`note_axis_value\` (\`noteId\`, \`axisId\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_ebb05710d62b2bff1c7b7370bc\` ON \`note_likes\` (\`userId\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_96b8de926816a87a054a0f089f\` ON \`note_likes\` (\`noteId\`)`);
-        await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_b9fd6ca5e42e4911ad6b391d2d\` ON \`note_likes\` (\`noteId\`, \`userId\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_4301907fc8edc9e178f189d2c1\` ON \`note_bookmarks\` (\`userId\`)`);
-        await queryRunner.query(`CREATE INDEX \`IDX_fc02dc079c808a0da4989ff9d2\` ON \`note_bookmarks\` (\`noteId\`)`);
-        await queryRunner.query(`CREATE UNIQUE INDEX \`IDX_4dd9bed29552862e706735f120\` ON \`note_bookmarks\` (\`noteId\`, \`userId\`)`);
+        await createIndexIfNotExists('user_authentications', 'IDX_39490b22fdf310ad4d45593c41', '`userId`');
+        await createIndexIfNotExists('user_authentications', 'IDX_b453cba486c3bdf31046376d9c', '`provider`, `providerId`', true);
+        await createIndexIfNotExists('tags', 'IDX_d90243459a697eadb8ad56e909', '`name`', true);
+        await createIndexIfNotExists('note_tags', 'IDX_a024216ede3dd087f4900ac8c2', '`tagId`');
+        await createIndexIfNotExists('note_tags', 'IDX_5d7069f9ad31c7ff1a85311b64', '`noteId`');
+        await createIndexIfNotExists('note_tags', 'IDX_1c5b938665506d2382bddbbe47', '`noteId`, `tagId`', true);
+        await createIndexIfNotExists('note_axis_value', 'IDX_0069aefbf7c4bf8075394435f4', '`axisId`, `valueNumeric`');
+        await createIndexIfNotExists('note_axis_value', 'IDX_94a04d9f1657f29efbbbd65f88', '`axisId`');
+        await createIndexIfNotExists('note_axis_value', 'IDX_11fc77a23a61107ac66b280174', '`noteId`, `axisId`', true);
+        await createIndexIfNotExists('note_likes', 'IDX_ebb05710d62b2bff1c7b7370bc', '`userId`');
+        await createIndexIfNotExists('note_likes', 'IDX_96b8de926816a87a054a0f089f', '`noteId`');
+        await createIndexIfNotExists('note_likes', 'IDX_b9fd6ca5e42e4911ad6b391d2d', '`noteId`, `userId`', true);
+        await createIndexIfNotExists('note_bookmarks', 'IDX_4301907fc8edc9e178f189d2c1', '`userId`');
+        await createIndexIfNotExists('note_bookmarks', 'IDX_fc02dc079c808a0da4989ff9d2', '`noteId`');
+        await createIndexIfNotExists('note_bookmarks', 'IDX_4dd9bed29552862e706735f120', '`noteId`, `userId`', true);
         await queryRunner.query(`ALTER TABLE \`user_authentications\` ADD CONSTRAINT \`FK_39490b22fdf310ad4d45593c410\` FOREIGN KEY (\`userId\`) REFERENCES \`users\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`note_tags\` ADD CONSTRAINT \`FK_5d7069f9ad31c7ff1a85311b64b\` FOREIGN KEY (\`noteId\`) REFERENCES \`notes\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE \`note_tags\` ADD CONSTRAINT \`FK_a024216ede3dd087f4900ac8c2f\` FOREIGN KEY (\`tagId\`) REFERENCES \`tags\`(\`id\`) ON DELETE CASCADE ON UPDATE NO ACTION`);
