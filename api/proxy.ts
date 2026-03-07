@@ -2,6 +2,21 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://3.39.48.139:3000';
 const LOG_PROXY_REQUESTS =
   (process.env.LOG_PROXY_REQUESTS ?? 'true').toLowerCase() !== 'false';
 
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
+async function readRawBody(req: any): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
 export default async function handler(req: any, res: any) {
   // CORS 헤더 먼저 설정
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -130,9 +145,11 @@ export default async function handler(req: any, res: any) {
     }
 
     // body 처리
-    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
-      fetchOptions.body =
-        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const rawBody = await readRawBody(req);
+      if (rawBody.length > 0) {
+        fetchOptions.body = rawBody;
+      }
     }
 
     // 백엔드로 요청 전송
