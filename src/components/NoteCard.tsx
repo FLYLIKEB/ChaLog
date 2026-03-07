@@ -2,7 +2,7 @@ import React, { type FC, useState, memo } from 'react';
 import { Star, Lock, Heart, Bookmark, Loader2 } from 'lucide-react';
 import teaCupSvg from '../assets/tea-cup.svg';
 import { Note } from '../types';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -261,14 +261,12 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           {note.tags && note.tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mb-0">
               {note.tags.slice(0, 5).map((tag, index) => (
-                <Link
+                <span
                   key={index}
-                  to={`/tag/${encodeURIComponent(tag)}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-xs px-2.5 py-1 bg-muted text-foreground rounded-full font-medium hover:bg-muted/80 transition-colors"
+                  className="text-xs px-2.5 py-1 bg-muted text-foreground rounded-full font-medium"
                 >
                   {tag}
-                </Link>
+                </span>
               ))}
               {note.tags.length > 5 && (
                 <span className="text-xs px-2.5 py-1 text-muted-foreground font-medium">

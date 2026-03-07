@@ -23,7 +23,6 @@ import { EditPost } from './pages/EditPost';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
-import { TagDetail } from './pages/TagDetail';
 import { FloatingActionButton } from './components/FloatingActionButton';
 
 type FloatingActionRouteConfig = {
@@ -127,7 +126,6 @@ export default function App() {
               <Route path="/community/new" element={<NewPost />} />
               <Route path="/community/:id" element={<PostDetail />} />
               <Route path="/community/:id/edit" element={<EditPost />} />
-              <Route path="/tag/:name" element={<TagDetail />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
