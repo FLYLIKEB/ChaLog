@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseGuards, BadRequestException, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TeasService } from './teas.service';
 import { CreateTeaDto } from './dto/create-tea.dto';
@@ -28,5 +28,32 @@ export class TeasController {
       throw new BadRequestException('Invalid id');
     }
     return this.teasService.findOne(parsedId);
+  }
+
+  @Get(':id/popular-tags')
+  getPopularTags(@Param('id') id: string) {
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.teasService.getPopularTags(parsedId);
+  }
+
+  @Get(':id/top-reviews')
+  getTopReviews(@Param('id') id: string) {
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.teasService.getTopReviews(parsedId);
+  }
+
+  @Get(':id/similar')
+  getSimilarTeas(@Param('id') id: string) {
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.teasService.getSimilarTeas(parsedId);
   }
 }
