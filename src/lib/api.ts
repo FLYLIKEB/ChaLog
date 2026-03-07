@@ -1,5 +1,14 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User, UserOnboardingPreference, CellarItem } from '../types';
+import {
+  Tea,
+  User,
+  UserOnboardingPreference,
+  CellarItem,
+  TeaFilterParams,
+  Seller,
+  PopularTag,
+  Note,
+} from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -1053,12 +1062,31 @@ export const teasApi = {
     const endpoint = query ? `/teas?q=${encodeURIComponent(query)}` : '/teas';
     return apiClient.get<Tea[]>(endpoint);
   },
+  getWithFilters: (params: TeaFilterParams) => {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.type) searchParams.set('type', params.type);
+    if (params.minRating != null) searchParams.set('minRating', String(params.minRating));
+    if (params.sort) searchParams.set('sort', params.sort);
+    const query = searchParams.toString();
+    return apiClient.get<Tea[]>(`/teas${query ? `?${query}` : ''}`);
+  },
+  getPopularRankings: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/rankings/popular?limit=${limit}`),
+  getNewRankings: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/rankings/new?limit=${limit}`),
+  getSellers: () =>
+    apiClient.get<{ sellers: Seller[] }>('/teas/sellers'),
+  getCuration: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/curation?limit=${limit}`),
+  getBySeller: (name: string) =>
+    apiClient.get<Tea[]>(`/teas/by-seller/${encodeURIComponent(name)}`),
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
   getPopularTags: (id: number) =>
-    apiClient.get<{ tags: import('../types').PopularTag[] }>(`/teas/${id}/popular-tags`),
+    apiClient.get<{ tags: PopularTag[] }>(`/teas/${id}/popular-tags`),
   getTopReviews: (id: number) =>
-    apiClient.get<import('../types').Note[]>(`/teas/${id}/top-reviews`),
+    apiClient.get<Note[]>(`/teas/${id}/top-reviews`),
   getSimilarTeas: (id: number) =>
     apiClient.get<Tea[]>(`/teas/${id}/similar`),
 };

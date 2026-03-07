@@ -67,7 +67,7 @@ export class CellarController {
     const userId = this.parseUserId(req);
     const itemId = this.parseId(id);
     await this.cellarService.remove(userId, itemId);
-    return { message: '셀러 아이템이 삭제되었습니다.' };
+    return { message: '찻장 아이템이 삭제되었습니다.' };
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

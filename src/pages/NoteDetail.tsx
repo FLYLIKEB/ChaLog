@@ -233,7 +233,7 @@ export function NoteDetail() {
             <div className="flex items-center gap-3">
               {note.overallRating !== null && (
                 <div className="flex items-center gap-2">
-                  <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+                  <Star className="w-6 h-6 fill-rating text-rating" />
                   <span className="text-2xl text-primary">{Number(note.overallRating).toFixed(1)}</span>
                 </div>
               )}

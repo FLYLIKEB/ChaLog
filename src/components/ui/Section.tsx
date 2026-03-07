@@ -3,6 +3,10 @@ import { cn } from "./utils";
 
 interface SectionProps extends React.ComponentProps<"section"> {
   title?: string;
+  /** 제목 아래에 표시할 설명 (작은 글씨) */
+  description?: string;
+  /** 헤더 오른쪽에 표시할 액션 (예: 더보기 버튼) */
+  headerAction?: React.ReactNode;
   spacing?: "sm" | "md" | "lg";
 }
 
@@ -12,11 +16,19 @@ const spacingClasses = {
   lg: "space-y-6",
 };
 
-export function Section({ title, spacing = "md", className, children, ...props }: SectionProps) {
+export function Section({ title, description, headerAction, spacing = "md", className, children, ...props }: SectionProps) {
   return (
     <section className={cn(spacingClasses[spacing], className)} {...props}>
-      {title && (
-        <h2 className="text-xl font-bold text-primary mb-4">{title}</h2>
+      {(title || headerAction) && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between gap-3">
+            {title && <h2 className="text-xl font-bold text-primary">{title}</h2>}
+            {headerAction}
+          </div>
+          {description && (
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          )}
+        </div>
       )}
       {children}
     </section>

@@ -9,10 +9,12 @@ const POLL_INTERVAL_MS = 30_000;
 interface HeaderProps {
   title?: string;
   showBack?: boolean;
+  /** 커스텀 뒤로가기 동작 (미제공 시 navigate(-1)) */
+  onBack?: () => void;
   showProfile?: boolean;
 }
 
-export function Header({ title, showBack, showProfile }: HeaderProps) {
+export function Header({ title, showBack, onBack, showProfile }: HeaderProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
@@ -50,7 +52,7 @@ export function Header({ title, showBack, showProfile }: HeaderProps) {
       <div className="flex items-center gap-3">
         {showBack && (
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => (onBack ? onBack() : navigate(-1))}
             className="min-h-[44px] min-w-[44px] p-2 hover:bg-accent rounded-full transition-colors flex items-center justify-center"
           >
             <ChevronLeft className="w-5 h-5" />

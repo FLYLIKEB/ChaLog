@@ -14,7 +14,7 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
@@ -200,7 +200,11 @@ export function UserProfile() {
       <div className="min-h-screen bg-background pb-20">
         <Header showBack title="사용자 프로필" />
         <div className="p-4">
-          <EmptyState type="notes" message="사용자를 찾을 수 없습니다." />
+          <EmptyState
+            type="notes"
+            message="사용자를 찾을 수 없어요."
+            action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+          />
         </div>
         <BottomNav />
       </div>
@@ -388,7 +392,23 @@ export function UserProfile() {
         )}
 
         {/* 노트 목록 섹션 */}
-        <Section spacing="lg">
+        <Section
+          title="노트"
+          spacing="lg"
+          headerAction={
+            isOwnProfile ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/saved')}
+                className="text-muted-foreground hover:text-foreground gap-1.5"
+              >
+                <Bookmark className="w-4 h-4" />
+                저장함
+              </Button>
+            ) : undefined
+          }
+        >
           {sortedNotes.length > 0 ? (
             <div className="space-y-3">
               {sortedNotes.map(note => (
@@ -396,7 +416,11 @@ export function UserProfile() {
               ))}
             </div>
           ) : (
-            <EmptyState type="notes" message="아직 작성한 노트가 없습니다." />
+            <EmptyState
+              type="notes"
+              message="아직 작성한 노트가 없어요."
+              action={{ label: '첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+            />
           )}
         </Section>
       </div>
