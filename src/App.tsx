@@ -50,15 +50,15 @@ function FloatingActionButtonSwitcher() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // 동적 라우트 처리
+  // 동적 라우트 처리 (커뮤니티 페이지는 자체 FAB을 사용)
   const shouldHide = 
     location.pathname === '/note/new' ||
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname === '/tea/new' ||
     location.pathname === '/cellar' ||
     location.pathname === '/cellar/new' ||
-    location.pathname === '/community/new' ||
-    location.pathname.startsWith('/community/') && location.pathname.endsWith('/edit') ||
+    location.pathname === '/community' ||
+    location.pathname.startsWith('/community/') ||
     location.pathname === '/onboarding';
   
   const override = floatingActionRouteOverrides[location.pathname];
