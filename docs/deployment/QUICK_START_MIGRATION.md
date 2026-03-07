@@ -39,13 +39,11 @@ cd /Users/jwp/Documents/programming/ChaLog
 각 단계를 개별적으로 실행:
 
 ```bash
-# 1. RDS 마이그레이션 스크립트 업로드 및 실행
-scp -i LightsailDefaultKey-ap-northeast-2.pem \
-    scripts/migrate-rds-to-docker-mysql.sh \
-    ubuntu@3.39.48.139:/tmp/
-
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
-    "chmod +x /tmp/migrate-rds-to-docker-mysql.sh && /tmp/migrate-rds-to-docker-mysql.sh"
+# 1. SSH 접속 후 마이그레이션 실행
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+cd /home/ubuntu/chalog-backend
+export $(cat .env | xargs)
+npx typeorm-ts-node-commonjs migration:run -d dist/src/database/data-source.js
 
 # 2. Nginx 설정
 ./scripts/setup-nginx.sh 3.39.48.139
@@ -56,10 +54,9 @@ ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
 | 스크립트 | 용도 |
 |---------|------|
 | `scripts/check-lightsail-connection.sh` | SSH 연결 확인 및 문제 진단 |
-| `scripts/migrate-rds-to-docker-mysql.sh` | RDS → Docker MySQL 데이터 마이그레이션 |
 | `scripts/setup-nginx.sh` | Nginx 설정 및 활성화 |
 | `scripts/execute-migration-plan.sh` | 전체 프로세스 자동화 |
-| `scripts/run-migration-via-browser.sh` | 브라우저 SSH용 명령어 생성 |
+| `scripts/run-migration-via-browser.sh` | 브라우저 SSH용 마이그레이션 명령어 생성 |
 
 ## ⚠️ 문제 해결
 
@@ -73,14 +70,14 @@ ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
 3. 네트워크 연결 확인
 4. SSH 키 권한 확인: `chmod 400 LightsailDefaultKey-ap-northeast-2.pem`
 
-### RDS 연결 실패
+### Docker MySQL 연결 실패
 
 **증상:** `ERROR 2003` 또는 `Access denied`
 
 **해결 방법:**
-1. RDS 보안 그룹에 Lightsail IP 추가 확인
-2. RDS 엔드포인트 및 자격 증명 확인
-3. RDS 인스턴스 상태 확인
+1. Docker MySQL 컨테이너 실행 확인: `docker ps | grep chalog-mysql`
+2. `.env`의 `DATABASE_URL` 확인: `mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog`
+3. 컨테이너 재시작: `docker compose up -d mysql`
 
 ### Docker MySQL 컨테이너 없음
 
@@ -90,7 +87,7 @@ ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
 ```bash
 # Lightsail에서 실행
 cd /home/ubuntu/chalog-backend
-docker-compose up -d mysql
+docker compose up -d mysql
 ```
 
 ## ✅ 체크리스트
@@ -99,14 +96,13 @@ docker-compose up -d mysql
 
 - [ ] Lightsail 인스턴스 실행 중
 - [ ] Docker MySQL 컨테이너 실행 중 (`docker ps | grep chalog-mysql`)
-- [ ] RDS 보안 그룹에 Lightsail IP 추가됨
 - [ ] SSH 키 권한 설정됨 (`chmod 400`)
 - [ ] GitHub Secrets 설정 완료 (배포용)
 
 마이그레이션 후 확인:
 
-- [ ] RDS 데이터 마이그레이션 완료
-- [ ] Docker MySQL에 데이터 확인
+- [ ] 마이그레이션 완료
+- [ ] Docker MySQL에 테이블 확인
 - [ ] 애플리케이션 배포 완료
 - [ ] Health check 통과 (`curl http://3.39.48.139/health`)
 - [ ] Nginx 설정 완료

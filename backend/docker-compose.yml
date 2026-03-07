@@ -1,0 +1,25 @@
+# 로컬 개발용 MySQL (SSH 터널 불필요)
+# 사용법: docker compose up -d
+# 연결: mysql://root:changeme_root_password@127.0.0.1:3306/chalog
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: chalog-mysql-local
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: changeme_root_password
+      MYSQL_DATABASE: chalog
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql_data_local:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pchangeme_root_password"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  mysql_data_local:

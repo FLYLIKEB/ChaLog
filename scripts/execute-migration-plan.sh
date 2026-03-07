@@ -39,48 +39,10 @@ echo "SSH 키: $SSH_KEY"
 echo ""
 
 # 단계별 실행 함수
-step_1_rds_migration() {
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}📋 1단계: RDS 데이터 마이그레이션${NC}"
-    echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    
-    # 마이그레이션 스크립트를 Lightsail에 업로드
-    echo -e "${YELLOW}📤 마이그레이션 스크립트 업로드 중...${NC}"
-    scp -i "$SSH_KEY" \
-        "$SCRIPT_DIR/migrate-rds-to-docker-mysql.sh" \
-        ubuntu@$LIGHTSAIL_IP:/tmp/migrate-rds-to-docker-mysql.sh
-    
-    # 실행 권한 부여 및 실행
-    echo -e "${YELLOW}🔄 마이그레이션 실행 중...${NC}"
-    ssh -i "$SSH_KEY" ubuntu@$LIGHTSAIL_IP << 'ENDSSH'
-chmod +x /tmp/migrate-rds-to-docker-mysql.sh
-cd /tmp
-export RDS_ENDPOINT="${RDS_ENDPOINT:-database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com}"
-export RDS_USER="${RDS_USER:-admin}"
-export RDS_PASSWORD="${RDS_PASSWORD:-az980831}"
-export RDS_DATABASE="${RDS_DATABASE:-chalog}"
-export MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD:-changeme_root_password}"
-export MYSQL_USER="${MYSQL_USER:-chalog_user}"
-export MYSQL_PASSWORD="${MYSQL_PASSWORD:-changeme_password}"
-export MYSQL_DATABASE="${MYSQL_DATABASE:-chalog}"
-
-/tmp/migrate-rds-to-docker-mysql.sh
-ENDSSH
-    
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ RDS 데이터 마이그레이션 완료${NC}"
-        return 0
-    else
-        echo -e "${RED}❌ RDS 데이터 마이그레이션 실패${NC}"
-        return 1
-    fi
-}
-
-step_2_check_github_actions() {
+step_1_check_github_actions() {
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}📋 2단계: GitHub Actions 워크플로우 확인${NC}"
+    echo -e "${BLUE}📋 1단계: GitHub Actions 워크플로우 확인${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
@@ -105,10 +67,10 @@ step_2_check_github_actions() {
     return 0
 }
 
-step_3_deploy_application() {
+step_2_deploy_application() {
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}📋 3단계: 애플리케이션 배포${NC}"
+    echo -e "${BLUE}📋 2단계: 애플리케이션 배포${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
@@ -142,10 +104,10 @@ step_3_deploy_application() {
     return 0
 }
 
-step_4_run_migrations() {
+step_3_run_migrations() {
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}📋 4단계: 데이터베이스 마이그레이션 실행${NC}"
+    echo -e "${BLUE}📋 3단계: 데이터베이스 마이그레이션 실행${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
@@ -190,10 +152,10 @@ ENDSSH
     fi
 }
 
-step_5_setup_nginx() {
+step_4_setup_nginx() {
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}📋 5단계: Nginx 설정${NC}"
+    echo -e "${BLUE}📋 4단계: Nginx 설정${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
@@ -209,10 +171,10 @@ step_5_setup_nginx() {
     fi
 }
 
-step_6_test_application() {
+step_5_test_application() {
     echo ""
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${BLUE}📋 6단계: 애플리케이션 테스트${NC}"
+    echo -e "${BLUE}📋 5단계: 애플리케이션 테스트${NC}"
     echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     
@@ -252,12 +214,11 @@ main() {
     fi
     
     # 단계별 실행
-    step_1_rds_migration || { echo -e "${RED}❌ 1단계 실패${NC}"; exit 1; }
-    step_2_check_github_actions || { echo -e "${YELLOW}⚠️  2단계 확인 필요${NC}"; }
-    step_3_deploy_application || { echo -e "${YELLOW}⚠️  3단계 확인 필요${NC}"; }
-    step_4_run_migrations || { echo -e "${YELLOW}⚠️  4단계 확인 필요${NC}"; }
-    step_5_setup_nginx || { echo -e "${RED}❌ 5단계 실패${NC}"; exit 1; }
-    step_6_test_application || { echo -e "${YELLOW}⚠️  6단계 확인 필요${NC}"; }
+    step_1_check_github_actions || { echo -e "${YELLOW}⚠️  1단계 확인 필요${NC}"; }
+    step_2_deploy_application || { echo -e "${YELLOW}⚠️  2단계 확인 필요${NC}"; }
+    step_3_run_migrations || { echo -e "${YELLOW}⚠️  3단계 확인 필요${NC}"; }
+    step_4_setup_nginx || { echo -e "${RED}❌ 4단계 실패${NC}"; exit 1; }
+    step_5_test_application || { echo -e "${YELLOW}⚠️  5단계 확인 필요${NC}"; }
     
     echo ""
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -268,7 +229,7 @@ main() {
     echo "  1. 애플리케이션 기능 테스트"
     echo "  2. 데이터베이스 연결 확인"
     echo "  3. 모든 기능이 정상 작동하는지 확인"
-    echo "  4. RDS 종료 고려 (데이터 확인 후)"
+    echo "  4. 모니터링 및 로그 확인"
     echo ""
     echo "모니터링:"
     echo "  - PM2 로그: ssh -i $SSH_KEY ubuntu@$LIGHTSAIL_IP 'pm2 logs chalog-backend'"

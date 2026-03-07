@@ -63,7 +63,7 @@ Windows에서 스크립트를 실행하려면 다음 중 하나의 방법을 사
 
 ### start-ssh-tunnel.sh
 
-SSH 터널을 통한 RDS 연결 시작
+SSH 터널을 통한 원격 DB(Lightsail Docker MySQL) 연결 시작
 
 ```bash
 cd backend

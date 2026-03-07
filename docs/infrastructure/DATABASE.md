@@ -5,18 +5,20 @@ ChaLog 프로젝트의 데이터베이스 설정 및 연결 가이드입니다.
 ## 목차
 
 1. [빠른 시작](#빠른-시작)
-2. [AWS RDS 설정](#aws-rds-설정)
-3. [EC2를 통한 연결 (SSH 터널)](#ec2를-통한-연결-ssh-터널)
-4. [문제 해결](#문제-해결)
-5. [비밀번호 관리](#비밀번호-관리)
+2. [Lightsail Docker MySQL](#lightsail-docker-mysql)
+3. [로컬 개발 환경](#로컬-개발-환경)
+4. [원격 DB 연결 (SSH 터널)](#원격-db-연결-ssh-터널)
+5. [문제 해결](#문제-해결)
+6. [비밀번호 관리](#비밀번호-관리)
 
 ## 빠른 시작
 
-### 1. SSH 터널 시작
+### 1. 로컬 개발 (Docker MySQL)
 
 ```bash
 cd backend
-./scripts/start-ssh-tunnel.sh
+docker compose up -d
+# 또는 ./scripts/start-local.sh
 ```
 
 ### 2. 환경 변수 확인
@@ -24,10 +26,8 @@ cd backend
 `backend/.env` 파일에 다음 설정이 있는지 확인:
 
 ```env
-DATABASE_URL=mysql://admin:password@localhost:3307/chalog
-SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=YOUR_EC2_HOST
-EC2_USER=YOUR_EC2_USER
+LOCAL_DATABASE_URL=mysql://root:changeme_root_password@127.0.0.1:3306/chalog
+DB_SYNCHRONIZE=true
 ```
 
 ### 3. 백엔드 실행
@@ -36,25 +36,57 @@ EC2_USER=YOUR_EC2_USER
 npm run start:dev
 ```
 
-## AWS RDS 설정
+## Lightsail Docker MySQL
 
 ### 현재 설정
 
 - **포트**: 3306
 - **데이터베이스**: `chalog`
-- **엔진**: MariaDB
+- **엔진**: MySQL 8.0 (Docker)
+- **컨테이너**: `chalog-mysql`
 
-> RDS 엔드포인트는 `.env` 파일의 `SSH_TUNNEL_REMOTE_HOST` 또는 `DATABASE_URL`에서 확인하세요.
+프로덕션 환경에서는 Lightsail 인스턴스 내부에 Docker MySQL이 실행됩니다.
 
-### 초기 설정 (이미 완료됨)
+**서버 내부 연결:**
+```env
+DATABASE_URL=mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog
+```
 
-RDS 인스턴스 생성 및 기본 설정은 이미 완료되었습니다. 
+### 테이블 생성 (Migration)
 
-**새로운 RDS 인스턴스를 생성해야 하는 경우:** [`AWS_RDS_SETUP.md`](./AWS_RDS_SETUP.md) 참고
+```bash
+cd backend
+npm run migration:run
+```
 
-## EC2를 통한 연결 (SSH 터널)
+자세한 내용은 [`docs/deployment/LIGHTSAIL_DOCKER_MYSQL.md`](../deployment/LIGHTSAIL_DOCKER_MYSQL.md)를 참고하세요.
 
-로컬 개발 환경에서 RDS에 연결하려면 SSH 터널을 사용합니다.
+## 로컬 개발 환경
+
+### Docker MySQL 사용 (권장)
+
+```bash
+cd backend
+docker compose up -d
+```
+
+`LOCAL_DATABASE_URL`이 설정되어 있으면 자동으로 로컬 DB에 연결됩니다.
+
+### 환경 변수 설정
+
+`backend/.env` 파일:
+
+```env
+# 로컬 개발
+NODE_ENV=development
+LOCAL_DATABASE_URL=mysql://root:changeme_root_password@127.0.0.1:3306/chalog
+DB_SYNCHRONIZE=true
+DB_SSL_ENABLED=false
+```
+
+## 원격 DB 연결 (SSH 터널)
+
+로컬에서 Lightsail Docker MySQL에 연결하려면 SSH 터널을 사용합니다.
 
 ### SSH 터널 자동 관리
 
@@ -69,42 +101,27 @@ cd backend
 ./scripts/stop-ssh-tunnel.sh
 ```
 
-**터널 상태 확인:**
-```bash
-ps aux | grep "ssh.*3307"
-```
-
 ### 수동 터널 생성
 
 ```bash
 ssh -i ~/.ssh/your-key.pem \
-    -L 3307:YOUR_RDS_ENDPOINT:3306 \
+    -L 3307:localhost:3306 \
     -N -f \
-    YOUR_EC2_USER@YOUR_EC2_HOST
+    ubuntu@3.39.48.139
 ```
 
-> 실제 값은 `.env` 파일에서 확인하세요.
+연결 후 `DATABASE_URL=mysql://chalog_user:password@localhost:3307/chalog` 사용
 
 ### 환경 변수 설정
 
-`backend/.env` 파일:
-
 ```env
-# Database
-DATABASE_URL=mysql://admin:password@localhost:3307/chalog
-DB_SYNCHRONIZE=false
-DB_SSL_ENABLED=false
-
-# SSH Tunnel
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=YOUR_EC2_HOST
-EC2_USER=YOUR_EC2_USER
+EC2_HOST=3.39.48.139
+EC2_USER=ubuntu
 SSH_TUNNEL_LOCAL_PORT=3307
-SSH_TUNNEL_REMOTE_HOST=YOUR_RDS_ENDPOINT
+SSH_TUNNEL_REMOTE_HOST=localhost
 SSH_TUNNEL_REMOTE_PORT=3306
 ```
-
-> `.env.example` 파일을 참고하여 실제 값으로 설정하세요.
 
 ## 문제 해결
 
@@ -112,25 +129,24 @@ SSH_TUNNEL_REMOTE_PORT=3306
 
 **원인:**
 - SSH 터널이 실행되지 않음
-- 보안 그룹 설정 문제
+- Docker MySQL 컨테이너 미실행
 - 네트워크 연결 문제
 
 **해결 방법:**
 
-1. **SSH 터널 확인**
+1. **로컬 Docker MySQL 확인**
    ```bash
-   ps aux | grep "ssh.*3307"
-   # 없으면 시작: ./scripts/start-ssh-tunnel.sh
+   docker ps | grep chalog-mysql
    ```
 
 2. **연결 테스트**
    ```bash
-   mysql -h localhost -P 3307 -u admin -p
+   mysql -h 127.0.0.1 -P 3306 -u root -pchangeme_root_password chalog
    ```
 
-3. **EC2 연결 확인**
+3. **SSH 터널 확인** (원격 접속 시)
    ```bash
-   ssh -i ~/.ssh/your-key.pem YOUR_EC2_USER@YOUR_EC2_HOST "echo '연결 성공'"
+   ps aux | grep "ssh.*3307"
    ```
 
 ### 인증 실패 (ERROR 1045)
@@ -140,51 +156,40 @@ SSH_TUNNEL_REMOTE_PORT=3306
 - 사용자명 오류
 
 **해결 방법:**
-- `.env` 파일의 `DATABASE_URL` 확인
-- 비밀번호 재설정 (아래 "비밀번호 관리" 참고)
+- `.env` 파일의 `LOCAL_DATABASE_URL` 또는 `DATABASE_URL` 확인
+- Docker 볼륨 초기화: `docker compose down -v && docker compose up -d`
 
-### SSH 터널이 자동으로 종료됨
-
-**원인:**
-- 네트워크 연결 불안정
-- EC2 인스턴스 재시작
+### Access denied for user 'root'@'localhost'
 
 **해결 방법:**
-- 스크립트에 `ServerAliveInterval` 옵션 포함 (이미 설정됨)
-- 터널 재시작: `./scripts/start-ssh-tunnel.sh`
+1. `127.0.0.1` 사용 (localhost 대신)
+2. Docker 볼륨 재생성: `docker compose down -v && docker compose up -d`
+3. `--default-authentication-plugin=mysql_native_password` 확인 (docker-compose.yml)
 
 ## 비밀번호 관리
 
 ### 비밀번호 확인
 
-AWS RDS의 마스터 비밀번호는 **보안상의 이유로 생성 후에는 확인할 수 없습니다**.
+Docker MySQL의 root 비밀번호는 `docker-compose.yml`의 `MYSQL_ROOT_PASSWORD`에서 확인합니다.
 
 ### 비밀번호 재설정
 
-1. **AWS 콘솔 → RDS**
-   - 데이터베이스 → 해당 RDS 인스턴스 선택
-   - "수정" 버튼 클릭
+1. **Docker 볼륨 초기화**
+   ```bash
+   cd backend
+   docker compose down -v
+   docker compose up -d
+   ```
 
-2. **비밀번호 재설정**
-   - "연결" 섹션 → "마스터 암호"
-   - "새 마스터 암호 입력" 선택
-   - 새 비밀번호 입력 및 확인
-
-3. **변경사항 적용**
-   - "즉시 적용" 선택
-   - "DB 인스턴스 수정" 클릭
-   - 재부팅 완료 대기 (약 2-5분)
-
-4. **환경 변수 업데이트**
+2. **환경 변수 업데이트**
    ```env
-   DATABASE_URL=mysql://admin:새비밀번호@localhost:3307/chalog
+   LOCAL_DATABASE_URL=mysql://root:새비밀번호@127.0.0.1:3306/chalog
    ```
 
 ### 보안 권장사항
 
 - ✅ 강력한 비밀번호 사용 (최소 8자, 대소문자, 숫자, 특수문자)
 - ✅ 비밀번호 관리자에 안전하게 저장
-- ✅ 정기적인 비밀번호 변경 (프로덕션)
 - ✅ 환경 변수로 관리 (코드에 하드코딩 금지)
 
 ## TypeORM Migrations
@@ -211,14 +216,6 @@ cd backend
 DATABASE_URL=mysql://... ./scripts/sync-schema.sh prod
 ```
 
-### 스키마 비교
-
-테스트 DB와 프로덕션 DB의 스키마를 비교:
-```bash
-cd backend
-DATABASE_URL=... TEST_DATABASE_URL=... ./scripts/compare-schema.sh
-```
-
 ### Migration 생성
 
 엔티티 변경사항으로부터 자동 생성:
@@ -227,17 +224,10 @@ cd backend
 npm run migration:generate -- migrations/MigrationName
 ```
 
-빈 Migration 파일 생성:
-```bash
-cd backend
-npm run migration:create -- migrations/MigrationName
-```
-
 자세한 내용은 [`backend/MIGRATIONS.md`](../../backend/MIGRATIONS.md)를 참고하세요.
 
 ## 추가 리소스
 
-- [AWS RDS 공식 문서](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/)
-- [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드
+- [MySQL 공식 문서](https://dev.mysql.com/doc/)
+- [`docs/deployment/LIGHTSAIL_DOCKER_MYSQL.md`](../deployment/LIGHTSAIL_DOCKER_MYSQL.md) - Lightsail Docker MySQL 가이드
 - [`backend/MIGRATIONS.md`](../../backend/MIGRATIONS.md) - TypeORM Migrations 가이드
-

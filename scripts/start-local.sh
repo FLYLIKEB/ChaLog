@@ -68,48 +68,65 @@ sleep 2
 echo -e "${GREEN}✅ 기존 프로세스 정리 완료${NC}"
 echo ""
 
-# 2. SSH 터널 시작
-echo -e "${BLUE}🔗 SSH 터널 시작 중...${NC}"
-cd "$BACKEND_DIR"
-if [ -f scripts/start-ssh-tunnel.sh ]; then
-    set +e  # SSH 터널 실패해도 계속 진행
-    bash scripts/start-ssh-tunnel.sh
-    SSH_TUNNEL_EXIT_CODE=$?
-    set -e  # 다시 에러 시 종료 모드로 복원
-    if [ $SSH_TUNNEL_EXIT_CODE -ne 0 ]; then
-        echo -e "${YELLOW}⚠️  SSH 터널 시작 실패 (계속 진행합니다)${NC}"
+# 2. 로컬 DB 자동 시작 (Docker MySQL 사용 시)
+# LOCAL_DATABASE_URL이 localhost:3306 또는 127.0.0.1:3306이면 로컬 Docker MySQL 사용
+if echo "${LOCAL_DATABASE_URL:-}" | grep -qE "localhost:3306|127\.0\.0\.1:3306"; then
+    echo -e "${BLUE}📦 로컬 Docker MySQL${NC}"
+    if command -v docker >/dev/null 2>&1; then
+        cd "$BACKEND_DIR"
+        docker compose up -d
+        cd "$PROJECT_ROOT"
+        sleep 3
+        echo -e "${GREEN}✅ 로컬 MySQL 실행됨${NC}"
         echo ""
     else
+        echo -e "${YELLOW}⚠️  Docker가 설치되어 있지 않습니다.${NC}"
+        echo "   설치: brew install --cask docker"
         echo ""
-        sleep 2
     fi
 else
-    echo -e "${YELLOW}⚠️  SSH 터널 스크립트를 찾을 수 없습니다. 건너뜁니다.${NC}"
-    echo ""
+    # 원격 DB 사용 시 SSH 터널 시작
+    echo -e "${BLUE}🔗 SSH 터널 시작 중...${NC}"
+    cd "$BACKEND_DIR"
+    if [ -f scripts/start-ssh-tunnel.sh ] && [ -n "${SSH_TUNNEL_REMOTE_HOST:-}" ]; then
+        set +e
+        bash scripts/start-ssh-tunnel.sh
+        SSH_TUNNEL_EXIT_CODE=$?
+        set -e
+        if [ $SSH_TUNNEL_EXIT_CODE -ne 0 ]; then
+            echo -e "${YELLOW}⚠️  SSH 터널 시작 실패 (계속 진행합니다)${NC}"
+            echo ""
+        else
+            echo ""
+            sleep 2
+        fi
+    else
+        echo -e "${YELLOW}⚠️  SSH 터널 건너뜀 (로컬 DB 또는 SSH_TUNNEL_REMOTE_HOST 미설정)${NC}"
+        echo ""
+    fi
 fi
 
 # 3. 백엔드 서버 시작
 echo -e "${BLUE}🔧 백엔드 서버 시작 중...${NC}"
 cd "$BACKEND_DIR"
-# 로컬 개발 환경으로 설정
+# 로컬 개발 환경 (DB_SYNCHRONIZE는 .env 값 사용 → 테이블 자동 생성)
 export NODE_ENV=development
-export DB_SYNCHRONIZE=false
 npm run start:dev > /tmp/chalog-backend.log 2>&1 &
 BACKEND_PID=$!
 echo -e "${GREEN}✅ 백엔드 서버 시작됨 (PID: $BACKEND_PID)${NC}"
 echo "   로그: tail -f /tmp/chalog-backend.log"
 echo ""
 
-# 4. 백엔드 서버가 시작될 때까지 대기
+# 4. 백엔드 서버가 시작될 때까지 대기 (DB 연결 최대 60초 + 여유)
 echo -e "${YELLOW}⏳ 백엔드 서버 시작 대기 중...${NC}"
-for i in {1..30}; do
+for i in {1..90}; do
     if curl -s http://localhost:3000/health > /dev/null 2>&1; then
         echo -e "${GREEN}✅ 백엔드 서버 준비 완료 (포트 3000)${NC}"
         echo ""
         break
     fi
-    if [ $i -eq 30 ]; then
-        echo -e "${RED}❌ 백엔드 서버 시작 시간 초과${NC}"
+    if [ $i -eq 90 ]; then
+        echo -e "${RED}❌ 백엔드 서버 시작 시간 초과 (90초)${NC}"
         echo "   로그 확인: tail -f /tmp/chalog-backend.log"
         exit 1
     fi
@@ -152,6 +169,9 @@ echo -e "${BLUE}📍 접속 정보:${NC}"
 echo -e "   프론트엔드: ${GREEN}http://localhost:5173${NC}"
 echo -e "   백엔드 API: ${GREEN}http://localhost:3000${NC}"
 echo -e "   Health Check: ${GREEN}http://localhost:3000/health${NC}"
+if echo "${LOCAL_DATABASE_URL:-}" | grep -qE "localhost:3306|127\.0\.0\.1:3306"; then
+    echo -e "   DB (MySQL): ${GREEN}127.0.0.1:3306/chalog${NC}"
+fi
 echo ""
 echo -e "${BLUE}📋 실행 중인 프로세스:${NC}"
 echo -e "   백엔드 PID: ${YELLOW}$BACKEND_PID${NC}"

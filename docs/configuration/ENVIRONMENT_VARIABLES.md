@@ -94,7 +94,7 @@ Vercel 대시보드에서 환경 변수 설정:
 |--------|------|------|
 | `DATABASE_URL` | 데이터베이스 연결 URL | `mysql://admin:password@localhost:3307/chalog` |
 | `DB_SYNCHRONIZE` | DB 스키마 자동 동기화 | `false` (프로덕션에서는 반드시 false) |
-| `DB_SSL_ENABLED` | SSL 연결 활성화 | `true` (RDS 사용 시) |
+| `DB_SSL_ENABLED` | SSL 연결 활성화 | `false` (Lightsail Docker MySQL은 내부 연결) |
 | `DB_SSL_REJECT_UNAUTHORIZED` | SSL 인증서 검증 | `true` (프로덕션 권장) |
 
 #### JWT 인증 설정
@@ -136,8 +136,8 @@ Vercel 대시보드에서 환경 변수 설정:
 | `EC2_HOST` | EC2 호스트 (Public IP) | `your-ec2-ip` |
 | `EC2_USER` | EC2 사용자명 | `ubuntu` |
 | `SSH_TUNNEL_LOCAL_PORT` | SSH 터널 로컬 포트 | `3307` |
-| `SSH_TUNNEL_REMOTE_HOST` | RDS 엔드포인트 | `your-rds-endpoint.rds.amazonaws.com` |
-| `SSH_TUNNEL_REMOTE_PORT` | RDS 포트 | `3306` |
+| `SSH_TUNNEL_REMOTE_HOST` | 원격 DB 호스트 (Lightsail 내부: localhost) | `localhost` |
+| `SSH_TUNNEL_REMOTE_PORT` | 원격 DB 포트 | `3306` |
 
 ### 사용 방법
 
@@ -153,7 +153,7 @@ nano .env
 ```
 
 **주요 설정**:
-- `DATABASE_URL`: SSH 터널을 통한 RDS 연결 (포트 3307)
+- `LOCAL_DATABASE_URL`: 로컬 Docker MySQL 연결 (127.0.0.1:3306)
 - `DB_SYNCHRONIZE`: `false` (프로덕션과 동일)
 - `NODE_ENV`: `development`
 
@@ -190,8 +190,8 @@ VITE_KAKAO_APP_KEY=your-kakao-javascript-key
 
 **백엔드:**
 ```env
-DATABASE_URL=mysql://admin:password@localhost:3307/chalog
-DB_SYNCHRONIZE=false
+LOCAL_DATABASE_URL=mysql://root:changeme_root_password@127.0.0.1:3306/chalog
+DB_SYNCHRONIZE=true
 DB_SSL_ENABLED=false
 NODE_ENV=development
 FRONTEND_URL=http://localhost:5173
@@ -202,12 +202,11 @@ FRONTEND_URL=http://localhost:5173
 **프론트엔드 (Vercel):**
 - Vercel 대시보드에서 `VITE_API_BASE_URL` 환경 변수 설정
 
-**백엔드 (EC2):**
+**백엔드 (EC2/Lightsail):**
 ```env
-DATABASE_URL=mysql://admin:password@your-rds-endpoint.rds.amazonaws.com:3306/chalog
+DATABASE_URL=mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog
 DB_SYNCHRONIZE=false
-DB_SSL_ENABLED=true
-DB_SSL_REJECT_UNAUTHORIZED=true
+DB_SSL_ENABLED=false
 JWT_SECRET=강력한-프로덕션-시크릿-키
 NODE_ENV=production
 FRONTEND_URL=https://cha-log-gilt.vercel.app

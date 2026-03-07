@@ -73,7 +73,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
     throw new Error('DATABASE_URL must include a database name in the path');
   }
 
-  // SSL 설정 (AWS RDS/Aurora 사용 시 권장)
+  // SSL 설정 (외부 DB 사용 시 권장)
   const sslEnabled = configService.get<string>('DB_SSL_ENABLED') === 'true';
   const sslRejectUnauthorized = configService.get<string>('DB_SSL_REJECT_UNAUTHORIZED') !== 'false';
   const sslConfig = sslEnabled
@@ -102,7 +102,7 @@ export const getTypeOrmConfig = (configService: ConfigService): TypeOrmModuleOpt
                  configService.get<string>('NODE_ENV') === 'development' && 
                  configService.get<string>('DB_SYNCHRONIZE') === 'true',
     logging: configService.get<string>('NODE_ENV') === 'development' || isTest,
-    // AWS RDS/Aurora 연결 최적화
+    // Lightsail Docker MySQL 연결 최적화
     // t3.small 환경에 맞게 연결 풀 크기 조정 (2GB RAM, 2 vCPU)
     extra: {
       connectionLimit: 8, // 연결 풀 최대 크기 (t3.small 최적화: 5 → 8)

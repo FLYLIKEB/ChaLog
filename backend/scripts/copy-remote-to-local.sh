@@ -35,9 +35,9 @@ if [ -z "$LOCAL_DATABASE_URL" ]; then
 fi
 
 # SSH 터널 필요 여부 확인
-# 원격 호스트가 RDS 엔드포인트인 경우 SSH 터널 필요
+# 원격 호스트가 Lightsail IP인 경우 SSH 터널 필요 (로컬에서 직접 접근 불가)
 SSH_TUNNEL_NEEDED=false
-if [[ "$DATABASE_URL" == *".rds.amazonaws.com"* ]]; then
+if [[ "$DATABASE_URL" == *".rds.amazonaws.com"* ]] || [[ "$DATABASE_URL" == *"3.39.48.139"* ]]; then
     # SSH_TUNNEL_REMOTE_HOST가 설정되지 않았으면 DATABASE_URL에서 추출
     if [ -z "$SSH_TUNNEL_REMOTE_HOST" ]; then
         SSH_TUNNEL_REMOTE_HOST=$(echo "$DATABASE_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')

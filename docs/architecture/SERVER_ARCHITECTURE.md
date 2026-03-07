@@ -45,7 +45,7 @@ flowchart TB
         end
     end
 
-    subgraph Database["AWS RDS MariaDB"]
+    subgraph Database["Lightsail Docker MySQL"]
         Tables["Tables<br/>users<br/>user_authentications<br/>teas<br/>notes"]
     end
 
@@ -61,7 +61,7 @@ flowchart TB
     AppModule --> TeasModule
     AppModule --> NotesModule
     AppModule --> HealthController
-    TypeOrmModule -->|SSH 터널<br/>직접 연결| Tables
+    TypeOrmModule -->|chalog-mysql:3306| Tables
 ```
 
 ## 상세 모듈 구조
@@ -171,7 +171,7 @@ graph TD
     NotesModule --> NoteEntity["entities/<br/>note.entity.ts"]
     NotesModule --> NoteDTO["dto/<br/>create-note.dto.ts<br/>update-note.dto.ts"]
     
-    TypeOrmModule --> TypeOrmConfig["database/<br/>typeorm.config.ts<br/>MariaDB 연결 설정<br/>SSL 설정 AWS RDS<br/>연결 풀 설정"]
+    TypeOrmModule --> TypeOrmConfig["database/<br/>typeorm.config.ts<br/>Lightsail Docker MySQL 연결<br/>연결 풀 설정"]
 
 ```
 
@@ -355,11 +355,8 @@ flowchart TB
         NestJSApp["NestJS 앱<br/>포트 3000"]
     end
 
-    subgraph DatabaseDeploy["데이터베이스 AWS RDS"]
-        RDSInstance["RDS MariaDB<br/>인스턴스"]
-        SSHTunnel["SSH 터널<br/>로컬 개발"]
-        DirectConnection["직접 연결<br/>프로덕션"]
-        SSL["SSL 활성화<br/>프로덕션"]
+    subgraph DatabaseDeploy["데이터베이스 Lightsail Docker MySQL"]
+        MySQLContainer["chalog-mysql<br/>Docker 컨테이너"]
     end
 
     Repo -->|main 브랜치 푸시| VercelDeploy
@@ -373,11 +370,7 @@ flowchart TB
     EC2Instance --> PM2
     PM2 --> NestJSApp
     
-    NestJSApp -->|로컬 개발| SSHTunnel
-    NestJSApp -->|프로덕션| DirectConnection
-    SSHTunnel --> RDSInstance
-    DirectConnection --> SSL
-    SSL --> RDSInstance
+    NestJSApp -->|chalog-mysql:3306| MySQLContainer
 
 ```
 
@@ -410,7 +403,7 @@ flowchart LR
     VercelCDN -->|Static Files| Static["Static Files"]
     VercelCDN -->|API 요청| Functions["Vercel Functions"]
     Functions -->|HTTP<br/>포트 3000| EC2["AWS EC2<br/>3.39.48.139"]
-    EC2 -->|SSH 터널<br/>로컬 개발<br/>또는<br/>직접 연결<br/>프로덕션| RDS["AWS RDS<br/>MariaDB"]
+    EC2 -->|chalog-mysql:3306| MySQL["Lightsail Docker<br/>MySQL"]
 
 ```
 

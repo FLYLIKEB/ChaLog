@@ -53,9 +53,9 @@ du -sh /home/ubuntu/chalog-backend/*
 ### 2. 백업
 
 ```bash
-# 데이터베이스 백업
-mysqldump -h your-rds-endpoint.rds.amazonaws.com \
-  -u admin -p chalog > chalog-backup-$(date +%Y%m%d).sql
+# 데이터베이스 백업 (Lightsail Docker MySQL인 경우)
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
+  "docker exec chalog-mysql mysqldump -uroot -p\${MYSQL_ROOT_PASSWORD} chalog" > chalog-backup-$(date +%Y%m%d).sql
 
 # 애플리케이션 파일 백업
 tar -czf chalog-backend-backup-$(date +%Y%m%d).tar.gz \
@@ -207,52 +207,16 @@ sudo ufw enable
 
 ## 데이터 마이그레이션
 
-### 1. 데이터베이스 연결 확인
+### 1. Lightsail Docker MySQL 확인
 
-Lightsail 인스턴스에서 RDS에 직접 연결 가능한지 확인:
+Lightsail 인스턴스에서 Docker MySQL이 실행 중인지 확인:
 
 ```bash
-# RDS 엔드포인트 확인 (EC2 .env 파일에서)
-# DATABASE_URL=mysql://admin:password@your-rds-endpoint.rds.amazonaws.com:3306/chalog
-
-# 연결 테스트
-mysql -h your-rds-endpoint.rds.amazonaws.com \
-  -u admin -p \
-  -e "SHOW DATABASES;"
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+docker ps | grep chalog-mysql
 ```
 
-**중요**: RDS 보안 그룹에 Lightsail 인스턴스의 IP를 추가해야 합니다.
-
-### 2. RDS 보안 그룹 설정
-
-**AWS CLI로 자동 설정:**
-```bash
-# RDS 인스턴스의 보안 그룹 ID 확인
-aws rds describe-db-instances \
-    --query "DBInstances[?contains(Endpoint.Address, 'database-1')].VpcSecurityGroups[*].VpcSecurityGroupId" \
-    --output text \
-    --region ap-northeast-2
-
-# 보안 그룹에 Lightsail Private IP 추가
-aws ec2 authorize-security-group-ingress \
-    --group-id <보안그룹ID> \
-    --protocol tcp \
-    --port 3306 \
-    --cidr 172.26.15.5/32 \
-    --region ap-northeast-2
-```
-
-**수동 설정:**
-1. **AWS RDS 콘솔**
-   - RDS 인스턴스 선택 → "연결 및 보안" 탭
-   - VPC 보안 그룹 링크 클릭
-
-2. **인바운드 규칙 추가**
-   - 유형: MySQL/Aurora (3306)
-   - 소스: `172.26.15.5/32` (Lightsail Private IP - 권장)
-   - 또는 `3.39.48.139/32` (Lightsail Public IP - 테스트용)
-
-### 3. 애플리케이션 디렉토리 생성
+### 2. 애플리케이션 디렉토리 생성
 
 ```bash
 # Lightsail 인스턴스에서
@@ -276,9 +240,9 @@ scp -i ~/.ssh/your-lightsail-key.pem \
 cat /home/ubuntu/chalog-backend/.env
 ```
 
-**중요**: `DATABASE_URL`이 RDS 엔드포인트를 직접 가리키는지 확인:
+**중요**: `DATABASE_URL`이 Lightsail Docker MySQL을 가리키는지 확인:
 ```env
-DATABASE_URL=mysql://admin:password@your-rds-endpoint.rds.amazonaws.com:3306/chalog
+DATABASE_URL=mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog
 ```
 
 ### 2. 애플리케이션 배포
@@ -460,7 +424,7 @@ aws ec2 terminate-instances --instance-ids i-xxxxx
 ## 마이그레이션 체크리스트
 
 - [ ] Lightsail 인스턴스 생성
-- [ ] RDS 보안 그룹에 Lightsail IP 추가
+- [ ] Docker MySQL 컨테이너 실행 확인
 - [ ] 데이터베이스 연결 테스트
 - [ ] 애플리케이션 배포
 - [ ] Nginx 설정
@@ -475,14 +439,14 @@ aws ec2 terminate-instances --instance-ids i-xxxxx
 
 ## 문제 해결
 
-### RDS 연결 실패
+### Docker MySQL 연결 실패
 
 ```bash
-# 보안 그룹 확인
-# Lightsail Private IP가 RDS 보안 그룹에 추가되었는지 확인
+# 컨테이너 확인
+docker ps | grep chalog-mysql
 
-# 연결 테스트
-mysql -h your-rds-endpoint.rds.amazonaws.com -u admin -p
+# 연결 테스트 (Lightsail 내부에서)
+docker exec -it chalog-mysql mysql -uchalog_user -p -e "SHOW DATABASES;"
 ```
 
 ### PM2 프로세스가 시작되지 않음
@@ -522,14 +486,9 @@ sudo tail -f /var/log/nginx/error.log
 
 ## 추가 최적화
 
-### Lightsail 데이터베이스 사용 (선택사항)
+### Lightsail Docker MySQL
 
-더 많은 비용 절감을 위해 Lightsail 데이터베이스로 전환할 수 있습니다:
-
-- Lightsail MySQL: $15/월 (1GB RAM)
-- RDS 대비 추가 절감 가능
-
-단, 현재 RDS가 잘 작동한다면 유지하는 것을 권장합니다.
+현재 Lightsail 인스턴스 내부에 Docker MySQL을 사용하여 비용을 절감하고 있습니다.
 
 ## 참고 자료
 

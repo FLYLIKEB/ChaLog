@@ -26,11 +26,10 @@ cp .env.example .env
 
 ### 주요 환경 변수
 
-- `DATABASE_URL`: 데이터베이스 연결 URL
-  - 로컬: `mysql://user:password@localhost:3306/chalog`
-  - AWS RDS/Aurora: `mysql://admin:password@your-rds-endpoint.region.rds.amazonaws.com:3306/chalog`
+- `DATABASE_URL`: 프로덕션 DB 연결 URL (Lightsail Docker MySQL: `mysql://chalog_user:password@chalog-mysql:3306/chalog`)
+- `LOCAL_DATABASE_URL`: 로컬 개발용 DB URL (`mysql://root:changeme_root_password@127.0.0.1:3306/chalog`)
 - `DB_SYNCHRONIZE`: 개발 환경에서만 `true`로 설정 (데이터 손실 위험)
-- `DB_SSL_ENABLED`: AWS RDS/Aurora 사용 시 SSL 연결 활성화 (`true` 권장)
+- `DB_SSL_ENABLED`: 외부 DB 사용 시 SSL 연결 활성화 (`false` - Lightsail 내부 Docker는 SSL 불필요)
 - `JWT_SECRET`: JWT 토큰 서명용 비밀키 (프로덕션에서는 반드시 변경)
 - `JWT_EXPIRES_IN`: JWT 토큰 만료 시간
 - `PORT`: 서버 포트 (기본값: 3000)
@@ -39,62 +38,44 @@ cp .env.example .env
 
 ## 데이터베이스 설정
 
-### AWS RDS/Aurora 사용 (현재 설정)
+### Lightsail Docker MySQL (프로덕션)
 
-현재 AWS RDS MariaDB를 사용하고 있습니다. SSH 터널을 통해 연결됩니다.
+프로덕션에서는 Lightsail 인스턴스 내부에 Docker MySQL이 실행됩니다.
 
-**연결 정보:**
-- 포트: `3306` (SSH 터널: 로컬 `3307`)
-- 데이터베이스: `chalog`
-
-**SSH 터널 설정:**
-
-`.env` 파일에 SSH 관련 설정이 포함되어 있습니다:
+**서버 내부 연결:**
 ```env
-SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=YOUR_EC2_HOST
-EC2_USER=YOUR_EC2_USER
-SSH_TUNNEL_LOCAL_PORT=3307
-SSH_TUNNEL_REMOTE_HOST=YOUR_RDS_ENDPOINT
+DATABASE_URL=mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog
 ```
 
-> `.env.example` 파일을 참고하여 실제 값으로 설정하세요.
+자세한 설정 가이드는 [`docs/deployment/LIGHTSAIL_DOCKER_MYSQL.md`](../docs/deployment/LIGHTSAIL_DOCKER_MYSQL.md)를 참고하세요.
 
-터널 시작/종료:
+### 로컬 Docker MySQL 사용
+
 ```bash
-# 터널 시작
+cd backend
+docker compose up -d
+```
+
+`.env` 파일:
+```env
+LOCAL_DATABASE_URL=mysql://root:changeme_root_password@127.0.0.1:3306/chalog
+DB_SYNCHRONIZE=true
+```
+
+### 원격 DB 접속 (SSH 터널)
+
+로컬에서 Lightsail Docker MySQL에 접속하려면 SSH 터널 사용:
+```bash
 ./scripts/start-ssh-tunnel.sh
-
-# 터널 종료
-./scripts/stop-ssh-tunnel.sh
 ```
 
-자세한 설정 가이드는 [`docs/DATABASE.md`](../docs/DATABASE.md)를 참고하세요.
-
-### 로컬 MySQL 사용 시
-
-MySQL 데이터베이스를 생성하세요:
-
-```sql
-CREATE DATABASE chalog CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-### AWS RDS/Aurora 사용 시
-
-자세한 설정 가이드는 [`docs/aws-rds-setup.md`](../docs/aws-rds-setup.md)를 참고하세요.
-
-**주요 단계:**
-1. AWS 콘솔에서 RDS/Aurora 인스턴스 생성
-2. 보안 그룹 인바운드 규칙 설정 (MySQL 포트 3306)
-3. 엔드포인트 주소 확인
-4. `.env` 파일에 `DATABASE_URL` 설정
-5. `DB_SSL_ENABLED=true` 설정 (권장)
+자세한 설정 가이드는 [`docs/infrastructure/DATABASE.md`](../docs/infrastructure/DATABASE.md)를 참고하세요.
 
 ## 스크립트
 
 데이터베이스 연결을 위한 유틸리티 스크립트:
 
-- `./scripts/start-ssh-tunnel.sh` - SSH 터널 시작 (RDS 연결용)
+- `./scripts/start-ssh-tunnel.sh` - SSH 터널 시작 (원격 DB 연결용)
 - `./scripts/stop-ssh-tunnel.sh` - SSH 터널 종료
 - `./scripts/check-database.sh` - 데이터베이스 확인 및 생성
 - `./scripts/sync-schema.sh` - 스키마 동기화 (Migration 실행)

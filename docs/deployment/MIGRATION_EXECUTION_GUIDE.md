@@ -6,13 +6,13 @@
 
 다음 스크립트들이 준비되었습니다:
 
-1. **`scripts/migrate-rds-to-docker-mysql.sh`** - RDS에서 Docker MySQL로 데이터 마이그레이션
-2. **`scripts/setup-nginx.sh`** - Nginx 설정 및 활성화
-3. **`scripts/execute-migration-plan.sh`** - 전체 마이그레이션 프로세스 자동화
+1. **`scripts/setup-nginx.sh`** - Nginx 설정 및 활성화
+2. **`scripts/execute-migration-plan.sh`** - 전체 마이그레이션 프로세스 자동화
+3. **`scripts/run-migration-via-browser.sh`** - 브라우저 SSH용 마이그레이션 명령어 생성
 
 ## 실행 단계
 
-### 1. RDS 데이터 마이그레이션
+### 1. Lightsail Docker MySQL 마이그레이션
 
 Lightsail 인스턴스에 SSH 접속 후 실행:
 
@@ -20,33 +20,18 @@ Lightsail 인스턴스에 SSH 접속 후 실행:
 # SSH 접속
 ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
 
-# 마이그레이션 스크립트 업로드 (로컬에서)
-scp -i LightsailDefaultKey-ap-northeast-2.pem \
-    scripts/migrate-rds-to-docker-mysql.sh \
-    ubuntu@3.39.48.139:/tmp/
+cd /home/ubuntu/chalog-backend
 
-# Lightsail에서 실행
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
-chmod +x /tmp/migrate-rds-to-docker-mysql.sh
-cd /tmp
-
-# 환경 변수 설정 (필요시 수정)
-export RDS_ENDPOINT="database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com"
-export RDS_USER="admin"
-export RDS_PASSWORD="az980831"
-export RDS_DATABASE="chalog"
-export MYSQL_ROOT_PASSWORD="changeme_root_password"
-export MYSQL_USER="chalog_user"
-export MYSQL_PASSWORD="changeme_password"
-export MYSQL_DATABASE="chalog"
+# .env 확인
+export $(cat .env | xargs)
 
 # 마이그레이션 실행
-/tmp/migrate-rds-to-docker-mysql.sh
+npx typeorm-ts-node-commonjs migration:run -d dist/src/database/data-source.js
 ```
 
 **주의사항:**
-- RDS 보안 그룹에 Lightsail IP (3.39.48.139)가 추가되어 있어야 합니다
 - Docker MySQL 컨테이너가 실행 중이어야 합니다 (`docker ps | grep chalog-mysql`)
+- `DATABASE_URL`이 `mysql://chalog_user:password@chalog-mysql:3306/chalog` 형식이어야 합니다
 
 ### 2. GitHub Actions 워크플로우 확인
 
@@ -57,7 +42,7 @@ GitHub Secrets가 올바르게 설정되어 있는지 확인:
    - `EC2_HOST`: `3.39.48.139`
    - `EC2_USER`: `ubuntu`
    - `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
-   - `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@localhost:3306/chalog`
+   - `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog`
    - `EC2_JWT_SECRET`: 기존 JWT Secret 값
 
 자세한 내용: `docs/deployment/GITHUB_SECRETS_SETUP.md`
@@ -82,7 +67,7 @@ cd /home/ubuntu/chalog-backend
 
 # .env 파일 생성 (DATABASE_URL을 localhost:3306으로 변경)
 cat > .env << EOF
-DATABASE_URL=mysql://chalog_user:changeme_password@localhost:3306/chalog
+DATABASE_URL=mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog
 DB_SYNCHRONIZE=false
 DB_SSL_ENABLED=false
 DB_SSL_REJECT_UNAUTHORIZED=false
@@ -224,11 +209,6 @@ cd /Users/jwp/Documents/programming/ChaLog
 - 네트워크 연결 확인
 - SSH 키 권한 확인: `chmod 400 LightsailDefaultKey-ap-northeast-2.pem`
 
-### RDS 연결 실패
-
-- RDS 보안 그룹에 Lightsail IP 추가 확인
-- RDS 엔드포인트 및 자격 증명 확인
-
 ### Docker MySQL 연결 실패
 
 - 컨테이너 실행 상태 확인: `docker ps | grep chalog-mysql`
@@ -245,15 +225,13 @@ cd /Users/jwp/Documents/programming/ChaLog
 ## 체크리스트
 
 - [ ] Docker MySQL 컨테이너 실행 중
-- [ ] RDS 데이터 마이그레이션 완료
+- [ ] Docker MySQL 컨테이너 실행 확인
 - [ ] GitHub Secrets 설정 완료
 - [ ] 애플리케이션 배포 완료
 - [ ] 데이터베이스 마이그레이션 실행 완료
 - [ ] Nginx 설정 완료
 - [ ] Health check 통과
 - [ ] 모든 기능 테스트 완료
-- [ ] RDS 종료 고려 (데이터 확인 후)
-
 ## 다음 단계
 
 마이그레이션이 완료되면:
@@ -262,4 +240,3 @@ cd /Users/jwp/Documents/programming/ChaLog
 2. 데이터 무결성 확인
 3. 백업 스크립트 설정 확인
 4. 모니터링 설정
-5. RDS 인스턴스 종료 고려 (비용 절감)

@@ -360,6 +360,6 @@ pm2 restart chalog-backend
 ## 관련 문서
 
 - [`docs/configuration/ENVIRONMENT_VARIABLES.md`](../configuration/ENVIRONMENT_VARIABLES.md) - 환경 변수 관리 가이드
-- [`docs/infrastructure/AWS_RDS_SETUP.md`](./AWS_RDS_SETUP.md) - AWS RDS 설정 가이드
+- [`docs/infrastructure/DATABASE.md`](./DATABASE.md) - 데이터베이스 설정 가이드
 - [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 가이드
 
