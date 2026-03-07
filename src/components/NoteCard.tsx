@@ -20,7 +20,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   const navigate = useNavigate();
   const { user } = useAuth();
   const hasImage = note.images && note.images.length > 0;
-  const firstImage = hasImage ? note.images![0] : null;
+  const firstImage = hasImage
+    ? (note.imageThumbnails?.[0] ?? note.images![0])
+    : null;
   const isMyNote = note.userId === user?.id;
   const canView = note.isPublic || isMyNote;
   

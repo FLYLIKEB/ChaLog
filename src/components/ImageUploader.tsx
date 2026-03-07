@@ -9,11 +9,12 @@ import { useNavigate } from 'react-router-dom';
 
 interface ImageUploaderProps {
   images: string[];
-  onChange: (images: string[]) => void;
+  imageThumbnails?: (string | null)[];
+  onChange: (images: string[], imageThumbnails: (string | null)[]) => void;
   maxImages?: number;
 }
 
-export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploaderProps) {
+export function ImageUploader({ images, imageThumbnails = [], onChange, maxImages = 5 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isAuthenticated } = useAuth();
@@ -60,11 +61,13 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       const results = await Promise.allSettled(uploadPromises);
       
       const successfulUrls: string[] = [];
+      const successfulThumbnailUrls: (string | null)[] = [];
       let failedCount = 0;
       
       for (const result of results) {
         if (result.status === 'fulfilled') {
           successfulUrls.push(result.value.url);
+          successfulThumbnailUrls.push(result.value.thumbnailUrl ?? null);
         } else {
           failedCount++;
           logger.error('Failed to upload image:', result.reason);
@@ -72,7 +75,9 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
       }
       
       if (successfulUrls.length > 0) {
-        onChange([...images, ...successfulUrls]);
+        const newImages = [...images, ...successfulUrls];
+        const newThumbnails = [...(imageThumbnails.length === images.length ? imageThumbnails : images.map(() => null)), ...successfulThumbnailUrls];
+        onChange(newImages, newThumbnails);
         toast.success(`${successfulUrls.length}장의 이미지가 업로드되었습니다.`);
       }
       
@@ -138,7 +143,10 @@ export function ImageUploader({ images, onChange, maxImages = 5 }: ImageUploader
                 onClick={(e) => {
                   e.stopPropagation();
                   e.preventDefault();
-                  onChange(images.filter((_, i) => i !== index));
+                  const newImages = images.filter((_, i) => i !== index);
+                  const newThumbnails = (imageThumbnails.length === images.length ? imageThumbnails : images.map(() => null))
+                    .filter((_, i) => i !== index);
+                  onChange(newImages, newThumbnails);
                 }}
                 className="w-full py-2 bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-lg text-white text-sm font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-1.5"
                 style={{

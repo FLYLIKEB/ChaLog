@@ -43,6 +43,9 @@ export class Note {
   @Column({ type: 'json', nullable: true })
   images: string[] | null;
 
+  @Column({ type: 'json', nullable: true })
+  imageThumbnails: string[] | null;
+
   @Column({ default: false })
   isPublic: boolean;
 
