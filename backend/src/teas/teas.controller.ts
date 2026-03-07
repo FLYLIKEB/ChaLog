@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards, BadRequestException, Request } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, BadRequestException, Request } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TeasService } from './teas.service';
 import { CreateTeaDto } from './dto/create-tea.dto';
+import { CreateSellerDto } from './dto/create-seller.dto';
+import { UpdateSellerDto } from './dto/update-seller.dto';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
 
 function parseTeaId(id: string): number {
@@ -68,6 +70,23 @@ export class TeasController {
       ? await this.teasService.findSellersByQuery(query.trim())
       : await this.teasService.findSellers();
     return { sellers };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('sellers')
+  async createSeller(@Body() dto: CreateSellerDto) {
+    return this.teasService.createSeller(dto);
+  }
+
+  @Get('sellers/by-name/:name')
+  async getSellerByName(@Param('name') name: string) {
+    return this.teasService.findSellerByName(name);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('sellers/by-name/:name')
+  async updateSeller(@Param('name') name: string, @Body() dto: UpdateSellerDto) {
+    return this.teasService.updateSeller(name, dto);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
