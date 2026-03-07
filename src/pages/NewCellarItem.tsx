@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -9,7 +9,7 @@ import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { logger } from '../lib/logger';
 
 const UNIT_OPTIONS: { value: 'g' | 'ml' | 'bag' | 'cake'; label: string }[] = [
@@ -22,6 +22,8 @@ const UNIT_OPTIONS: { value: 'g' | 'ml' | 'bag' | 'cake'; label: string }[] = [
 export function NewCellarItem() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnedTeaId = searchParams.get('teaId');
 
   const [teas, setTeas] = useState<Tea[]>([]);
   const [teaSearch, setTeaSearch] = useState('');
@@ -45,7 +47,19 @@ export function NewCellarItem() {
       try {
         setIsLoadingTeas(true);
         const data = await teasApi.getAll();
-        setTeas(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setTeas(list);
+
+        // 신규 차 등록 후 돌아온 경우 해당 차를 자동 선택
+        if (returnedTeaId) {
+          const id = parseInt(returnedTeaId, 10);
+          if (!isNaN(id)) {
+            const matched = list.find((t) => t.id === id);
+            if (matched) {
+              setSelectedTeaId(id);
+            }
+          }
+        }
       } catch (error) {
         logger.error('Failed to fetch teas:', error);
         toast.error('차 목록을 불러오는데 실패했습니다.');
@@ -55,7 +69,7 @@ export function NewCellarItem() {
     };
 
     fetchTeas();
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, returnedTeaId]);
 
   const filteredTeas = teaSearch.trim()
     ? teas.filter(
@@ -150,9 +164,23 @@ export function NewCellarItem() {
               ) : (
                 <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border">
                   {filteredTeas.length === 0 ? (
-                    <p className="text-sm text-muted-foreground p-3 text-center">
-                      {teaSearch ? '검색 결과가 없습니다.' : '차 목록이 없습니다.'}
-                    </p>
+                    <div className="p-3 text-center space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        {teaSearch ? '검색 결과가 없습니다.' : '차 목록이 없습니다.'}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            `/tea/new?returnTo=/cellar/new${teaSearch.trim() ? `&searchQuery=${encodeURIComponent(teaSearch.trim())}` : ''}`,
+                          )
+                        }
+                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                      >
+                        <PlusCircle className="w-4 h-4" />
+                        새 차 등록하기
+                      </button>
+                    </div>
                   ) : (
                     filteredTeas.map((tea) => (
                       <button
