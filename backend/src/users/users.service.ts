@@ -294,16 +294,13 @@ export class UsersService {
   }
 
   async getNotificationSetting(userId: number): Promise<UserNotificationSetting> {
-    const existing = await this.notificationSettingRepository.findOne({ where: { userId } });
-    if (existing) {
-      return existing;
-    }
-
-    const created = this.notificationSettingRepository.create({
-      userId,
-      isNotificationEnabled: true,
-    });
-    return await this.notificationSettingRepository.save(created);
+    await this.notificationSettingRepository
+      .createQueryBuilder()
+      .insert()
+      .values({ userId, isNotificationEnabled: true })
+      .orIgnore()
+      .execute();
+    return this.notificationSettingRepository.findOne({ where: { userId } });
   }
 
   async updateNotificationSetting(

@@ -12,16 +12,22 @@ import { usersApi } from '../lib/api';
 export function Settings() {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [isNotificationEnabled, setIsNotificationEnabled] = useState(true);
+  const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean | null>(null);
+  const [isNotificationLoaded, setIsNotificationLoaded] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+    const controller = new AbortController();
     usersApi.getNotificationSetting(user.id).then((setting) => {
+      if (controller.signal.aborted) return;
       setIsNotificationEnabled(setting.isNotificationEnabled);
+      setIsNotificationLoaded(true);
     }).catch(() => {
-      // 기본값 유지
+      if (controller.signal.aborted) return;
+      setIsNotificationLoaded(true);
     });
+    return () => controller.abort();
   }, [user]);
 
   const handleNotificationToggle = async (checked: boolean) => {
@@ -93,9 +99,9 @@ export function Settings() {
               </div>
             </div>
             <Switch
-              checked={isNotificationEnabled}
+              checked={isNotificationEnabled ?? false}
               onCheckedChange={handleNotificationToggle}
-              disabled={isNotificationLoading}
+              disabled={!isNotificationLoaded || isNotificationLoading}
             />
           </div>
         </section>

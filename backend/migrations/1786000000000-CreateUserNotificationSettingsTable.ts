@@ -7,7 +7,7 @@ export class CreateUserNotificationSettingsTable1786000000000
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE IF NOT EXISTS \`user_notification_settings\` (
+      CREATE TABLE \`user_notification_settings\` (
         \`userId\` INT NOT NULL,
         \`isNotificationEnabled\` TINYINT(1) NOT NULL DEFAULT 1,
         \`createdAt\` DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
