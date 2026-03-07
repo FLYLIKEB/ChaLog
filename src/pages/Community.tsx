@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
+import { PostCardSkeleton } from '../components/PostCardSkeleton';
 import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
 import { postsApi } from '../lib/api';
 import { PostCard } from '../components/PostCard';
@@ -70,22 +71,31 @@ export function Community() {
       {/* 게시글 목록 */}
       <div className="px-4">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <div className="space-y-0">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <PostCardSkeleton key={i} />
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <EmptyState
             type="feed"
             message={
               selectedCategory
-                ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없습니다.`
+                ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없어요.`
                 : '첫 번째 게시글을 작성해보세요!'
             }
+            action={{ label: '첫 글 쓰기', onClick: () => navigate('/community/new') }}
           />
         ) : (
           <div>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            {posts.map((post, i) => (
+              <div
+                key={post.id}
+                className="animate-fade-in-up opacity-0"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <PostCard post={post} />
+              </div>
             ))}
           </div>
         )}

@@ -91,7 +91,11 @@ export function Saved() {
               ))}
             </div>
           ) : (
-            <EmptyState type="notes" message="아직 저장한 노트가 없습니다." />
+            <EmptyState
+              type="notes"
+              message="아직 저장한 노트가 없어요."
+              action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+            />
           )}
         </Section>
       </div>

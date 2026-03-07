@@ -247,7 +247,7 @@ export function TagDetail() {
                       )}
                       {note.overallRating !== null && (
                         <div className="flex items-center gap-1 mt-1">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                          <Star className="w-3.5 h-3.5 fill-rating text-rating" />
                           <span className="text-xs font-medium">{Number(note.overallRating).toFixed(1)}</span>
                         </div>
                       )}

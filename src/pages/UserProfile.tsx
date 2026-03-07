@@ -200,7 +200,11 @@ export function UserProfile() {
       <div className="min-h-screen bg-background pb-20">
         <Header showBack title="사용자 프로필" />
         <div className="p-4">
-          <EmptyState type="notes" message="사용자를 찾을 수 없습니다." />
+          <EmptyState
+            type="notes"
+            message="사용자를 찾을 수 없어요."
+            action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+          />
         </div>
         <BottomNav />
       </div>
@@ -412,7 +416,11 @@ export function UserProfile() {
               ))}
             </div>
           ) : (
-            <EmptyState type="notes" message="아직 작성한 노트가 없습니다." />
+            <EmptyState
+              type="notes"
+              message="아직 작성한 노트가 없어요."
+              action={{ label: '첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+            />
           )}
         </Section>
       </div>

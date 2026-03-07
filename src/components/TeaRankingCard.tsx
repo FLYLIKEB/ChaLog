@@ -11,9 +11,9 @@ interface TeaRankingCardProps {
 }
 
 const RANK_STYLES: Record<number, { bg: string; text: string; icon?: string }> = {
-  1: { bg: 'bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400', icon: '🥇' },
-  2: { bg: 'bg-slate-400/20', text: 'text-slate-600 dark:text-slate-300', icon: '🥈' },
-  3: { bg: 'bg-amber-700/20', text: 'text-amber-800 dark:text-amber-600', icon: '🥉' },
+  1: { bg: 'bg-rating/20', text: 'text-rating', icon: '🥇' },
+  2: { bg: 'bg-muted-foreground/20', text: 'text-muted-foreground', icon: '🥈' },
+  3: { bg: 'bg-rating/30', text: 'text-rating', icon: '🥉' },
 };
 
 export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
@@ -45,7 +45,7 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
       </div>
       <div className="flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <Star className="w-3.5 h-3.5 fill-rating text-rating" />
           <span className="font-medium">{Number(tea.averageRating).toFixed(1)}</span>
         </div>
         <span className="text-muted-foreground">{tea.reviewCount}개 리뷰</span>

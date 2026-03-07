@@ -309,7 +309,7 @@ export function EditNote() {
     return (
       <DetailFallback title="노트 수정">
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       </DetailFallback>
     );
@@ -325,12 +325,12 @@ export function EditNote() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-6">
+    <div className="min-h-screen bg-background pb-6">
       <Header showBack title="노트 수정" />
       
       <div className="p-4 space-y-6">
         {/* 차 선택 영역 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <Label className="mb-2 block">차 선택</Label>
           <Input
             ref={teaInputRef}
@@ -361,10 +361,10 @@ export function EditNote() {
                     setSelectedTea(tea.id);
                     setSearchQuery(tea.name);
                   }}
-                  className="w-full text-left p-3 hover:bg-gray-50 transition-colors min-h-[44px]"
+                  className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {tea.type} · {tea.seller || '구매처 미상'}
                   </p>
                 </button>
@@ -374,8 +374,8 @@ export function EditNote() {
 
           {/* 검색 결과가 없을 때 새 차 추가 옵션 */}
           {searchQuery && !selectedTea && filteredTeas.length === 0 && (
-            <div className="mt-2 p-4 border border-dashed border-gray-300 rounded-lg text-center">
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="mt-2 p-4 border border-dashed border-border rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-3">
                 "{searchQuery}"에 대한 검색 결과가 없습니다.
               </p>
               <Button
@@ -393,12 +393,12 @@ export function EditNote() {
           )}
 
           {selectedTeaData && (
-            <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg">
               <div className="flex items-center gap-2 mb-2">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm text-emerald-900">{selectedTeaData.name}</span>
+                <Check className="w-4 h-4 text-success" />
+                <span className="text-sm text-foreground font-medium">{selectedTeaData.name}</span>
               </div>
-              <div className="text-xs text-emerald-700 space-y-1">
+              <div className="text-xs text-muted-foreground space-y-1">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
                 {selectedTeaData.seller && <p>구매처: {selectedTeaData.seller}</p>}
@@ -408,7 +408,7 @@ export function EditNote() {
         </section>
 
         {/* 평점 슬라이더 */}
-        <section className="bg-white rounded-lg p-4 space-y-4">
+        <section className="bg-card rounded-lg p-4 space-y-4">
           <h3>평가</h3>
           {axes
             .sort((a, b) => a.displayOrder - b.displayOrder)
@@ -426,7 +426,7 @@ export function EditNote() {
         </section>
 
         {/* 사진 업로드 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <ImageUploader
             images={images}
             onChange={setImages}
@@ -436,7 +436,7 @@ export function EditNote() {
 
         {/* 태그 입력 */}
         <section 
-          className="bg-white rounded-lg p-4"
+          className="bg-card rounded-lg p-4"
           onKeyDown={(e) => {
             // 태그 입력 섹션에서 Enter 키가 폼 제출을 트리거하지 않도록 방지
             if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
@@ -453,7 +453,7 @@ export function EditNote() {
         </section>
 
         {/* 메모 입력 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <Label className="mb-2 block">메모</Label>
           <Textarea
             placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
@@ -464,11 +464,11 @@ export function EditNote() {
         </section>
 
         {/* 공개 여부 스위치 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <Label>공개 설정</Label>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 다른 사용자에게 이 노트를 공개합니다
               </p>
             </div>

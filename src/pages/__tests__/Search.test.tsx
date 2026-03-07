@@ -110,7 +110,7 @@ describe('Search 페이지', () => {
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '없는차');
 
-    expect(await screen.findByText('검색 결과가 없습니다.')).toBeInTheDocument();
+    expect(await screen.findByText('검색 결과가 없어요.')).toBeInTheDocument();
   });
 
   it('샵/브랜드 섹션에 샵 목록을 표시한다', async () => {

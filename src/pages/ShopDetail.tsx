@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
 import { EmptyState } from '../components/EmptyState';
@@ -12,6 +12,7 @@ import { logger } from '../lib/logger';
 
 export function ShopDetail() {
   const { name } = useParams<{ name: string }>();
+  const navigate = useNavigate();
   const [teas, setTeas] = useState<Tea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,7 +39,11 @@ export function ShopDetail() {
     return (
       <div className="min-h-screen bg-background pb-20">
         <Header title="샵 상세" showBack />
-        <EmptyState type="search" message="샵을 찾을 수 없습니다." />
+        <EmptyState
+          type="search"
+          message="샵을 찾을 수 없어요."
+          action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+        />
         <BottomNav />
       </div>
     );
@@ -72,7 +77,11 @@ export function ShopDetail() {
                 ))}
               </div>
             ) : (
-              <EmptyState type="search" message="이 샵에 등록된 차가 없습니다." />
+              <EmptyState
+                type="search"
+                message="이 샵에 등록된 차가 없어요."
+                action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+              />
             )}
           </>
         )}

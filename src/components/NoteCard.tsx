@@ -181,7 +181,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             onClick={handleBookmarkClick}
             disabled={isTogglingBookmark}
             className={cn(
-              "min-h-[40px] min-w-[40px] flex items-center justify-center transition-colors disabled:opacity-50 rounded-md",
+              "min-h-[40px] min-w-[40px] flex items-center justify-center transition-all duration-150 disabled:opacity-50 rounded-md active:scale-95",
               isBookmarked 
                 ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
                 : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
@@ -194,7 +194,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             ) : (
               <Bookmark
                 className={cn(
-                  "w-4 h-4 transition-all",
+                  "w-4 h-4 transition-all duration-150",
                   isBookmarked 
                     ? 'fill-primary text-primary stroke-primary' 
                     : 'fill-none text-muted-foreground stroke-muted-foreground'
@@ -223,7 +223,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
       >
       <div className="flex items-start gap-3 sm:gap-4">
         {/* 이미지 썸네일 */}
-        <div className="shrink-0 rounded-lg overflow-hidden bg-gray-100 w-28 h-auto sm:w-32 sm:h-auto mt-3 self-stretch">
+        <div className="shrink-0 rounded-lg overflow-hidden bg-muted w-28 h-auto sm:w-32 sm:h-auto mt-3 self-stretch">
           {hasImage && firstImage ? (
             <ImageWithFallback
               src={firstImage}
@@ -252,7 +252,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           {/* 별점 */}
           {note.overallRating !== null && (
             <div className="flex items-center gap-1.5 -mt-0.5">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              <Star className="w-4 h-4 fill-rating text-rating" />
               <span className="text-sm font-medium">{Number(note.overallRating).toFixed(1)}</span>
             </div>
           )}

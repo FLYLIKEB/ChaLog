@@ -33,7 +33,7 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
         </div>
         <div className="shrink-0 flex flex-col items-end gap-0.5">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+            <Star className="w-4 h-4 fill-rating text-rating" />
             <span className="text-sm font-medium">{Number(tea.averageRating).toFixed(1)}</span>
           </div>
           <span className="text-xs text-muted-foreground">{tea.reviewCount}개 리뷰</span>

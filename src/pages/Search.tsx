@@ -5,6 +5,7 @@ import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
 import { TeaRankingCard } from '../components/TeaRankingCard';
 import { TeaNewCard } from '../components/TeaNewCard';
+import { TeaCardSkeleton } from '../components/TeaCardSkeleton';
 import { EmptyState } from '../components/EmptyState';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -249,7 +250,7 @@ export function Search() {
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            className="pl-10 rounded-full"
           />
         </div>
 
@@ -322,17 +323,29 @@ export function Search() {
         {showResults && (
           <>
             {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <TeaCardSkeleton key={i} />
+                ))}
               </div>
             ) : teas.length > 0 ? (
               <div className="space-y-3">
-                {teas.map((tea) => (
-                  <TeaCard key={tea.id} tea={tea} />
-                ))}
+{teas.map((tea, i) => (
+                <div
+                  key={tea.id}
+                  className="animate-fade-in-up opacity-0"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <TeaCard tea={tea} />
+                </div>
+              ))}
               </div>
             ) : (
-              <EmptyState type="search" message="검색 결과가 없습니다." />
+              <EmptyState
+                type="search"
+                message="검색 결과가 없어요."
+                action={{ label: '검색어 바꿔보기', onClick: goBackToExplore }}
+              />
             )}
 
             <Button
@@ -350,8 +363,30 @@ export function Search() {
         {!showResults && (
           <>
             {sectionsLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              <div className="space-y-8">
+                <Section title="인기 차 랭킹" spacing="lg">
+                  <div className="flex gap-3 overflow-x-hidden">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="shrink-0 w-[200px]">
+                        <TeaCardSkeleton />
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+                <Section title="신규 차" spacing="lg">
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <TeaCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </Section>
+                <Section title="추천 큐레이션" spacing="lg">
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <TeaCardSkeleton key={i} />
+                    ))}
+                  </div>
+                </Section>
               </div>
             ) : (
               <div className="space-y-8">

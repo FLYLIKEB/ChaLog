@@ -147,10 +147,10 @@ export function Notifications() {
       <main className="pb-20">
         {loading ? (
           <div className="flex justify-center items-center h-48">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
             <Bell className="w-12 h-12" />
             <p className="text-sm">새로운 알림이 없습니다.</p>
           </div>
@@ -162,7 +162,7 @@ export function Notifications() {
                   variant="ghost"
                   size="sm"
                   onClick={handleMarkAllAsRead}
-                  className="text-xs text-gray-500 flex items-center gap-1"
+                  className="text-xs text-muted-foreground flex items-center gap-1"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   전체 읽음
@@ -174,7 +174,7 @@ export function Notifications() {
                 <li key={notification.id}>
                   <button
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full flex items-start gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                    className={`w-full flex items-start gap-3 px-4 py-4 text-left hover:bg-muted/30 transition-colors border-b border-border ${
                       !notification.isRead ? 'bg-blue-50/40' : ''
                     }`}
                   >
@@ -186,10 +186,10 @@ export function Notifications() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 leading-snug">
+                      <p className="text-sm text-foreground leading-snug">
                         {getNotificationText(notification)}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formatRelativeTime(notification.createdAt)}
                       </p>
                     </div>
@@ -212,7 +212,7 @@ export function Notifications() {
                   size="sm"
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="text-sm text-gray-500"
+                  className="text-sm text-muted-foreground"
                 >
                   {loadingMore ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
