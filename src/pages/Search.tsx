@@ -58,32 +58,42 @@ export function Search() {
   const [sectionsLoading, setSectionsLoading] = useState(true);
 
   const fetchSections = useCallback(async () => {
-    try {
-      setSectionsLoading(true);
-      const [popularRes, newRes, curationRes, sellersRes] = await Promise.allSettled([
-        teasApi.getPopularRankings(10),
-        teasApi.getNewRankings(10),
-        teasApi.getCuration(10),
-        teasApi.getSellers(),
-      ]);
-      if (popularRes.status === 'fulfilled') {
-        setPopularTeas(Array.isArray(popularRes.value) ? popularRes.value : []);
-      }
-      if (newRes.status === 'fulfilled') {
-        setNewTeas(Array.isArray(newRes.value) ? newRes.value : []);
-      }
-      if (curationRes.status === 'fulfilled') {
-        setCurationTeas(Array.isArray(curationRes.value) ? curationRes.value : []);
-      }
-      if (sellersRes.status === 'fulfilled' && sellersRes.value?.sellers) {
-        setSellers(sellersRes.value.sellers);
-      }
-    } catch (error) {
-      logger.error('Failed to fetch explore sections:', error);
-      toast.error('탐색 데이터를 불러오는데 실패했습니다.');
-    } finally {
-      setSectionsLoading(false);
+    setSectionsLoading(true);
+    const [popularRes, newRes, curationRes, sellersRes] = await Promise.allSettled([
+      teasApi.getPopularRankings(10),
+      teasApi.getNewRankings(10),
+      teasApi.getCuration(10),
+      teasApi.getSellers(),
+    ]);
+    if (popularRes.status === 'fulfilled') {
+      setPopularTeas(Array.isArray(popularRes.value) ? popularRes.value : []);
+    } else {
+      logger.error('Failed to fetch popular rankings:', popularRes.reason);
     }
+    if (newRes.status === 'fulfilled') {
+      setNewTeas(Array.isArray(newRes.value) ? newRes.value : []);
+    } else {
+      logger.error('Failed to fetch new rankings:', newRes.reason);
+    }
+    if (curationRes.status === 'fulfilled') {
+      setCurationTeas(Array.isArray(curationRes.value) ? curationRes.value : []);
+    } else {
+      logger.error('Failed to fetch curation:', curationRes.reason);
+    }
+    if (sellersRes.status === 'fulfilled' && sellersRes.value?.sellers) {
+      setSellers(sellersRes.value.sellers);
+    } else if (sellersRes.status === 'rejected') {
+      logger.error('Failed to fetch sellers:', sellersRes.reason);
+    }
+    const anyFailed =
+      popularRes.status === 'rejected' ||
+      newRes.status === 'rejected' ||
+      curationRes.status === 'rejected' ||
+      sellersRes.status === 'rejected';
+    if (anyFailed) {
+      toast.error('탐색 데이터를 불러오는데 실패했습니다.');
+    }
+    setSectionsLoading(false);
   }, []);
 
   const fetchAllTeas = useCallback(async () => {
@@ -162,7 +172,7 @@ export function Search() {
         sort: urlSort || 'popular',
       });
     }
-  }, [hasFilterParams, urlSort, urlType, urlMinRating]);
+  }, [hasFilterParams, urlSort, urlType, urlMinRating, fetchWithFilters, searchQuery]);
 
   useEffect(() => {
     if (!searchQuery.trim() && !hasSearched && !hasFilterParams) {

@@ -235,6 +235,39 @@ describe('/teas - 차 API', () => {
     expect(response.body.length).toBeLessThanOrEqual(10);
   });
 
+  it('GET /teas/curation - 온보딩 완료 사용자에게 맞춤 큐레이션 반환', async () => {
+    await context.testHelper.createTea(testUser.token, {
+      name: '큐레이션홍차',
+      type: '홍차',
+      seller: '테스트샵',
+    });
+    await context.testHelper.createTea(testUser.token, {
+      name: '큐레이션녹차',
+      type: '녹차',
+      seller: '테스트샵',
+    });
+
+    await context.testHelper
+      .authenticatedRequest(testUser.token)
+      .patch(`/users/${testUser.id}/onboarding`)
+      .send({
+        preferredTeaTypes: ['홍차', '녹차'],
+        preferredFlavorTags: ['민트'],
+      })
+      .expect(200);
+
+    const response = await context.testHelper
+      .authenticatedRequest(testUser.token)
+      .get('/teas/curation?limit=10')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeLessThanOrEqual(10);
+    const types = response.body.map((t: { type: string }) => t.type);
+    const hasPreferredTypes = types.some((t: string) => t === '홍차' || t === '녹차');
+    expect(hasPreferredTypes).toBe(true);
+  });
+
   it('GET /teas?type=&minRating=&sort= - 필터 조합 검증', async () => {
     await context.testHelper.createTea(testUser.token, {
       name: '필터테스트홍차',

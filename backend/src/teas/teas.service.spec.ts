@@ -34,6 +34,7 @@ describe('TeasService', () => {
     addOrderBy: jest.fn().mockReturnThis(),
     setParameter: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
     getMany: jest.fn(),
   };
 
@@ -387,14 +388,14 @@ describe('TeasService', () => {
         preferredTeaTypes: ['홍차', '녹차'],
         hasCompletedOnboarding: true,
       });
-      mockQueryBuilder.getMany.mockResolvedValue([
-        mockTea({ id: 1, type: '홍차' }),
-        mockTea({ id: 2, type: '녹차' }),
-      ]);
+      const popularByType = Array.from({ length: 10 }, (_, i) =>
+        mockTea({ id: i + 1, type: ['홍차', '녹차'][i % 2] }),
+      );
+      mockQueryBuilder.getMany.mockResolvedValue(popularByType);
 
       const result = await service.findCurationTeas(10, 1);
 
-      expect(result).toHaveLength(2);
+      expect(result).toHaveLength(10);
       expect(mockQueryBuilder.where).toHaveBeenCalledWith('tea.type IN (:...types)', {
         types: ['홍차', '녹차'],
       });

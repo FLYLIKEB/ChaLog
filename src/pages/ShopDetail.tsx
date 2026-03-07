@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
 import { EmptyState } from '../components/EmptyState';
@@ -12,7 +12,6 @@ import { logger } from '../lib/logger';
 
 export function ShopDetail() {
   const { name } = useParams<{ name: string }>();
-  const navigate = useNavigate();
   const [teas, setTeas] = useState<Tea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,7 +19,7 @@ export function ShopDetail() {
     if (!name) return;
     try {
       setIsLoading(true);
-      const data = await teasApi.getBySeller(decodeURIComponent(name));
+      const data = await teasApi.getBySeller(name);
       setTeas(Array.isArray(data) ? data : []);
     } catch (error) {
       logger.error('Failed to fetch shop teas:', error);
@@ -45,7 +44,7 @@ export function ShopDetail() {
     );
   }
 
-  const displayName = decodeURIComponent(name);
+  const displayName = name;
 
   return (
     <div className="min-h-screen bg-background pb-20">

@@ -27,15 +27,18 @@ export class TeasController {
     @Query('type') type?: string,
     @Query('minRating') minRatingStr?: string,
     @Query('sort') sort?: 'popular' | 'new' | 'rating',
+    @Query('limit') limitStr?: string,
   ) {
     const hasFilters = query || type || minRatingStr || sort;
     if (hasFilters) {
       const minRating = minRatingStr ? parseFloat(minRatingStr) : undefined;
+      const limit = limitStr ? parseInt(limitStr, 10) : undefined;
       return this.teasService.findWithFilters({
         q: query,
         type,
         minRating: Number.isNaN(minRating as number) ? undefined : minRating,
         sort,
+        limit: Number.isNaN(limit as number) ? undefined : limit,
       });
     }
     return this.teasService.findAll();

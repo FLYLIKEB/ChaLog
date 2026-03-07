@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Tea } from './entities/tea.entity';
@@ -8,6 +8,8 @@ import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class TeasService {
+  private readonly logger = new Logger(TeasService.name);
+
   constructor(
     @InjectRepository(Tea)
     private teasRepository: Repository<Tea>,
@@ -95,8 +97,11 @@ export class TeasService {
             .getMany();
           return [...popularByType, ...additional].slice(0, take);
         }
-      } catch {
-        // Fall through to default
+      } catch (error) {
+        this.logger.warn(
+          `Onboarding preference fetch failed for user ${userId}`,
+          error instanceof Error ? error.message : error,
+        );
       }
     }
 
@@ -149,6 +154,7 @@ export class TeasService {
     type?: string;
     minRating?: number;
     sort?: 'popular' | 'new' | 'rating';
+    limit?: number;
   }): Promise<Tea[]> {
     const qb = this.teasRepository.createQueryBuilder('tea');
 
@@ -183,6 +189,9 @@ export class TeasService {
         qb.orderBy('tea.createdAt', 'DESC').addOrderBy('tea.id', 'ASC');
         break;
     }
+
+    const take = Math.min(Math.max(1, params.limit ?? 50), 100);
+    qb.take(take);
 
     return qb.getMany();
   }
