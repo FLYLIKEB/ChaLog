@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { PAGE_BG_GRADIENT } from './constants';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
 import { GoogleOAuthProvider } from '@react-oauth/google';
@@ -28,6 +29,7 @@ import { TagDetail } from './pages/TagDetail';
 import { ShopDetail } from './pages/ShopDetail';
 import { Notifications } from './pages/Notifications';
 import { FloatingActionButton } from './components/FloatingActionButton';
+import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
 type FloatingActionRouteConfig = {
   position?: 'default' | 'aboveNav';
@@ -113,8 +115,9 @@ export default function App() {
   const content = (
     <AuthProvider>
       <BrowserRouter>
-        <div className="max-w-2xl mx-auto bg-background min-h-screen overflow-x-hidden">
+        <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
           <OnboardingRouteGuard>
+            <PullToRefreshProvider>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
@@ -142,6 +145,7 @@ export default function App() {
               <Route path="/onboarding" element={<Onboarding />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </PullToRefreshProvider>
           </OnboardingRouteGuard>
           <FloatingActionButtonSwitcher />
           <Toaster />
