@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useRef, useContext } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { BottomNavSpacer } from '../components/BottomNavSpacer';
 
 type RegisterRefreshFn = (callback: (() => Promise<void>) | undefined) => void;
 
@@ -43,18 +44,20 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
         <div
           ref={scrollContainerRef}
           className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y"
-          style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
+          style={{
+            WebkitOverflowScrolling: 'touch',
+            scrollBehavior: 'auto',
+          } as React.CSSProperties}
         >
-        {showIndicator && (
-          <div
-            className="flex flex-col items-center justify-center shrink-0 transition-all duration-300 ease-out animate-pull-refresh-in"
-            style={{
-              minHeight: Math.max(pullDistance, isRefreshing ? 88 : 48),
-              paddingTop: 'calc(var(--header-spacer) + 12px)',
-              paddingBottom: 2,
-            }}
-          >
-            {isRefreshing ? (
+        <div
+          className="flex flex-col items-center justify-center shrink-0 transition-all duration-200 ease-out overflow-hidden"
+          style={{
+            minHeight: showIndicator ? Math.max(pullDistance, isRefreshing ? 88 : 48) : 0,
+            paddingTop: showIndicator ? 'calc(var(--header-spacer) + 12px)' : 0,
+            paddingBottom: showIndicator ? 2 : 0,
+          }}
+        >
+            {showIndicator && (isRefreshing ? (
               <div className="relative flex flex-col items-center gap-4 py-2 min-w-[200px]">
                 {/* 찻잎 모양 - 도는 🌿 근처에 배치 */}
                 <div className="absolute inset-0 pointer-events-none overflow-visible flex items-center justify-center">
@@ -96,10 +99,10 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
                   {isReadyToRefresh ? '놓으면 새로고침' : '당겨서 새로고침'}
                 </p>
               </div>
-            )}
+            ))}
           </div>
-        )}
         {children}
+        <BottomNavSpacer />
         </div>
       </div>
     </PullToRefreshContext.Provider>

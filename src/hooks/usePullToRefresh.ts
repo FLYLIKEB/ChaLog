@@ -91,6 +91,10 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     }
   }, [onRefresh]);
 
+  const rafIdRef = useRef<number | null>(null);
+  const pendingDeltaRef = useRef<number | null>(null);
+  const wheelAccumRef = useRef(0);
+
   const applyPull = useCallback((deltaY: number) => {
     if (deltaY > 0) {
       const raw = deltaY * RESISTANCE;
@@ -98,11 +102,28 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
         ? raw
         : PULL_THRESHOLD + (raw - PULL_THRESHOLD) * 0.3;
       const clamped = Math.min(distance, MAX_PULL);
-      setPullDistance(clamped);
+      if (Math.abs(pullDistanceRef.current - clamped) < 1) return; // 미세 변화 무시
       pullDistanceRef.current = clamped;
+      pendingDeltaRef.current = clamped;
+      if (rafIdRef.current == null) {
+        rafIdRef.current = requestAnimationFrame(() => {
+          rafIdRef.current = null;
+          const v = pendingDeltaRef.current;
+          if (v != null) {
+            pendingDeltaRef.current = null;
+            setPullDistance(v);
+          }
+        });
+      }
     } else {
-      setPullDistance(0);
+      if (pullDistanceRef.current === 0) return; // 이미 0이면 re-render 방지
       pullDistanceRef.current = 0;
+      pendingDeltaRef.current = null;
+      if (rafIdRef.current != null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      setPullDistance(0);
     }
   }, []);
 
@@ -127,8 +148,11 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     const handleTouchMove = (e: TouchEvent) => {
       if (isRefreshing) return;
       if (el.scrollTop > 0) {
-        setPullDistance(0);
-        pullDistanceRef.current = 0;
+        if (pullDistanceRef.current > 0) {
+          touchStartY.current = e.touches[0].clientY;
+          setPullDistance(0);
+          pullDistanceRef.current = 0;
+        }
         return;
       }
       const deltaY = e.touches[0].clientY - touchStartY.current;
@@ -151,8 +175,11 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
       if (!isPointerDownRef.current || isRefreshing) return;
       if (e.pointerType !== 'mouse') return;
       if (el.scrollTop > 0) {
-        setPullDistance(0);
-        pullDistanceRef.current = 0;
+        if (pullDistanceRef.current > 0) {
+          touchStartY.current = e.clientY;
+          setPullDistance(0);
+          pullDistanceRef.current = 0;
+        }
         return;
       }
       const deltaY = e.clientY - touchStartY.current;
@@ -171,8 +198,14 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     const handleWheel = (e: WheelEvent) => {
       if (isRefreshing) return;
       if (el.scrollTop === 0 && e.deltaY < 0) {
-        e.preventDefault();
-        handleRefresh();
+        wheelAccumRef.current += Math.abs(e.deltaY);
+        if (wheelAccumRef.current > 40) {
+          wheelAccumRef.current = 0;
+          e.preventDefault();
+          handleRefresh();
+        }
+      } else {
+        wheelAccumRef.current = 0;
       }
     };
 
@@ -194,6 +227,10 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
       el.removeEventListener('pointerup', handlePointerUp);
       el.removeEventListener('pointerleave', handlePointerUp);
       el.removeEventListener('wheel', handleWheel);
+      if (rafIdRef.current != null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
   }, [isRefreshing, handleRefresh, applyPull, finishPull]);
 

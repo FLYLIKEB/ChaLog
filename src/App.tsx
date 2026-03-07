@@ -27,6 +27,7 @@ import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
 import { TagDetail } from './pages/TagDetail';
 import { ShopDetail } from './pages/ShopDetail';
+import { NewShop } from './pages/NewShop';
 import { Notifications } from './pages/Notifications';
 import { FloatingActionButton } from './components/FloatingActionButton';
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
@@ -48,6 +49,7 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/note/new': { hidden: true },
   '/note/:id/edit': { hidden: true },
   '/tea/new': { hidden: true },
+  '/shop/new': { hidden: true },
   '/cellar': { hidden: true },
   '/cellar/new': { hidden: true },
   '/onboarding': { hidden: true },
@@ -62,6 +64,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/note/new' ||
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname === '/tea/new' ||
+    location.pathname === '/shop/new' ||
     location.pathname === '/cellar' ||
     location.pathname === '/cellar/new' ||
     location.pathname === '/community' ||
@@ -137,6 +140,7 @@ export default function App() {
               <Route path="/community/:id" element={<PostDetail />} />
               <Route path="/community/:id/edit" element={<EditPost />} />
               <Route path="/tag/:name" element={<TagDetail />} />
+              <Route path="/shop/new" element={<NewShop />} />
               <Route path="/shop/:name" element={<ShopDetail />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
