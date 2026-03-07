@@ -38,3 +38,4 @@ your-key.pem
 
 # SQL Tools session files
 *.session.sql
+chalog-s3-user_accessKeys.csv

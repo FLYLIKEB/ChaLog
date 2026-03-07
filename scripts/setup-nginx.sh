@@ -42,43 +42,31 @@ ENDSSH
 
 echo ""
 echo -e "${BLUE}📋 2단계: Nginx 설정 파일 생성${NC}"
-ssh -i "$SSH_KEY" ubuntu@$LIGHTSAIL_IP << ENDSSH
+ssh -i "$SSH_KEY" ubuntu@$LIGHTSAIL_IP << 'ENDSSH'
 sudo tee /etc/nginx/sites-available/chalog-backend > /dev/null << 'NGINX_CONFIG'
 server {
-    listen 80;
-    server_name $LIGHTSAIL_IP;
-    
-    # 로그 설정
+    listen 80 default_server;
+    server_name _;
+
     access_log /var/log/nginx/chalog-backend-access.log;
     error_log /var/log/nginx/chalog-backend-error.log;
-    
-    # 클라이언트 최대 본문 크기 (파일 업로드용)
+
     client_max_body_size 50M;
-    
+
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-        
-        # 타임아웃 설정
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
-    }
-    
-    # Health check 엔드포인트 (캐싱 없이)
-    location /health {
-        proxy_pass http://localhost:3000/health;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_cache_bypass \$http_upgrade;
-        access_log off;
     }
 }
 NGINX_CONFIG
