@@ -69,11 +69,28 @@ export class NotesController {
         file.mimetype,
       );
 
-      // S3에 업로드
+      // S3에 원본 업로드
       const key = this.s3Service.generateKey('notes', file.originalname, file.mimetype);
       const url = await this.s3Service.uploadFile(key, processedBuffer, file.mimetype);
 
-      return { url };
+      // 썸네일 생성 및 업로드 (실패 시 원본 URL로 폴백)
+      let thumbnailUrl = url;
+      try {
+        const thumbnailBuffer = await this.imageProcessorService.generateThumbnail(
+          file.buffer,
+          file.mimetype,
+        );
+        const thumbnailKey = this.s3Service.getThumbnailKey(key);
+        thumbnailUrl = await this.s3Service.uploadFile(
+          thumbnailKey,
+          thumbnailBuffer,
+          file.mimetype,
+        );
+      } catch {
+        // 썸네일 생성/업로드 실패 시 원본 URL 사용
+      }
+
+      return { url, thumbnailUrl };
     } catch (error) {
       // 사용자 입력 오류(파일 형식, 크기)는 이미 위에서 처리됨
       // S3 또는 이미지 처리 서버 오류는 500으로 처리

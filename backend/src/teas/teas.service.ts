@@ -85,7 +85,7 @@ export class TeasService {
 
     const notes = await this.dataSource.query(
       `SELECT n.id, n.teaId, n.userId, n.schemaId, n.overallRating, n.isRatingIncluded,
-              n.memo, n.images, n.isPublic, n.createdAt, n.updatedAt,
+              n.memo, n.images, n.imageThumbnails, n.isPublic, n.createdAt, n.updatedAt,
               u.name AS userName,
               tea.name AS teaName,
               (SELECT COUNT(*) FROM note_likes nl WHERE nl.noteId = n.id) AS likeCount,

@@ -36,6 +36,7 @@ export function EditNote() {
   const [overallRating, setOverallRating] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [imageThumbnails, setImageThumbnails] = useState<(string | null)[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -176,7 +177,14 @@ export function EditNote() {
         }
         
         setMemo(normalizedNote.memo || '');
-        setImages(normalizedNote.images || []);
+        const noteImages = normalizedNote.images || [];
+        setImages(noteImages);
+        const noteThumbnails = normalizedNote.imageThumbnails || [];
+        setImageThumbnails(
+          noteThumbnails.length === noteImages.length
+            ? noteThumbnails
+            : noteImages.map(() => null)
+        );
         setTags(normalizedNote.tags || []);
         setIsPublic(normalizedNote.isPublic);
 
@@ -287,6 +295,12 @@ export function EditNote() {
         axisValues: axisValuesArray,
         memo: processedMemo,
         images: images.length > 0 ? images : null,
+        imageThumbnails:
+          images.length > 0 && imageThumbnails.length === images.length
+            ? imageThumbnails.map((t, i) => t ?? images[i])
+            : images.length > 0
+              ? images
+              : null,
         tags: tags.length > 0 ? tags : undefined,
         isPublic,
       });
@@ -429,7 +443,11 @@ export function EditNote() {
         <section className="bg-white rounded-lg p-4">
           <ImageUploader
             images={images}
-            onChange={setImages}
+            imageThumbnails={imageThumbnails}
+            onChange={(newImages, newThumbnails) => {
+              setImages(newImages);
+              setImageThumbnails(newThumbnails);
+            }}
             maxImages={5}
           />
         </section>

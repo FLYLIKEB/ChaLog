@@ -292,6 +292,15 @@ export class NotesService {
     // tags와 axisValues 필드를 분리
     const { tags, axisValues, ...noteData } = updateNoteDto;
 
+    // 이미지 변경 시 제거된 이미지 S3에서 삭제
+    if (noteData.images !== undefined && note.images && note.images.length > 0) {
+      const newUrls = new Set(noteData.images);
+      const removedUrls = note.images.filter((url) => !newUrls.has(url));
+      if (removedUrls.length > 0) {
+        await this.deleteNoteImages(removedUrls);
+      }
+    }
+
     Object.assign(note, noteData);
     const updatedNote = await this.notesRepository.save(note);
 
@@ -342,7 +351,7 @@ export class NotesService {
   }
 
   /**
-   * 노트의 이미지 URL들에서 S3 key를 추출하여 삭제
+   * 노트의 이미지 URL들에서 S3 key를 추출하여 삭제 (원본 + 썸네일)
    */
   private async deleteNoteImages(imageUrls: string[]): Promise<void> {
     if (!imageUrls || imageUrls.length === 0) {
@@ -355,10 +364,16 @@ export class NotesService {
         if (key) {
           await this.s3Service.deleteFile(key);
           this.logger.log(`S3 이미지 삭제 성공: ${key}`);
+          const thumbnailKey = this.s3Service.getThumbnailKey(key);
+          try {
+            await this.s3Service.deleteFile(thumbnailKey);
+            this.logger.log(`S3 썸네일 삭제 성공: ${thumbnailKey}`);
+          } catch {
+            // 레거시 노트는 썸네일이 없을 수 있음
+          }
         }
       } catch (error) {
         // 이미지 삭제 실패해도 노트 삭제는 계속 진행
-        // (이미지가 이미 삭제되었거나 존재하지 않을 수 있음)
         this.logger.warn(`S3 이미지 삭제 실패 (URL: ${url}): ${error instanceof Error ? error.message : String(error)}`);
       }
     });
