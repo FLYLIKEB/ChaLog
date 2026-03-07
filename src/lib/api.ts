@@ -6,6 +6,7 @@ import {
   CellarItem,
   TeaFilterParams,
   Seller,
+  SellerDetail,
   PopularTag,
   Note,
   RatingSchema,
@@ -1032,6 +1033,25 @@ export interface CreateTeaRequest {
   price?: number;
 }
 
+export interface CreateSellerRequest {
+  name: string;
+  address?: string;
+  mapUrl?: string;
+  websiteUrl?: string;
+  phone?: string;
+  description?: string;
+  businessHours?: string;
+}
+
+export interface UpdateSellerRequest {
+  address?: string;
+  mapUrl?: string;
+  websiteUrl?: string;
+  phone?: string;
+  description?: string;
+  businessHours?: string;
+}
+
 export interface CreateNoteRequest {
   teaId: number;
   schemaId: number;
@@ -1087,6 +1107,12 @@ export const teasApi = {
     const params = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
     return apiClient.get<{ sellers: Seller[] }>(`/teas/sellers${params}`);
   },
+  createSeller: (data: CreateSellerRequest) =>
+    apiClient.post<SellerDetail>('/teas/sellers', data),
+  getSellerByName: (name: string) =>
+    apiClient.get<SellerDetail | null>(`/teas/sellers/by-name/${encodeURIComponent(name)}`),
+  updateSeller: (name: string, data: UpdateSellerRequest) =>
+    apiClient.patch<SellerDetail>(`/teas/sellers/by-name/${encodeURIComponent(name)}`, data),
   getCuration: (limit = 10) =>
     apiClient.get<Tea[]>(`/teas/curation?limit=${limit}`),
   getBySeller: (name: string) =>

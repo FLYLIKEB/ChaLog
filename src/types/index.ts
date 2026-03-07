@@ -20,6 +20,18 @@ export interface Seller {
   teaCount: number;
 }
 
+export interface SellerDetail {
+  id: number;
+  name: string;
+  address?: string | null;
+  mapUrl?: string | null;
+  websiteUrl?: string | null;
+  phone?: string | null;
+  description?: string | null;
+  businessHours?: string | null;
+  createdAt: string;
+}
+
 export interface TeaFilterParams {
   q?: string;
   type?: string;

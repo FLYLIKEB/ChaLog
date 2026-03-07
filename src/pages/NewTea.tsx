@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, Store } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -27,12 +27,13 @@ export function NewTea() {
   const [searchParams] = useSearchParams();
   const returnTo = searchParams.get('returnTo');
   const searchQuery = searchParams.get('searchQuery');
+  const sellerParam = searchParams.get('seller');
 
   const [name, setName] = useState(searchQuery || '');
   const [type, setType] = useState('');
   const [yearSelect, setYearSelect] = useState<string>('__none__');
   const [yearCustom, setYearCustom] = useState('');
-  const [seller, setSeller] = useState('');
+  const [seller, setSeller] = useState(sellerParam || '');
   const [origin, setOrigin] = useState('');
   const [price, setPrice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -309,15 +310,29 @@ export function NewTea() {
             {/* 구매처 */}
             <div className="space-y-2">
               <Label htmlFor="seller">구매처 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <SellerCombobox
-                id="seller"
-                value={seller}
-                onChange={setSeller}
-                disabled={isLoading}
-                placeholder="검색하거나 새 샵 이름 입력"
-              />
+              <div className="flex gap-2">
+                <SellerCombobox
+                  id="seller"
+                  value={seller}
+                  onChange={setSeller}
+                  disabled={isLoading}
+                  placeholder="검색하거나 새 샵 이름 입력"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={isLoading}
+                  onClick={() => navigate('/shop/new?returnTo=/tea/new')}
+                  aria-label="샵 추가"
+                  title="샵 추가"
+                >
+                  <Store className="w-4 h-4" />
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
-                기존 샵을 선택하면 해당 샵과 연결돼요. 새 샵은 직접 입력하면 돼요.
+                기존 샵을 선택하거나, 새 샵 추가 버튼으로 등록할 수 있어요.
               </p>
             </div>
 
