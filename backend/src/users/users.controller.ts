@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  Query,
   BadRequestException,
   UseGuards,
   Post,
@@ -37,6 +38,12 @@ export class UsersController {
     private readonly imageProcessorService: ImageProcessorService,
     private readonly followsService: FollowsService,
   ) {}
+
+  @Get('trending')
+  getTrending(@Query('period') period?: string) {
+    const p = period === '30d' ? '30d' : '7d';
+    return this.usersService.getTrendingCreators(p);
+  }
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')

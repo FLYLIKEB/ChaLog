@@ -29,6 +29,12 @@ export class TeasController {
     return this.teasService.findAll();
   }
 
+  @Get('trending')
+  getTrending(@Query('period') period?: string) {
+    const p = period === '30d' ? '30d' : '7d';
+    return this.teasService.getTrendingTeas(p);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.teasService.findOne(parseTeaId(id));

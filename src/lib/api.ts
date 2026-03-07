@@ -1049,6 +1049,8 @@ export const teasApi = {
     const endpoint = query ? `/teas?q=${encodeURIComponent(query)}` : '/teas';
     return apiClient.get<Tea[]>(endpoint);
   },
+  getTrending: (period?: '7d' | '30d') =>
+    apiClient.get<Tea[]>(`/teas/trending?period=${period || '7d'}`),
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
   getPopularTags: (id: number) =>
@@ -1099,6 +1101,8 @@ export interface UserNotificationSetting {
 }
 
 export const usersApi = {
+  getTrending: (period?: '7d' | '30d') =>
+    apiClient.get<Array<User & { followerCount: number }>>(`/users/trending?period=${period || '7d'}`),
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
   updateProfile: (id: number, data: { name?: string; profileImageUrl?: string | null; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
