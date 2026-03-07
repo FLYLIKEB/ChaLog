@@ -45,6 +45,7 @@ const mockTea: Tea = {
   year: 2023,
   seller: '차향',
   origin: '중국 푸젠',
+  price: 25000,
   averageRating: 4.2,
   reviewCount: 8,
 };
@@ -123,6 +124,27 @@ describe('TeaDetail', () => {
       expect(screen.getByText('정산소종')).toBeInTheDocument();
       expect(screen.getAllByText('홍차').length).toBeGreaterThan(0);
       expect(screen.getByText('2023년')).toBeInTheDocument();
+      expect(screen.getByText('25,000원')).toBeInTheDocument();
+    });
+  });
+
+  it('가격이 없을 때 가격을 표시하지 않는다', async () => {
+    const teaWithoutPrice = { ...mockTea, price: undefined };
+    vi.mocked(teasApi.getById).mockResolvedValue(teaWithoutPrice);
+    vi.mocked(notesApi.getAll).mockResolvedValue([]);
+    vi.mocked(teasApi.getPopularTags).mockResolvedValue({ tags: [] });
+    vi.mocked(teasApi.getTopReviews).mockResolvedValue([]);
+    vi.mocked(teasApi.getSimilarTeas).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter>
+        <TeaDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('정산소종')).toBeInTheDocument();
+      expect(screen.queryByText('25,000원')).not.toBeInTheDocument();
     });
   });
 
@@ -257,7 +279,7 @@ describe('TeaDetail', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('차 정보를 찾을 수 없습니다.')).toBeInTheDocument();
+      expect(screen.getByText('차 정보를 찾을 수 없어요.')).toBeInTheDocument();
     });
   });
 

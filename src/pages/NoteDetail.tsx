@@ -223,6 +223,9 @@ export function NoteDetail() {
                 <span>{tea.type}</span>
                 {tea.year && <span>· {tea.year}년</span>}
                 {tea.seller && <span>· {tea.seller}</span>}
+                {tea.price != null && tea.price > 0 && (
+                  <span>· {tea.price.toLocaleString()}원</span>
+                )}
               </div>
             </button>
           </section>

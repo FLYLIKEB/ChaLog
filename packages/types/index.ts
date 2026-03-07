@@ -5,6 +5,7 @@ export interface Tea {
   type: string;
   seller?: string;
   origin?: string;
+  price?: number;
   averageRating: number;
   reviewCount: number;
 }

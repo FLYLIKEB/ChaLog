@@ -273,7 +273,10 @@ export function NewNote() {
                 >
                   <p className="text-sm">{tea.name}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {tea.type} · {tea.seller || '구매처 미상'}
+                    {tea.type}
+                    {tea.seller && ` · ${tea.seller}`}
+                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
+                    {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}
                   </p>
                 </button>
               ))}

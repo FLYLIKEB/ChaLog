@@ -78,6 +78,11 @@ function CellarCard({
                 {item.tea.type}
               </span>
             )}
+            {item.tea.price != null && item.tea.price > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                {item.tea.price.toLocaleString()}원
+              </span>
+            )}
           </p>
         </div>
         <button

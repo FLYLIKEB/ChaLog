@@ -34,6 +34,7 @@ export function NewTea() {
   const [yearCustom, setYearCustom] = useState('');
   const [seller, setSeller] = useState('');
   const [origin, setOrigin] = useState('');
+  const [price, setPrice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
@@ -124,12 +125,20 @@ export function NewTea() {
     try {
       setIsLoading(true);
 
+      const priceNum = price.trim() ? parseInt(price.replace(/,/g, ''), 10) : undefined;
+      if (price.trim() && (isNaN(priceNum!) || priceNum! < 0)) {
+        toast.error('가격을 올바르게 입력해주세요.');
+        setIsLoading(false);
+        return;
+      }
+
       const teaData = {
         name: name.trim(),
         type: type.trim(),
         year: yearValue ? parseInt(yearValue, 10) : undefined,
         seller: seller.trim() || undefined,
         origin: origin.trim() || undefined,
+        price: priceNum,
       };
 
       const createdTea = await teasApi.create(teaData);
@@ -310,6 +319,21 @@ export function NewTea() {
               <p className="text-xs text-muted-foreground">
                 기존 샵을 선택하면 해당 샵과 연결돼요. 새 샵은 직접 입력하면 돼요.
               </p>
+            </div>
+
+            {/* 가격 */}
+            <div className="space-y-2">
+              <Label htmlFor="price">가격 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <Input
+                id="price"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 15000"
+                value={price}
+                onChange={(e) => setPrice(e.target.value.replace(/[^0-9,]/g, ''))}
+                disabled={isLoading}
+                aria-label="가격 (원)"
+              />
             </div>
 
             {/* 산지 */}

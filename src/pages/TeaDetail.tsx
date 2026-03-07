@@ -164,6 +164,12 @@ export function TeaDetail() {
                 <p className="text-sm">{tea.origin}</p>
               </div>
             )}
+            {tea.price != null && tea.price > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">가격</p>
+                <p className="text-sm">{tea.price.toLocaleString()}원</p>
+              </div>
+            )}
           </div>
         </section>
 

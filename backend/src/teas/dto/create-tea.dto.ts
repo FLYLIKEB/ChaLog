@@ -23,5 +23,10 @@ export class CreateTeaDto {
   @IsOptional()
   @IsString()
   origin?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number;
 }
 

@@ -13,6 +13,7 @@ const mockTeas = [
     seller: '차향',
     year: 2023,
     origin: '중국',
+    price: 25000,
     averageRating: 4.4,
     reviewCount: 15,
   },
@@ -128,6 +129,7 @@ describe('NewTea 페이지', () => {
     expect(screen.getByLabelText(/차 이름/)).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '차 종류 선택' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '녹차' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/가격/)).toBeInTheDocument();
   });
 
   it('searchQuery 파라미터가 있으면 차 이름 필드가 자동 채워진다', () => {
@@ -235,6 +237,7 @@ describe('NewTea 페이지', () => {
       year: 2024,
       seller: '새 찻집',
       origin: '한국',
+      price: undefined,
     });
 
     await waitFor(() => {
@@ -344,7 +347,33 @@ describe('NewTea 페이지', () => {
       year: undefined,
       seller: undefined,
       origin: undefined,
+      price: undefined,
     });
+  });
+
+  it('가격을 입력하면 등록 시 함께 전달된다', async () => {
+    const user = userEvent.setup();
+    const { teasApi } = await import('../../lib/api');
+
+    renderNewTea();
+
+    const nameInput = screen.getByLabelText(/차 이름/);
+    const 녹차Button = screen.getByRole('button', { name: '녹차' });
+    const priceInput = screen.getByLabelText(/가격/);
+
+    await user.type(nameInput, '가격 테스트 차');
+    await user.click(녹차Button);
+    await user.type(priceInput, '15000');
+
+    await user.click(screen.getByRole('button', { name: '등록하기' }));
+
+    expect(teasApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: '가격 테스트 차',
+        type: '녹차',
+        price: 15000,
+      }),
+    );
   });
 
   it('모든 차 종류 버튼이 표시된다', () => {

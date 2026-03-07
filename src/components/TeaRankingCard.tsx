@@ -40,6 +40,9 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
           <div className="flex items-center gap-1.5 text-muted-foreground text-xs truncate">
             <span>{tea.type}</span>
             {tea.year && <span>{tea.year}년</span>}
+            {tea.price != null && tea.price > 0 && (
+              <span>{tea.price.toLocaleString()}원</span>
+            )}
           </div>
         </div>
       </div>

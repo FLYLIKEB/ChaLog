@@ -21,6 +21,9 @@ export class Tea {
   @Column({ nullable: true })
   origin: string;
 
+  @Column({ type: 'int', nullable: true })
+  price: number;
+
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
   averageRating: number;
 

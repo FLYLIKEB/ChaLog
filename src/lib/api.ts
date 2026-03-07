@@ -1029,6 +1029,7 @@ export interface CreateTeaRequest {
   type: string;
   seller?: string;
   origin?: string;
+  price?: number;
 }
 
 export interface CreateNoteRequest {

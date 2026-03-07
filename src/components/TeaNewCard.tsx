@@ -28,6 +28,9 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
           <div className="flex items-center gap-2 mt-1.5 text-muted-foreground text-sm">
             <span>{tea.type}</span>
             {tea.year && <span>{tea.year}년</span>}
+            {tea.price != null && tea.price > 0 && (
+              <span>{tea.price.toLocaleString()}원</span>
+            )}
             {tea.seller && <span className="truncate">{tea.seller}</span>}
           </div>
         </div>

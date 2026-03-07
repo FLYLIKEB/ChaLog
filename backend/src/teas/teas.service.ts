@@ -291,12 +291,13 @@ export class TeasService {
       type: string;
       seller: string | null;
       origin: string | null;
+      price: number | null;
       averageRating: string;
       reviewCount: string;
       createdAt: Date;
       updatedAt: Date;
     }> = await this.dataSource.query(
-      `SELECT tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin,
+      `SELECT tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.price,
               tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
        FROM teas tea
        JOIN notes n ON n.teaId = tea.id AND n.isPublic = 1
@@ -306,7 +307,7 @@ export class TeasService {
          GROUP BY noteId
        ) lc ON lc.noteId = n.id
        WHERE n.createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
-       GROUP BY tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin,
+       GROUP BY tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.price,
                 tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
        ORDER BY SUM((1 + COALESCE(lc.like_count, 0)) * EXP(-? * DATEDIFF(NOW(), n.createdAt))) DESC
        LIMIT 10`,
