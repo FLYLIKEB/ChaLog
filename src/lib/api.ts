@@ -1042,6 +1042,10 @@ export const authApi = {
   loginWithKakao: (data: KakaoLoginRequest) => apiClient.post<AuthResponse>('/auth/kakao', data),
   loginWithGoogle: (data: GoogleLoginRequest) => apiClient.post<AuthResponse>('/auth/google', data),
   getProfile: () => apiClient.post('/auth/profile'),
+  linkKakao: (accessToken: string) =>
+    apiClient.post<null>('/auth/link/kakao', { accessToken }),
+  linkGoogle: (accessToken: string) =>
+    apiClient.post<null>('/auth/link/google', { accessToken }),
 };
 
 export const teasApi = {
@@ -1098,8 +1102,19 @@ export interface UserNotificationSetting {
   updatedAt: Date;
 }
 
+export interface LinkedAccount {
+  id: number;
+  provider: 'email' | 'kakao' | 'google' | 'naver' | 'apple';
+  providerId: string;
+  hasCredential: boolean;
+}
+
 export const usersApi = {
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
+  getLinkedAccounts: (id: number) =>
+    apiClient.get<LinkedAccount[]>(`/users/${id}/authentications`),
+  unlinkAccount: (userId: number, authId: number) =>
+    apiClient.delete(`/users/${userId}/authentications/${authId}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
   updateProfile: (id: number, data: { name?: string; profileImageUrl?: string | null; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
   getOnboardingPreference: (id: number) => apiClient.get<UserOnboardingPreference>(`/users/${id}/onboarding`),

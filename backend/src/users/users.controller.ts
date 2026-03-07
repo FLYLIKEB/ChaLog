@@ -7,6 +7,7 @@ import {
   Post,
   Patch,
   Body,
+  Delete,
   UseInterceptors,
   UploadedFile,
   Request,
@@ -224,6 +225,63 @@ export class UsersController {
     }
 
     return this.usersService.updateOnboardingPreference(parsedUserId, updateOnboardingDto);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id/authentications')
+  async getLinkedAccounts(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    if (parsedId !== parsedUserId) {
+      throw new ForbiddenException('이 연동 계정 정보를 조회할 권한이 없습니다.');
+    }
+
+    return this.usersService.getLinkedAccounts(parsedUserId);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id/authentications/:authId')
+  @HttpCode(204)
+  async unlinkAccount(
+    @Param('id') id: string,
+    @Param('authId') authId: string,
+    @Request() req,
+  ) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    const parsedId = parseInt(id, 10);
+    const parsedAuthId = parseInt(authId, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedAuthId)) {
+      throw new BadRequestException('Invalid authId');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    if (parsedId !== parsedUserId) {
+      throw new ForbiddenException('이 연동 계정을 해제할 권한이 없습니다.');
+    }
+
+    await this.usersService.unlinkAccount(parsedUserId, parsedAuthId);
   }
 
   @UseGuards(AuthGuard('jwt'))
