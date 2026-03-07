@@ -74,6 +74,9 @@ export interface User {
   name: string;
   email: string | null;
   profileImageUrl?: string | null;
+  followerCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean;
 }
 
 export interface UserOnboardingPreference {

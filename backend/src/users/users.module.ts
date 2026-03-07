@@ -6,9 +6,14 @@ import { User } from './entities/user.entity';
 import { UserAuthentication } from './entities/user-authentication.entity';
 import { UserOnboardingPreference } from './entities/user-onboarding-preference.entity';
 import { StorageModule } from '../common/storage/storage.module';
+import { FollowsModule } from '../follows/follows.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, UserAuthentication, UserOnboardingPreference]), StorageModule],
+  imports: [
+    TypeOrmModule.forFeature([User, UserAuthentication, UserOnboardingPreference]),
+    StorageModule,
+    FollowsModule,
+  ],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

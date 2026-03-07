@@ -13,6 +13,7 @@ import {
   InternalServerErrorException,
   Logger,
   ForbiddenException,
+  HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -23,6 +24,7 @@ import { S3Service } from '../common/storage/s3.service';
 import { ImageProcessorService } from '../common/storage/image-processor.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
+import { FollowsService } from '../follows/follows.service';
 
 @Controller('users')
 export class UsersController {
@@ -32,17 +34,70 @@ export class UsersController {
     private readonly usersService: UsersService,
     private readonly s3Service: S3Service,
     private readonly imageProcessorService: ImageProcessorService,
+    private readonly followsService: FollowsService,
   ) {}
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Request() req?) {
     const parsedId = parseInt(id, 10);
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    
-    return this.usersService.findOne(parsedId);
+
+    const currentUserId: number | undefined = req?.user?.userId
+      ? parseInt(req.user.userId, 10)
+      : undefined;
+
+    const user = await this.usersService.findOne(parsedId);
+    const [followerCount, followingCount, isFollowing] = await Promise.all([
+      this.followsService.getFollowerCount(parsedId),
+      this.followsService.getFollowingCount(parsedId),
+      currentUserId ? this.followsService.isFollowing(currentUserId, parsedId) : Promise.resolve(false),
+    ]);
+
+    return { ...user, followerCount, followingCount, isFollowing };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(200)
+  @Post(':id/follow')
+  async toggleFollow(@Param('id') id: string, @Request() req) {
+    if (!req.user || !req.user.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    const parsedId = parseInt(id, 10);
+    const parsedUserId = parseInt(req.user.userId, 10);
+
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    if (Number.isNaN(parsedUserId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+
+    return this.followsService.toggle(parsedUserId, parsedId);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/followers')
+  async getFollowers(@Param('id') id: string) {
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.followsService.getFollowers(parsedId);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get(':id/following')
+  async getFollowing(@Param('id') id: string) {
+    const parsedId = parseInt(id, 10);
+    if (Number.isNaN(parsedId)) {
+      throw new BadRequestException('Invalid id');
+    }
+    return this.followsService.getFollowing(parsedId);
   }
 
   @UseGuards(AuthGuard('jwt'))

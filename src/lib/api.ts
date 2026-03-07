@@ -1050,12 +1050,13 @@ export const teasApi = {
 export const notesApi = {
   getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean) => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following') => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
     if (teaId !== undefined) params.append('teaId', String(teaId));
     if (bookmarked !== undefined) params.append('bookmarked', String(bookmarked));
+    if (feed !== undefined) params.append('feed', feed);
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
@@ -1077,5 +1078,14 @@ export const usersApi = {
     id: number,
     data: { preferredTeaTypes: string[]; preferredFlavorTags: string[] },
   ) => apiClient.patch<UserOnboardingPreference>(`/users/${id}/onboarding`, data),
+};
+
+export const followsApi = {
+  toggle: (userId: number) =>
+    apiClient.post<{ isFollowing: boolean }>(`/users/${userId}/follow`),
+  getFollowers: (userId: number) =>
+    apiClient.get<User[]>(`/users/${userId}/followers`),
+  getFollowing: (userId: number) =>
+    apiClient.get<User[]>(`/users/${userId}/following`),
 };
 

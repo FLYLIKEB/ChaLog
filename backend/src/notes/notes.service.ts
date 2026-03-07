@@ -14,6 +14,7 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
 import { DEFAULT_RATING_SCHEMA, DEFAULT_RATING_AXES } from './constants/default-rating-schema';
+import { FollowsService } from '../follows/follows.service';
 
 @Injectable()
 export class NotesService {
@@ -40,6 +41,7 @@ export class NotesService {
     private dataSource: DataSource,
     private teasService: TeasService,
     private s3Service: S3Service,
+    private followsService: FollowsService,
   ) {}
 
   async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
@@ -88,8 +90,37 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean): Promise<any[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string): Promise<any[]> {
     try {
+      // following 피드: 팔로잉한 유저의 공개 노트만 조회
+      if (feed === 'following') {
+        if (!currentUserId) {
+          throw new BadRequestException('팔로잉 피드를 조회하려면 로그인이 필요합니다.');
+        }
+
+        const followingIds = await this.followsService.getFollowingIds(currentUserId);
+
+        if (followingIds.length === 0) {
+          return [];
+        }
+
+        const queryBuilder = this.notesRepository
+          .createQueryBuilder('note')
+          .leftJoinAndSelect('note.user', 'user')
+          .leftJoinAndSelect('note.tea', 'tea')
+          .leftJoinAndSelect('note.schema', 'schema')
+          .leftJoinAndSelect('note.noteTags', 'noteTags')
+          .leftJoinAndSelect('noteTags.tag', 'tag')
+          .leftJoinAndSelect('note.axisValues', 'axisValues')
+          .leftJoinAndSelect('axisValues.axis', 'axis')
+          .where('note.userId IN (:...followingIds)', { followingIds })
+          .andWhere('note.isPublic = :isPublic', { isPublic: true })
+          .orderBy('note.createdAt', 'DESC');
+
+        const notes = await queryBuilder.getMany();
+        return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+      }
+
       // 북마크 필터가 활성화된 경우, 북마크한 노트만 조회
       if (bookmarked) {
         if (!currentUserId) {
