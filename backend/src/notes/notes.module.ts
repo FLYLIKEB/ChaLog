@@ -12,9 +12,15 @@ import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
 import { TeasModule } from '../teas/teas.module';
 import { StorageModule } from '../common/storage/storage.module';
+import { FollowsModule } from '../follows/follows.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Note, Tag, NoteTag, NoteLike, NoteBookmark, RatingSchema, RatingAxis, NoteAxisValue]), TeasModule, StorageModule],
+  imports: [
+    TypeOrmModule.forFeature([Note, Tag, NoteTag, NoteLike, NoteBookmark, RatingSchema, RatingAxis, NoteAxisValue]),
+    TeasModule,
+    StorageModule,
+    FollowsModule,
+  ],
   providers: [NotesService],
   controllers: [NotesController],
 })

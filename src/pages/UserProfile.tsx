@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
-import { usersApi, notesApi } from '../lib/api';
+import { usersApi, notesApi, followsApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
 import { Loader2, Star, Heart, FileText, Camera } from 'lucide-react';
@@ -37,6 +37,7 @@ export function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
@@ -93,6 +94,53 @@ export function UserProfile() {
 
     fetchData();
   }, [userId, isOwnProfile, authLoading]);
+
+  const handleFollowToggle = async () => {
+    if (!currentUser) {
+      toast.error('팔로우하려면 로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    if (!user) return;
+
+    setIsFollowLoading(true);
+    const prevIsFollowing = user.isFollowing;
+    const delta = prevIsFollowing ? -1 : 1;
+
+    setUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            isFollowing: !prevIsFollowing,
+            followerCount: (prev.followerCount ?? 0) + delta,
+          }
+        : prev,
+    );
+
+    try {
+      const result = await followsApi.toggle(userId) as { isFollowing: boolean };
+      // optimistic update already adjusted followerCount; only sync isFollowing from server
+      setUser((prev) =>
+        prev
+          ? { ...prev, isFollowing: result.isFollowing }
+          : prev,
+      );
+    } catch (error) {
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              isFollowing: prevIsFollowing,
+              followerCount: (prev.followerCount ?? 0) - delta,
+            }
+          : prev,
+      );
+      toast.error('팔로우 처리 중 오류가 발생했습니다.');
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
 
   const stats = useMemo(() => {
     if (notes.length === 0) {
@@ -159,7 +207,7 @@ export function UserProfile() {
         {/* 프로필 헤더 섹션 */}
         <Card className="p-4 sm:p-6 md:p-8">
           <div className="flex flex-col items-center gap-3 mb-6">
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
               <UserAvatar
                 name={user.name}
                 profileImageUrl={user.profileImageUrl}
@@ -176,9 +224,29 @@ export function UserProfile() {
                 </Button>
               )}
             </div>
-            <div className="flex flex-col items-center text-center">
+            <div className="flex flex-col items-center text-center gap-2">
               <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
-              <p className="text-sm text-muted-foreground mt-1">작성한 노트 {notes.length}개</p>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>팔로워 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
+                <span>팔로잉 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
+              </div>
+              {!isOwnProfile && !authLoading && (
+                <Button
+                  onClick={handleFollowToggle}
+                  disabled={isFollowLoading}
+                  variant={user.isFollowing ? 'outline' : 'default'}
+                  size="sm"
+                  className="mt-1 min-w-[88px]"
+                >
+                  {isFollowLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : user.isFollowing ? (
+                    '팔로잉'
+                  ) : (
+                    '팔로우'
+                  )}
+                </Button>
+              )}
             </div>
           </div>
         </Card>
