@@ -1,3 +1,28 @@
+## 이슈 기반 신규 기능 개발 워크플로우
+
+Plan 모드로 이슈의 신규 기능을 구현할 때 반드시 아래 순서를 따른다:
+
+1. **신규 브랜치 생성**: `feature/issue-{번호}-{설명}` 형식으로 브랜치 생성 후 체크아웃
+   ```bash
+   git checkout -b feature/issue-123-add-filter
+   ```
+2. **구현 작업**: Plan에서 합의된 내용대로 코드 작성
+3. **테스트**: `npm run test:run` 또는 관련 테스트 실행 → 통과 확인
+4. **커밋**: 이슈 번호 포함 커밋 메시지로 커밋
+   ```bash
+   git commit -m "feat: #123 필터 기능 구현"
+   ```
+5. **Push 및 PR 생성**: 원격 브랜치 push 후 PR 생성 (`Closes #123` 포함)
+   ```bash
+   git push -u origin feature/issue-123-add-filter
+   gh pr create --title "feat: #123 필터 기능 구현" --body "Closes #123"
+   ```
+6. **머지**: PR 승인 후 머지 (직접 머지 또는 GitHub UI 사용)
+
+> 신규 기능은 반드시 `main`/`master`에 직접 커밋하지 말고, 위 워크플로우를 통해 PR로만 반영한다.
+
+---
+
 ## Git Operations
 
 - Commit messages: Korean format `<type>: <description>` (e.g., `feat: 노트 필터 기능 추가`)
