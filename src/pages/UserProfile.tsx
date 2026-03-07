@@ -213,7 +213,12 @@ export function UserProfile() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header showBack title="사용자 프로필" />
+      <Header
+        showBack={!isOwnProfile}
+        showProfile={isOwnProfile}
+        showLogo={isOwnProfile}
+        title={isOwnProfile ? '내 노트' : '사용자 프로필'}
+      />
 
       <div className="p-6 space-y-6">
         {/* 프로필 헤더 섹션 */}

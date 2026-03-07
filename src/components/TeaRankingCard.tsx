@@ -23,7 +23,7 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-3 hover:shadow-md transition-shadow cursor-pointer flex flex-col gap-2 min-h-0"
+      className="w-full text-left p-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer flex flex-col gap-2 min-h-0"
     >
       <div className="flex items-center gap-2">
         <div
@@ -36,7 +36,7 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
           {style.icon ?? rank}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="truncate font-medium text-primary text-sm">{tea.name}</h3>
+          <h3 className="truncate font-medium text-foreground text-sm">{tea.name}</h3>
           <div className="flex items-center gap-1.5 text-muted-foreground text-xs truncate">
             <span>{tea.type}</span>
             {tea.year && <span>{tea.year}년</span>}

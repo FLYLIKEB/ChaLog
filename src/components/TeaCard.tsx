@@ -14,11 +14,11 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-4 hover:shadow-md transition-shadow cursor-pointer"
+      className="w-full text-left p-4 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="truncate text-primary">{tea.name}</h3>
+          <h3 className="truncate font-medium text-foreground">{tea.name}</h3>
           <div className="flex items-center gap-3 mt-2 text-muted-foreground">
             <span className="text-sm">{tea.type}</span>
             {tea.year && <span className="text-sm">{tea.year}년</span>}

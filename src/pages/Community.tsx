@@ -46,7 +46,7 @@ export function Community() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header title="커뮤니티" />
+      <Header title="커뮤니티" showLogo />
 
       {/* 카테고리 탭 */}
       <div className="sticky top-14 z-10 bg-background border-b border-border/50">

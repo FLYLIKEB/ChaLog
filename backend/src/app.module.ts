@@ -40,6 +40,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
       inject: [ConfigService],
     }),
     CacheModule.register({
+      isGlobal: true,
       ttl: 600000, // 10분 (밀리초)
     }),
     TypeOrmModule.forRootAsync({

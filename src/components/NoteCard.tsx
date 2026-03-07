@@ -168,12 +168,19 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   };
 
   return (
-    <div className="relative overflow-hidden">
+    <div
+      className={cn(
+        'relative overflow-hidden rounded-2xl border border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+        'bg-card transition-shadow duration-200',
+        canView && 'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
+        !canView && 'opacity-60'
+      )}
+    >
       {/* 북마크 버튼 배경 (스와이프 시 보임) */}
       {user && (
-        <div 
+        <div
           className={cn(
-            "absolute right-0 top-0 bottom-0 flex items-center justify-center bg-primary/10 transition-opacity duration-200 z-10",
+            'absolute right-0 top-0 bottom-0 flex items-center justify-center rounded-r-2xl bg-primary/10 transition-opacity duration-200 z-10',
             isSwiped ? 'opacity-100' : 'opacity-0'
           )}
           style={{ width: '80px' }}
@@ -183,9 +190,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             onClick={handleBookmarkClick}
             disabled={isTogglingBookmark}
             className={cn(
-              "min-h-[40px] min-w-[40px] flex items-center justify-center transition-all duration-150 disabled:opacity-50 rounded-md active:scale-95",
-              isBookmarked 
-                ? 'text-primary hover:text-primary/80 hover:bg-primary/5' 
+              'min-h-[40px] min-w-[40px] flex items-center justify-center transition-all duration-150 disabled:opacity-50 rounded-full active:scale-95',
+              isBookmarked
+                ? 'text-primary hover:text-primary/80 hover:bg-primary/5'
                 : 'text-muted-foreground hover:text-primary hover:bg-muted/50'
             )}
             title={isBookmarked ? '북마크 해제' : '북마크 추가'}
@@ -196,9 +203,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             ) : (
               <Bookmark
                 className={cn(
-                  "w-4 h-4 transition-all duration-150",
-                  isBookmarked 
-                    ? 'fill-primary text-primary stroke-primary' 
+                  'w-4 h-4 transition-all duration-150',
+                  isBookmarked
+                    ? 'fill-primary text-primary stroke-primary'
                     : 'fill-none text-muted-foreground stroke-muted-foreground'
                 )}
               />
@@ -206,7 +213,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           </button>
         </div>
       )}
-      
+
       <div
         onClick={handleCardClick}
         onKeyDown={handleKeyDown}
@@ -216,109 +223,111 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
         role={canView ? 'button' : undefined}
         tabIndex={canView ? 0 : undefined}
         className={cn(
-          "w-full text-left py-1 px-0 transition-transform duration-200 cursor-pointer relative",
-          "bg-card text-card-foreground",
-          "border-b border-border/50 last:border-b-0",
-          canView ? 'hover:bg-muted/20' : 'opacity-60 cursor-not-allowed'
+          'w-full text-left p-4 transition-transform duration-200 cursor-pointer relative',
+          canView ? 'hover:bg-muted/5' : 'cursor-not-allowed'
         )}
         style={{ transform: `translateX(${translateX}px)` }}
       >
-      <div className="flex items-start gap-3 sm:gap-4">
-        {/* 이미지 썸네일 */}
-        <div className="shrink-0 rounded-lg overflow-hidden bg-muted w-28 h-auto sm:w-32 sm:h-auto mt-3 self-stretch">
-          {hasImage && firstImage ? (
-            <ImageWithFallback
-              src={firstImage}
-              alt="Note image"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <img src={teaCupSvg} alt="Tea cup" className="w-10 h-10 opacity-40" />
-            </div>
-          )}
-        </div>
-        
-        {/* 내용 영역 */}
-        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-          {/* 상단: 제목/메모 */}
-          <div className="flex-1 min-w-0 mt-3">
-            {showTeaName && (
-              <h3 className="truncate mb-1.5 text-primary font-medium text-base">{note.teaName}</h3>
-            )}
-            {note.memo && (
-              <p className="text-sm text-muted-foreground line-clamp-1 leading-relaxed">{note.memo}</p>
-            )}
-          </div>
-
-          {/* 별점 */}
-          {note.overallRating !== null && (
-            <div className="flex items-center gap-1.5 -mt-0.5">
-              <Star className="w-4 h-4 fill-rating text-rating" />
-              <span className="text-sm font-medium">{Number(note.overallRating).toFixed(1)}</span>
-            </div>
-          )}
-
-          {/* 태그 */}
-          {note.tags && note.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-0">
-              {note.tags.slice(0, 5).map((tag, index) => (
-                <Link
-                  key={index}
-                  to={`/tag/${encodeURIComponent(tag)}`}
-                  onClick={(e) => e.stopPropagation()}
-                  className="text-xs px-2.5 py-1 bg-muted text-foreground rounded-full font-medium hover:bg-muted/80 transition-colors"
-                >
-                  {tag}
-                </Link>
-              ))}
-              {note.tags.length > 5 && (
-                <span className="text-xs px-2.5 py-1 text-muted-foreground font-medium">
-                  +{note.tags.length - 5}
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* 하단: 사용자 정보와 액션 버튼 */}
-          <div className="flex items-center justify-between gap-3 mt-2">
-            <div className="flex items-center gap-1 flex-1 min-w-0">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  navigate(`/user/${note.userId}`);
-                }}
-                className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors font-medium underline-offset-2 hover:underline"
-                aria-label={`${note.userName}의 프로필 보기`}
-              >
-                {note.userName}
-              </button>
-              <span className="text-xs text-muted-foreground">·</span>
-              <span className="text-xs text-muted-foreground">
-                {note.createdAt.toLocaleDateString('ko-KR')}
-              </span>
-              {!note.isPublic && (
-                <>
-                  <span className="text-xs text-muted-foreground">·</span>
-                  <Lock className="w-3 h-3 text-muted-foreground" />
-                </>
-              )}
-            </div>
-            
-            {/* 좋아요 수만 표시 */}
-            {user && likeCount > 0 && (
-              <div className="flex items-center shrink-0">
-                <span className="text-xs text-muted-foreground">
-                  <Heart className="w-3 h-3 inline fill-none stroke-muted-foreground mr-0.5" />
-                  {likeCount}
-                </span>
+        <div className="flex items-start gap-3 sm:gap-4">
+          {/* 이미지 썸네일 */}
+          <div className="shrink-0 rounded-xl overflow-hidden bg-muted w-24 h-24 sm:w-28 sm:h-28">
+            {hasImage && firstImage ? (
+              <ImageWithFallback
+                src={firstImage}
+                alt="Note image"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center min-h-[96px]">
+                <img src={teaCupSvg} alt="Tea cup" className="w-10 h-10 opacity-40" />
               </div>
             )}
           </div>
+
+          {/* 내용 영역 */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5">
+            {/* 상단: 제목/메모 */}
+            <div className="flex-1 min-w-0">
+              {showTeaName && (
+                <h3 className="truncate mb-1 text-foreground font-semibold text-[15px]">
+                  {note.teaName}
+                </h3>
+              )}
+              {note.memo && (
+                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                  {note.memo}
+                </p>
+              )}
+            </div>
+
+            {/* 별점 */}
+            {note.overallRating !== null && (
+              <div className="flex items-center gap-1.5">
+                <Star className="w-4 h-4 fill-rating text-rating shrink-0" />
+                <span className="text-sm font-medium">{Number(note.overallRating).toFixed(1)}</span>
+              </div>
+            )}
+
+            {/* 태그 */}
+            {note.tags && note.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {note.tags.slice(0, 5).map((tag, index) => (
+                  <Link
+                    key={index}
+                    to={`/tag/${encodeURIComponent(tag)}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-xs px-2 py-0.5 bg-primary/5 text-primary rounded-full font-medium hover:bg-primary/10 transition-colors"
+                  >
+                    {tag}
+                  </Link>
+                ))}
+                {note.tags.length > 5 && (
+                  <span className="text-xs px-2 py-0.5 text-muted-foreground font-medium">
+                    +{note.tags.length - 5}
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* 하단: 사용자 정보와 액션 버튼 */}
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-1 flex-1 min-w-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    navigate(`/user/${note.userId}`);
+                  }}
+                  className="text-xs text-muted-foreground hover:text-primary cursor-pointer transition-colors font-medium underline-offset-2 hover:underline truncate"
+                  aria-label={`${note.userName}의 프로필 보기`}
+                >
+                  {note.userName}
+                </button>
+                <span className="text-xs text-muted-foreground shrink-0">·</span>
+                <span className="text-xs text-muted-foreground shrink-0">
+                  {note.createdAt.toLocaleDateString('ko-KR')}
+                </span>
+                {!note.isPublic && (
+                  <>
+                    <span className="text-xs text-muted-foreground shrink-0">·</span>
+                    <Lock className="w-3 h-3 text-muted-foreground shrink-0" />
+                  </>
+                )}
+              </div>
+
+              {/* 좋아요 수만 표시 */}
+              {user && likeCount > 0 && (
+                <div className="flex items-center shrink-0">
+                  <span className="text-xs text-muted-foreground">
+                    <Heart className="w-3 h-3 inline fill-none stroke-muted-foreground mr-0.5" />
+                    {likeCount}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 };

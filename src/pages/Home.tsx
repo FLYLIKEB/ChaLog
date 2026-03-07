@@ -150,13 +150,13 @@ export function Home() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <Header showProfile />
+        <Header showProfile showLogo />
         <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
           <Section title="오늘의 차" spacing="lg">
             <TeaCardSkeleton />
           </Section>
           <Section title="피드" spacing="lg">
-            <div className="space-y-0">
+            <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
               ))}
@@ -229,7 +229,7 @@ export function Home() {
 
           <TabsContent value="forYou" className="mt-4">
             {publicNotes.length > 0 ? (
-              <div className="space-y-0">
+              <div className="space-y-3">
                 {publicNotes.map((note, i) => (
                   <div
                     key={note.id}
@@ -264,7 +264,7 @@ export function Home() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : followingNotes.length > 0 ? (
-              <div className="space-y-0">
+              <div className="space-y-3">
                 {followingNotes.map(note => (
                   <NoteCard key={note.id} note={note} showTeaName />
                 ))}
@@ -310,7 +310,7 @@ export function Home() {
                   </div>
                 )}
                 {tagNotes.length > 0 ? (
-                  <div className="space-y-0">
+                  <div className="space-y-3">
                     {tagNotes.map(note => (
                       <NoteCard key={note.id} note={note} showTeaName />
                     ))}

@@ -239,6 +239,7 @@ export function Search() {
         title={showResults ? resultsTitle : '차 탐색'}
         showBack={showResults}
         onBack={showResults ? goBackToExplore : undefined}
+        showLogo={!showResults}
       />
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
@@ -256,7 +257,7 @@ export function Search() {
 
         {/* 필터 패널 */}
         {showResults && (
-          <div className="space-y-3 pb-2 border-b border-border">
+          <div className="space-y-3 pb-2 border-b border-border/60">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Filter className="w-4 h-4" />
               필터
@@ -269,10 +270,10 @@ export function Search() {
                   onClick={() => {
                     setFilterType(filterType === type ? null : type);
                   }}
-                  className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     filterType === type
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border hover:bg-muted'
+                      : 'bg-background border-border/60 hover:bg-muted/80'
                   }`}
                 >
                   {type}
@@ -286,10 +287,10 @@ export function Search() {
                   key={opt.label}
                   type="button"
                   onClick={() => setFilterMinRating(opt.value)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     filterMinRating === opt.value
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border hover:bg-muted'
+                      : 'bg-background border-border/60 hover:bg-muted/80'
                   }`}
                 >
                   {opt.label}
@@ -303,10 +304,10 @@ export function Search() {
                   key={opt.key}
                   type="button"
                   onClick={() => setFilterSort(opt.key)}
-                  className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     filterSort === opt.key
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border hover:bg-muted'
+                      : 'bg-background border-border/60 hover:bg-muted/80'
                   }`}
                 >
                   {opt.label}

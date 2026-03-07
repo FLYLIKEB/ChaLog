@@ -22,7 +22,7 @@ export function Section({ title, description, headerAction, spacing = "md", clas
       {(title || headerAction) && (
         <div className="mb-4">
           <div className="flex items-center justify-between gap-3">
-            {title && <h2 className="text-xl font-bold text-primary">{title}</h2>}
+            {title && <h2 className="text-lg font-semibold text-foreground tracking-tight">{title}</h2>}
             {headerAction}
           </div>
           {description && (
