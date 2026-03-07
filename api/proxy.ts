@@ -148,7 +148,7 @@ export default async function handler(req: any, res: any) {
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       const rawBody = await readRawBody(req);
       if (rawBody.length > 0) {
-        fetchOptions.body = new Uint8Array(rawBody);
+        fetchOptions.body = rawBody;
       }
     }
 

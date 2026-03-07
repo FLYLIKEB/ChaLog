@@ -17,6 +17,12 @@ import { UserId } from '../auth/decorators/user-id.decorator';
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  /**
+   * 인증된 사용자의 알림 목록을 페이지네이션으로 조회합니다.
+   * @param userId - JWT에서 추출된 사용자 ID
+   * @param page - 페이지 번호 (쿼리 파라미터)
+   * @param limit - 페이지당 개수 (쿼리 파라미터, 1~100)
+   */
   @Get()
   async findAll(
     @UserId() userId: number,
@@ -36,18 +42,31 @@ export class NotificationsController {
     return this.notificationsService.findAllByUser(userId, pageNum, limitNum);
   }
 
+  /**
+   * 인증된 사용자의 미읽음 알림 개수를 반환합니다.
+   * @param userId - JWT에서 추출된 사용자 ID
+   */
   @Get('unread-count')
   async getUnreadCount(@UserId() userId: number) {
     const count = await this.notificationsService.getUnreadCount(userId);
     return { count };
   }
 
+  /**
+   * 인증된 사용자의 모든 미읽음 알림을 읽음 처리합니다.
+   * @param userId - JWT에서 추출된 사용자 ID
+   */
   @Patch('read-all')
   async markAllAsRead(@UserId() userId: number) {
     await this.notificationsService.markAllAsRead(userId);
     return { success: true };
   }
 
+  /**
+   * 특정 알림을 읽음 처리합니다.
+   * @param id - 알림 ID (경로 파라미터)
+   * @param userId - JWT에서 추출된 사용자 ID
+   */
   @Patch(':id/read')
   async markAsRead(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
     await this.notificationsService.markAsRead(id, userId);
