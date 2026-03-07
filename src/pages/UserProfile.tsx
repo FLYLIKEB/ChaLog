@@ -12,7 +12,7 @@ import {
 } from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi } from '../lib/api';
-import { User, Note } from '../types';
+import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
 import { Loader2, Star, Heart, FileText, Camera } from 'lucide-react';
 import { logger } from '../lib/logger';
@@ -23,6 +23,7 @@ import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 type SortType = 'latest' | 'rating';
 
@@ -36,6 +37,7 @@ export function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
   // 내 프로필인지 확인 (인증 로딩이 완료된 후에만 확인)
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
@@ -65,6 +67,15 @@ export function UserProfile() {
         setUser(userData as User);
         const notesArray = Array.isArray(notesData) ? notesData : [];
         setNotes(notesArray as Note[]);
+
+        if (isOwnProfile) {
+          try {
+            const pref = await usersApi.getOnboardingPreference(userId);
+            setOnboardingPreference(pref);
+          } catch {
+            // 온보딩 미완료 유저 등의 경우 무시
+          }
+        }
       } catch (error: unknown) {
         logger.error('Failed to fetch user profile:', error);
         
@@ -203,6 +214,34 @@ export function UserProfile() {
             label="작성한 노트"
           />
         </div>
+
+        {/* 취향 정보 섹션 */}
+        {onboardingPreference && (
+          (onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0) && (
+            <Card className="p-4 sm:p-6 space-y-4">
+              {onboardingPreference.preferredTeaTypes?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {onboardingPreference.preferredTeaTypes.map(tag => (
+                      <Badge key={tag} variant="secondary">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {onboardingPreference.preferredFlavorTags?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">향미 태그</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {onboardingPreference.preferredFlavorTags.map(tag => (
+                      <Badge key={tag} variant="outline">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )
+        )}
 
         {/* 정렬 드롭다운 */}
         {notes.length > 0 && (

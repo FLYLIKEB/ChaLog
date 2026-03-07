@@ -3,7 +3,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { UserProfile } from '../UserProfile';
 import { MemoryRouter } from 'react-router-dom';
 import { usersApi, notesApi } from '../../lib/api';
-import { User, Note } from '../../types';
+import { User, Note, UserOnboardingPreference } from '../../types';
 
 const mockNavigate = vi.fn();
 const mockUseParams = vi.fn(() => ({ id: '2' }));
@@ -18,6 +18,7 @@ vi.mock('../../lib/api', async () => {
     ...actual,
     usersApi: {
       getById: vi.fn(),
+      getOnboardingPreference: vi.fn(),
     },
     notesApi: {
       getAll: vi.fn(),
@@ -99,6 +100,7 @@ describe('UserProfile', () => {
     });
     vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
     vi.mocked(notesApi.getAll).mockResolvedValue(mockNotes);
+    vi.mocked(usersApi.getOnboardingPreference).mockRejectedValue({ statusCode: 404 });
   });
 
   it('사용자 프로필 정보를 표시해야 함', async () => {
@@ -306,6 +308,100 @@ describe('UserProfile', () => {
       // 다른 사용자면 true (공개 노트만 조회)
       expect(notesApi.getAll).toHaveBeenCalledWith(2, true);
     }, { timeout: 3000 });
+  });
+
+  describe('온보딩 취향 태그', () => {
+    const mockOnboardingPreference: UserOnboardingPreference = {
+      preferredTeaTypes: ['녹차', '홍차', '우롱차'],
+      preferredFlavorTags: ['꽃향', '과일향'],
+      hasCompletedOnboarding: true,
+    };
+
+    it('내 프로필일 때 관심 차종 태그를 표시해야 함', async () => {
+      mockUseParams.mockReturnValue({ id: '1' });
+      mockUseAuth.mockReturnValue({
+        user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+        isAuthenticated: true,
+      });
+      vi.mocked(usersApi.getById).mockResolvedValue({ ...mockUser, id: 1 });
+      vi.mocked(usersApi.getOnboardingPreference).mockResolvedValue(mockOnboardingPreference);
+
+      render(
+        <MemoryRouter>
+          <UserProfile />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('관심 차종')).toBeInTheDocument();
+        expect(screen.getByText('녹차')).toBeInTheDocument();
+        expect(screen.getByText('홍차')).toBeInTheDocument();
+        expect(screen.getByText('우롱차')).toBeInTheDocument();
+      });
+    });
+
+    it('내 프로필일 때 향미 태그를 표시해야 함', async () => {
+      mockUseParams.mockReturnValue({ id: '1' });
+      mockUseAuth.mockReturnValue({
+        user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+        isAuthenticated: true,
+      });
+      vi.mocked(usersApi.getById).mockResolvedValue({ ...mockUser, id: 1 });
+      vi.mocked(usersApi.getOnboardingPreference).mockResolvedValue(mockOnboardingPreference);
+
+      render(
+        <MemoryRouter>
+          <UserProfile />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('향미 태그')).toBeInTheDocument();
+        expect(screen.getByText('꽃향')).toBeInTheDocument();
+        expect(screen.getByText('과일향')).toBeInTheDocument();
+      });
+    });
+
+    it('타인 프로필일 때 취향 정보를 표시하지 않아야 함', async () => {
+      vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
+
+      render(
+        <MemoryRouter>
+          <UserProfile />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: '프로필 사용자' })).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('관심 차종')).not.toBeInTheDocument();
+      expect(screen.queryByText('향미 태그')).not.toBeInTheDocument();
+      expect(usersApi.getOnboardingPreference).not.toHaveBeenCalled();
+    });
+
+    it('온보딩 미완료 유저(404)의 경우 취향 섹션을 표시하지 않아야 함', async () => {
+      mockUseParams.mockReturnValue({ id: '1' });
+      mockUseAuth.mockReturnValue({
+        user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
+        isAuthenticated: true,
+      });
+      vi.mocked(usersApi.getById).mockResolvedValue({ ...mockUser, id: 1 });
+      vi.mocked(usersApi.getOnboardingPreference).mockRejectedValue({ statusCode: 404 });
+
+      render(
+        <MemoryRouter>
+          <UserProfile />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: '프로필 사용자' })).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('관심 차종')).not.toBeInTheDocument();
+      expect(screen.queryByText('향미 태그')).not.toBeInTheDocument();
+    });
   });
 });
 
