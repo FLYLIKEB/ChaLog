@@ -10,13 +10,14 @@ import { NoteBookmark } from './entities/note-bookmark.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
+import { TagFollow } from './entities/tag-follow.entity';
 import { TeasModule } from '../teas/teas.module';
 import { StorageModule } from '../common/storage/storage.module';
 import { FollowsModule } from '../follows/follows.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Note, Tag, NoteTag, NoteLike, NoteBookmark, RatingSchema, RatingAxis, NoteAxisValue]),
+    TypeOrmModule.forFeature([Note, Tag, NoteTag, NoteLike, NoteBookmark, RatingSchema, RatingAxis, NoteAxisValue, TagFollow]),
     TeasModule,
     StorageModule,
     FollowsModule,

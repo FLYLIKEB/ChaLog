@@ -6,6 +6,7 @@ import { Tag } from './entities/tag.entity';
 import { NoteTag } from './entities/note-tag.entity';
 import { NoteLike } from './entities/note-like.entity';
 import { NoteBookmark } from './entities/note-bookmark.entity';
+import { TagFollow } from './entities/tag-follow.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
@@ -31,6 +32,8 @@ export class NotesService {
     private noteLikesRepository: Repository<NoteLike>,
     @InjectRepository(NoteBookmark)
     private noteBookmarksRepository: Repository<NoteBookmark>,
+    @InjectRepository(TagFollow)
+    private tagFollowsRepository: Repository<TagFollow>,
     @InjectRepository(RatingSchema)
     private ratingSchemaRepository: Repository<RatingSchema>,
     @InjectRepository(RatingAxis)
@@ -114,6 +117,41 @@ export class NotesService {
           .leftJoinAndSelect('note.axisValues', 'axisValues')
           .leftJoinAndSelect('axisValues.axis', 'axis')
           .where('note.userId IN (:...followingIds)', { followingIds })
+          .andWhere('note.isPublic = :isPublic', { isPublic: true })
+          .orderBy('note.createdAt', 'DESC');
+
+        const notes = await queryBuilder.getMany();
+        return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+      }
+
+      // tags 피드: 팔로우한 태그가 달린 공개 노트 조회
+      if (feed === 'tags') {
+        if (!currentUserId) {
+          throw new BadRequestException('태그 피드를 조회하려면 로그인이 필요합니다.');
+        }
+
+        const tagFollows = await this.tagFollowsRepository.find({
+          where: { userId: currentUserId },
+          select: ['tagId'],
+        });
+
+        if (tagFollows.length === 0) {
+          return [];
+        }
+
+        const tagIds = tagFollows.map((tf) => tf.tagId);
+
+        const queryBuilder = this.notesRepository
+          .createQueryBuilder('note')
+          .leftJoinAndSelect('note.user', 'user')
+          .leftJoinAndSelect('note.tea', 'tea')
+          .leftJoinAndSelect('note.schema', 'schema')
+          .leftJoinAndSelect('note.noteTags', 'noteTags')
+          .leftJoinAndSelect('noteTags.tag', 'tag')
+          .leftJoinAndSelect('note.axisValues', 'axisValues')
+          .leftJoinAndSelect('axisValues.axis', 'axis')
+          .innerJoin('note.noteTags', 'followedNoteTag')
+          .where('followedNoteTag.tagId IN (:...tagIds)', { tagIds })
           .andWhere('note.isPublic = :isPublic', { isPublic: true })
           .orderBy('note.createdAt', 'DESC');
 

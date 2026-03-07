@@ -1056,7 +1056,7 @@ export const teasApi = {
 export const notesApi = {
   getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following') => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags') => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
