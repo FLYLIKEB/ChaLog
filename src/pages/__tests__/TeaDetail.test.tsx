@@ -243,12 +243,12 @@ describe('TeaDetail', () => {
     });
   });
 
-  it('차 정보를 찾을 수 없을 때 에러 메시지를 표시해야 한다', async () => {
+  it('핵심 API(getById) 실패 시 에러 메시지를 표시해야 한다', async () => {
     vi.mocked(teasApi.getById).mockRejectedValue(new Error('Not found'));
     vi.mocked(notesApi.getAll).mockRejectedValue(new Error('Not found'));
-    vi.mocked(teasApi.getPopularTags).mockRejectedValue(new Error('Not found'));
-    vi.mocked(teasApi.getTopReviews).mockRejectedValue(new Error('Not found'));
-    vi.mocked(teasApi.getSimilarTeas).mockRejectedValue(new Error('Not found'));
+    vi.mocked(teasApi.getPopularTags).mockResolvedValue({ tags: [] });
+    vi.mocked(teasApi.getTopReviews).mockResolvedValue([]);
+    vi.mocked(teasApi.getSimilarTeas).mockResolvedValue([]);
 
     render(
       <MemoryRouter>
@@ -258,6 +258,27 @@ describe('TeaDetail', () => {
 
     await waitFor(() => {
       expect(screen.getByText('차 정보를 찾을 수 없습니다.')).toBeInTheDocument();
+    });
+  });
+
+  it('부가 API 실패 시에도 차 기본 정보와 평점을 표시해야 한다', async () => {
+    vi.mocked(teasApi.getById).mockResolvedValue(mockTea);
+    vi.mocked(notesApi.getAll).mockResolvedValue([]);
+    vi.mocked(teasApi.getPopularTags).mockRejectedValue(new Error('tags failed'));
+    vi.mocked(teasApi.getTopReviews).mockRejectedValue(new Error('reviews failed'));
+    vi.mocked(teasApi.getSimilarTeas).mockRejectedValue(new Error('similar failed'));
+
+    render(
+      <MemoryRouter>
+        <TeaDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('정산소종')).toBeInTheDocument();
+      expect(screen.getByText('4.2')).toBeInTheDocument();
+      expect(screen.queryByTestId('tag-cloud')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('similar-teas')).not.toBeInTheDocument();
     });
   });
 

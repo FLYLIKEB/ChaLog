@@ -2,6 +2,14 @@ import { Controller, Get, Post, Body, Param, Query, UseGuards, BadRequestExcepti
 import { AuthGuard } from '@nestjs/passport';
 import { TeasService } from './teas.service';
 import { CreateTeaDto } from './dto/create-tea.dto';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
+
+function parseTeaId(id: string): number {
+  if (!/^\d+$/.test(id)) {
+    throw new BadRequestException('Invalid id');
+  }
+  return Number(id);
+}
 
 @Controller('teas')
 export class TeasController {
@@ -23,37 +31,23 @@ export class TeasController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    const parsedId = parseInt(id, 10);
-    if (Number.isNaN(parsedId)) {
-      throw new BadRequestException('Invalid id');
-    }
-    return this.teasService.findOne(parsedId);
+    return this.teasService.findOne(parseTeaId(id));
   }
 
   @Get(':id/popular-tags')
   getPopularTags(@Param('id') id: string) {
-    const parsedId = parseInt(id, 10);
-    if (Number.isNaN(parsedId)) {
-      throw new BadRequestException('Invalid id');
-    }
-    return this.teasService.getPopularTags(parsedId);
+    return this.teasService.getPopularTags(parseTeaId(id));
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id/top-reviews')
-  getTopReviews(@Param('id') id: string) {
-    const parsedId = parseInt(id, 10);
-    if (Number.isNaN(parsedId)) {
-      throw new BadRequestException('Invalid id');
-    }
-    return this.teasService.getTopReviews(parsedId);
+  getTopReviews(@Param('id') id: string, @Request() req) {
+    const currentUserId = req.user?.userId;
+    return this.teasService.getTopReviews(parseTeaId(id), currentUserId);
   }
 
   @Get(':id/similar')
   getSimilarTeas(@Param('id') id: string) {
-    const parsedId = parseInt(id, 10);
-    if (Number.isNaN(parsedId)) {
-      throw new BadRequestException('Invalid id');
-    }
-    return this.teasService.getSimilarTeas(parsedId);
+    return this.teasService.getSimilarTeas(parseTeaId(id));
   }
 }

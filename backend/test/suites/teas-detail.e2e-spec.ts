@@ -68,21 +68,38 @@ describe('/teas/:id 상세 고도화 API', () => {
   afterAll(async () => {
     try {
       await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
-      await context.dataSource.query('DELETE FROM note_bookmarks');
-      await context.dataSource.query('DELETE FROM note_likes');
-      await context.dataSource.query('DELETE FROM note_axis_value');
-      await context.dataSource.query('DELETE FROM note_tags');
-      await context.dataSource.query('DELETE FROM notes');
-      await context.dataSource.query('DELETE FROM teas WHERE id = ?', [testTea?.id]);
+      const noteIds = [testNote1?.id, testNote2?.id].filter(Boolean);
+      if (noteIds.length) {
+        await context.dataSource.query(
+          `DELETE FROM note_likes WHERE noteId IN (${noteIds.map(() => '?').join(',')})`,
+          noteIds,
+        );
+        await context.dataSource.query(
+          `DELETE FROM note_axis_value WHERE noteId IN (${noteIds.map(() => '?').join(',')})`,
+          noteIds,
+        );
+        await context.dataSource.query(
+          `DELETE FROM note_tags WHERE noteId IN (${noteIds.map(() => '?').join(',')})`,
+          noteIds,
+        );
+        await context.dataSource.query(
+          `DELETE FROM notes WHERE id IN (${noteIds.map(() => '?').join(',')})`,
+          noteIds,
+        );
+      }
+      if (testTea?.id) {
+        await context.dataSource.query('DELETE FROM teas WHERE id = ?', [testTea.id]);
+      }
       if (testUser1?.id) {
         await context.dataSource.query('DELETE FROM users WHERE id = ?', [testUser1.id]);
       }
       if (testUser2?.id) {
         await context.dataSource.query('DELETE FROM users WHERE id = ?', [testUser2.id]);
       }
-      await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
     } catch (error) {
       console.warn('테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+    } finally {
+      await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
     }
     await teardownTestApp(context);
   });

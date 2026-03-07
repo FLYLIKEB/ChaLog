@@ -30,6 +30,7 @@ describe('TeasService', () => {
     andWhere: jest.fn().mockReturnThis(),
     orWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    addOrderBy: jest.fn().mockReturnThis(),
     setParameter: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     getMany: jest.fn(),
@@ -139,16 +140,38 @@ describe('TeasService', () => {
       await expect(service.getTopReviews(999)).rejects.toThrow(NotFoundException);
     });
 
-    it('반환된 노트에 isLiked, isBookmarked 기본값이 포함되어야 한다', async () => {
+    it('currentUserId 없을 때 isLiked는 false여야 한다', async () => {
       mockTeasRepository.findOne.mockResolvedValue(mockTea());
       mockDataSource.query.mockResolvedValue([
-        { id: 1, teaId: 1, userId: 1, likeCount: '2' },
+        { id: 1, teaId: 1, userId: 1, likeCount: '2', isLiked: '0' },
       ]);
 
       const result = await service.getTopReviews(1);
 
       expect(result[0].isLiked).toBe(false);
       expect(result[0].isBookmarked).toBe(false);
+    });
+
+    it('currentUserId가 있고 좋아요를 눌렀을 때 isLiked는 true여야 한다', async () => {
+      mockTeasRepository.findOne.mockResolvedValue(mockTea());
+      mockDataSource.query.mockResolvedValue([
+        { id: 1, teaId: 1, userId: 2, likeCount: '3', isLiked: '1' },
+      ]);
+
+      const result = await service.getTopReviews(1, 99);
+
+      expect(result[0].isLiked).toBe(true);
+    });
+
+    it('currentUserId가 있고 좋아요를 누르지 않았을 때 isLiked는 false여야 한다', async () => {
+      mockTeasRepository.findOne.mockResolvedValue(mockTea());
+      mockDataSource.query.mockResolvedValue([
+        { id: 1, teaId: 1, userId: 2, likeCount: '1', isLiked: '0' },
+      ]);
+
+      const result = await service.getTopReviews(1, 99);
+
+      expect(result[0].isLiked).toBe(false);
     });
   });
 
@@ -165,6 +188,16 @@ describe('TeasService', () => {
 
       expect(result).toHaveLength(2);
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tea.id != :id', { id: 1 });
+    });
+
+    it('보조 정렬(reviewCount DESC, id ASC)이 적용되어야 한다', async () => {
+      mockTeasRepository.findOne.mockResolvedValue(mockTea());
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.getSimilarTeas(1);
+
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('tea.reviewCount', 'DESC');
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith('tea.id', 'ASC');
     });
 
     it('결과에 요청한 차 자신이 포함되지 않아야 한다', async () => {

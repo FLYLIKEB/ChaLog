@@ -21,10 +21,17 @@ function StarRating({ value, max = 5 }: { value: number; max?: number }) {
         const filled = value >= i + 1;
         const half = !filled && value >= i + 0.5;
         return (
-          <Star
-            key={i}
-            className={`w-4 h-4 ${filled || half ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`}
-          />
+          <span key={i} className="relative inline-flex">
+            <Star className="w-4 h-4 text-gray-300" />
+            {(filled || half) && (
+              <span
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: filled ? '100%' : '50%' }}
+              >
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              </span>
+            )}
+          </span>
         );
       })}
     </div>
@@ -53,9 +60,12 @@ export function TeaDetail() {
           return;
         }
 
-        const [teaData, notesData, tagsData, reviewsData, similarData] = await Promise.all([
+        const [teaData, notesData] = await Promise.all([
           teasApi.getById(teaId),
           notesApi.getAll(undefined, true, teaId),
+        ]);
+
+        const [tagsResult, reviewsResult, similarResult] = await Promise.allSettled([
           teasApi.getPopularTags(teaId),
           teasApi.getTopReviews(teaId),
           teasApi.getSimilarTeas(teaId),
@@ -63,9 +73,19 @@ export function TeaDetail() {
 
         setTea(teaData as Tea);
         setPublicNotes(Array.isArray(notesData) ? (notesData as Note[]) : []);
-        setPopularTags((tagsData as { tags: PopularTag[] }).tags ?? []);
-        setTopReviews(Array.isArray(reviewsData) ? (reviewsData as Note[]) : []);
-        setSimilarTeas(Array.isArray(similarData) ? (similarData as Tea[]) : []);
+        setPopularTags(
+          tagsResult.status === 'fulfilled' ? (tagsResult.value as { tags: PopularTag[] }).tags ?? [] : [],
+        );
+        setTopReviews(
+          reviewsResult.status === 'fulfilled' && Array.isArray(reviewsResult.value)
+            ? (reviewsResult.value as Note[])
+            : [],
+        );
+        setSimilarTeas(
+          similarResult.status === 'fulfilled' && Array.isArray(similarResult.value)
+            ? (similarResult.value as Tea[])
+            : [],
+        );
       } catch (error) {
         logger.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');

@@ -88,20 +88,27 @@ export class TeasService {
               n.memo, n.images, n.isPublic, n.createdAt, n.updatedAt,
               u.name AS userName,
               tea.name AS teaName,
-              (SELECT COUNT(*) FROM note_likes nl WHERE nl.noteId = n.id) AS likeCount
+              (SELECT COUNT(*) FROM note_likes nl WHERE nl.noteId = n.id) AS likeCount,
+              CASE
+                WHEN ? IS NULL THEN 0
+                ELSE EXISTS (
+                  SELECT 1 FROM note_likes nl2
+                  WHERE nl2.noteId = n.id AND nl2.userId = ?
+                )
+              END AS isLiked
        FROM notes n
        JOIN users u ON u.id = n.userId
        JOIN teas tea ON tea.id = n.teaId
        WHERE n.teaId = ? AND n.isPublic = 1
        ORDER BY likeCount DESC, n.createdAt DESC
        LIMIT 3`,
-      [teaId],
+      [currentUserId ?? null, currentUserId ?? null, teaId],
     );
 
     return notes.map((note: any) => ({
       ...note,
       likeCount: Number(note.likeCount),
-      isLiked: false,
+      isLiked: Boolean(Number(note.isLiked)),
       isBookmarked: false,
     }));
   }
@@ -119,6 +126,8 @@ export class TeasService {
       .andWhere('tea.id != :id', { id: teaId })
       .andWhere('tea.averageRating BETWEEN :lower AND :upper', { lower, upper })
       .orderBy('ABS(tea.averageRating - :rating)', 'ASC')
+      .addOrderBy('tea.reviewCount', 'DESC')
+      .addOrderBy('tea.id', 'ASC')
       .setParameter('rating', rating)
       .limit(4)
       .getMany();
