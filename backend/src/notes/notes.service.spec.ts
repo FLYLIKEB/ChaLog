@@ -113,6 +113,7 @@ describe('NotesService', () => {
 
   const mockS3Service = {
     deleteFile: jest.fn(),
+    getThumbnailKey: jest.fn((key: string) => key.replace(/^notes\//, 'notes/thumbnails/')),
   };
 
   const mockDataSource = {

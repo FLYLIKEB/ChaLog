@@ -161,5 +161,124 @@ describe('/teas - 차 API', () => {
     expect(Array.isArray(response.body)).toBe(true);
     expect(response.body.length).toBe(0);
   });
+
+  it('GET /teas/rankings/popular - 인기 차 랭킹 반환', async () => {
+    await context.testHelper.createTea(testUser.token, {
+      name: '인기차1',
+      type: '홍차',
+      seller: '차향',
+    });
+    await context.testHelper.createTea(testUser.token, {
+      name: '인기차2',
+      type: '녹차',
+    });
+
+    const response = await context.testHelper.unauthenticatedRequest()
+      .get('/teas/rankings/popular?limit=10')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeLessThanOrEqual(10);
+  });
+
+  it('GET /teas/rankings/new - 신규 차 반환', async () => {
+    const response = await context.testHelper.unauthenticatedRequest()
+      .get('/teas/rankings/new?limit=5')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeLessThanOrEqual(5);
+  });
+
+  it('GET /teas/sellers - 샵/브랜드 리스트 반환', async () => {
+    await context.testHelper.createTea(testUser.token, {
+      name: '샵테스트차',
+      type: '홍차',
+      seller: '테스트샵',
+    });
+
+    const response = await context.testHelper.unauthenticatedRequest()
+      .get('/teas/sellers')
+      .expect(200);
+
+    expect(response.body).toHaveProperty('sellers');
+    expect(Array.isArray(response.body.sellers)).toBe(true);
+    const found = response.body.sellers.find((s: any) => s.name === '테스트샵');
+    if (found) {
+      expect(found.teaCount).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('GET /teas/by-seller/:name - 샵별 차 목록 반환', async () => {
+    const tea = await context.testHelper.createTea(testUser.token, {
+      name: '샵상세테스트',
+      type: '홍차',
+      seller: '차향',
+    });
+
+    const response = await context.testHelper.unauthenticatedRequest()
+      .get(`/teas/by-seller/${encodeURIComponent('차향')}`)
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    const found = response.body.find((t: any) => t.id === tea.id);
+    expect(found).toBeDefined();
+    expect(found.seller).toBe('차향');
+  });
+
+  it('GET /teas/curation - 추천 큐레이션 반환 (비로그인)', async () => {
+    const response = await context.testHelper.unauthenticatedRequest()
+      .get('/teas/curation?limit=10')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeLessThanOrEqual(10);
+  });
+
+  it('GET /teas/curation - 온보딩 완료 사용자에게 맞춤 큐레이션 반환', async () => {
+    await context.testHelper.createTea(testUser.token, {
+      name: '큐레이션홍차',
+      type: '홍차',
+      seller: '테스트샵',
+    });
+    await context.testHelper.createTea(testUser.token, {
+      name: '큐레이션녹차',
+      type: '녹차',
+      seller: '테스트샵',
+    });
+
+    await context.testHelper
+      .authenticatedRequest(testUser.token)
+      .patch(`/users/${testUser.id}/onboarding`)
+      .send({
+        preferredTeaTypes: ['홍차', '녹차'],
+        preferredFlavorTags: ['민트'],
+      })
+      .expect(200);
+
+    const response = await context.testHelper
+      .authenticatedRequest(testUser.token)
+      .get('/teas/curation?limit=10')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+    expect(response.body.length).toBeLessThanOrEqual(10);
+    const types = response.body.map((t: { type: string }) => t.type);
+    const hasPreferredTypes = types.some((t: string) => t === '홍차' || t === '녹차');
+    expect(hasPreferredTypes).toBe(true);
+  });
+
+  it('GET /teas?type=&minRating=&sort= - 필터 조합 검증', async () => {
+    await context.testHelper.createTea(testUser.token, {
+      name: '필터테스트홍차',
+      type: '홍차',
+    });
+
+    const response = await context.testHelper.unauthenticatedRequest()
+      .get('/teas?type=홍차&minRating=3&sort=popular')
+      .expect(200);
+
+    expect(Array.isArray(response.body)).toBe(true);
+  });
 });
 

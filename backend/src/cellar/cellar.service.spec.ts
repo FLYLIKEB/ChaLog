@@ -74,7 +74,7 @@ describe('CellarService', () => {
   });
 
   describe('create', () => {
-    it('셀러 아이템을 생성해야 한다', async () => {
+    it('찻장 아이템을 생성해야 한다', async () => {
       const userId = 10;
       const dto = { teaId: 1, quantity: 100, unit: 'g' as const };
       const createdItem = mockUser1CellarItem({ quantity: 100 });
@@ -131,7 +131,7 @@ describe('CellarService', () => {
   });
 
   describe('findAll', () => {
-    it('해당 사용자의 셀러 아이템 목록을 반환해야 한다', async () => {
+    it('해당 사용자의 찻장 아이템 목록을 반환해야 한다', async () => {
       const userId = 10;
       const items = [mockUser1CellarItem(), mockUser1CellarItem({ id: 2 })];
       mockCellarItemsRepository.find.mockResolvedValue(items);
@@ -155,7 +155,7 @@ describe('CellarService', () => {
   });
 
   describe('findOne', () => {
-    it('자신의 셀러 아이템을 조회해야 한다', async () => {
+    it('자신의 찻장 아이템을 조회해야 한다', async () => {
       const item = mockUser1CellarItem();
       mockCellarItemsRepository.findOne.mockResolvedValue(item);
 
@@ -178,7 +178,7 @@ describe('CellarService', () => {
   });
 
   describe('update', () => {
-    it('셀러 아이템을 수정해야 한다', async () => {
+    it('찻장 아이템을 수정해야 한다', async () => {
       const original = mockUser1CellarItem({ quantity: 50 });
       const updated = mockUser1CellarItem({ quantity: 30 });
 
@@ -226,7 +226,7 @@ describe('CellarService', () => {
   });
 
   describe('remove', () => {
-    it('셀러 아이템을 삭제해야 한다', async () => {
+    it('찻장 아이템을 삭제해야 한다', async () => {
       const item = mockUser1CellarItem();
       mockCellarItemsRepository.findOne.mockResolvedValue(item);
       mockCellarItemsRepository.remove.mockResolvedValue(undefined);

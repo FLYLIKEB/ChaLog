@@ -126,5 +126,56 @@ export class S3Service {
     const extension = this.getExtension(filename, mimeType);
     return `${prefix}/${timestamp}-${randomString}.${extension}`;
   }
+
+  /**
+   * 원본 S3 key에서 썸네일 key 유도
+   * notes/123-abc.jpg → notes/thumbnails/123-abc.jpg
+   */
+  getThumbnailKey(originalKey: string): string {
+    const lastSlash = originalKey.lastIndexOf('/');
+    if (lastSlash === -1) {
+      return `thumbnails/${originalKey}`;
+    }
+    const prefix = originalKey.substring(0, lastSlash);
+    const filename = originalKey.substring(lastSlash + 1);
+    return `${prefix}/thumbnails/${filename}`;
+  }
+
+  /**
+   * 원본 URL에서 썸네일 URL 유도 (레거시/폴백용)
+   */
+  getThumbnailUrlFromOriginalUrl(originalUrl: string): string {
+    const key = this.extractKeyFromUrl(originalUrl);
+    if (!key) {
+      return originalUrl;
+    }
+    const thumbnailKey = this.getThumbnailKey(key);
+    return this.buildUrlFromKey(thumbnailKey);
+  }
+
+  private extractKeyFromUrl(url: string): string | null {
+    try {
+      const urlObj = new URL(url);
+      const pathParts = urlObj.pathname.split('/').filter(Boolean);
+      const endpoint = this.configService.get<string>('AWS_S3_ENDPOINT');
+      // 커스텀 엔드포인트: /bucket/key → pathParts[0]=bucket, rest=key
+      if (endpoint && pathParts.length >= 2) {
+        return pathParts.slice(1).join('/');
+      }
+      // 표준 S3: pathname = /key
+      return pathParts.length > 0 ? pathParts.join('/') : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private buildUrlFromKey(key: string): string {
+    const region = this.configService.get<string>('AWS_REGION') || 'ap-northeast-2';
+    const endpoint = this.configService.get<string>('AWS_S3_ENDPOINT');
+    if (endpoint) {
+      return `${endpoint}/${this.bucketName}/${key}`;
+    }
+    return `https://${this.bucketName}.s3.${region}.amazonaws.com/${key}`;
+  }
 }
 

@@ -12,6 +12,8 @@ import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
 import { Tea, Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
 import { Loader2, Hash } from 'lucide-react';
+import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
+import { TeaCardSkeleton } from '../components/TeaCardSkeleton';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -147,8 +149,21 @@ export function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" />
+      <div className="min-h-screen bg-background pb-20">
+        <Header showProfile />
+        <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+          <Section title="오늘의 차" spacing="lg">
+            <TeaCardSkeleton />
+          </Section>
+          <Section title="피드" spacing="lg">
+            <div className="space-y-0">
+              {[1, 2, 3, 4].map((i) => (
+                <NoteCardSkeleton key={i} />
+              ))}
+            </div>
+          </Section>
+        </div>
+        <BottomNav />
       </div>
     );
   }
@@ -193,7 +208,11 @@ export function Home() {
           {todayTea ? (
             <TeaCard tea={todayTea} />
           ) : (
-            <EmptyState type="feed" message="등록된 차가 없습니다." />
+            <EmptyState
+              type="feed"
+              message="등록된 차가 없어요. 첫 차를 등록해 보세요!"
+              action={{ label: '새 차 등록', onClick: () => navigate('/tea/new') }}
+            />
           )}
         </Section>
 
@@ -211,12 +230,22 @@ export function Home() {
           <TabsContent value="forYou" className="mt-4">
             {publicNotes.length > 0 ? (
               <div className="space-y-0">
-                {publicNotes.map(note => (
-                  <NoteCard key={note.id} note={note} showTeaName />
+                {publicNotes.map((note, i) => (
+                  <div
+                    key={note.id}
+                    className="animate-fade-in-up opacity-0"
+                    style={{ animationDelay: `${i * 50}ms` }}
+                  >
+                    <NoteCard note={note} showTeaName />
+                  </div>
                 ))}
               </div>
             ) : (
-              <EmptyState type="feed" message="아직 등록된 노트가 없습니다." />
+              <EmptyState
+                type="feed"
+                message="아직 등록된 노트가 없어요. 첫 차 노트를 남겨볼까요?"
+                action={{ label: '첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+              />
             )}
           </TabsContent>
 
@@ -243,7 +272,8 @@ export function Home() {
             ) : (
               <EmptyState
                 type="feed"
-                message="팔로잉한 리뷰어의 노트가 없습니다. 리뷰어를 팔로우해 보세요!"
+                message="팔로잉한 리뷰어의 노트가 없어요. 리뷰어를 팔로우해 보세요!"
+                action={{ label: '탐색하기', onClick: () => navigate('/search') }}
               />
             )}
           </TabsContent>
@@ -298,7 +328,8 @@ export function Home() {
                 ) : (
                   <EmptyState
                     type="feed"
-                    message="팔로우한 태그의 공개 노트가 없습니다."
+                    message="팔로우한 태그의 공개 노트가 없어요."
+                    action={{ label: '태그 탐색하기', onClick: () => navigate('/search') }}
                   />
                 )}
               </>

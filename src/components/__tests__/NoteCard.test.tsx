@@ -55,6 +55,33 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
     expect(imageContainer).toHaveClass('flex', 'items-center', 'justify-center');
   });
 
+  it('imageThumbnails가 있으면 썸네일을 우선 표시해야 함', () => {
+    const noteWithThumbnail = {
+      ...mockNote,
+      images: ['https://example.com/original.jpg'],
+      imageThumbnails: ['https://example.com/thumb.jpg'],
+    };
+    render(
+      <MemoryRouter>
+        <NoteCard note={noteWithThumbnail} />
+      </MemoryRouter>,
+    );
+
+    const img = screen.getByAltText('Note image');
+    expect(img).toHaveAttribute('src', 'https://example.com/thumb.jpg');
+  });
+
+  it('imageThumbnails가 없으면 images로 폴백해야 함', () => {
+    render(
+      <MemoryRouter>
+        <NoteCard note={mockNote} />
+      </MemoryRouter>,
+    );
+
+    const img = screen.getByAltText('Note image');
+    expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
+  });
+
   it('이미지가 없을 때 이미지 컨테이너가 렌더링되지 않아야 함', () => {
     const noteWithoutImage = { ...mockNote, images: null };
     render(
