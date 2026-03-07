@@ -83,6 +83,13 @@
         },
         {
             "type": "node-terminal",
+            "name": "🗄️ 로컬 DB 마이그레이션 실행 (run-local-migrations.sh)",
+            "request": "launch",
+            "command": "bash scripts/run-local-migrations.sh",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
             "name": "🗄️ 원격 DB 마이그레이션 실행 (run-remote-migrations.sh)",
             "request": "launch",
             "command": "bash scripts/run-remote-migrations.sh",
