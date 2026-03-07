@@ -1,17 +1,19 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
 import { TeaCard } from '../components/TeaCard';
 import { CreatorCard } from '../components/CreatorCard';
+import { UserAvatar } from '../components/ui/UserAvatar';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
 import { Tea, Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
-import { Loader2, Hash } from 'lucide-react';
+import { Loader2, Hash, MessageCircle } from 'lucide-react';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { TeaCardSkeleton } from '../components/TeaCardSkeleton';
 import { toast } from 'sonner';
@@ -24,7 +26,6 @@ type FeedTab = 'forYou' | 'following' | 'tags';
 export function Home() {
   const navigate = useNavigate();
   const { user: currentUser, isLoading: authLoading } = useAuth();
-  const [todayTea, setTodayTea] = useState<Tea | null>(null);
   const [trendingTeas, setTrendingTeas] = useState<Tea[]>([]);
   const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null } & { followerCount: number }>>([]);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
@@ -36,32 +37,15 @@ export function Home() {
   const [isTagsLoading, setIsTagsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<FeedTab>('forYou');
 
-  const fetchForYouFeed = useCallback(async () => {
+  const fetchForYouFeed = useCallback(async (opts?: { silent?: boolean }) => {
     try {
-      setIsLoading(true);
+      if (!opts?.silent) setIsLoading(true);
       
-      const [teasResult, notesResult, trendingTeasResult, trendingCreatorsResult] = await Promise.allSettled([
-        teasApi.getAll(),
+      const [notesResult, trendingTeasResult, trendingCreatorsResult] = await Promise.allSettled([
         notesApi.getAll(undefined, true),
         teasApi.getTrending('7d'),
         usersApi.getTrending('7d'),
       ]);
-
-      if (teasResult.status === 'fulfilled') {
-        const teasArray = Array.isArray(teasResult.value) ? teasResult.value : [];
-        if (teasArray.length > 0) {
-          const randomIndex = Math.floor(Math.random() * teasArray.length);
-          setTodayTea(teasArray[randomIndex]);
-        }
-      } else {
-        const error = teasResult.reason;
-        logger.error('Failed to fetch teas:', error);
-        if (error?.statusCode === 429) {
-          toast.error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
-        } else {
-          toast.error('차 정보를 불러오는데 실패했습니다.');
-        }
-      }
 
       if (notesResult.status === 'fulfilled') {
         const notesArray = Array.isArray(notesResult.value) ? notesResult.value : [];
@@ -147,21 +131,51 @@ export function Home() {
     }
   }, [activeTab, currentUser, authLoading, fetchTagsFeed]);
 
+  const handleRefresh = useCallback(async () => {
+    await fetchForYouFeed({ silent: true });
+    if (activeTab === 'following' && currentUser) await fetchFollowingFeed();
+    if (activeTab === 'tags' && currentUser) await fetchTagsFeed();
+  }, [fetchForYouFeed, fetchFollowingFeed, fetchTagsFeed, activeTab, currentUser]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(handleRefresh);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, handleRefresh]);
+
+  const recentContributors = useMemo(() => {
+    const seen = new Set<number>();
+    return publicNotes
+      .filter((n) => {
+        if (seen.has(n.userId)) return false;
+        seen.add(n.userId);
+        return true;
+      })
+      .map((n) => ({ id: n.userId, name: n.userName }));
+  }, [publicNotes]);
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-background dark:from-background dark:to-background pb-20">
+      <div className="min-h-screen pb-20">
         <Header showProfile showLogo />
-        <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
-          <Section title="☕ 오늘의 차" spacing="lg">
-            <TeaCardSkeleton />
-          </Section>
-          <Section title="📝 피드" spacing="lg">
+        <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+          <Section title="📝 피드" description="다양한 차 노트를 둘러보세요." spacing="lg">
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
               ))}
             </div>
           </Section>
+          <footer className="mt-12 pt-8 pb-6 border-t border-border/40">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>차멍 v0.1</span>
+              <span className="text-border">·</span>
+              <span>이용약관</span>
+              <span className="text-border">·</span>
+              <span>개인정보처리방침</span>
+            </div>
+            <p className="text-center text-[10px] text-muted-foreground/60 mt-3">© 2026 차멍. All rights reserved.</p>
+          </footer>
         </div>
         <BottomNav />
       </div>
@@ -169,12 +183,11 @@ export function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-background dark:from-background dark:to-background pb-20">
+    <div className="min-h-screen pb-20">
       <Header showProfile showLogo />
-      
-      <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+      <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* 지금 핫한 차 섹션 */}
-        <Section title="🔥 지금 핫한 차" spacing="lg">
+        <Section title="🔥 지금 핫한 차" description="최근 7일간 리뷰가 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingTeas.map((tea) => (
@@ -189,7 +202,7 @@ export function Home() {
         </Section>
 
         {/* 인기 크리에이터 섹션 */}
-        <Section title="✨ 인기 크리에이터" spacing="lg">
+        <Section title="✨ 인기 크리에이터" description="팔로워가 많은 인기 리뷰어를 만나보세요." spacing="lg">
           {trendingCreators.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingCreators.map((creator) => (
@@ -203,20 +216,8 @@ export function Home() {
           )}
         </Section>
 
-        {/* 오늘의 차 섹션 */}
-        <Section title="☕ 오늘의 차" spacing="lg">
-          {todayTea ? (
-            <TeaCard tea={todayTea} />
-          ) : (
-            <EmptyState
-              type="feed"
-              message="등록된 차가 없어요. 첫 차를 등록해 보세요!"
-              action={{ label: '🍵 새 차 등록', onClick: () => navigate('/tea/new') }}
-            />
-          )}
-        </Section>
-
         {/* 피드 탭 섹션 */}
+        <Section title="📝 피드" description="다양한 차 노트를 둘러보세요." spacing="lg">
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as FeedTab)}
@@ -336,8 +337,56 @@ export function Home() {
             )}
           </TabsContent>
         </Tabs>
-      </div>
+        </Section>
 
+        {/* 최근 기여자 - 아주 작게 가로 스크롤 */}
+        {recentContributors.length > 0 && (
+          <div className="mt-8 pt-4 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground mb-2 px-1">최근 기여자</p>
+            <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 scrollbar-hide">
+              {recentContributors.map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/user/${c.id}`}
+                  className="shrink-0 flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <UserAvatar name={c.name} size="xs" className="shrink-0" />
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[60px]">
+                    {c.name}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 하단 푸터 - 오픈톡 + 개발정보 (미니멀) */}
+        <footer className="mt-12 pt-8 pb-6 border-t border-border/30">
+          {import.meta.env.VITE_KAKAO_OPEN_CHAT_URL && (
+            <a
+              href={import.meta.env.VITE_KAKAO_OPEN_CHAT_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-2.5 px-4 rounded-lg bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-sm font-medium transition-colors mb-5"
+            >
+              <MessageCircle className="w-4 h-4" />
+              카톡 오픈톡방 참여하기
+            </a>
+          )}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/80">
+            <span>차멍 v0.1</span>
+            <span className="text-border/60">·</span>
+            <button type="button" onClick={() => toast.info('준비 중입니다.')} className="text-[11px] font-normal hover:text-foreground/70 transition-colors">
+              이용약관
+            </button>
+            <span className="text-border/60">·</span>
+            <button type="button" onClick={() => toast.info('준비 중입니다.')} className="text-[11px] font-normal hover:text-foreground/70 transition-colors">
+              개인정보처리방침
+            </button>
+          </div>
+          <p className="text-center text-[10px] text-muted-foreground/60 mt-3">© 2026 차멍. All rights reserved.</p>
+        </footer>
+      </div>
       <BottomNav />
     </div>
   );
