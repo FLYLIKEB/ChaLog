@@ -300,7 +300,7 @@ export class UsersService {
       .values({ userId, isNotificationEnabled: true })
       .orIgnore()
       .execute();
-    return this.notificationSettingRepository.findOne({ where: { userId } });
+    return this.notificationSettingRepository.findOne({ where: { userId } }) as Promise<UserNotificationSetting>;
   }
 
   async updateNotificationSetting(
