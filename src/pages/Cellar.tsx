@@ -128,6 +128,7 @@ export function Cellar() {
   const [activeType, setActiveType] = useState<'all' | string>('all');
   const [sortKey, setSortKey] = useState<SortKey>('createdAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [sortOpen, setSortOpen] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -207,6 +208,7 @@ export function Cellar() {
       setSortKey(key);
       setSortDir(option?.defaultDir ?? 'desc');
     }
+    setSortOpen(false);
   };
 
   const handleDelete = (id: number) => {
@@ -297,24 +299,21 @@ export function Cellar() {
           </div>
         )}
 
-        {/* 아이템 수 + 정렬 버튼 */}
+        {/* 아이템 수 + 정렬 드롭다운 */}
         {items.length > 0 && (
           <div className="flex items-center justify-between px-4 sm:px-6 pb-2">
             <p className="text-sm text-muted-foreground">{displayedItems.length}개</p>
-            <div className="flex items-center gap-1">
-              {/* 현재 정렬 기준 — 클릭하면 다음 옵션으로 순환 */}
+            <div className="relative flex items-center gap-1">
+              {/* 정렬 기준 버튼 — 클릭 시 커스텀 옵션 목록 표시 */}
               <button
                 type="button"
                 aria-label="정렬 기준"
-                onClick={() => {
-                  const idx = SORT_OPTIONS.findIndex((o) => o.key === sortKey);
-                  const next = SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length];
-                  setSortKey(next.key);
-                  setSortDir(next.defaultDir);
-                }}
-                className="text-sm font-medium text-foreground hover:text-primary transition-colors px-1 py-1"
+                aria-expanded={sortOpen}
+                onClick={() => setSortOpen((prev) => !prev)}
+                className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors px-1 py-1"
               >
                 {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
               </button>
               {/* 방향 토글 */}
               <button
@@ -329,6 +328,40 @@ export function Cellar() {
                   <ChevronDown className="w-4 h-4" />
                 )}
               </button>
+              {/* 커스텀 드롭다운 목록 */}
+              {sortOpen && (
+                <>
+                  {/* 외부 클릭 닫기용 오버레이 */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setSortOpen(false)}
+                  />
+                  <ul
+                    role="listbox"
+                    aria-label="정렬 옵션"
+                    className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-lg py-1 min-w-28 overflow-hidden"
+                  >
+                    {SORT_OPTIONS.map((opt) => (
+                      <li key={opt.key}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={sortKey === opt.key}
+                          onClick={() => handleSortChange(opt.key)}
+                          className={[
+                            'w-full text-left px-4 py-2 text-sm transition-colors',
+                            sortKey === opt.key
+                              ? 'text-primary font-medium bg-primary/5'
+                              : 'text-foreground hover:bg-secondary',
+                          ].join(' ')}
+                        >
+                          {opt.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
           </div>
         )}
