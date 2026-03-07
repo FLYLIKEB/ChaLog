@@ -1,6 +1,6 @@
 import { HTMLAttributes } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, FileText, Bookmark } from 'lucide-react';
+import { Home, Search, FileText, Bookmark, Package } from 'lucide-react';
 import { cn } from './ui/utils';
 
 type BottomNavItem = {
@@ -22,6 +22,13 @@ const NAV_ITEMS: BottomNavItem[] = [
     isActive: (pathname) => pathname === '/my-notes' || pathname.startsWith('/user/'),
   },
   { label: '저장함', path: '/saved', icon: Bookmark, activeStyle: 'fill' },
+  {
+    label: '셀러',
+    path: '/cellar',
+    icon: Package,
+    activeStyle: 'bold',
+    isActive: (pathname) => pathname === '/cellar' || pathname.startsWith('/cellar/'),
+  },
 ];
 
 type BottomNavProps = HTMLAttributes<HTMLElement>;

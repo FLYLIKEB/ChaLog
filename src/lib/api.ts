@@ -1,5 +1,5 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User, UserOnboardingPreference } from '../types';
+import { Tea, User, UserOnboardingPreference, CellarItem } from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -1093,5 +1093,25 @@ export const followsApi = {
     apiClient.get<User[]>(`/users/${userId}/followers`),
   getFollowing: (userId: number) =>
     apiClient.get<User[]>(`/users/${userId}/following`),
+};
+
+export interface CreateCellarItemRequest {
+  teaId: number;
+  quantity?: number;
+  unit?: 'g' | 'ml' | 'bag' | 'cake';
+  openedAt?: string | null;
+  remindAt?: string | null;
+  memo?: string | null;
+}
+
+export interface UpdateCellarItemRequest extends Partial<CreateCellarItemRequest> {}
+
+export const cellarApi = {
+  getAll: () => apiClient.get<CellarItem[]>('/cellar'),
+  getById: (id: number) => apiClient.get<CellarItem>(`/cellar/${id}`),
+  getReminders: () => apiClient.get<CellarItem[]>('/cellar/reminders'),
+  create: (data: CreateCellarItemRequest) => apiClient.post<CellarItem>('/cellar', data),
+  update: (id: number, data: UpdateCellarItemRequest) => apiClient.patch<CellarItem>(`/cellar/${id}`, data),
+  remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 

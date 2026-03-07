@@ -89,3 +89,16 @@ export interface UserOnboardingPreference {
   preferredFlavorTags: string[];
   hasCompletedOnboarding: boolean;
 }
+
+export interface CellarItem {
+  id: number;
+  teaId: number;
+  tea: Tea;
+  quantity: number;
+  unit: 'g' | 'ml' | 'bag' | 'cake';
+  openedAt: string | null;
+  remindAt: string | null;
+  memo: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
