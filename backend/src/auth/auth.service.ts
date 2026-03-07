@@ -1,6 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import axios from 'axios';
@@ -10,7 +9,6 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -65,6 +63,29 @@ export class AuthService {
     }
   }
 
+  async loginWithGoogle(accessToken: string) {
+    try {
+      const googleUserInfo = await this.getGoogleUserInfo(accessToken);
+
+      if (!googleUserInfo || !googleUserInfo.id) {
+        throw new UnauthorizedException('구글 사용자 정보를 가져올 수 없습니다.');
+      }
+
+      const user = await this.usersService.createOrUpdateGoogleUser(
+        googleUserInfo.id,
+        googleUserInfo.email || null,
+        googleUserInfo.name || '구글 사용자',
+      );
+
+      return this.login(user);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('구글 로그인에 실패했습니다.');
+    }
+  }
+
   private async getKakaoUserInfo(accessToken: string): Promise<{
     id: number;
     kakao_account?: {
@@ -90,4 +111,24 @@ export class AuthService {
       throw new UnauthorizedException(errorMessage);
     }
   }
+
+  private async getGoogleUserInfo(accessToken: string): Promise<{
+    id: string;
+    email?: string;
+    name?: string;
+  }> {
+    try {
+      const response = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.error?.message || '구글 사용자 정보 조회에 실패했습니다.';
+      throw new UnauthorizedException(errorMessage);
+    }
+  }
+
 }

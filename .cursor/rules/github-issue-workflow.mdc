@@ -1,0 +1,45 @@
+---
+description: GitHub 이슈 기반 신규 기능 개발 워크플로우 규칙
+alwaysApply: true
+---
+
+# GitHub 이슈 기반 신규 기능 개발 워크플로우
+
+깃허브 이슈로 신규 기능을 계획하고 개발할 때 반드시 아래 절차를 따른다.
+
+## 필수 절차
+
+### 1. 신규 브랜치 생성 (시작 시)
+이슈 번호와 기능명을 기반으로 브랜치를 생성한다.
+
+```bash
+# 브랜치 명명 규칙: feature/issue-{번호}-{기능명-kebab-case}
+git checkout -b feature/issue-42-add-login
+```
+
+### 2. 작업 진행
+브랜치에서 모든 커밋을 진행한다.
+
+### 3. PR 자동 생성 (마무리 시)
+작업이 끝나면 반드시 `gh pr create`로 PR을 자동 생성한다.
+
+```bash
+git push -u origin HEAD
+gh pr create --title "feat: {기능 요약}" --body "$(cat <<'EOF'
+## Summary
+- 관련 이슈: #{이슈번호}
+- <변경 내용 bullet points>
+
+## Test plan
+- [ ] <테스트 항목>
+
+EOF
+)"
+```
+
+## 규칙 요약
+
+- ✅ 이슈 기반 작업 시작 → 무조건 신규 브랜치 생성
+- ✅ 작업 완료 시 → 무조건 PR 자동 생성
+- ❌ main/master 브랜치에서 직접 작업 금지
+- ❌ PR 없이 작업 종료 금지

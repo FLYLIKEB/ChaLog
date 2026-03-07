@@ -115,83 +115,79 @@ export class UsersService {
     email: string | null,
     name: string,
   ): Promise<User> {
-    // 기존 카카오 인증 정보 확인
+    return this.createOrUpdateOAuthUser(AuthProvider.KAKAO, kakaoId, email, name);
+  }
+
+  async createOrUpdateGoogleUser(
+    googleId: string,
+    email: string | null,
+    name: string,
+  ): Promise<User> {
+    return this.createOrUpdateOAuthUser(AuthProvider.GOOGLE, googleId, email, name);
+  }
+
+  private async createOrUpdateOAuthUser(
+    provider: AuthProvider,
+    providerId: string,
+    email: string | null,
+    name: string,
+  ): Promise<User> {
     const existingAuth = await this.authRepository.findOne({
-      where: { provider: AuthProvider.KAKAO, providerId: kakaoId },
+      where: { provider, providerId },
       relations: ['user'],
     });
 
     if (existingAuth) {
-      return await this.updateExistingKakaoUser(existingAuth.user, email, name);
+      const user = existingAuth.user;
+      if (name && user.name !== name) {
+        user.name = name;
+        await this.usersRepository.save(user);
+      }
+      if (email) {
+        await this.addEmailAuthIfNotExists(user.id, email);
+      }
+      return user;
     }
 
-    return await this.createNewKakaoUser(kakaoId, email, name);
-  }
-
-  private async updateExistingKakaoUser(
-    user: User,
-    email: string | null,
-    name: string,
-  ): Promise<User> {
-    // 사용자 이름 업데이트
-    if (name && user.name !== name) {
-      user.name = name;
-      await this.usersRepository.save(user);
-    }
-
-    // 이메일 인증 정보 추가 (없는 경우만)
-    if (email) {
-      await this.addEmailAuthIfNotExists(user.id, email);
-    }
-
-    return user;
-  }
-
-  private async createNewKakaoUser(
-    kakaoId: string,
-    email: string | null,
-    name: string,
-  ): Promise<User> {
-    // 트랜잭션으로 사용자와 인증 정보를 원자적으로 생성
     return await this.dataSource.transaction(async (manager) => {
-      // 사용자 생성
       const user = manager.create(User, { name });
       const savedUser = await manager.save(User, user);
 
-      const onboardingPreference = manager.create(UserOnboardingPreference, {
-        userId: savedUser.id,
-        preferredTeaTypes: [],
-        preferredFlavorTags: [],
-        hasCompletedOnboarding: false,
-      });
-      await manager.save(UserOnboardingPreference, onboardingPreference);
+      await manager.save(
+        UserOnboardingPreference,
+        manager.create(UserOnboardingPreference, {
+          userId: savedUser.id,
+          preferredTeaTypes: [],
+          preferredFlavorTags: [],
+          hasCompletedOnboarding: false,
+        }),
+      );
 
-      // 카카오 인증 정보 생성
-      const kakaoAuth = manager.create(UserAuthentication, {
-        userId: savedUser.id,
-        provider: AuthProvider.KAKAO,
-        providerId: kakaoId,
-        credential: null,
-      });
-      await manager.save(UserAuthentication, kakaoAuth);
+      await manager.save(
+        UserAuthentication,
+        manager.create(UserAuthentication, {
+          userId: savedUser.id,
+          provider,
+          providerId,
+          credential: null,
+        }),
+      );
 
-      // 이메일 인증 정보 추가 (있는 경우)
       if (email) {
-        // 이미 다른 사용자가 해당 이메일을 사용 중인지 확인
         const existingEmailAuth = await manager.findOne(UserAuthentication, {
           where: { provider: AuthProvider.EMAIL, providerId: email },
         });
-        if (existingEmailAuth) {
-          // 이미 다른 사용자가 해당 이메일을 사용 중이면 이메일 연결 건너뛰기
-          return savedUser;
+        if (!existingEmailAuth) {
+          await manager.save(
+            UserAuthentication,
+            manager.create(UserAuthentication, {
+              userId: savedUser.id,
+              provider: AuthProvider.EMAIL,
+              providerId: email,
+              credential: null,
+            }),
+          );
         }
-        const emailAuth = manager.create(UserAuthentication, {
-          userId: savedUser.id,
-          provider: AuthProvider.EMAIL,
-          providerId: email,
-          credential: null,
-        });
-        await manager.save(UserAuthentication, emailAuth);
       }
 
       return savedUser;
@@ -202,28 +198,22 @@ export class UsersService {
     userId: number,
     email: string,
   ): Promise<void> {
-    // 해당 이메일이 어떤 사용자에게든 이미 등록되어 있는지 확인
     const existingEmailAuth = await this.authRepository.findOne({
       where: { provider: AuthProvider.EMAIL, providerId: email },
     });
 
     if (existingEmailAuth) {
-      // 이미 다른 사용자가 해당 이메일을 사용 중이면 건너뛰기
-      if (existingEmailAuth.userId !== userId) {
-        return;
-      }
-      // 같은 사용자에게 이미 등록되어 있으면 건너뛰기
       return;
     }
 
-    // 이메일이 등록되어 있지 않으면 추가
-    const emailAuth = this.authRepository.create({
-      userId,
-      provider: AuthProvider.EMAIL,
-      providerId: email,
-      credential: null,
-    });
-    await this.authRepository.save(emailAuth);
+    await this.authRepository.save(
+      this.authRepository.create({
+        userId,
+        provider: AuthProvider.EMAIL,
+        providerId: email,
+        credential: null,
+      }),
+    );
   }
 
   async getUserEmail(userId: number): Promise<string | null> {
@@ -253,6 +243,11 @@ export class UsersService {
     const existing = await this.onboardingPreferencesRepository.findOne({ where: { userId } });
     if (existing) {
       return existing;
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
     const created = this.onboardingPreferencesRepository.create({
