@@ -1077,8 +1077,10 @@ export const teasApi = {
     apiClient.get<Tea[]>(`/teas/rankings/popular?limit=${limit}`),
   getNewRankings: (limit = 10) =>
     apiClient.get<Tea[]>(`/teas/rankings/new?limit=${limit}`),
-  getSellers: () =>
-    apiClient.get<{ sellers: Seller[] }>('/teas/sellers'),
+  getSellers: (query?: string) => {
+    const params = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+    return apiClient.get<{ sellers: Seller[] }>(`/teas/sellers${params}`);
+  },
   getCuration: (limit = 10) =>
     apiClient.get<Tea[]>(`/teas/curation?limit=${limit}`),
   getBySeller: (name: string) =>

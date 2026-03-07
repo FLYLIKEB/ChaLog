@@ -17,7 +17,7 @@ interface ImageUploaderProps {
 export function ImageUploader({ images, imageThumbnails = [], onChange, maxImages = 5 }: ImageUploaderProps) {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,15 +88,25 @@ export function ImageUploader({ images, imageThumbnails = [], onChange, maxImage
       // 모든 업로드가 실패한 경우에만 에러 처리
       if (successfulUrls.length === 0 && failedCount > 0) {
         const firstError = results.find(r => r.status === 'rejected') as PromiseRejectedResult;
-        if (firstError?.reason?.statusCode === 401) {
-          toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
+        const reason = firstError?.reason;
+        const isAuthError = reason?.statusCode === 401 ||
+          (reason?.statusCode === 500 && typeof reason?.message === 'string' && /session|expired|reauthenticate/i.test(reason.message));
+        if (isAuthError) {
+          logout();
+          toast.error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
           navigate('/login');
         }
       }
     } catch (error: any) {
       logger.error('Failed to upload images:', error);
       if (error?.statusCode === 401) {
-        toast.error('로그인이 필요합니다. 다시 로그인해주세요.');
+        logout();
+        toast.error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
+        navigate('/login');
+      } else if (error?.statusCode === 500 && typeof error?.message === 'string' && /session|expired|reauthenticate/i.test(error.message)) {
+        // 500이지만 세션 만료 메시지인 경우 (구버전 백엔드 호환)
+        logout();
+        toast.error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
         navigate('/login');
       } else {
         toast.error(error?.message || '이미지 업로드에 실패했습니다.');

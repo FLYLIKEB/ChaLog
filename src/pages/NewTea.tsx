@@ -5,12 +5,20 @@ import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { SellerCombobox } from '../components/SellerCombobox';
 import { teasApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { NAVIGATION_DELAY, TEA_TYPES } from '../constants';
+import { NAVIGATION_DELAY, TEA_TYPES, YEAR_OPTIONS, COMMON_ORIGINS } from '../constants';
 
 export function NewTea() {
   const navigate = useNavigate();
@@ -21,7 +29,8 @@ export function NewTea() {
 
   const [name, setName] = useState(searchQuery || '');
   const [type, setType] = useState('');
-  const [year, setYear] = useState('');
+  const [yearSelect, setYearSelect] = useState<string>('__none__');
+  const [yearCustom, setYearCustom] = useState('');
   const [seller, setSeller] = useState('');
   const [origin, setOrigin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -96,9 +105,9 @@ export function NewTea() {
       return;
     }
 
-    // 연도 검증
-    if (year.trim()) {
-      const yearNum = parseInt(year.trim(), 10);
+    const yearValue = yearSelect === 'custom' ? yearCustom.trim() : (yearSelect === '__none__' ? '' : yearSelect);
+    if (yearValue) {
+      const yearNum = parseInt(yearValue, 10);
       if (isNaN(yearNum) || yearNum < 1900) {
         toast.error('연도는 1900년 이상이어야 합니다.');
         return;
@@ -111,7 +120,7 @@ export function NewTea() {
       const teaData = {
         name: name.trim(),
         type: type.trim(),
-        year: year.trim() ? parseInt(year.trim(), 10) : undefined,
+        year: yearValue ? parseInt(yearValue, 10) : undefined,
         seller: seller.trim() || undefined,
         origin: origin.trim() || undefined,
       };
@@ -160,19 +169,19 @@ export function NewTea() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Header showBack title="새 차 등록" showProfile />
       
       <div className="p-4 sm:max-w-md sm:mx-auto">
-        <div className="bg-white rounded-lg p-6 space-y-6">
+        <div className="bg-card rounded-lg p-6 space-y-6 border border-border">
           <div>
             <h1 className="text-2xl font-bold mb-2">새 차 등록</h1>
-            <p className="text-gray-600 text-sm">
+            <p className="text-muted-foreground text-sm">
               마신 차를 등록하고 노트를 작성해보세요
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             {/* 차 이름 */}
             <div className="space-y-2">
               <Label htmlFor="name">
@@ -181,19 +190,19 @@ export function NewTea() {
               <Input
                 id="name"
                 type="text"
-                placeholder="예: 정산소종"
+                placeholder="예: 정산소종, 다즐링, 동정미록"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isLoading}
                 required
               />
               {isCheckingDuplicate && (
-                <p className="text-xs text-gray-500">중복 확인 중...</p>
+                <p className="text-xs text-muted-foreground">중복 확인 중...</p>
               )}
               {duplicateWarning && (
                 <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm text-amber-800">{duplicateWarning}</p>
                       {duplicateTeaId && (
@@ -237,51 +246,90 @@ export function NewTea() {
                 ))}
               </div>
               {!type && typeTouched && (
-                <p className="text-xs text-red-500">차 종류를 선택해주세요.</p>
+                <p className="text-xs text-destructive">차 종류를 선택해주세요.</p>
               )}
               {!type && !typeTouched && (
-                <p className="text-xs text-gray-500">차 종류를 선택해주세요.</p>
+                <p className="text-xs text-muted-foreground">1개 선택</p>
               )}
             </div>
 
             {/* 연도 */}
-            <div className="space-y-2">
-              <Label htmlFor="year">연도</Label>
-              <Input
-                id="year"
-                type="number"
-                placeholder="예: 2024"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
+            <div className="space-y-2" role="group" aria-labelledby="year-label">
+              <Label id="year-label" htmlFor="year-select">제조 연도 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <Select
+                value={yearSelect}
+                onValueChange={(v) => setYearSelect(v)}
                 disabled={isLoading}
-                min="1900"
-              />
-              <p className="text-xs text-gray-500">1900년 이상 입력해주세요</p>
+              >
+                <SelectTrigger id="year-select" className="w-full" aria-label="연도 선택">
+                  <SelectValue placeholder="연도를 선택하세요" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">선택 안 함</SelectItem>
+                  {YEAR_OPTIONS.map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}년
+                    </SelectItem>
+                  ))}
+                  <SelectItem value="custom">그 외 (직접 입력)</SelectItem>
+                </SelectContent>
+              </Select>
+              {yearSelect === 'custom' && (
+                <Input
+                  id="year-custom"
+                  type="number"
+                  placeholder="1900~1989년"
+                  value={yearCustom}
+                  onChange={(e) => setYearCustom(e.target.value)}
+                  disabled={isLoading}
+                  min={1900}
+                  max={1989}
+                  className="mt-2"
+                  aria-label="연도 직접 입력"
+                />
+              )}
             </div>
 
             {/* 구매처 */}
             <div className="space-y-2">
-              <Label htmlFor="seller">구매처</Label>
-              <Input
+              <Label htmlFor="seller">구매처 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <SellerCombobox
                 id="seller"
-                type="text"
-                placeholder="예: OO 찻집"
                 value={seller}
-                onChange={(e) => setSeller(e.target.value)}
+                onChange={setSeller}
                 disabled={isLoading}
+                placeholder="검색하거나 새 샵 이름 입력"
               />
+              <p className="text-xs text-muted-foreground">
+                기존 샵을 선택하면 해당 샵과 연결돼요. 새 샵은 직접 입력하면 돼요.
+              </p>
             </div>
 
             {/* 산지 */}
             <div className="space-y-2">
-              <Label htmlFor="origin">산지</Label>
+              <Label>산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {COMMON_ORIGINS.map((o) => (
+                  <Button
+                    key={o}
+                    type="button"
+                    variant={origin === o ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setOrigin(origin === o ? '' : o)}
+                    disabled={isLoading}
+                    className="h-8"
+                  >
+                    {o}
+                  </Button>
+                ))}
+              </div>
               <Input
-                id="origin"
                 type="text"
-                placeholder="예: 중국, 한국, 일본"
+                placeholder="직접 입력 (예: 윈난, 다즐링)"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
                 disabled={isLoading}
+                className="mt-1"
               />
             </div>
 

@@ -36,6 +36,13 @@ export const RECOMMENDED_NOTE_TAGS = [
 // 차 종류
 export const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'] as const;
 
+// 새 차 등록 - 연도 선택 (현재년 ~ 1990)
+const currentYear = new Date().getFullYear();
+export const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i);
+
+// 새 차 등록 - 자주 쓰는 산지
+export const COMMON_ORIGINS = ['중국', '한국', '일본', '대만', '인도', '스리랑카', '베트남', '케냐'] as const;
+
 export type TeaType = typeof TEA_TYPES[number];
 
 export const ONBOARDING_TEA_TYPES = TEA_TYPES;

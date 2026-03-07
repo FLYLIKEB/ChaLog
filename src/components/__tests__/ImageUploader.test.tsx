@@ -284,7 +284,7 @@ describe('ImageUploader 컴포넌트', () => {
       await user.upload(fileInput, mockFile);
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith('로그인이 필요합니다. 다시 로그인해주세요.');
+        expect(toast.error).toHaveBeenCalledWith('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
         expect(mockNavigate).toHaveBeenCalledWith('/login');
         expect(mockOnChange).not.toHaveBeenCalled();
       });

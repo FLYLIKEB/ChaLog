@@ -306,6 +306,25 @@ describe('TeasService', () => {
     });
   });
 
+  describe('findSellersByQuery', () => {
+    it('검색어로 seller를 필터링하여 반환해야 한다', async () => {
+      mockDataSource.query.mockResolvedValue([
+        { seller: '차향', teaCount: '5' },
+        { seller: '차향몰', teaCount: '2' },
+      ]);
+
+      const result = await service.findSellersByQuery('차');
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ name: '차향', teaCount: 5 });
+      expect(result[1]).toEqual({ name: '차향몰', teaCount: 2 });
+      expect(mockDataSource.query).toHaveBeenCalledWith(
+        expect.stringContaining('LIKE ?'),
+        ['%차%'],
+      );
+    });
+  });
+
   describe('findBySeller', () => {
     it('해당 seller의 차 목록을 반환해야 한다', async () => {
       mockTeasRepository.find.mockResolvedValue([

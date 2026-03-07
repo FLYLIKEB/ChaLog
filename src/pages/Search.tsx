@@ -501,14 +501,24 @@ export function Search() {
                   )}
                 </Section>
 
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate('/tea/new')}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  새 차 등록
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate('/tea/new')}
+                  >
+                    <Store className="w-4 h-4 mr-2" />
+                    샵 신규추가
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate('/tea/new')}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    새 차 등록
+                  </Button>
+                </div>
               </div>
             )}
           </>

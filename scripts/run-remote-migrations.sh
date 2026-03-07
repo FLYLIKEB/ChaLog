@@ -68,6 +68,7 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
+# data-source.js 필요 (data-source.ts는 ESM에서 __dirname 오류 발생)
 if [ ! -f "dist/src/database/data-source.js" ]; then
     echo "❌ data-source.js 파일이 없습니다: /home/ubuntu/chalog-backend/dist/src/database/data-source.js"
     exit 1
@@ -80,7 +81,8 @@ set +o allexport
 export NODE_ENV=production
 
 echo "--- 마이그레이션 상태 ---"
-npx typeorm migration:show -d dist/src/database/data-source.js
+# typeorm-ts-node-commonjs: .ts 마이그레이션 로드 가능, data-source.js: __dirname 정상 동작
+npx typeorm-ts-node-commonjs migration:show -d dist/src/database/data-source.js
 ENDSSH
 
 echo ""
@@ -97,11 +99,12 @@ set +o allexport
 export NODE_ENV=production
 
 echo "--- 마이그레이션 실행 ---"
-npx typeorm migration:run -d dist/src/database/data-source.js
+# typeorm-ts-node-commonjs: .ts 마이그레이션 로드 가능, data-source.js: __dirname 정상 동작
+npx typeorm-ts-node-commonjs migration:run -d dist/src/database/data-source.js
 
 echo ""
 echo "--- 최종 상태 확인 ---"
-npx typeorm migration:show -d dist/src/database/data-source.js
+npx typeorm-ts-node-commonjs migration:show -d dist/src/database/data-source.js
 ENDSSH
 
 echo ""

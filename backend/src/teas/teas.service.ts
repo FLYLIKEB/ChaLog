@@ -62,6 +62,19 @@ export class TeasService {
     return rows.map((r) => ({ name: r.seller, teaCount: Number(r.teaCount) }));
   }
 
+  async findSellersByQuery(query: string): Promise<{ name: string; teaCount: number }[]> {
+    const rows: { seller: string; teaCount: string }[] = await this.dataSource.query(
+      `SELECT seller AS seller, COUNT(*) AS teaCount
+       FROM teas
+       WHERE seller IS NOT NULL AND seller != '' AND seller LIKE ?
+       GROUP BY seller
+       ORDER BY teaCount DESC
+       LIMIT 20`,
+      [`%${query}%`],
+    );
+    return rows.map((r) => ({ name: r.seller, teaCount: Number(r.teaCount) }));
+  }
+
   async findBySeller(sellerName: string): Promise<Tea[]> {
     return this.teasRepository.find({
       where: { seller: sellerName },

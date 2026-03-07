@@ -63,8 +63,10 @@ export class TeasController {
   }
 
   @Get('sellers')
-  async getSellers() {
-    const sellers = await this.teasService.findSellers();
+  async getSellers(@Query('q') query?: string) {
+    const sellers = query?.trim()
+      ? await this.teasService.findSellersByQuery(query.trim())
+      : await this.teasService.findSellers();
     return { sellers };
   }
 
