@@ -1101,7 +1101,7 @@ export interface UserNotificationSetting {
 export const usersApi = {
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
-  updateProfile: (id: number, data: { profileImageUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
+  updateProfile: (id: number, data: { name?: string; profileImageUrl?: string | null; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
   getOnboardingPreference: (id: number) => apiClient.get<UserOnboardingPreference>(`/users/${id}/onboarding`),
   updateOnboardingPreference: (
     id: number,

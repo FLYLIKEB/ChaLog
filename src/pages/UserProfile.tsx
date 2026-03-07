@@ -14,13 +14,14 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
 import { Card } from '../components/ui/card';
 import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
+import { ProfileEditModal } from '../components/ProfileEditModal';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -37,6 +38,7 @@ export function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
@@ -179,6 +181,12 @@ export function UserProfile() {
     }
   };
 
+  const handleProfileInfoUpdate = (updatedFields: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...updatedFields });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
@@ -225,7 +233,49 @@ export function UserProfile() {
               )}
             </div>
             <div className="flex flex-col items-center text-center gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
+                {isOwnProfile && (
+                  <Button
+                    onClick={() => setIsProfileEditModalOpen(true)}
+                    size="icon"
+                    variant="ghost"
+                    className="w-7 h-7 rounded-full text-muted-foreground hover:text-foreground"
+                    aria-label="프로필 편집"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+              {user.bio && (
+                <p className="text-sm text-muted-foreground max-w-[240px] leading-snug">{user.bio}</p>
+              )}
+              {(user.instagramUrl || user.blogUrl) && (
+                <div className="flex items-center gap-2">
+                  {user.instagramUrl && (
+                    <a
+                      href={user.instagramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="인스타그램"
+                    >
+                      <Instagram className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                  {user.blogUrl && (
+                    <a
+                      href={user.blogUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="블로그"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+              )}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span>팔로워 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
                 <span>팔로잉 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
@@ -259,6 +309,16 @@ export function UserProfile() {
             currentImageUrl={user.profileImageUrl}
             onSuccess={handleProfileImageUpdate}
             userId={user.id}
+          />
+        )}
+
+        {/* 프로필 정보 편집 모달 */}
+        {isOwnProfile && user && (
+          <ProfileEditModal
+            open={isProfileEditModalOpen}
+            onOpenChange={setIsProfileEditModalOpen}
+            user={user}
+            onSuccess={handleProfileInfoUpdate}
           />
         )}
 

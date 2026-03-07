@@ -79,6 +79,9 @@ export interface User {
   name: string;
   email: string | null;
   profileImageUrl?: string | null;
+  bio?: string | null;
+  instagramUrl?: string | null;
+  blogUrl?: string | null;
   followerCount?: number;
   followingCount?: number;
   isFollowing?: boolean;
