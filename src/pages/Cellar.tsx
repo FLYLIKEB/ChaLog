@@ -234,8 +234,6 @@ export function Cellar() {
     );
   }
 
-  const currentSortOption = SORT_OPTIONS.find((o) => o.key === sortKey)!;
-
   return (
     <div className="min-h-screen bg-background pb-32">
       <Header showProfile title="내 셀러" />
@@ -299,28 +297,31 @@ export function Cellar() {
           </div>
         )}
 
-        {/* 아이템 수 + 정렬 드롭다운 */}
+        {/* 아이템 수 + 정렬 버튼 */}
         {items.length > 0 && (
           <div className="flex items-center justify-between px-4 sm:px-6 pb-2">
             <p className="text-sm text-muted-foreground">{displayedItems.length}개</p>
-            <div className="relative flex items-center gap-1">
-              <select
+            <div className="flex items-center gap-1">
+              {/* 현재 정렬 기준 — 클릭하면 다음 옵션으로 순환 */}
+              <button
+                type="button"
                 aria-label="정렬 기준"
-                value={sortKey}
-                onChange={(e) => handleSortChange(e.target.value as SortKey)}
-                className="appearance-none bg-transparent text-sm font-medium text-foreground pr-6 py-1 focus:outline-none cursor-pointer"
+                onClick={() => {
+                  const idx = SORT_OPTIONS.findIndex((o) => o.key === sortKey);
+                  const next = SORT_OPTIONS[(idx + 1) % SORT_OPTIONS.length];
+                  setSortKey(next.key);
+                  setSortDir(next.defaultDir);
+                }}
+                className="text-sm font-medium text-foreground hover:text-primary transition-colors px-1 py-1"
               >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.key} value={opt.key}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+                {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
+              </button>
+              {/* 방향 토글 */}
               <button
                 type="button"
                 aria-label={sortDir === 'asc' ? '오름차순' : '내림차순'}
                 onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-muted-foreground hover:text-foreground transition-colors p-1"
               >
                 {sortDir === 'asc' ? (
                   <ChevronUp className="w-4 h-4" />

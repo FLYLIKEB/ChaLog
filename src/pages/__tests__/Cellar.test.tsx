@@ -274,17 +274,19 @@ describe('Cellar 페이지', () => {
 
   // ── 정렬 테스트 ──────────────────────────────────────────────────────────
 
-  it('정렬 드롭다운이 렌더링된다', async () => {
+  it('정렬 기준 버튼이 렌더링된다', async () => {
     const items = [makeItem({ id: 1, tea: makeTea(1, '동방미인') as any })];
     vi.mocked(cellarApi.getAll).mockResolvedValue(items);
 
     renderCellar();
 
-    const sortSelect = await screen.findByRole('combobox', { name: '정렬 기준' });
-    expect(sortSelect).toBeInTheDocument();
+    const sortBtn = await screen.findByRole('button', { name: '정렬 기준' });
+    expect(sortBtn).toBeInTheDocument();
+    // 기본값 "추가일" 레이블 표시
+    expect(sortBtn).toHaveTextContent('추가일');
   });
 
-  it('잔량 정렬 변경 시 quantity가 적은 아이템이 먼저 표시된다', async () => {
+  it('정렬 기준 버튼 클릭 시 다음 옵션으로 순환하고 목록이 유지된다', async () => {
     const items = [
       makeItem({ id: 1, tea: makeTea(1, '많은차') as any, quantity: 100 }),
       makeItem({ id: 2, teaId: 2, tea: makeTea(2, '적은차') as any, quantity: 10 }),
@@ -293,12 +295,12 @@ describe('Cellar 페이지', () => {
 
     renderCellar();
 
-    // 정렬 드롭다운을 "잔량"으로 변경 (기본값 desc → 많은순)
-    const sortSelect = await screen.findByRole('combobox', { name: '정렬 기준' });
-    await userEvent.selectOptions(sortSelect, 'quantity');
+    // 추가일 → 잔량으로 순환 (1번 클릭)
+    const sortBtn = await screen.findByRole('button', { name: '정렬 기준' });
+    await userEvent.click(sortBtn); // 추가일 → 잔량 (desc, 많은순)
 
-    // desc(많은순)일 때 첫 번째 카드가 "많은차"
     await waitFor(() => {
+      expect(sortBtn).toHaveTextContent('잔량');
       const cards = screen.getAllByRole('heading', { level: 3 });
       expect(cards[0]).toHaveTextContent('많은차');
     });
