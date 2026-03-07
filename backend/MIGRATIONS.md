@@ -80,6 +80,9 @@ export class MigrationName1234567890123 implements MigrationInterface {
 4. **CreateNoteBookmarksTable1700000000004**: note_bookmarks 테이블 생성
 5. **AddImagesColumnToNotes1700000000005**: notes 테이블에 images 컬럼 추가
 6. **MakeMemoNullable1700000000006**: notes 테이블의 memo 컬럼을 nullable로 변경
+7. **RatingSchemaVersioning1700000000007**: rating_schema, rating_axis, note_axis_value 테이블 생성
+8. **AddProfileImageUrlToUsers1765282420978**: users 테이블에 profile_image_url 컬럼 추가
+9. **CreateUserOnboardingPreferences1769000000000**: user_onboarding_preferences 테이블 생성
 
 ## 주의사항
 

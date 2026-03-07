@@ -226,7 +226,7 @@ sequenceDiagram
     participant Proxy as Vercel Proxy
     participant Backend as 백엔드 NestJS
     participant Auth as AuthService
-    participant DB as MariaDB
+    participant DB as MySQL
 
     Client->>Proxy: POST /api/auth/login<br/>email, password
     Proxy->>Backend: POST /auth/login<br/>프록시 요청
@@ -250,7 +250,7 @@ sequenceDiagram
     participant Proxy as Vercel Proxy
     participant Backend as 백엔드 NestJS
     participant Service as TeasService
-    participant DB as MariaDB
+    participant DB as MySQL
 
     Client->>Proxy: GET /api/teas
     Proxy->>Backend: GET /teas<br/>프록시 요청
@@ -273,7 +273,7 @@ sequenceDiagram
     participant Backend as 백엔드 NestJS
     participant Guard as JWT Guard
     participant Service as NotesService
-    participant DB as MariaDB
+    participant DB as MySQL
 
     Client->>Proxy: POST /api/notes<br/>Authorization: Bearer token<br/>note data
     Proxy->>Backend: POST /notes<br/>프록시 요청
@@ -350,7 +350,7 @@ flowchart TB
 
     subgraph BackendDeploy["백엔드 배포 AWS EC2"]
         GitHubActions["GitHub Actions<br/>자동 배포 워크플로우"]
-        EC2Instance["EC2 인스턴스<br/>t3.small<br/>3.39.48.139"]
+        EC2Instance["Lightsail 인스턴스<br/>3.39.48.139"]
         PM2["PM2 프로세스 관리<br/>ecosystem.config.js"]
         NestJSApp["NestJS 앱<br/>포트 3000"]
     end

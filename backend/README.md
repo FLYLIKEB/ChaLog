@@ -4,8 +4,8 @@ NestJS 기반 백엔드 API 서버입니다.
 
 ## 요구 사항
 
-- Node.js 20 이상
-- MySQL 8.0 이상
+- Node.js 22 이상
+- MySQL 8.0 이상 (Docker 권장)
 - npm 9 이상
 
 ## 설치
