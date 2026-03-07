@@ -17,6 +17,8 @@ import { Settings } from './pages/Settings';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
+import { Cellar } from './pages/Cellar';
+import { NewCellarItem } from './pages/NewCellarItem';
 import { FloatingActionButton } from './components/FloatingActionButton';
 
 type FloatingActionRouteConfig = {
@@ -35,6 +37,8 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/note/new': { hidden: true },
   '/note/:id/edit': { hidden: true },
   '/tea/new': { hidden: true },
+  '/cellar': { hidden: true },
+  '/cellar/new': { hidden: true },
   '/onboarding': { hidden: true },
 };
 
@@ -47,6 +51,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/note/new' ||
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname === '/tea/new' ||
+    location.pathname === '/cellar/new' ||
     location.pathname === '/onboarding';
   
   const override = floatingActionRouteOverrides[location.pathname];
@@ -108,6 +113,8 @@ export default function App() {
               <Route path="/user/:id" element={<UserProfile />} />
               <Route path="/my-notes" element={<MyNotes />} />
               <Route path="/saved" element={<Saved />} />
+              <Route path="/cellar" element={<Cellar />} />
+              <Route path="/cellar/new" element={<NewCellarItem />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

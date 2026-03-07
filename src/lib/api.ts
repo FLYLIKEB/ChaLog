@@ -1073,6 +1073,7 @@ export const notesApi = {
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
+  report: (id: number, reason: string) => apiClient.post<{ id: number; message: string }>(`/notes/${id}/report`, { reason }),
 };
 
 export const usersApi = {
@@ -1093,5 +1094,16 @@ export const followsApi = {
     apiClient.get<User[]>(`/users/${userId}/followers`),
   getFollowing: (userId: number) =>
     apiClient.get<User[]>(`/users/${userId}/following`),
+};
+
+export const cellarApi = {
+  getAll: () => apiClient.get<import('../types').CellarItem[]>('/cellar'),
+  getById: (id: number) => apiClient.get<import('../types').CellarItem>(`/cellar/${id}`),
+  getReminders: () => apiClient.get<import('../types').CellarItem[]>('/cellar/reminders'),
+  create: (data: import('../types').CreateCellarItemRequest) =>
+    apiClient.post<import('../types').CellarItem>('/cellar', data),
+  update: (id: number, data: import('../types').UpdateCellarItemRequest) =>
+    apiClient.patch<import('../types').CellarItem>(`/cellar/${id}`, data),
+  remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 

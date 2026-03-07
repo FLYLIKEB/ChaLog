@@ -46,9 +46,11 @@ echo "  서버: $LIGHTSAIL_IP"
 echo "  SSH 키: $SSH_KEY"
 echo ""
 
+SSH_CMD="ssh -i \"$SSH_KEY\" -o StrictHostKeyChecking=no -o LogLevel=QUIET ubuntu@\"$LIGHTSAIL_IP\""
+
 # SSH 연결 테스트
 echo -e "${BLUE}[1/3] SSH 연결 확인 중...${NC}"
-if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no ubuntu@"$LIGHTSAIL_IP" "echo ok" > /dev/null 2>&1; then
+if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o LogLevel=QUIET ubuntu@"$LIGHTSAIL_IP" "echo ok" > /dev/null 2>&1; then
     echo -e "${RED}❌ SSH 연결 실패: $LIGHTSAIL_IP${NC}"
     exit 1
 fi
@@ -57,7 +59,7 @@ echo ""
 
 # 마이그레이션 상태 확인
 echo -e "${BLUE}[2/3] 현재 마이그레이션 상태 확인 중...${NC}"
-ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@"$LIGHTSAIL_IP" << 'ENDSSH'
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o LogLevel=QUIET ubuntu@"$LIGHTSAIL_IP" 'bash -s' << 'ENDSSH'
 set -e
 cd /home/ubuntu/chalog-backend
 
@@ -85,7 +87,7 @@ echo ""
 
 # 마이그레이션 실행
 echo -e "${BLUE}[3/3] 마이그레이션 실행 중...${NC}"
-ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no ubuntu@"$LIGHTSAIL_IP" << 'ENDSSH'
+ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o LogLevel=QUIET ubuntu@"$LIGHTSAIL_IP" 'bash -s' << 'ENDSSH'
 set -e
 cd /home/ubuntu/chalog-backend
 
