@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TeasModule } from './teas/teas.module';
 import { NotesModule } from './notes/notes.module';
+import { ReportsModule } from './reports/reports.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
 import { User } from './users/entities/user.entity';
@@ -42,6 +43,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     UsersModule,
     TeasModule,
     NotesModule,
+    ReportsModule,
   ],
   controllers: [HealthController],
   providers: [
