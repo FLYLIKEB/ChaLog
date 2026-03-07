@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException, Logger, Inject } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException, Logger, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -232,6 +232,68 @@ export class UsersService {
       where: { userId, provider: AuthProvider.EMAIL },
     });
     return auth?.providerId || null;
+  }
+
+  async getLinkedAccounts(userId: number): Promise<
+    Array<{ id: number; provider: AuthProvider; providerId: string; hasCredential: boolean }>
+  > {
+    const auths = await this.authRepository.find({
+      where: { userId },
+      order: { provider: 'ASC' },
+    });
+    return auths.map((a) => ({
+      id: a.id,
+      provider: a.provider,
+      providerId: a.providerId,
+      hasCredential: !!a.credential,
+    }));
+  }
+
+  async unlinkAccount(userId: number, authId: number): Promise<void> {
+    const auth = await this.authRepository.findOne({
+      where: { id: authId },
+      relations: ['user'],
+    });
+    if (!auth) {
+      throw new NotFoundException('연동 계정을 찾을 수 없습니다.');
+    }
+    if (auth.userId !== userId) {
+      throw new ForbiddenException('이 연동 계정을 해제할 권한이 없습니다.');
+    }
+    const count = await this.authRepository.count({ where: { userId } });
+    if (count <= 1) {
+      throw new BadRequestException('최소 1개의 로그인 수단은 유지해야 합니다.');
+    }
+    await this.authRepository.remove(auth);
+  }
+
+  async linkOAuthAccount(
+    userId: number,
+    provider: AuthProvider,
+    providerId: string,
+    email: string | null,
+  ): Promise<void> {
+    const existingAuth = await this.authRepository.findOne({
+      where: { provider, providerId },
+      relations: ['user'],
+    });
+    if (existingAuth) {
+      if (existingAuth.userId === userId) {
+        throw new BadRequestException('이미 연동된 계정입니다.');
+      }
+      throw new ConflictException('다른 계정에 이미 연동된 소셜 계정입니다.');
+    }
+    await this.authRepository.save(
+      this.authRepository.create({
+        userId,
+        provider,
+        providerId,
+        credential: null,
+      }),
+    );
+    if (email) {
+      await this.addEmailAuthIfNotExists(userId, email);
+    }
   }
 
   async update(id: number, userId: number, updateUserDto: UpdateUserDto): Promise<User> {

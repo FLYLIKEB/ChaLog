@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
+import { AuthProvider } from '../users/entities/user-authentication.entity';
 import axios from 'axios';
 
 @Injectable()
@@ -131,4 +132,29 @@ export class AuthService {
     }
   }
 
+  async linkKakao(userId: number, accessToken: string): Promise<void> {
+    const kakaoUserInfo = await this.getKakaoUserInfo(accessToken);
+    if (!kakaoUserInfo || !kakaoUserInfo.id) {
+      throw new UnauthorizedException('카카오 사용자 정보를 가져올 수 없습니다.');
+    }
+    await this.usersService.linkOAuthAccount(
+      userId,
+      AuthProvider.KAKAO,
+      String(kakaoUserInfo.id),
+      kakaoUserInfo.kakao_account?.email || null,
+    );
+  }
+
+  async linkGoogle(userId: number, accessToken: string): Promise<void> {
+    const googleUserInfo = await this.getGoogleUserInfo(accessToken);
+    if (!googleUserInfo || !googleUserInfo.id) {
+      throw new UnauthorizedException('구글 사용자 정보를 가져올 수 없습니다.');
+    }
+    await this.usersService.linkOAuthAccount(
+      userId,
+      AuthProvider.GOOGLE,
+      googleUserInfo.id,
+      googleUserInfo.email || null,
+    );
+  }
 }
