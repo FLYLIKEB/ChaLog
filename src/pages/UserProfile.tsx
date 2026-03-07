@@ -11,10 +11,10 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
-import { usersApi, notesApi, followsApi } from '../lib/api';
+import { usersApi, notesApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera, Users } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
@@ -37,7 +37,6 @@ export function UserProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
@@ -62,7 +61,7 @@ export function UserProfile() {
           usersApi.getById(userId),
           notesApi.getAll(userId, isPublicFilter),
         ]);
-        
+
         setUser(userData as User);
         const notesArray = Array.isArray(notesData) ? notesData : [];
         setNotes(notesArray as Note[]);
@@ -80,7 +79,7 @@ export function UserProfile() {
         }
       } catch (error: unknown) {
         logger.error('Failed to fetch user profile:', error);
-        
+
         const statusCode = (error as { statusCode?: number })?.statusCode;
         if (statusCode === 404) {
           toast.error('사용자를 찾을 수 없습니다.');
@@ -95,56 +94,6 @@ export function UserProfile() {
     fetchData();
   }, [userId, isOwnProfile, authLoading]);
 
-  const handleFollowToggle = async () => {
-    if (!currentUser) {
-      toast.error('팔로우하려면 로그인이 필요합니다.');
-      navigate('/login');
-      return;
-    }
-
-    if (!user) return;
-
-    setIsFollowLoading(true);
-    const prevIsFollowing = user.isFollowing;
-    const delta = prevIsFollowing ? -1 : 1;
-
-    setUser((prev) =>
-      prev
-        ? {
-            ...prev,
-            isFollowing: !prevIsFollowing,
-            followerCount: (prev.followerCount ?? 0) + delta,
-          }
-        : prev,
-    );
-
-    try {
-      const result = await followsApi.toggle(userId) as { isFollowing: boolean };
-      setUser((prev) =>
-        prev
-          ? {
-              ...prev,
-              isFollowing: result.isFollowing,
-              followerCount: (prev.followerCount ?? 0) + (result.isFollowing ? (prevIsFollowing ? 0 : 1) : (prevIsFollowing ? -1 : 0)),
-            }
-          : prev,
-      );
-    } catch (error) {
-      setUser((prev) =>
-        prev
-          ? {
-              ...prev,
-              isFollowing: prevIsFollowing,
-              followerCount: (prev.followerCount ?? 0) - delta,
-            }
-          : prev,
-      );
-      toast.error('팔로우 처리 중 오류가 발생했습니다.');
-    } finally {
-      setIsFollowLoading(false);
-    }
-  };
-
   const stats = useMemo(() => {
     if (notes.length === 0) {
       return {
@@ -153,12 +102,12 @@ export function UserProfile() {
         noteCount: 0,
       };
     }
-    
+
     const averageRating = notes.reduce((sum, note) => sum + (note.overallRating || 0), 0) / notes.length;
     const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
-    
+
     const safeAverageRating = isNaN(averageRating) ? 0 : Number(averageRating.toFixed(1));
-    
+
     return {
       averageRating: safeAverageRating,
       totalLikes,
@@ -205,16 +154,16 @@ export function UserProfile() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header showBack title="사용자 프로필" />
-      
+
       <div className="p-6 space-y-6">
         {/* 프로필 헤더 섹션 */}
         <Card className="p-4 sm:p-6 md:p-8">
           <div className="flex flex-col items-center gap-3 mb-6">
-            <div className="relative shrink-0">
-              <UserAvatar 
-                name={user.name} 
+            <div className="relative flex-shrink-0">
+              <UserAvatar
+                name={user.name}
                 profileImageUrl={user.profileImageUrl}
-                size="md" 
+                size="md"
               />
               {isOwnProfile && (
                 <Button
@@ -227,29 +176,9 @@ export function UserProfile() {
                 </Button>
               )}
             </div>
-            <div className="flex flex-col items-center text-center gap-2">
+            <div className="flex flex-col items-center text-center">
               <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>팔로워 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
-                <span>팔로잉 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
-              </div>
-              {!isOwnProfile && !authLoading && (
-                <Button
-                  onClick={handleFollowToggle}
-                  disabled={isFollowLoading}
-                  variant={user.isFollowing ? 'outline' : 'default'}
-                  size="sm"
-                  className="mt-1 min-w-[88px]"
-                >
-                  {isFollowLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : user.isFollowing ? (
-                    '팔로잉'
-                  ) : (
-                    '팔로우'
-                  )}
-                </Button>
-              )}
+              <p className="text-sm text-muted-foreground mt-1">작성한 노트 {notes.length}개</p>
             </div>
           </div>
         </Card>
