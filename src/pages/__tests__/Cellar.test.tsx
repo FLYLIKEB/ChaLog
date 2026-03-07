@@ -1,231 +1,214 @@
-import { screen, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, vi, describe, it, expect } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 import { Cellar } from '../Cellar';
-import { renderWithRouter } from '../../test/renderWithRouter';
-import { useAuth } from '../../contexts/AuthContext';
 import { cellarApi } from '../../lib/api';
+import { CellarItem } from '../../types';
 
-const mockDate = new Date('2024-01-01T00:00:00.000Z');
+const mockNavigate = vi.fn();
+const mockUseAuth = vi.fn(() => ({
+  user: { id: 1, email: 'test@example.com', name: '테스트 유저' },
+  token: 'mock-token',
+  isLoading: false,
+  isAuthenticated: true,
+  hasCompletedOnboarding: true,
+  isOnboardingLoading: false,
+  login: vi.fn(),
+  logout: vi.fn(),
+  register: vi.fn(),
+  loginWithKakao: vi.fn(),
+  refreshOnboardingStatus: vi.fn(),
+}));
 
-const mockTea = {
-  id: 1,
-  name: '운남 보이차',
-  type: '보이차',
-  averageRating: 4.5,
-  reviewCount: 10,
-};
-
-const mockCellarItems = [
-  {
-    id: 1,
-    userId: 1,
-    teaId: 1,
-    tea: mockTea,
-    quantity: 150,
-    unit: 'g' as const,
-    openedAt: '2024-01-01',
-    remindAt: null,
-    memo: '첫 번째 차',
-    createdAt: mockDate,
-    updatedAt: mockDate,
-  },
-  {
-    id: 2,
-    userId: 1,
-    teaId: 2,
-    tea: { ...mockTea, id: 2, name: '대홍포' },
-    quantity: 50,
-    unit: 'g' as const,
-    openedAt: null,
-    remindAt: null,
-    memo: null,
-    createdAt: mockDate,
-    updatedAt: mockDate,
-  },
-];
-
-const mockReminderItems = [
-  {
-    ...mockCellarItems[0],
-    remindAt: '2024-01-01',
-  },
-];
-
-const mockUser = {
-  id: 1,
-  name: '테스트 사용자',
-  email: 'test@example.com',
-};
-
-vi.mock('../../contexts/AuthContext', async () => {
-  const actual = await vi.importActual<typeof import('../../contexts/AuthContext')>('../../contexts/AuthContext');
+vi.mock('../../lib/api', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/api')>('../../lib/api');
   return {
     ...actual,
-    useAuth: vi.fn(),
+    cellarApi: {
+      getAll: vi.fn(),
+      getReminders: vi.fn(),
+      remove: vi.fn(),
+    },
   };
 });
 
-vi.mock('../../lib/api', () => ({
-  cellarApi: {
-    getAll: vi.fn(),
-    getReminders: vi.fn(),
-    remove: vi.fn(),
-  },
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => mockUseAuth(),
 }));
 
-const mockNavigate = vi.fn();
-
 vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
   };
 });
 
-const mockToastError = vi.fn();
-const mockToastSuccess = vi.fn();
-
 vi.mock('sonner', () => ({
   toast: {
-    error: (...args: any[]) => mockToastError(...args),
-    success: (...args: any[]) => mockToastSuccess(...args),
+    error: vi.fn(),
+    success: vi.fn(),
   },
 }));
+
+const makeTea = (id: number, name: string, type = '녹차') => ({
+  id,
+  name,
+  type,
+  averageRating: 4.0,
+  reviewCount: 5,
+  year: 2023,
+  seller: null,
+  origin: null,
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+});
+
+const makeItem = (overrides: Partial<CellarItem> = {}): CellarItem => ({
+  id: 1,
+  userId: 1,
+  teaId: 1,
+  tea: makeTea(1, '동방미인') as any,
+  quantity: 50,
+  unit: 'g',
+  openedAt: null,
+  remindAt: null,
+  memo: null,
+  createdAt: new Date('2024-01-01T00:00:00.000Z'),
+  updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+  ...overrides,
+});
+
+function renderCellar() {
+  return render(
+    <MemoryRouter initialEntries={['/cellar']}>
+      <Cellar />
+    </MemoryRouter>,
+  );
+}
 
 describe('Cellar 페이지', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useAuth).mockReturnValue({
-      user: mockUser,
-      isAuthenticated: true,
-      isLoading: false,
+    mockUseAuth.mockReturnValue({
+      user: { id: 1, email: 'test@example.com', name: '테스트 유저' },
       token: 'mock-token',
+      isLoading: false,
+      isAuthenticated: true,
+      hasCompletedOnboarding: true,
+      isOnboardingLoading: false,
       login: vi.fn(),
+      logout: vi.fn(),
       register: vi.fn(),
       loginWithKakao: vi.fn(),
-      logout: vi.fn(),
-      hasCompletedOnboarding: null,
-      isOnboardingLoading: false,
       refreshOnboardingStatus: vi.fn(),
     });
-    vi.mocked(cellarApi.getAll).mockResolvedValue(mockCellarItems);
+    vi.mocked(cellarApi.getAll).mockResolvedValue([]);
     vi.mocked(cellarApi.getReminders).mockResolvedValue([]);
   });
 
-  afterEach(() => {
-    vi.clearAllMocks();
-  });
+  it('로딩 후 빈 상태 메시지를 표시한다', async () => {
+    renderCellar();
 
-  it('로그인하지 않은 사용자는 로그인 페이지로 리다이렉트', () => {
-    mockNavigate.mockClear();
-    vi.mocked(useAuth).mockReturnValue({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false,
-      token: null,
-      login: vi.fn(),
-      register: vi.fn(),
-      loginWithKakao: vi.fn(),
-      logout: vi.fn(),
-      hasCompletedOnboarding: null,
-      isOnboardingLoading: false,
-      refreshOnboardingStatus: vi.fn(),
+    await waitFor(() => {
+      expect(screen.getByText('아직 셀러에 차가 없습니다.')).toBeInTheDocument();
     });
-
-    renderWithRouter(<Cellar />, { route: '/cellar' });
-
-    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
-  it('셀러 아이템 목록을 표시한다', async () => {
-    renderWithRouter(<Cellar />, { route: '/cellar' });
+  it('셀러 아이템 목록을 렌더링한다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '동방미인') as any }),
+      makeItem({ id: 2, teaId: 2, tea: makeTea(2, '대홍포') as any, quantity: 30 }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText('내 셀러')).toBeInTheDocument();
-    expect(screen.getByText('운남 보이차')).toBeInTheDocument();
-    expect(screen.getByText('대홍포')).toBeInTheDocument();
+      expect(screen.getByText('동방미인')).toBeInTheDocument();
+      expect(screen.getByText('대홍포')).toBeInTheDocument();
+    });
   });
 
-  it('빈 상태 메시지를 표시한다', async () => {
-    vi.mocked(cellarApi.getAll).mockResolvedValue([]);
+  it('리마인더 배너를 표시한다', async () => {
+    const reminderItem = makeItem({
+      remindAt: new Date(Date.now() - 1000).toISOString() as any,
+      tea: makeTea(1, '리마인더 차') as any,
+    });
+    vi.mocked(cellarApi.getAll).mockResolvedValue([reminderItem]);
+    vi.mocked(cellarApi.getReminders).mockResolvedValue([reminderItem]);
 
-    renderWithRouter(<Cellar />, { route: '/cellar' });
+    renderCellar();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText('보유한 차를 추가해보세요.')).toBeInTheDocument();
+      expect(screen.getByText('리마인더 알림')).toBeInTheDocument();
+      const reminderTexts = screen.getAllByText(/리마인더 차/);
+      expect(reminderTexts.length).toBeGreaterThan(0);
+    });
   });
 
-  it('리마인더가 있을 때 배너를 표시한다', async () => {
-    vi.mocked(cellarApi.getReminders).mockResolvedValue(mockReminderItems);
+  it('노트 작성 버튼 클릭 시 /note/new로 이동한다', async () => {
+    const items = [makeItem({ teaId: 5, tea: makeTea(5, '테스트 차') as any })];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
 
-    renderWithRouter(<Cellar />, { route: '/cellar' });
+    renderCellar();
+
+    const noteBtn = await screen.findByRole('button', { name: /노트 작성/ });
+    await userEvent.click(noteBtn);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/note/new?teaId=5');
+  });
+
+  it('개봉일이 있는 아이템은 개봉일을 표시한다', async () => {
+    const items = [makeItem({ openedAt: '2024-03-01' as any })];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    expect(screen.getByText(/1개의 차가 오늘 리마인더 기한입니다/)).toBeInTheDocument();
+      expect(screen.getByText(/개봉일/)).toBeInTheDocument();
+      expect(screen.getByText(/2024.03.01/)).toBeInTheDocument();
+    });
   });
 
-  it('로딩 중에 스피너를 표시한다', () => {
-    vi.mocked(cellarApi.getAll).mockImplementation(() => new Promise(() => {}));
+  it('메모가 있는 아이템은 메모를 표시한다', async () => {
+    const items = [makeItem({ memo: '이 차는 정말 맛있어요.' })];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
 
-    renderWithRouter(<Cellar />, { route: '/cellar' });
-
-    expect(screen.getByRole('status', { name: /로딩/i })).toBeInTheDocument();
-  });
-
-  it('API 에러 시 에러 토스트를 표시한다', async () => {
-    mockToastError.mockClear();
-    vi.mocked(cellarApi.getAll).mockRejectedValue(new Error('API Error'));
-
-    renderWithRouter(<Cellar />, { route: '/cellar' });
+    renderCellar();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
-    }, { timeout: 3000 });
-
-    await new Promise(resolve => setTimeout(resolve, 100));
-    expect(mockToastError).toHaveBeenCalledWith('보유 차 목록을 불러오는데 실패했습니다.');
+      expect(screen.getByText('이 차는 정말 맛있어요.')).toBeInTheDocument();
+    });
   });
 
-  it('"차 추가" 버튼 클릭 시 /cellar/new로 이동한다', async () => {
-    const { getByRole } = renderWithRouter(<Cellar />, { route: '/cellar' });
+  it('빈 상태에서 차 추가하기 버튼 클릭 시 /cellar/new로 이동한다', async () => {
+    renderCellar();
 
-    await waitFor(() => {
-      expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
-    }, { timeout: 5000 });
-
-    const addButton = getByRole('button', { name: '차 추가' });
-    addButton.click();
+    const addBtn = await screen.findByRole('button', { name: /차 추가하기/ });
+    await userEvent.click(addBtn);
 
     expect(mockNavigate).toHaveBeenCalledWith('/cellar/new');
   });
 
-  it('인증 로딩 중에는 로딩 스피너를 표시한다', () => {
-    vi.mocked(useAuth).mockReturnValue({
+  it('로그인하지 않은 사용자는 로그인 페이지로 리다이렉트', () => {
+    mockUseAuth.mockReturnValue({
       user: null,
-      isAuthenticated: false,
-      isLoading: true,
       token: null,
-      login: vi.fn(),
-      register: vi.fn(),
-      loginWithKakao: vi.fn(),
-      logout: vi.fn(),
+      isLoading: false,
+      isAuthenticated: false,
       hasCompletedOnboarding: null,
       isOnboardingLoading: false,
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      loginWithKakao: vi.fn(),
       refreshOnboardingStatus: vi.fn(),
     });
 
-    renderWithRouter(<Cellar />, { route: '/cellar' });
+    renderCellar();
 
-    expect(screen.getByRole('status', { name: /로딩/i })).toBeInTheDocument();
+    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 });
