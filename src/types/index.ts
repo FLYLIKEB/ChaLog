@@ -180,3 +180,21 @@ export interface Comment {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type NotificationType = 'note_like' | 'follow';
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  actorId: number;
+  actor: Pick<User, 'id' | 'name' | 'profileImageUrl'>;
+  targetId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  total: number;
+}
