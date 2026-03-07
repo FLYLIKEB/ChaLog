@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NoteReport } from './entities/note-report.entity';
@@ -24,6 +24,13 @@ export class ReportsService {
 
     if (note.userId === reporterId) {
       throw new ForbiddenException('자신의 노트는 신고할 수 없습니다.');
+    }
+
+    const alreadyReported = await this.noteReportsRepository.exist({
+      where: { noteId, reporterId },
+    });
+    if (alreadyReported) {
+      throw new ConflictException('이미 신고한 노트입니다.');
     }
 
     const report = this.noteReportsRepository.create({

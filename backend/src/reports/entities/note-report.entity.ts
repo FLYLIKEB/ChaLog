@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { Note } from '../../notes/entities/note.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -10,6 +10,7 @@ export enum ReportReason {
 }
 
 @Entity('note_reports')
+@Unique(['noteId', 'reporterId'])
 export class NoteReport {
   @PrimaryGeneratedColumn()
   id: number;

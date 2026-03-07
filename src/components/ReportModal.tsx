@@ -10,17 +10,8 @@ import {
 import { Button } from './ui/button';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
-import { notesApi } from '../lib/api';
+import { notesApi, REPORT_REASONS, ReportReason } from '../lib/api';
 import { toast } from 'sonner';
-
-export const REPORT_REASONS = [
-  { value: 'spam', label: '스팸' },
-  { value: 'inappropriate', label: '부적절한 내용' },
-  { value: 'copyright', label: '저작권 침해' },
-  { value: 'other', label: '기타' },
-] as const;
-
-export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
 
 interface ReportModalProps {
   open: boolean;
