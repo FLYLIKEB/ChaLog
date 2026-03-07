@@ -1,3 +1,8 @@
+export interface PopularTag {
+  name: string;
+  count: number;
+}
+
 export interface Tea {
   id: number;
   name: string;
