@@ -87,6 +87,13 @@
             "request": "launch",
             "command": "bash scripts/run-remote-migrations.sh",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "🔀 원격 main → 현재 브랜치 머지 (merge-main-into-current.sh)",
+            "request": "launch",
+            "command": "bash scripts/merge-main-into-current.sh",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
