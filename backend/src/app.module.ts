@@ -8,6 +8,8 @@ import { UsersModule } from './users/users.module';
 import { TeasModule } from './teas/teas.module';
 import { NotesModule } from './notes/notes.module';
 import { CellarModule } from './cellar/cellar.module';
+import { PostsModule } from './posts/posts.module';
+import { CommentsModule } from './comments/comments.module';
 import { ReportsModule } from './reports/reports.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
@@ -45,6 +47,8 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     TeasModule,
     NotesModule,
     CellarModule,
+    PostsModule,
+    CommentsModule,
     ReportsModule,
   ],
   controllers: [HealthController],
