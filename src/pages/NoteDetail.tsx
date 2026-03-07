@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { ReportModal } from '../components/ReportModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,7 @@ export function NoteDetail() {
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     // 삭제된 노트는 API 호출하지 않음
@@ -343,6 +345,21 @@ export function NoteDetail() {
           </section>
         )}
 
+        {/* 다른 사람 노트일 때 신고 버튼 */}
+        {user && !isMyNote && (
+          <section className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowReportModal(true)}
+              className="text-muted-foreground hover:text-destructive gap-1.5"
+            >
+              <Flag className="w-3.5 h-3.5" />
+              신고하기
+            </Button>
+          </section>
+        )}
+
         {/* 내 노트일 때만 노출되는 액션 */}
         {isMyNote && (
           <section className="flex flex-col sm:flex-row gap-3">
@@ -376,6 +393,13 @@ export function NoteDetail() {
           </section>
         )}
       </div>
+
+      {/* 신고 모달 */}
+      <ReportModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        noteId={noteId}
+      />
 
       {/* 삭제 확인 다이얼로그 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

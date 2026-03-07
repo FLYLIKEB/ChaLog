@@ -1073,7 +1073,17 @@ export const notesApi = {
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
+  report: (id: number, reason: ReportReason) => apiClient.post<{ id: number; message: string }>(`/notes/${id}/report`, { reason }),
 };
+
+export const REPORT_REASONS = [
+  { value: 'spam', label: '스팸' },
+  { value: 'inappropriate', label: '부적절한 내용' },
+  { value: 'copyright', label: '저작권 침해' },
+  { value: 'other', label: '기타' },
+] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
 
 export const usersApi = {
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
