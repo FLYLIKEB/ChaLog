@@ -188,3 +188,15 @@ html {
   font-size: var(--font-size);
 }
 
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide,
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+

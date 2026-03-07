@@ -71,7 +71,7 @@ export function Saved() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header showProfile title="저장함" />
+      <Header showBack showProfile title="저장함" />
       
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
         <Section title="저장한 노트" spacing="lg">

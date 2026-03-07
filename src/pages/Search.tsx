@@ -3,6 +3,8 @@ import { Search as SearchIcon, Plus, Loader2, Store, ChevronRight, Filter } from
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
+import { TeaRankingCard } from '../components/TeaRankingCard';
+import { TeaNewCard } from '../components/TeaNewCard';
 import { EmptyState } from '../components/EmptyState';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -32,6 +34,7 @@ export function Search() {
   const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | null;
   const urlType = searchParams.get('type');
   const urlMinRating = searchParams.get('minRating');
+  const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [teas, setTeas] = useState<Tea[]>([]);
@@ -198,24 +201,46 @@ export function Search() {
 
   const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
 
+  const SECTION_TITLES: Record<string, string> = {
+    popular: '인기 차 랭킹',
+    new: '신규 차',
+    curation: '추천 큐레이션',
+  };
+  const resultsTitle =
+    urlSection && SECTION_TITLES[urlSection]
+      ? SECTION_TITLES[urlSection]
+      : searchQuery.trim()
+        ? '검색 결과'
+        : '차 탐색';
+
+  const goBackToExplore = useCallback(() => {
+    setSearchParams({});
+    setSearchQuery('');
+    setHasSearched(false);
+  }, [setSearchParams]);
+
   const handleMorePopular = () => {
-    setSearchParams({ sort: 'popular' });
+    setSearchParams({ sort: 'popular', section: 'popular' });
     setHasSearched(true);
   };
   const handleMoreNew = () => {
-    setSearchParams({ sort: 'new' });
+    setSearchParams({ sort: 'new', section: 'new' });
     setHasSearched(true);
   };
   const handleMoreCuration = () => {
-    setSearchParams({ sort: 'popular' });
+    setSearchParams({ sort: 'popular', section: 'curation' });
     setHasSearched(true);
   };
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header title="차 탐색" />
+    <div className="min-h-screen bg-background pb-20 flex flex-col overflow-hidden">
+      <Header
+        title={showResults ? resultsTitle : '차 탐색'}
+        showBack={showResults}
+        onBack={showResults ? goBackToExplore : undefined}
+      />
 
-      <div className="p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {/* 검색 입력 영역 */}
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -330,70 +355,94 @@ export function Search() {
               </div>
             ) : (
               <div className="space-y-8">
-                <Section title="인기 차 랭킹" spacing="lg">
-                  {popularTeas.length > 0 ? (
-                    <>
-                      <div className="space-y-3">
-                        {popularTeas.slice(0, 5).map((tea) => (
-                          <TeaCard key={tea.id} tea={tea} />
-                        ))}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-muted-foreground"
+                <Section
+                  title="인기 차 랭킹"
+                  description="리뷰가 많은 순으로 인기 있는 차를 모았어요."
+                  spacing="lg"
+                  headerAction={
+                    popularTeas.length > 0 ? (
+                      <button
+                        type="button"
                         onClick={handleMorePopular}
+                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
                       >
-                        더보기 <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </>
+                        더보기 <ChevronRight className="w-4 h-4 ml-0.5" />
+                      </button>
+                    ) : undefined
+                  }
+                >
+                  {popularTeas.length > 0 ? (
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                      {popularTeas.slice(0, 10).map((tea, index) => (
+                        <div key={tea.id} className="shrink-0 w-[200px]">
+                          <TeaRankingCard tea={tea} rank={index + 1} />
+                        </div>
+                      ))}
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">등록된 차가 없습니다.</p>
                   )}
                 </Section>
 
-                <Section title="신규 차" spacing="lg">
-                  {newTeas.length > 0 ? (
-                    <>
-                      <div className="space-y-3">
-                        {newTeas.slice(0, 5).map((tea) => (
-                          <TeaCard key={tea.id} tea={tea} />
-                        ))}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-muted-foreground"
+                <Section
+                  title="신규 차"
+                  description="최근에 ChaLog에 새로 등록된 차예요."
+                  spacing="lg"
+                  headerAction={
+                    newTeas.length > 0 ? (
+                      <button
+                        type="button"
                         onClick={handleMoreNew}
+                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
                       >
-                        더보기 <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </>
+                        더보기 <ChevronRight className="w-4 h-4 ml-0.5" />
+                      </button>
+                    ) : undefined
+                  }
+                >
+                  {newTeas.length > 0 ? (
+                    <div className="space-y-2">
+                      {newTeas.slice(0, 5).map((tea) => (
+                        <TeaNewCard key={tea.id} tea={tea} />
+                      ))}
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">등록된 차가 없습니다.</p>
                   )}
                 </Section>
 
-                <Section title="추천 큐레이션" spacing="lg">
-                  {curationTeas.length > 0 ? (
-                    <>
-                      <div className="space-y-3">
-                        {curationTeas.slice(0, 5).map((tea) => (
-                          <TeaCard key={tea.id} tea={tea} />
-                        ))}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        className="w-full text-muted-foreground"
+                <Section
+                  title="추천 큐레이션"
+                  description="다양한 기준으로 엄선한 추천 차 목록이에요."
+                  spacing="lg"
+                  headerAction={
+                    curationTeas.length > 0 ? (
+                      <button
+                        type="button"
                         onClick={handleMoreCuration}
+                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
                       >
-                        더보기 <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </>
+                        더보기 <ChevronRight className="w-4 h-4 ml-0.5" />
+                      </button>
+                    ) : undefined
+                  }
+                >
+                  {curationTeas.length > 0 ? (
+                    <div className="space-y-3">
+                      {curationTeas.slice(0, 5).map((tea) => (
+                        <TeaCard key={tea.id} tea={tea} />
+                      ))}
+                    </div>
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">추천할 차가 없습니다.</p>
                   )}
                 </Section>
 
-                <Section title="샵/브랜드" spacing="lg">
+                <Section
+                  title="샵/브랜드"
+                  description="차를 구매할 수 있는 샵과 브랜드를 둘러보세요."
+                  spacing="lg"
+                >
                   {sellers.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {sellers.map((seller) => (
