@@ -38,7 +38,7 @@ export class Notification {
   @JoinColumn({ name: 'actorId' })
   actor: User;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   targetId: number | null;
 
   @Column({ default: false })
