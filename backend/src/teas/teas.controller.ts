@@ -44,6 +44,12 @@ export class TeasController {
     return this.teasService.findAll();
   }
 
+  @Get('trending')
+  getTrending(@Query('period') period?: string) {
+    const p = period === '30d' ? '30d' : '7d';
+    return this.teasService.getTrendingTeas(p);
+  }
+
   @Get('rankings/popular')
   getPopularRankings(@Query('limit') limit?: string) {
     const limitNum = limit ? parseInt(limit, 10) : 10;

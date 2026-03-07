@@ -161,7 +161,7 @@ export function NewTea() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header showBack title="새 차 등록" />
+      <Header showBack title="새 차 등록" showProfile />
       
       <div className="p-4 sm:max-w-md sm:mx-auto">
         <div className="bg-white rounded-lg p-6 space-y-6">

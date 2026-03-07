@@ -120,7 +120,7 @@ export function TagDetail() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header title={`#${decodedName}`} />
+        <Header title={`#${decodedName}`} showProfile />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>
@@ -135,7 +135,7 @@ export function TagDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header title="" />
+      <Header title="" showProfile />
 
       {/* 태그 헤더 */}
       <div className="px-4 pt-2 pb-4 border-b border-border/50">

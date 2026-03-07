@@ -204,7 +204,7 @@ export function NewNote() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
-      <Header showBack title="새 노트 작성" />
+      <Header showBack title="새 노트 작성" showProfile />
       
       <div className="p-4 space-y-6">
         {/* 차 선택 영역 */}

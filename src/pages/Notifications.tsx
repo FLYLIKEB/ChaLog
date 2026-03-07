@@ -143,7 +143,7 @@ export function Notifications() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header title="알림" showBack />
+      <Header title="알림" showBack showProfile />
       <main className="pb-20">
         {loading ? (
           <div className="flex justify-center items-center h-48">

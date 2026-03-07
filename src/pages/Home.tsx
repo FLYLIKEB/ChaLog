@@ -4,10 +4,11 @@ import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
 import { TeaCard } from '../components/TeaCard';
+import { CreatorCard } from '../components/CreatorCard';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { teasApi, notesApi, tagsApi } from '../lib/api';
+import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
 import { Tea, Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
 import { Loader2, Hash } from 'lucide-react';
@@ -24,6 +25,8 @@ export function Home() {
   const navigate = useNavigate();
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const [todayTea, setTodayTea] = useState<Tea | null>(null);
+  const [trendingTeas, setTrendingTeas] = useState<Tea[]>([]);
+  const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null } & { followerCount: number }>>([]);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
   const [followingNotes, setFollowingNotes] = useState<Note[]>([]);
   const [tagNotes, setTagNotes] = useState<Note[]>([]);
@@ -37,9 +40,11 @@ export function Home() {
     try {
       setIsLoading(true);
       
-      const [teasResult, notesResult] = await Promise.allSettled([
+      const [teasResult, notesResult, trendingTeasResult, trendingCreatorsResult] = await Promise.allSettled([
         teasApi.getAll(),
         notesApi.getAll(undefined, true),
+        teasApi.getTrending('7d'),
+        usersApi.getTrending('7d'),
       ]);
 
       if (teasResult.status === 'fulfilled') {
@@ -69,6 +74,20 @@ export function Home() {
         } else {
           toast.error('노트 정보를 불러오는데 실패했습니다.');
         }
+      }
+
+      if (trendingTeasResult.status === 'fulfilled') {
+        const arr = Array.isArray(trendingTeasResult.value) ? trendingTeasResult.value : [];
+        setTrendingTeas(arr as Tea[]);
+      } else {
+        logger.error('Failed to fetch trending teas:', trendingTeasResult.reason);
+      }
+
+      if (trendingCreatorsResult.status === 'fulfilled') {
+        const arr = Array.isArray(trendingCreatorsResult.value) ? trendingCreatorsResult.value : [];
+        setTrendingCreators(arr);
+      } else {
+        logger.error('Failed to fetch trending creators:', trendingCreatorsResult.reason);
       }
     } catch (error) {
       logger.error('Failed to fetch data:', error);
@@ -130,14 +149,14 @@ export function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <Header showProfile />
+      <div className="min-h-screen bg-gradient-to-b from-white to-background dark:from-background dark:to-background pb-20">
+        <Header showProfile showLogo />
         <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
-          <Section title="오늘의 차" spacing="lg">
+          <Section title="☕ 오늘의 차" spacing="lg">
             <TeaCardSkeleton />
           </Section>
-          <Section title="피드" spacing="lg">
-            <div className="space-y-0">
+          <Section title="📝 피드" spacing="lg">
+            <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
               ))}
@@ -150,19 +169,49 @@ export function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header showProfile />
+    <div className="min-h-screen bg-gradient-to-b from-white to-background dark:from-background dark:to-background pb-20">
+      <Header showProfile showLogo />
       
       <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+        {/* 지금 핫한 차 섹션 */}
+        <Section title="🔥 지금 핫한 차" spacing="lg">
+          {trendingTeas.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
+              {trendingTeas.map((tea) => (
+                <div key={tea.id} className="shrink-0 w-[280px]">
+                  <TeaCard tea={tea} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState type="feed" message="아직 트렌딩 차가 없습니다." />
+          )}
+        </Section>
+
+        {/* 인기 크리에이터 섹션 */}
+        <Section title="✨ 인기 크리에이터" spacing="lg">
+          {trendingCreators.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
+              {trendingCreators.map((creator) => (
+                <div key={creator.id} className="shrink-0 w-[200px]">
+                  <CreatorCard user={creator} followerCount={creator.followerCount} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState type="feed" message="아직 인기 크리에이터가 없습니다." />
+          )}
+        </Section>
+
         {/* 오늘의 차 섹션 */}
-        <Section title="오늘의 차" spacing="lg">
+        <Section title="☕ 오늘의 차" spacing="lg">
           {todayTea ? (
             <TeaCard tea={todayTea} />
           ) : (
             <EmptyState
               type="feed"
               message="등록된 차가 없어요. 첫 차를 등록해 보세요!"
-              action={{ label: '새 차 등록', onClick: () => navigate('/tea/new') }}
+              action={{ label: '🍵 새 차 등록', onClick: () => navigate('/tea/new') }}
             />
           )}
         </Section>
@@ -180,7 +229,7 @@ export function Home() {
 
           <TabsContent value="forYou" className="mt-4">
             {publicNotes.length > 0 ? (
-              <div className="space-y-0">
+              <div className="space-y-3">
                 {publicNotes.map((note, i) => (
                   <div
                     key={note.id}
@@ -195,7 +244,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="아직 등록된 노트가 없어요. 첫 차 노트를 남겨볼까요?"
-                action={{ label: '첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+                action={{ label: '✍️ 첫 노트 쓰기', onClick: () => navigate('/note/new') }}
               />
             )}
           </TabsContent>
@@ -215,7 +264,7 @@ export function Home() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : followingNotes.length > 0 ? (
-              <div className="space-y-0">
+              <div className="space-y-3">
                 {followingNotes.map(note => (
                   <NoteCard key={note.id} note={note} showTeaName />
                 ))}
@@ -224,7 +273,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="팔로잉한 리뷰어의 노트가 없어요. 리뷰어를 팔로우해 보세요!"
-                action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+                action={{ label: '🔍 탐색하기', onClick: () => navigate('/search') }}
               />
             )}
           </TabsContent>
@@ -261,7 +310,7 @@ export function Home() {
                   </div>
                 )}
                 {tagNotes.length > 0 ? (
-                  <div className="space-y-0">
+                  <div className="space-y-3">
                     {tagNotes.map(note => (
                       <NoteCard key={note.id} note={note} showTeaName />
                     ))}
@@ -280,7 +329,7 @@ export function Home() {
                   <EmptyState
                     type="feed"
                     message="팔로우한 태그의 공개 노트가 없어요."
-                    action={{ label: '태그 탐색하기', onClick: () => navigate('/search') }}
+                    action={{ label: '🔍 태그 탐색하기', onClick: () => navigate('/search') }}
                   />
                 )}
               </>

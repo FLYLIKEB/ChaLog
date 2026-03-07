@@ -38,7 +38,7 @@ export function ShopDetail() {
   if (!name) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <Header title="샵 상세" showBack />
+        <Header title="샵 상세" showBack showProfile />
         <EmptyState
           type="search"
           message="샵을 찾을 수 없어요."
@@ -53,7 +53,7 @@ export function ShopDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header title="샵 상세" showBack />
+      <Header title="샵 상세" showBack showProfile />
 
       <div className="p-4 space-y-4">
         {isLoading ? (

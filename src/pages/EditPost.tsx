@@ -94,7 +94,7 @@ export function EditPost() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBack title="게시글 수정" />
+      <Header showBack title="게시글 수정" showProfile />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">
         {/* 카테고리 선택 */}

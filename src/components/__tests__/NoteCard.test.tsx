@@ -44,7 +44,7 @@ const mockNote: Note = {
 };
 
 describe('NoteCard - 이미지 가운데 정렬', () => {
-  it('이미지가 있을 때 이미지 컨테이너에 가운데 정렬 클래스가 있어야 함', () => {
+  it('이미지가 있을 때 이미지 컨테이너에 rounded-xl가 있어야 함', () => {
     render(
       <MemoryRouter>
         <NoteCard note={mockNote} />
@@ -52,7 +52,7 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
     );
 
     const imageContainer = screen.getByAltText('Note image').parentElement;
-    expect(imageContainer).toHaveClass('flex', 'items-center', 'justify-center');
+    expect(imageContainer).toHaveClass('rounded-xl', 'overflow-hidden');
   });
 
   it('imageThumbnails가 있으면 썸네일을 우선 표시해야 함', () => {
