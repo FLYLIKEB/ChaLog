@@ -96,7 +96,7 @@ export function Search() {
       curationRes.status === 'rejected' ||
       sellersRes.status === 'rejected';
     if (anyFailed) {
-      toast.error('탐색 데이터를 불러오는데 실패했습니다.');
+      toast.error('사색 데이터를 불러오는데 실패했습니다.');
     }
     setSectionsLoading(false);
   }, []);
@@ -217,16 +217,16 @@ export function Search() {
   }, [filterSort, filterType, filterMinRating, searchQuery, setSearchParams, fetchWithFilters]);
 
   const SECTION_TITLES: Record<string, string> = {
-    popular: '🏆 인기 차 랭킹',
+    popular: '🏆 사랑받는 차',
     new: '🆕 신규 차',
-    curation: '✨ 추천 큐레이션',
+    curation: '✨ 차선',
   };
   const resultsTitle =
     urlSection && SECTION_TITLES[urlSection]
       ? SECTION_TITLES[urlSection]
       : searchQuery.trim()
         ? '🔍 검색 결과'
-        : '🔍 차 탐색';
+        : '🔍 차 사색';
 
   const goBackToExplore = useCallback(() => {
     setSearchParams({});
@@ -250,7 +250,7 @@ export function Search() {
   return (
     <div className="min-h-screen pb-20 flex flex-col overflow-hidden">
       <Header
-        title={showResults ? resultsTitle : '차 탐색'}
+        title={showResults ? resultsTitle : '차 사색'}
         showBack={showResults}
         onBack={showResults ? goBackToExplore : undefined}
         showLogo
@@ -375,12 +375,12 @@ export function Search() {
           </>
         )}
 
-        {/* 탐색 섹션 (검색 전) */}
+        {/* 사색 섹션 (검색 전) */}
         {!showResults && (
           <>
             {sectionsLoading ? (
               <div className="space-y-8">
-                <Section title="🏆 인기 차 랭킹" spacing="lg">
+                <Section title="🏆 사랑받는 차" spacing="lg">
                   <div className="flex gap-3 overflow-x-hidden">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="shrink-0 w-[200px]">
@@ -396,7 +396,7 @@ export function Search() {
                     ))}
                   </div>
                 </Section>
-                <Section title="✨ 추천 큐레이션" spacing="lg">
+                <Section title="✨ 차선" spacing="lg">
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
                       <TeaCardSkeleton key={i} />
@@ -407,8 +407,8 @@ export function Search() {
             ) : (
               <div className="space-y-8">
                 <Section
-                  title="🏆 인기 차 랭킹"
-                  description="리뷰가 많은 순으로 인기 있는 차를 모았어요."
+                  title="🏆 사랑받는 차"
+                  description="차록이 많은 순으로 사랑받는 차를 모았어요."
                   spacing="lg"
                   headerAction={
                     popularTeas.length > 0 ? (
@@ -463,8 +463,8 @@ export function Search() {
                 </Section>
 
                 <Section
-                  title="✨ 추천 큐레이션"
-                  description="다양한 기준으로 엄선한 추천 차 목록이에요."
+                  title="✨ 차선"
+                  description="다양한 기준으로 엄선한 차 목록이에요."
                   spacing="lg"
                   headerAction={
                     curationTeas.length > 0 ? (
@@ -485,13 +485,13 @@ export function Search() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground py-4">추천할 차가 없습니다.</p>
+                    <p className="text-sm text-muted-foreground py-4">엄선한 차가 없습니다.</p>
                   )}
                 </Section>
 
 <Section
-                title="🏪 샵/브랜드"
-                  description="차를 구매할 수 있는 샵과 브랜드를 둘러보세요."
+                title="🏪 찻집/다실"
+                  description="차를 구매할 수 있는 찻집과 다실을 둘러보세요."
                   spacing="lg"
                 >
                   {sellers.length > 0 ? (
@@ -499,7 +499,7 @@ export function Search() {
                       {sellers.map((seller) => (
                         <button
                           key={seller.name}
-                          onClick={() => navigate(`/shop/${encodeURIComponent(seller.name)}`)}
+                          onClick={() => navigate(`/teahouse/${encodeURIComponent(seller.name)}`)}
                           className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors text-left"
                         >
                           <Store className="w-4 h-4 text-muted-foreground" />
@@ -511,7 +511,7 @@ export function Search() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground py-4">등록된 샵이 없습니다.</p>
+                    <p className="text-sm text-muted-foreground py-4">등록된 찻집이 없습니다.</p>
                   )}
                 </Section>
 
@@ -519,10 +519,10 @@ export function Search() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => navigate('/shop/new')}
+                    onClick={() => navigate('/teahouse/new')}
                   >
                     <Store className="w-4 h-4 mr-2" />
-                    샵 신규추가
+                    찻집 신규추가
                   </Button>
                   <Button
                     variant="outline"

@@ -117,7 +117,7 @@ function CellarCard({
           onClick={() => onNoteClick(item.teaId)}
         >
           <FileText className="w-3.5 h-3.5" />
-          노트 작성
+          차록 작성
         </Button>
       </div>
     </div>

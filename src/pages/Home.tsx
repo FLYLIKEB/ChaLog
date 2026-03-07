@@ -57,7 +57,7 @@ export function Home() {
         if (error?.statusCode === 429) {
           toast.error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
         } else {
-          toast.error('노트 정보를 불러오는데 실패했습니다.');
+          toast.error('차록 정보를 불러오는데 실패했습니다.');
         }
       }
 
@@ -91,7 +91,7 @@ export function Home() {
       setFollowingNotes(notesArray as Note[]);
     } catch (error) {
       logger.error('Failed to fetch following notes:', error);
-      toast.error('팔로잉 피드를 불러오는데 실패했습니다.');
+      toast.error('구독 피드를 불러오는데 실패했습니다.');
     } finally {
       setIsFollowingLoading(false);
     }
@@ -110,7 +110,7 @@ export function Home() {
       setFollowedTags(Array.isArray(tagsData) ? tagsData : []);
     } catch (error) {
       logger.error('Failed to fetch tag feed:', error);
-      toast.error('태그 피드를 불러오는데 실패했습니다.');
+      toast.error('향미 차록 흐름을 불러오는데 실패했습니다.');
     } finally {
       setIsTagsLoading(false);
     }
@@ -161,7 +161,7 @@ export function Home() {
         <Header showProfile showLogo />
         <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
           <HeroSection />
-          <Section title="📝 피드" description="다양한 차 노트를 둘러보세요." spacing="lg">
+          <Section title="📝 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
@@ -191,8 +191,8 @@ export function Home() {
         {/* Hero - 차멍 설명 */}
         <HeroSection />
 
-        {/* 지금 핫한 차 섹션 */}
-        <Section title="🔥 지금 핫한 차" description="최근 7일간 리뷰가 많은 인기 차예요." spacing="lg">
+        {/* 요즘 인기 차 섹션 */}
+        <Section title="🔥 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingTeas.map((tea) => (
@@ -206,8 +206,8 @@ export function Home() {
           )}
         </Section>
 
-        {/* 인기 크리에이터 섹션 */}
-        <Section title="✨ 인기 크리에이터" description="팔로워가 많은 인기 리뷰어를 만나보세요." spacing="lg">
+        {/* 인기 다우 섹션 */}
+        <Section title="✨ 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
           {trendingCreators.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingCreators.map((creator) => (
@@ -217,20 +217,20 @@ export function Home() {
               ))}
             </div>
           ) : (
-            <EmptyState type="feed" message="아직 인기 크리에이터가 없습니다." />
+            <EmptyState type="feed" message="아직 인기 다우가 없습니다." />
           )}
         </Section>
 
-        {/* 피드 탭 섹션 */}
-        <Section title="📝 피드" description="다양한 차 노트를 둘러보세요." spacing="lg">
+        {/* 차록 흐름 탭 섹션 */}
+        <Section title="📝 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as FeedTab)}
         >
           <TabsList className="w-full">
-            <TabsTrigger value="forYou" className="flex-1">For You</TabsTrigger>
-            <TabsTrigger value="following" className="flex-1">Following</TabsTrigger>
-            <TabsTrigger value="tags" className="flex-1">태그</TabsTrigger>
+            <TabsTrigger value="forYou" className="flex-1">맞춤 차선</TabsTrigger>
+            <TabsTrigger value="following" className="flex-1">구독</TabsTrigger>
+            <TabsTrigger value="tags" className="flex-1">향미</TabsTrigger>
           </TabsList>
 
           <TabsContent value="forYou" className="mt-4">
@@ -249,8 +249,8 @@ export function Home() {
             ) : (
               <EmptyState
                 type="feed"
-                message="아직 등록된 노트가 없어요. 첫 차 노트를 남겨볼까요?"
-                action={{ label: '✍️ 첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+                message="아직 등록된 차록이 없어요. 첫 차록을 남겨볼까요?"
+                action={{ label: '✍️ 첫 차록 쓰기', onClick: () => navigate('/note/new') }}
               />
             )}
           </TabsContent>
@@ -259,7 +259,7 @@ export function Home() {
             {!currentUser && !authLoading ? (
               <div className="flex flex-col items-center gap-4 py-12 text-center">
                 <p className="text-muted-foreground text-sm">
-                  팔로잉한 리뷰어의 노트를 보려면 로그인이 필요합니다.
+                  구독한 다우의 차록을 보려면 로그인이 필요합니다.
                 </p>
                 <Button size="sm" onClick={() => navigate('/login')}>
                   로그인하기
@@ -278,8 +278,8 @@ export function Home() {
             ) : (
               <EmptyState
                 type="feed"
-                message="팔로잉한 리뷰어의 노트가 없어요. 리뷰어를 팔로우해 보세요!"
-                action={{ label: '🔍 탐색하기', onClick: () => navigate('/search') }}
+                message="구독한 다우의 차록이 없어요. 다우를 구독해 보세요!"
+                action={{ label: '🔍 사색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </TabsContent>
@@ -288,7 +288,7 @@ export function Home() {
             {!currentUser && !authLoading ? (
               <div className="flex flex-col items-center gap-4 py-12 text-center">
                 <p className="text-muted-foreground text-sm">
-                  팔로우한 태그 노트를 보려면 로그인이 필요합니다.
+                  구독한 향미 차록을 보려면 로그인이 필요합니다.
                 </p>
                 <Button size="sm" onClick={() => navigate('/login')}>
                   로그인하기
@@ -300,7 +300,7 @@ export function Home() {
               </div>
             ) : (
               <>
-                {/* 팔로우 중인 태그 pill */}
+                {/* 구독 중인 향미 pill */}
                 {followedTags.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-4 pb-3 border-b border-border/50">
                     {followedTags.map((tag) => (
@@ -325,17 +325,17 @@ export function Home() {
                   <div className="flex flex-col items-center gap-4 py-12 text-center">
                     <Hash className="w-10 h-10 text-muted-foreground/30" />
                     <p className="text-muted-foreground text-sm">
-                      팔로우한 태그가 없습니다.
+                      구독한 향미가 없습니다.
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      태그를 클릭해 상세 페이지에서 팔로우해 보세요!
+                      향미를 클릭해 상세 페이지에서 구독해 보세요!
                     </p>
                   </div>
                 ) : (
                   <EmptyState
                     type="feed"
-                    message="팔로우한 태그의 공개 노트가 없어요."
-                    action={{ label: '🔍 태그 탐색하기', onClick: () => navigate('/search') }}
+                    message="구독한 테마의 공개 차록이 없어요."
+                    action={{ label: '🔍 테마 사색하기', onClick: () => navigate('/sasaek') }}
                   />
                 )}
               </>

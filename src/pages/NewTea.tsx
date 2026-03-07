@@ -194,7 +194,7 @@ export function NewTea() {
           <div>
             <h1 className="text-2xl font-bold mb-2">새 차 등록</h1>
             <p className="text-muted-foreground text-sm">
-              마신 차를 등록하고 노트를 작성해보세요
+              마신 차를 등록하고 차록을 작성해보세요
             </p>
           </div>
 
@@ -316,7 +316,7 @@ export function NewTea() {
                   value={seller}
                   onChange={setSeller}
                   disabled={isLoading}
-                  placeholder="검색하거나 새 샵 이름 입력"
+                  placeholder="검색하거나 새 찻집 이름 입력"
                   className="flex-1"
                 />
                 <Button
@@ -324,15 +324,15 @@ export function NewTea() {
                   variant="outline"
                   size="icon"
                   disabled={isLoading}
-                  onClick={() => navigate('/shop/new?returnTo=/tea/new')}
-                  aria-label="샵 추가"
-                  title="샵 추가"
+                  onClick={() => navigate('/teahouse/new?returnTo=/tea/new')}
+                  aria-label="찻집 추가"
+                  title="찻집 추가"
                 >
                   <Store className="w-4 h-4" />
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                기존 샵을 선택하거나, 새 샵 추가 버튼으로 등록할 수 있어요.
+                기존 찻집을 선택하거나, 새 찻집 추가 버튼으로 등록할 수 있어요.
               </p>
             </div>
 

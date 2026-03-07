@@ -47,7 +47,7 @@ export function NewPost() {
     try {
       const post = await postsApi.create(dto);
       toast.success('게시글이 작성되었습니다.');
-      navigate(`/community/${post.id}`, { replace: true });
+      navigate(`/chadam/${post.id}`, { replace: true });
     } catch {
       toast.error('게시글 작성에 실패했습니다.');
     } finally {
@@ -145,7 +145,7 @@ export function NewPost() {
               type="text"
               value={sponsorNote}
               onChange={(e) => setSponsorNote(e.target.value)}
-              placeholder="협찬 브랜드 또는 내용을 입력하세요 (선택)"
+              placeholder="협찬 다실 또는 내용을 입력하세요 (선택)"
               maxLength={300}
               className={cn(
                 'w-full text-sm border border-border rounded-lg px-3 py-2.5',

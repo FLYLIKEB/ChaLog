@@ -79,7 +79,7 @@ export function Onboarding() {
       return;
     }
     if (selectedFlavorTags.length === 0) {
-      toast.error('향미 태그를 최소 1개 선택해주세요.');
+      toast.error('향미를 최소 1개 선택해주세요.');
       return;
     }
 
@@ -116,7 +116,7 @@ export function Onboarding() {
             <span className="text-xs text-gray-500">{stepLabel}</span>
             <h1 className="text-2xl font-bold text-gray-900">차 취향을 알려주세요</h1>
             <p className="text-sm text-gray-600">
-              맞춤 추천을 위해 관심 차종과 향미 태그를 선택해주세요.
+              맞춤 차선을 위해 관심 차종과 향미를 선택해주세요.
             </p>
           </div>
 
@@ -138,7 +138,7 @@ export function Onboarding() {
           {step === 2 && (
             <>
               <OnboardingTagSelector
-                title="향미 태그"
+                title="향미"
                 description="좋아하는 향미를 선택해주세요."
                 tags={ONBOARDING_FLAVOR_TAGS}
                 selectedTags={selectedFlavorTags}

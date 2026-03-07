@@ -1,5 +1,10 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+
+function CommunityRedirect() {
+  const { pathname } = useLocation();
+  return <Navigate to={pathname.replace('/community', '/chadam')} replace />;
+}
 import { PAGE_BG_GRADIENT } from './constants';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
@@ -40,7 +45,7 @@ type FloatingActionRouteConfig = {
 
 const DEFAULT_FLOATING_ACTION_CONFIG: FloatingActionRouteConfig = {
   position: 'aboveNav',
-  ariaLabel: '새 노트 작성',
+  ariaLabel: '새 차록 작성',
 };
 
 const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = {
@@ -49,7 +54,7 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/note/new': { hidden: true },
   '/note/:id/edit': { hidden: true },
   '/tea/new': { hidden: true },
-  '/shop/new': { hidden: true },
+  '/teahouse/new': { hidden: true },
   '/cellar': { hidden: true },
   '/cellar/new': { hidden: true },
   '/onboarding': { hidden: true },
@@ -59,16 +64,16 @@ function FloatingActionButtonSwitcher() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // 동적 라우트 처리 (커뮤니티 페이지는 자체 FAB을 사용)
+  // 동적 라우트 처리 (차담 페이지는 자체 FAB을 사용)
   const shouldHide = 
     location.pathname === '/note/new' ||
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname === '/tea/new' ||
-    location.pathname === '/shop/new' ||
+    location.pathname === '/teahouse/new' ||
     location.pathname === '/cellar' ||
     location.pathname === '/cellar/new' ||
-    location.pathname === '/community' ||
-    location.pathname.startsWith('/community/') ||
+    location.pathname === '/chadam' ||
+    location.pathname.startsWith('/chadam/') ||
     location.pathname === '/onboarding';
   
   const override = floatingActionRouteOverrides[location.pathname];
@@ -124,7 +129,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-              <Route path="/search" element={<Search />} />
+              <Route path="/sasaek" element={<Search />} />
               <Route path="/tea/new" element={<NewTea />} />
               <Route path="/tea/:id" element={<TeaDetail />} />
               <Route path="/note/new" element={<NewNote />} />
@@ -135,18 +140,20 @@ export default function App() {
               <Route path="/saved" element={<Saved />} />
               <Route path="/cellar" element={<Cellar />} />
               <Route path="/cellar/new" element={<NewCellarItem />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/community/new" element={<NewPost />} />
-              <Route path="/community/:id" element={<PostDetail />} />
-              <Route path="/community/:id/edit" element={<EditPost />} />
+              <Route path="/chadam" element={<Community />} />
+              <Route path="/chadam/new" element={<NewPost />} />
+              <Route path="/chadam/:id" element={<PostDetail />} />
+              <Route path="/chadam/:id/edit" element={<EditPost />} />
               <Route path="/tag/:name" element={<TagDetail />} />
-              <Route path="/shop/new" element={<NewShop />} />
-              <Route path="/shop/:name" element={<ShopDetail />} />
+              <Route path="/teahouse/new" element={<NewShop />} />
+              <Route path="/teahouse/:name" element={<ShopDetail />} />
               <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/search" element={<Navigate to="/sasaek" replace />} />
+              <Route path="/community/*" element={<CommunityRedirect />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             </PullToRefreshProvider>

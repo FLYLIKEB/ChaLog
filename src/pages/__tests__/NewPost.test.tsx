@@ -48,7 +48,7 @@ describe('NewPost 페이지', () => {
   afterEach(() => { vi.clearAllMocks(); });
 
   it('폼 입력 필드를 표시한다', () => {
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     expect(screen.getByPlaceholderText('제목을 입력하세요')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('내용을 입력하세요')).toBeInTheDocument();
@@ -56,23 +56,23 @@ describe('NewPost 페이지', () => {
   });
 
   it('카테고리 버튼들을 표시한다', () => {
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('추천')).toBeInTheDocument();
+    expect(screen.getByText('차선')).toBeInTheDocument();
     expect(screen.getByText('도구')).toBeInTheDocument();
     expect(screen.getByText('찻집 후기')).toBeInTheDocument();
   });
 
   it('제목/내용이 비어 있으면 제출 버튼이 비활성화된다', () => {
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     const submitButton = screen.getByText('게시글 작성');
     expect(submitButton).toBeDisabled();
   });
 
   it('제목/내용 입력 후 제출 버튼이 활성화된다', () => {
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     fireEvent.change(screen.getByPlaceholderText('제목을 입력하세요'), {
       target: { value: '제목 입력' },
@@ -101,17 +101,17 @@ describe('NewPost 페이지', () => {
       refreshOnboardingStatus: vi.fn(),
     });
 
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
   it('협찬 체크 시 협찬 입력 필드가 나타난다', () => {
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     const checkbox = screen.getByRole('checkbox');
     fireEvent.click(checkbox);
 
-    expect(screen.getByPlaceholderText('협찬 브랜드 또는 내용을 입력하세요 (선택)')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('협찬 다실 또는 내용을 입력하세요 (선택)')).toBeInTheDocument();
   });
 
   it('게시글 작성 성공 시 상세 페이지로 이동한다', async () => {
@@ -132,7 +132,7 @@ describe('NewPost 페이지', () => {
       updatedAt: new Date(),
     });
 
-    renderWithRouter(<NewPost />, { route: '/community/new' });
+    renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     fireEvent.change(screen.getByPlaceholderText('제목을 입력하세요'), {
       target: { value: '제목 입력' },
@@ -144,7 +144,7 @@ describe('NewPost 페이지', () => {
     fireEvent.click(screen.getByText('게시글 작성'));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/community/1', { replace: true });
+      expect(mockNavigate).toHaveBeenCalledWith('/chadam/1', { replace: true });
     });
   });
 });

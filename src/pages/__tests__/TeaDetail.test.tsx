@@ -159,7 +159,7 @@ describe('TeaDetail', () => {
 
     await waitFor(() => {
       expect(screen.getByText('4.2')).toBeInTheDocument();
-      expect(screen.getByText('8개 리뷰 기반')).toBeInTheDocument();
+      expect(screen.getByText('8개 차록 기반')).toBeInTheDocument();
     });
   });
 
@@ -180,7 +180,7 @@ describe('TeaDetail', () => {
     });
   });
 
-  it('대표 리뷰 섹션 제목을 표시해야 한다', async () => {
+  it('대표 차록 섹션 제목을 표시해야 한다', async () => {
     setupMocks();
 
     render(
@@ -190,7 +190,7 @@ describe('TeaDetail', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('대표 리뷰')).toBeInTheDocument();
+      expect(screen.getByText('대표 차록')).toBeInTheDocument();
     });
   });
 
@@ -261,7 +261,7 @@ describe('TeaDetail', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('평가 데이터가 부족합니다. 더 많은 리뷰가 필요해요.')).toBeInTheDocument();
+      expect(screen.getByText('평가 데이터가 부족합니다. 더 많은 차록이 필요해요.')).toBeInTheDocument();
     });
   });
 
@@ -304,7 +304,7 @@ describe('TeaDetail', () => {
     });
   });
 
-  it('"이 차로 노트 작성하기" 버튼이 있어야 한다', async () => {
+  it('"이 차로 차록 작성하기" 버튼이 있어야 한다', async () => {
     setupMocks();
 
     render(
@@ -314,7 +314,7 @@ describe('TeaDetail', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: '이 차로 노트 작성하기' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '이 차로 차록 작성하기' })).toBeInTheDocument();
     });
   });
 });

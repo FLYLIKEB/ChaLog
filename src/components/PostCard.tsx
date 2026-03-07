@@ -24,7 +24,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
 
   const handleClick = () => {
-    navigate(`/community/${post.id}`);
+    navigate(`/chadam/${post.id}`);
   };
 
   const handleLikeClick = async (e: React.MouseEvent) => {

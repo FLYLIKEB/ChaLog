@@ -133,7 +133,7 @@ export function EditNote() {
   useEffect(() => {
     const fetchNote = async () => {
       if (isNaN(noteId)) {
-        toast.error('유효하지 않은 노트 ID입니다.');
+        toast.error('유효하지 않은 차록 ID입니다.');
         navigate('/my-notes');
         return;
       }
@@ -145,7 +145,7 @@ export function EditNote() {
 
         // 권한 확인
         if (normalizedNote.userId !== user?.id) {
-          toast.error('이 노트를 수정할 권한이 없습니다.');
+          toast.error('이 차록을 수정할 권한이 없습니다.');
           navigate(`/note/${noteId}`);
           return;
         }
@@ -200,11 +200,11 @@ export function EditNote() {
       } catch (error: any) {
         logger.error('Failed to fetch note:', error);
         if (error?.statusCode === 403) {
-          toast.error('이 노트를 수정할 권한이 없습니다.');
+          toast.error('이 차록을 수정할 권한이 없습니다.');
         } else if (error?.statusCode === 404) {
-          toast.error('노트를 찾을 수 없습니다.');
+          toast.error('차록을 찾을 수 없습니다.');
         } else {
-          toast.error('노트를 불러오는데 실패했습니다.');
+          toast.error('차록을 불러오는데 실패했습니다.');
         }
         navigate('/my-notes');
       } finally {
@@ -263,7 +263,7 @@ export function EditNote() {
     }
 
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
 
@@ -312,12 +312,12 @@ export function EditNote() {
         isPublic,
       });
 
-      toast.success('노트가 수정되었습니다.');
+      toast.success('차록이 수정되었습니다.');
       setTimeout(() => navigate(`/note/${noteId}`, { replace: true }), NAVIGATION_DELAY);
     } catch (error: any) {
       logger.error('Failed to update note:', error);
       if (error?.statusCode === 403) {
-        toast.error('이 노트를 수정할 권한이 없습니다.');
+        toast.error('이 차록을 수정할 권한이 없습니다.');
       } else {
         toast.error(error instanceof Error ? error.message : '수정에 실패했습니다.');
       }
@@ -328,7 +328,7 @@ export function EditNote() {
 
   if (isLoading) {
     return (
-      <DetailFallback title="노트 수정">
+      <DetailFallback title="차록 수정">
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
@@ -339,15 +339,15 @@ export function EditNote() {
   if (!note) {
     return (
       <DetailFallback 
-        title="노트 수정" 
-        message="노트를 찾을 수 없거나 수정할 권한이 없습니다." 
+        title="차록 수정"
+        message="차록을 찾을 수 없거나 수정할 권한이 없습니다."
       />
     );
   }
 
   return (
     <div className="min-h-screen">
-      <Header showBack title="노트 수정" showProfile />
+      <Header showBack title="차록 수정" showProfile />
       
       <div className="p-4 pb-24 space-y-6">
         {/* 차 선택 영역 */}
@@ -503,7 +503,7 @@ export function EditNote() {
             <div>
               <Label>공개 설정</Label>
               <p className="text-xs text-muted-foreground mt-1">
-                다른 사용자에게 이 노트를 공개합니다
+                다른 사용자에게 이 차록을 공개합니다
               </p>
             </div>
             <Switch checked={isPublic} onCheckedChange={setIsPublic} />

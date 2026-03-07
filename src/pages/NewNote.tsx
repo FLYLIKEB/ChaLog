@@ -236,7 +236,7 @@ export function NewNote() {
 
   return (
     <div className="min-h-screen">
-      <Header showBack title="새 노트 작성" showProfile showLogo />
+      <Header showBack title="새 차록 작성" showProfile showLogo />
       
       <div className="p-4 pb-24 space-y-6">
         {/* 차 선택 영역 */}
@@ -444,7 +444,7 @@ export function NewNote() {
             <div>
               <Label>공개 설정</Label>
               <p className="text-xs text-gray-500 mt-1">
-                다른 사용자에게 이 노트를 공개합니다
+                다른 사용자에게 이 차록을 공개합니다
               </p>
             </div>
             <Switch checked={isPublic} onCheckedChange={setIsPublic} />

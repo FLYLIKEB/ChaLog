@@ -17,7 +17,7 @@ const mockBookmarkedNotes = [
     schemaId: 1,
     overallRating: 4.5,
     isRatingIncluded: true,
-    memo: '저장한 노트 1',
+    memo: '저장한 차록 1',
     isPublic: true,
     createdAt: mockDate,
     isBookmarked: true,
@@ -128,7 +128,7 @@ describe('Saved 페이지', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
-  it('북마크한 노트 리스트를 표시한다', async () => {
+  it('북마크한 차록 리스트를 표시한다', async () => {
     renderWithRouter(<Saved />, { route: '/saved' });
 
     // 로딩이 완료될 때까지 대기
@@ -136,12 +136,12 @@ describe('Saved 페이지', () => {
       expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
     }, { timeout: 5000 });
 
-    expect(screen.getByText('저장한 노트')).toBeInTheDocument();
-    expect(screen.getByText('저장한 노트 1')).toBeInTheDocument();
-    expect(screen.getByText('저장한 노트 2')).toBeInTheDocument();
+    expect(screen.getByText('저장한 차록')).toBeInTheDocument();
+    expect(screen.getByText('저장한 차록 1')).toBeInTheDocument();
+    expect(screen.getByText('저장한 차록 2')).toBeInTheDocument();
   });
 
-  it('빈 상태 메시지를 표시한다 (저장한 노트가 없을 때)', async () => {
+  it('빈 상태 메시지를 표시한다 (저장한 차록이 없을 때)', async () => {
     vi.mocked(notesApi.getAll).mockResolvedValue([]);
 
     renderWithRouter(<Saved />, { route: '/saved' });
@@ -150,8 +150,8 @@ describe('Saved 페이지', () => {
       expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
     }, { timeout: 5000 });
 
-    expect(screen.getByText('저장한 노트')).toBeInTheDocument();
-    expect(screen.getByText('아직 저장한 노트가 없습니다.')).toBeInTheDocument();
+    expect(screen.getByText('저장한 차록')).toBeInTheDocument();
+    expect(screen.getByText('아직 저장한 차록이 없어요.')).toBeInTheDocument();
   });
 
   it('로딩 상태를 표시한다', () => {
@@ -175,12 +175,12 @@ describe('Saved 페이지', () => {
 
     // 에러 후 빈 상태가 표시됨
     await waitFor(() => {
-      expect(screen.getByText('아직 저장한 노트가 없습니다.')).toBeInTheDocument();
+      expect(screen.getByText('아직 저장한 차록이 없어요.')).toBeInTheDocument();
     });
 
     // toast가 호출되었는지 확인 (비동기 처리 완료 후)
     await new Promise(resolve => setTimeout(resolve, 100));
-    expect(mockToastError).toHaveBeenCalledWith('저장한 노트를 불러오는데 실패했습니다.');
+    expect(mockToastError).toHaveBeenCalledWith('저장한 차록을 불러오는데 실패했습니다.');
   });
 
   it('인증 로딩 중에는 로딩 스피너를 표시한다', () => {

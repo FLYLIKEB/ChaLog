@@ -191,7 +191,7 @@ describe('UserProfile', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText(/아직 작성한 노트가 없습니다/)).toBeInTheDocument();
+      expect(screen.getByText(/아직 작성한 차록이 없어요/)).toBeInTheDocument();
     });
   });
 
@@ -356,7 +356,7 @@ describe('UserProfile', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText('향미 태그')).toBeInTheDocument();
+        expect(screen.getByText('향미')).toBeInTheDocument();
         expect(screen.getByText('꽃향')).toBeInTheDocument();
         expect(screen.getByText('과일향')).toBeInTheDocument();
       });
@@ -376,7 +376,7 @@ describe('UserProfile', () => {
       });
 
       expect(screen.queryByText('관심 차종')).not.toBeInTheDocument();
-      expect(screen.queryByText('향미 태그')).not.toBeInTheDocument();
+      expect(screen.queryByText('향미')).not.toBeInTheDocument();
       expect(usersApi.getOnboardingPreference).not.toHaveBeenCalled();
     });
 
@@ -400,7 +400,7 @@ describe('UserProfile', () => {
       });
 
       expect(screen.queryByText('관심 차종')).not.toBeInTheDocument();
-      expect(screen.queryByText('향미 태그')).not.toBeInTheDocument();
+      expect(screen.queryByText('향미')).not.toBeInTheDocument();
     });
   });
 });

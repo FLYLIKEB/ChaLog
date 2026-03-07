@@ -19,7 +19,7 @@ export const SEARCH_DEBOUNCE_DELAY = 600; // 밀리초
 export const PAGE_BG_GRADIENT =
   'bg-gradient-to-b from-white to-background dark:from-background dark:to-background';
 
-// 리뷰 관련 상수
+// 차록 관련 상수
 export const MIN_REVIEWS_FOR_TAGS = 3;
 
 // 기본 태그 (차 상세 페이지용 - 평점 기반 계산)

@@ -147,13 +147,13 @@ describe('Cellar 페이지', () => {
     });
   });
 
-  it('노트 작성 버튼 클릭 시 /note/new로 이동한다', async () => {
+  it('차록 작성 버튼 클릭 시 /note/new로 이동한다', async () => {
     const items = [makeItem({ teaId: 5, tea: makeTea(5, '테스트 차') as any })];
     vi.mocked(cellarApi.getAll).mockResolvedValue(items);
 
     renderCellar();
 
-    const noteBtn = await screen.findByRole('button', { name: /노트 작성/ });
+    const noteBtn = await screen.findByRole('button', { name: /차록 작성/ });
     await userEvent.click(noteBtn);
 
     expect(mockNavigate).toHaveBeenCalledWith('/note/new?teaId=5');

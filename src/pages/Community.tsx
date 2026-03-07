@@ -53,7 +53,7 @@ export function Community() {
 
   return (
     <div className="min-h-screen pb-20">
-      <Header title="커뮤니티" showLogo showProfile />
+      <Header title="차담" showLogo showProfile />
 
       {/* 카테고리 탭 - 헤더 높이만큼 아래에서 고정 */}
       <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-10 bg-background border-b border-border/50">
@@ -111,7 +111,7 @@ export function Community() {
       {/* 새 글 작성 FAB */}
       {user && (
         <FloatingActionButton
-          onClick={() => navigate('/community/new')}
+          onClick={() => navigate('/chadam/new')}
           ariaLabel="새 게시글 작성"
           position="aboveNav"
         >

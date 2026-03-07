@@ -11,7 +11,7 @@ interface ChaLogLogoProps {
   onClick?: () => void;
 }
 
-/** 차멍 브랜드 로고 - 차(茶) 잎 모티프. 한국어권: 차멍, 영어권: ChaMeong */
+/** 차멍 로고 - 차(茶) 잎 모티프. 한국어권: 차멍, 영어권: ChaMeong */
 export function ChaLogLogo({ iconOnly = false, className, asButton, onClick }: ChaLogLogoProps) {
   const isKorean = useIsKorean();
 

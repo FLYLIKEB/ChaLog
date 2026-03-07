@@ -25,7 +25,7 @@ const mockTeas = [
 
 const mockSellers = [
   { name: '탐색전용샵', teaCount: 5 },
-  { name: '브랜드A', teaCount: 3 },
+  { name: '다실A', teaCount: 3 },
 ];
 
 vi.mock('../../lib/api', () => ({
@@ -81,20 +81,20 @@ const getNavigateSpy = () => {
 };
 
 describe('Search 페이지', () => {
-  it('탐색 섹션(인기, 신규, 추천, 샵)을 렌더링한다', async () => {
-    renderWithRouter(<Search />, { route: '/search' });
+  it('사색 섹션(인기, 신규, 차선, 찻집)을 렌더링한다', async () => {
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     await waitFor(() => {
-      expect(screen.getByText('인기 차 랭킹')).toBeInTheDocument();
+      expect(screen.getByText('사랑받는 차')).toBeInTheDocument();
     });
     expect(screen.getByText('신규 차')).toBeInTheDocument();
-    expect(screen.getByText('추천 큐레이션')).toBeInTheDocument();
-    expect(screen.getByText('샵/브랜드')).toBeInTheDocument();
+    expect(screen.getByText(/차선/)).toBeInTheDocument();
+    expect(screen.getByText('찻집/다실')).toBeInTheDocument();
   });
 
   it('검색어와 일치하는 차를 렌더링한다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '무이');
@@ -105,7 +105,7 @@ describe('Search 페이지', () => {
 
   it('일치하는 차가 없으면 빈 상태를 보여준다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '없는차');
@@ -113,18 +113,18 @@ describe('Search 페이지', () => {
     expect(await screen.findByText('검색 결과가 없어요.')).toBeInTheDocument();
   });
 
-  it('샵/브랜드 섹션에 샵 목록을 표시한다', async () => {
-    renderWithRouter(<Search />, { route: '/search' });
+  it('찻집/다실 섹션에 찻집 목록을 표시한다', async () => {
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     await waitFor(() => {
       expect(screen.getByText('탐색전용샵')).toBeInTheDocument();
     });
-    expect(screen.getByText('브랜드A')).toBeInTheDocument();
+    expect(screen.getByText('다실A')).toBeInTheDocument();
   });
 
   it('새 차 등록 버튼이 표시된다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '테스트');
@@ -136,7 +136,7 @@ describe('Search 페이지', () => {
 
   it('새 차 등록 버튼 클릭 시 새 차 등록 페이지로 이동한다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '테스트');
@@ -153,7 +153,7 @@ describe('Search 페이지', () => {
 
   it('필터 UI(차종, 평점, 정렬)가 검색 결과 시 표시된다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '무이');

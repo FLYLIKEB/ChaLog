@@ -13,16 +13,16 @@ type BottomNavItem = {
 
 const NAV_ITEMS: BottomNavItem[] = [
   { label: '홈', path: '/', icon: Home, activeStyle: 'fill' },
-  { label: '탐색', path: '/search', icon: Search, activeStyle: 'bold' },
+  { label: '사색', path: '/sasaek', icon: Search, activeStyle: 'bold' },
   {
-    label: '커뮤니티',
-    path: '/community',
+    label: '차담',
+    path: '/chadam',
     icon: MessageSquare,
     activeStyle: 'bold',
-    isActive: (pathname) => pathname === '/community' || pathname.startsWith('/community/'),
+    isActive: (pathname) => pathname === '/chadam' || pathname.startsWith('/chadam/'),
   },
   {
-    label: '내 노트',
+    label: '내 차록',
     path: '/my-notes',
     icon: FileText,
     activeStyle: 'bold',

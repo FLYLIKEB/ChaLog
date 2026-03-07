@@ -116,7 +116,7 @@ describe('TeasService', () => {
   });
 
   describe('getTopReviews', () => {
-    it('likeCount 내림차순으로 최대 3개 리뷰를 반환해야 한다', async () => {
+    it('likeCount 내림차순으로 최대 3개 차록을 반환해야 한다', async () => {
       mockTeasRepository.findOne.mockResolvedValue(mockTea());
       mockDataSource.query.mockResolvedValue([
         { id: 1, teaId: 1, userId: 1, likeCount: '5', memo: '좋아요' },
@@ -132,7 +132,7 @@ describe('TeasService', () => {
       expect(result[2].likeCount).toBe(1);
     });
 
-    it('리뷰가 없을 때 빈 배열을 반환해야 한다', async () => {
+    it('차록이 없을 때 빈 배열을 반환해야 한다', async () => {
       mockTeasRepository.findOne.mockResolvedValue(mockTea());
       mockDataSource.query.mockResolvedValue([]);
 

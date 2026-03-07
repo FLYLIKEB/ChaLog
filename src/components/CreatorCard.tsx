@@ -30,7 +30,7 @@ export const CreatorCard: FC<CreatorCardProps> = ({ user, followerCount }) => {
         <h3 className="truncate w-full text-center font-medium text-foreground">{user.name}</h3>
         <div className="flex items-center justify-center gap-1.5 mt-1 text-muted-foreground text-sm">
           <Users className="w-4 h-4 shrink-0" />
-          <span>팔로워 {followerCount}명</span>
+          <span>구독자 {followerCount}명</span>
         </div>
       </div>
     </Card>

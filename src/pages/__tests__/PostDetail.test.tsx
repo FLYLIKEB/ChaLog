@@ -94,7 +94,7 @@ describe('PostDetail 페이지', () => {
   afterEach(() => { vi.clearAllMocks(); });
 
   it('게시글 제목과 내용을 표시한다', async () => {
-    renderWithRouter(<PostDetail />, { route: '/community/1' });
+    renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
       expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe('PostDetail 페이지', () => {
   });
 
   it('카테고리 뱃지를 표시한다', async () => {
-    renderWithRouter(<PostDetail />, { route: '/community/1' });
+    renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
       expect(screen.getByText('우림 질문')).toBeInTheDocument();
@@ -111,7 +111,7 @@ describe('PostDetail 페이지', () => {
   });
 
   it('댓글을 표시한다', async () => {
-    renderWithRouter(<PostDetail />, { route: '/community/1' });
+    renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
       expect(screen.getByText('첫 번째 댓글입니다.')).toBeInTheDocument();
@@ -122,10 +122,10 @@ describe('PostDetail 페이지', () => {
     vi.mocked(postsApi.getById).mockResolvedValue({
       ...mockPost,
       isSponsored: true,
-      sponsorNote: '브랜드 A',
+      sponsorNote: '다실 A',
     });
 
-    renderWithRouter(<PostDetail />, { route: '/community/1' });
+    renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
       expect(screen.getByText('협찬')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('PostDetail 페이지', () => {
   it('작성자에게 수정/삭제 옵션을 표시한다', async () => {
     vi.mocked(postsApi.getById).mockResolvedValue({ ...mockPost, userId: mockUser.id });
 
-    renderWithRouter(<PostDetail />, { route: '/community/1' });
+    renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
       expect(screen.getByLabelText('더보기')).toBeInTheDocument();

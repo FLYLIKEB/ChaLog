@@ -47,7 +47,7 @@ export function NoteDetail() {
 
   const fetchData = useCallback(async () => {
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
     try {
@@ -69,11 +69,11 @@ export function NoteDetail() {
     } catch (error: any) {
       logger.error('Failed to fetch note:', error);
       if (error?.statusCode === 403) {
-        toast.error('이 노트를 볼 권한이 없습니다.');
+        toast.error('이 차록을 볼 권한이 없습니다.');
       } else if (error?.statusCode === 404) {
-        toast.error('노트를 찾을 수 없습니다.');
+        toast.error('차록을 찾을 수 없습니다.');
       } else {
-        toast.error('노트를 불러오는데 실패했습니다.');
+        toast.error('차록을 불러오는데 실패했습니다.');
       }
     } finally {
       setIsLoading(false);
@@ -97,7 +97,7 @@ export function NoteDetail() {
 
   if (isLoading) {
     return (
-      <DetailFallback title="노트 상세">
+      <DetailFallback title="차록 상세">
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
@@ -108,8 +108,8 @@ export function NoteDetail() {
   if (!note) {
     return (
       <DetailFallback 
-        title="노트 상세" 
-        message="노트를 찾을 수 없거나 볼 권한이 없습니다." 
+        title="차록 상세"
+        message="차록을 찾을 수 없거나 볼 권한이 없습니다."
       />
     );
   }
@@ -118,7 +118,7 @@ export function NoteDetail() {
 
   const handleTogglePublic = async () => {
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
 
@@ -126,7 +126,7 @@ export function NoteDetail() {
       setIsUpdating(true);
       await notesApi.update(noteId, { isPublic: !note.isPublic });
       setNote({ ...note, isPublic: !note.isPublic });
-      toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
+      toast.success(note.isPublic ? '차록이 비공개로 전환되었습니다.' : '차록이 공개되었습니다.');
     } catch (error) {
       logger.error('Failed to update note:', error);
       toast.error('업데이트에 실패했습니다.');
@@ -137,7 +137,7 @@ export function NoteDetail() {
 
   const handleDelete = async () => {
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
 
@@ -145,7 +145,7 @@ export function NoteDetail() {
       setIsDeleting(true);
       await notesApi.delete(noteId);
       setIsDeleted(true); // 삭제 상태 설정하여 API 재호출 방지
-      toast.success('노트가 삭제되었습니다.');
+      toast.success('차록이 삭제되었습니다.');
       // 이전 화면으로 돌아가기
       navigate(-1);
     } catch (error) {
@@ -208,7 +208,7 @@ export function NoteDetail() {
 
   return (
     <div className="min-h-screen pb-6">
-      <Header showBack title="노트 상세" showProfile />
+      <Header showBack title="차록 상세" showProfile />
       
       <div className="p-4 space-y-6">
         {/* 차 정보 요약 */}
@@ -331,7 +331,7 @@ export function NoteDetail() {
         {/* 태그 */}
         {note.tags && note.tags.length > 0 && (
           <section className="bg-card rounded-lg p-4">
-            <h3 className="mb-3 text-primary">태그</h3>
+            <h3 className="mb-3 text-primary">향미</h3>
             <div className="flex flex-wrap gap-2">
               {note.tags.map((tag, index) => (
                 <Link key={index} to={`/tag/${encodeURIComponent(tag)}`}>
@@ -412,7 +412,7 @@ export function NoteDetail() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>노트 삭제</AlertDialogTitle>
+            <AlertDialogTitle>차록 삭제</AlertDialogTitle>
             <AlertDialogDescription>
               정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>

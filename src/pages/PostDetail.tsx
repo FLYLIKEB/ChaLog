@@ -59,7 +59,7 @@ export function PostDetail() {
       setComments(commentsData);
     } catch {
       toast.error('게시글을 불러오는 데 실패했습니다.');
-      navigate('/community', { replace: true });
+      navigate('/chadam', { replace: true });
     } finally {
       setIsLoading(false);
     }
@@ -67,7 +67,7 @@ export function PostDetail() {
 
   useEffect(() => {
     if (!postId || isNaN(postId)) {
-      navigate('/community', { replace: true });
+      navigate('/chadam', { replace: true });
       return;
     }
     fetchData();
@@ -120,7 +120,7 @@ export function PostDetail() {
     try {
       await postsApi.delete(postId);
       toast.success('게시글이 삭제되었습니다.');
-      navigate('/community', { replace: true });
+      navigate('/chadam', { replace: true });
     } catch {
       toast.error('게시글 삭제에 실패했습니다.');
     }
@@ -171,7 +171,7 @@ export function PostDetail() {
             <DropdownMenuContent align="end">
               {isAuthor ? (
                 <>
-                  <DropdownMenuItem onClick={() => navigate(`/community/${postId}/edit`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/chadam/${postId}/edit`)}>
                     <Pencil className="w-4 h-4 mr-2" />
                     수정
                   </DropdownMenuItem>

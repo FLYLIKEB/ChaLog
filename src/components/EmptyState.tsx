@@ -21,11 +21,11 @@ export function EmptyState({ type, message, action, onRetry }: EmptyStateProps) 
   };
 
   const defaultMessages = {
-    feed: '아직 공개된 노트가 없어요.',
+    feed: '아직 공개된 차록이 없어요.',
     search: '일치하는 차가 없어요.',
     network: '연결이 불안정해요.',
     server: '서버에 문제가 발생했어요.',
-    notes: '아직 기록된 노트가 없어요.',
+    notes: '아직 기록된 차록이 없어요.',
   };
 
   const Icon = icons[type];

@@ -52,7 +52,7 @@ export function SellerCombobox({
     return () => clearTimeout(timeoutId);
   }, [value, open, fetchSellers]);
 
-  // 포커스 시 샵 목록 로드
+  // 포커스 시 찻집 목록 로드
   const handleFocus = useCallback(() => {
     setOpen(true);
     fetchSellers(value.trim());
@@ -105,9 +105,9 @@ export function SellerCombobox({
           ) : sellers.length === 0 ? (
             <div className="py-4 text-center text-sm text-muted-foreground">
               {value.trim() ? (
-                '검색 결과가 없어요. 직접 입력해 새 샵을 등록할 수 있어요.'
+                '검색 결과가 없어요. 직접 입력해 새 찻집을 등록할 수 있어요.'
               ) : (
-                '샵 이름을 입력해 검색하거나, 직접 입력해 새 샵을 등록할 수 있어요.'
+                '찻집 이름을 입력해 검색하거나, 직접 입력해 새 찻집을 등록할 수 있어요.'
               )}
             </div>
           ) : (

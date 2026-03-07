@@ -185,7 +185,7 @@ export function TeaDetail() {
             </div>
             <div className="space-y-1">
               <StarRating value={Number(tea.averageRating)} />
-              <p className="text-xs text-muted-foreground">{tea.reviewCount}개 리뷰 기반</p>
+              <p className="text-xs text-muted-foreground">{tea.reviewCount}개 차록 기반</p>
             </div>
           </div>
 
@@ -204,7 +204,7 @@ export function TeaDetail() {
 
           {tea.reviewCount < MIN_REVIEWS_FOR_TAGS && (
             <p className="mt-3 text-sm text-rating bg-rating/10 p-3 rounded-lg">
-              평가 데이터가 부족합니다. 더 많은 리뷰가 필요해요.
+              평가 데이터가 부족합니다. 더 많은 차록이 필요해요.
             </p>
           )}
         </section>
@@ -212,7 +212,7 @@ export function TeaDetail() {
         {/* 태그 클라우드 */}
         {popularTags.length > 0 && (
           <section className="bg-white rounded-lg p-4">
-            <h2 className="mb-3">자주 사용된 태그</h2>
+            <h2 className="mb-3">자주 사용된 향미</h2>
             <div
               className="flex flex-wrap gap-2"
               data-testid="tag-cloud"
@@ -240,10 +240,10 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 대표 리뷰 3개 */}
+        {/* 대표 차록 3개 */}
         {topReviews.length > 0 && (
           <section>
-            <h2 className="mb-3">대표 리뷰</h2>
+            <h2 className="mb-3">대표 차록</h2>
             <div className="space-y-3">
               {topReviews.map((note) => (
                 <NoteCard key={note.id} note={note} />
@@ -252,7 +252,7 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 유사 차 추천 */}
+        {/* 유사 차선 */}
         {similarTeas.length > 0 && (
           <section>
             <h2 className="mb-3">비슷한 차</h2>
@@ -271,7 +271,7 @@ export function TeaDetail() {
 
         {/* 전체 공개 노트 */}
         <section>
-          <h2 className="mb-3">공개 노트 전체</h2>
+          <h2 className="mb-3">공개 차록 전체</h2>
           {remainingNotes.length > 0 || topReviews.length === 0 ? (
             <div className="space-y-3">
               {(topReviews.length === 0 ? publicNotes : remainingNotes).map((note) => (
@@ -280,13 +280,13 @@ export function TeaDetail() {
               {publicNotes.length === 0 && (
                 <EmptyState
                 type="feed"
-                message="아직 공개된 노트가 없어요."
-                action={{ label: '노트 작성하기', onClick: () => navigate(`/note/new?teaId=${tea.id}`) }}
+                message="아직 공개된 차록이 없어요."
+                action={{ label: '차록 작성하기', onClick: () => navigate(`/note/new?teaId=${tea.id}`) }}
               />
               )}
             </div>
           ) : (
-            <EmptyState type="feed" message="모든 노트가 대표 리뷰에 표시되었습니다." />
+            <EmptyState type="feed" message="모든 차록이 대표 차록에 표시되었습니다." />
           )}
         </section>
 
@@ -295,7 +295,7 @@ export function TeaDetail() {
           onClick={() => navigate(`/note/new?teaId=${tea.id}`)}
           className="w-full"
         >
-          이 차로 노트 작성하기
+          이 차로 차록 작성하기
         </Button>
       </div>
     </div>

@@ -41,7 +41,7 @@ export function HeroSection({ className }: HeroSectionProps) {
             마시는 순간만큼, 기억하는 순간도 소중해요.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-            나만의 차 테이스팅 노트를 쌓고, 함께하는 차꾼들의 리뷰로 새로운 차를 발견하세요.
+            나만의 차록을 쌓고, 함께하는 다우들의 차록으로 새로운 차를 발견하세요.
           </p>
         </div>
       </div>

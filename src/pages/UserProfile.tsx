@@ -99,7 +99,7 @@ export function UserProfile() {
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
-      toast.error('팔로우하려면 로그인이 필요합니다.');
+      toast.error('구독하려면 로그인이 필요합니다.');
       navigate('/login');
       return;
     }
@@ -138,7 +138,7 @@ export function UserProfile() {
             }
           : prev,
       );
-      toast.error('팔로우 처리 중 오류가 발생했습니다.');
+      toast.error('구독 처리 중 오류가 발생했습니다.');
     } finally {
       setIsFollowLoading(false);
     }
@@ -203,7 +203,7 @@ export function UserProfile() {
           <EmptyState
             type="notes"
             message="사용자를 찾을 수 없어요."
-            action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+            action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
           />
         </div>
         <BottomNav />
@@ -217,7 +217,7 @@ export function UserProfile() {
         showBack={!isOwnProfile}
         showProfile={isOwnProfile}
         showLogo={isOwnProfile}
-        title={isOwnProfile ? '내 노트' : '사용자 프로필'}
+        title={isOwnProfile ? '내 차록' : '사용자 프로필'}
       />
 
       <div className="p-6 space-y-6">
@@ -286,8 +286,8 @@ export function UserProfile() {
                 </div>
               )}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>팔로워 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
-                <span>팔로잉 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
+                <span>구독자 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
+                <span>구독 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
               </div>
               {!isOwnProfile && !authLoading && (
                 <Button
@@ -300,9 +300,9 @@ export function UserProfile() {
                   {isFollowLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : user.isFollowing ? (
-                    '팔로잉'
+                    '구독 중'
                   ) : (
-                    '팔로우'
+                    '구독'
                   )}
                 </Button>
               )}
@@ -346,7 +346,7 @@ export function UserProfile() {
           <StatCard
             icon={FileText}
             value={stats.noteCount}
-            label="작성한 노트"
+            label="작성한 차록"
           />
         </div>
 
@@ -366,7 +366,7 @@ export function UserProfile() {
               )}
               {onboardingPreference.preferredFlavorTags?.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">향미 태그</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
                   <div className="flex flex-wrap gap-1.5">
                     {onboardingPreference.preferredFlavorTags.map(tag => (
                       <Badge key={tag} variant="outline">{tag}</Badge>
@@ -398,7 +398,7 @@ export function UserProfile() {
 
         {/* 노트 목록 섹션 */}
         <Section
-          title="노트"
+          title="차록"
           spacing="lg"
           headerAction={
             isOwnProfile ? (
@@ -423,8 +423,8 @@ export function UserProfile() {
           ) : (
             <EmptyState
               type="notes"
-              message="아직 작성한 노트가 없어요."
-              action={{ label: '첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+              message="아직 작성한 차록이 없어요."
+              action={{ label: '첫 차록 쓰기', onClick: () => navigate('/note/new') }}
             />
           )}
         </Section>

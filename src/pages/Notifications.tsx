@@ -43,9 +43,9 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
 function getNotificationText(notification: Notification): string {
   const actorName = notification.actor?.name ?? '누군가';
   if (notification.type === 'note_like') {
-    return `${actorName}님이 내 노트에 좋아요를 눌렀습니다.`;
+    return `${actorName}님이 내 차록에 좋아요를 눌렀습니다.`;
   }
-  return `${actorName}님이 나를 팔로우하기 시작했습니다.`;
+    return `${actorName}님이 나를 구독하기 시작했습니다.`;
 }
 
 function getNotificationPath(notification: Notification): string | null {

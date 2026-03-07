@@ -37,7 +37,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
 
   const handleClick = () => {
     if (!canView) {
-      toast.error('비공개 노트는 작성자만 볼 수 있습니다.');
+      toast.error('비공개 차록은 작성자만 볼 수 있습니다.');
       return;
     }
     navigate(`/note/${note.id}`);

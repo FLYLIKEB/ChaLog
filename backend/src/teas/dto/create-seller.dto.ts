@@ -2,7 +2,7 @@ import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator';
 
 export class CreateSellerDto {
   @IsString()
-  @IsNotEmpty({ message: '샵 이름을 입력해주세요.' })
+  @IsNotEmpty({ message: '찻집 이름을 입력해주세요.' })
   @MaxLength(255)
   name: string;
 

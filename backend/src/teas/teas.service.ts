@@ -65,7 +65,7 @@ export class TeasService {
   }): Promise<Seller> {
     const trimmed = dto.name.trim();
     if (!trimmed) {
-      throw new Error('샵 이름을 입력해주세요.');
+      throw new Error('찻집 이름을 입력해주세요.');
     }
     const existing = await this.sellerRepository.findOne({ where: { name: trimmed } });
     if (existing) {

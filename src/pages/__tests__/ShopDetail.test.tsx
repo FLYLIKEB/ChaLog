@@ -51,9 +51,9 @@ vi.mock('sonner', () => ({
 }));
 
 describe('ShopDetail 페이지', () => {
-  it('샵명과 차 개수를 표시한다', async () => {
+  it('찻집명과 차 개수를 표시한다', async () => {
     mockUseParams.mockReturnValue({ name: '테스트샵' } as { name: string });
-    renderWithRouter(<ShopDetail />, { route: '/shop/테스트샵' });
+    renderWithRouter(<ShopDetail />, { route: '/teahouse/테스트샵' });
 
     expect(await screen.findByRole('heading', { name: '테스트샵' })).toBeInTheDocument();
     expect(screen.getByText('2종의 차')).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe('ShopDetail 페이지', () => {
 
   it('해당 seller의 차 목록을 렌더링한다', async () => {
     mockUseParams.mockReturnValue({ name: '테스트샵' });
-    renderWithRouter(<ShopDetail />, { route: '/shop/테스트샵' });
+    renderWithRouter(<ShopDetail />, { route: '/teahouse/테스트샵' });
 
     await waitFor(() => {
       expect(screen.getByText('샵테스트차1')).toBeInTheDocument();
@@ -71,10 +71,10 @@ describe('ShopDetail 페이지', () => {
 
   it('빈 seller일 때 안내 메시지를 표시한다', async () => {
     mockUseParams.mockReturnValue({ name: '빈샵' });
-    renderWithRouter(<ShopDetail />, { route: '/shop/빈샵' });
+    renderWithRouter(<ShopDetail />, { route: '/teahouse/빈샵' });
 
     await waitFor(() => {
-      expect(screen.getByText('이 샵에 등록된 차가 없습니다.')).toBeInTheDocument();
+      expect(screen.getByText('이 찻집에 등록된 차가 없어요.')).toBeInTheDocument();
     });
   });
 });

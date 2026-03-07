@@ -63,7 +63,7 @@ describe('/posts - 게시글 CRUD API', () => {
       ...postData,
       title: '협찬 게시글',
       isSponsored: true,
-      sponsorNote: '브랜드 A 협찬',
+      sponsorNote: '다실 A 협찬',
     };
     const response = await context.testHelper.authenticatedRequest(testUser.token)
       .post('/posts')
@@ -71,7 +71,7 @@ describe('/posts - 게시글 CRUD API', () => {
       .expect(201);
 
     expect(response.body.isSponsored).toBe(true);
-    expect(response.body.sponsorNote).toBe('브랜드 A 협찬');
+    expect(response.body.sponsorNote).toBe('다실 A 협찬');
   });
 
   it('POST /posts - 인증 없이 게시글 생성 실패', async () => {

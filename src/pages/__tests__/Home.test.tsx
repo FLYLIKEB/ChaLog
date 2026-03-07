@@ -37,7 +37,7 @@ const mockNotes = [
       clarity: 5,
       complexity: 4,
     },
-    memo: '공개 노트입니다.',
+    memo: '공개 차록입니다.',
     isPublic: true,
     createdAt: mockDate,
   },
@@ -55,7 +55,7 @@ const mockNotes = [
       clarity: 4,
       complexity: 3,
     },
-    memo: '비공개 노트입니다.',
+    memo: '비공개 차록입니다.',
     isPublic: false,
     createdAt: mockDate,
   },
@@ -88,7 +88,7 @@ describe('Home 페이지', () => {
     mathRandomSpy.mockRestore();
   });
 
-  it('오늘의 차 카드와 공개 노트를 렌더링한다', async () => {
+  it('오늘의 차 카드와 공개 차록을 렌더링한다', async () => {
     renderWithRouter(<Home />, { route: '/' });
 
     // API 호출이 완료될 때까지 대기 - 로딩 스피너가 사라지고 콘텐츠가 나타날 때까지 기다림
@@ -100,9 +100,8 @@ describe('Home 페이지', () => {
     expect(screen.getByText('오늘의 차')).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: '화과향' })).toHaveLength(2);
 
-    expect(screen.getByText('공개 노트')).toBeInTheDocument();
-    expect(screen.getByText('공개 노트입니다.')).toBeInTheDocument();
-    expect(screen.queryByText('비공개 노트입니다.')).not.toBeInTheDocument();
+    expect(screen.getByText('공개 차록입니다.')).toBeInTheDocument();
+    expect(screen.queryByText('비공개 차록입니다.')).not.toBeInTheDocument();
   });
 });
 

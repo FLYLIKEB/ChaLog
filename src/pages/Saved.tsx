@@ -28,7 +28,7 @@ export function Saved() {
       setBookmarkedNotes(notesArray as Note[]);
     } catch (error) {
       logger.error('Failed to fetch bookmarked notes:', error);
-      toast.error('저장한 노트를 불러오는데 실패했습니다.');
+      toast.error('저장한 차록을 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -80,7 +80,7 @@ export function Saved() {
       <Header showBack showProfile title="📌 저장함" />
       
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-        <Section title="📌 저장한 노트" spacing="lg">
+        <Section title="📌 저장한 차록" spacing="lg">
           {bookmarkedNotes.length > 0 ? (
             <div className="space-y-3">
               {bookmarkedNotes.map(note => (
@@ -99,8 +99,8 @@ export function Saved() {
           ) : (
             <EmptyState
               type="notes"
-              message="아직 저장한 노트가 없어요."
-              action={{ label: '🔍 탐색하기', onClick: () => navigate('/search') }}
+              message="아직 저장한 차록이 없어요."
+              action={{ label: '🔍 사색하기', onClick: () => navigate('/sasaek') }}
             />
           )}
         </Section>

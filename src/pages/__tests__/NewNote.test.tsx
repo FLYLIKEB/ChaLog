@@ -102,7 +102,7 @@ const renderNewNote = (initialEntry = '/new-note') =>
         <Route path="/new-note" element={<NewNote />} />
         <Route path="/note/new" element={<NewNote />} />
         <Route path="/tea/new" element={<div data-testid="new-tea-page">새 차 등록</div>} />
-        <Route path="/my-notes" element={<div data-testid="my-notes-page">내 노트 목록</div>} />
+        <Route path="/my-notes" element={<div data-testid="my-notes-page">내 차록 목록</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -137,7 +137,7 @@ describe('NewNote 페이지', () => {
     expect(toastMock.error).toHaveBeenCalledWith('메모를 작성해주세요.');
   });
 
-  it('성공적으로 저장하면 성공 토스트 후 내 노트로 이동한다', async () => {
+  it('성공적으로 저장하면 성공 토스트 후 내 차록으로 이동한다', async () => {
     const user = userEvent.setup();
 
     renderNewNote();

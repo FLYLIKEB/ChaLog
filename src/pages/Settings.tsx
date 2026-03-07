@@ -333,7 +333,7 @@ export function Settings() {
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">앱 알림</p>
-                <p className="text-xs text-muted-foreground mt-0.5">좋아요, 댓글, 팔로우 알림</p>
+                <p className="text-xs text-muted-foreground mt-0.5">좋아요, 댓글, 구독 알림</p>
               </div>
             </div>
             <Switch

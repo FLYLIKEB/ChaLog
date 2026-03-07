@@ -51,7 +51,7 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
           <Star className="w-3.5 h-3.5 fill-rating text-rating" />
           <span className="font-medium">{Number(tea.averageRating).toFixed(1)}</span>
         </div>
-        <span className="text-muted-foreground">{tea.reviewCount}개 리뷰</span>
+        <span className="text-muted-foreground">{tea.reviewCount}개 차록</span>
       </div>
     </Card>
   );

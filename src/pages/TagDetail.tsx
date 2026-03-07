@@ -50,10 +50,10 @@ export function TagDetail() {
     } catch (error: any) {
       logger.error('Failed to load tag detail:', error);
       if (error?.statusCode === 404) {
-        toast.error('존재하지 않는 태그입니다.');
+        toast.error('존재하지 않는 향미입니다.');
         navigate(-1);
       } else {
-        toast.error('태그 정보를 불러올 수 없습니다.');
+        toast.error('향미 정보를 불러올 수 없습니다.');
       }
     } finally {
       setIsLoading(false);
@@ -85,7 +85,7 @@ export function TagDetail() {
       setHasMore(result.notes.length === LIMIT && (noteList?.notes.length ?? 0) + result.notes.length < result.total);
     } catch (error: any) {
       logger.error('Failed to load more notes:', error);
-      toast.error('노트를 더 불러올 수 없습니다.');
+      toast.error('차록을 더 불러올 수 없습니다.');
     } finally {
       setIsLoadingMore(false);
     }
@@ -108,17 +108,17 @@ export function TagDetail() {
             ? { ...prev, isFollowing: false, followerCount: Math.max(0, prev.followerCount - 1) }
             : prev,
         );
-        toast.success(`#${decodedName} 팔로우를 취소했습니다.`);
+        toast.success(`#${decodedName} 구독을 취소했습니다.`);
       } else {
         await tagsApi.followTag(decodedName);
         setTagDetail((prev) =>
           prev ? { ...prev, isFollowing: true, followerCount: prev.followerCount + 1 } : prev,
         );
-        toast.success(`#${decodedName} 태그를 팔로우했습니다.`);
+        toast.success(`#${decodedName} 향미를 구독했습니다.`);
       }
     } catch (error: any) {
       logger.error('Failed to toggle follow:', error);
-      toast.error(wasFollowing ? '팔로우 취소에 실패했습니다.' : '팔로우에 실패했습니다.');
+      toast.error(wasFollowing ? '구독 취소에 실패했습니다.' : '구독에 실패했습니다.');
     } finally {
       setIsFollowLoading(false);
     }
@@ -163,11 +163,11 @@ export function TagDetail() {
             <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
               <span className="flex items-center gap-1">
                 <Star className="w-3.5 h-3.5" />
-                노트 {total.toLocaleString()}개
+                차록 {total.toLocaleString()}개
               </span>
               <span className="flex items-center gap-1">
                 <Users className="w-3.5 h-3.5" />
-                팔로워 {tagDetail.followerCount.toLocaleString()}명
+                구독자 {tagDetail.followerCount.toLocaleString()}명
               </span>
             </div>
           </div>
@@ -184,12 +184,12 @@ export function TagDetail() {
             ) : tagDetail.isFollowing ? (
               <>
                 <BellOff className="w-4 h-4 mr-1.5" />
-                팔로우 중
+                구독 중
               </>
             ) : (
               <>
                 <Bell className="w-4 h-4 mr-1.5" />
-                팔로우
+                구독
               </>
             )}
           </Button>
@@ -206,7 +206,7 @@ export function TagDetail() {
           }`}
           onClick={() => setActiveTab('notes')}
         >
-          노트 목록
+          차록 목록
         </button>
         <button
           className={`flex-1 py-3 text-sm font-medium transition-colors ${
@@ -216,7 +216,7 @@ export function TagDetail() {
           }`}
           onClick={() => setActiveTab('related')}
         >
-          관련 태그
+          관련 향미
         </button>
       </div>
 
@@ -227,7 +227,7 @@ export function TagDetail() {
             {notes.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <Hash className="w-10 h-10 mb-3 opacity-30" />
-                <p className="text-sm">이 태그가 달린 공개 노트가 없습니다.</p>
+                <p className="text-sm">이 향미가 달린 공개 차록이 없습니다.</p>
               </div>
             ) : (
               <div className="divide-y divide-border/50">
@@ -330,10 +330,10 @@ export function TagDetail() {
             {/* 인기 태그 */}
             <section>
               <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-                인기 태그
+                인기 향미
               </h2>
               {popularTags.length === 0 ? (
-                <p className="text-sm text-muted-foreground">인기 태그가 없습니다.</p>
+                <p className="text-sm text-muted-foreground">인기 향미가 없습니다.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {popularTags.map((tag) => (
@@ -358,10 +358,10 @@ export function TagDetail() {
             {/* 신규 태그 */}
             <section>
               <h2 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">
-                신규 태그
+                신규 향미
               </h2>
               {recentTags.length === 0 ? (
-                <p className="text-sm text-muted-foreground">신규 태그가 없습니다.</p>
+                <p className="text-sm text-muted-foreground">신규 향미가 없습니다.</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {recentTags.map((tag) => (

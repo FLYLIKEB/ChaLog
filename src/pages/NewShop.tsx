@@ -48,7 +48,7 @@ export function NewShop() {
     }
     const trimmed = name.trim();
     if (!trimmed) {
-      toast.error('샵 이름을 입력해주세요.');
+      toast.error('찻집 이름을 입력해주세요.');
       return;
     }
     try {
@@ -62,7 +62,7 @@ export function NewShop() {
         description: description.trim() || undefined,
         businessHours: businessHours.trim() || undefined,
       });
-      toast.success('샵이 등록되었습니다.');
+      toast.success('찻집이 등록되었습니다.');
       if (returnTo) {
         setTimeout(() => {
           const params = new URLSearchParams();
@@ -72,12 +72,12 @@ export function NewShop() {
         }, NAVIGATION_DELAY);
       } else {
         setTimeout(() => {
-          navigate(`/shop/${encodeURIComponent(trimmed)}`);
+          navigate(`/teahouse/${encodeURIComponent(trimmed)}`);
         }, NAVIGATION_DELAY);
       }
     } catch (error) {
       logger.error('Failed to create seller:', error);
-      const msg = error instanceof Error ? error.message : '샵 등록에 실패했습니다.';
+      const msg = error instanceof Error ? error.message : '찻집 등록에 실패했습니다.';
       toast.error(msg);
     } finally {
       setIsLoading(false);
@@ -90,21 +90,21 @@ export function NewShop() {
 
   return (
     <div className="min-h-screen">
-      <Header showBack title="샵 추가" showProfile />
+      <Header showBack title="찻집 추가" showProfile />
 
       <div className="p-4 sm:max-w-md sm:mx-auto">
         <div className="bg-card rounded-lg p-6 space-y-6 border border-border">
           <div>
-            <h1 className="text-2xl font-bold mb-2">샵 추가</h1>
+            <h1 className="text-2xl font-bold mb-2">찻집 추가</h1>
             <p className="text-muted-foreground text-sm">
-              새 샵을 등록하면 바로 샵 목록에 추가돼요.
+              새 찻집을 등록하면 바로 찻집 목록에 추가돼요.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <div className="space-y-2">
               <Label htmlFor="shop-name">
-                샵 이름 <span className="text-red-500">*</span>
+                찻집 이름 <span className="text-red-500">*</span>
               </Label>
               <Input
                 id="shop-name"
@@ -181,7 +181,7 @@ export function NewShop() {
               <Label htmlFor="description">소개 <span className="text-muted-foreground font-normal">(선택)</span></Label>
               <textarea
                 id="description"
-                placeholder="샵 소개를 입력해주세요"
+                placeholder="찻집 소개를 입력해주세요"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isLoading}

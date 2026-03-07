@@ -190,7 +190,7 @@ describe('/teas - 차 API', () => {
     expect(response.body.length).toBeLessThanOrEqual(5);
   });
 
-  it('GET /teas/sellers - 샵/브랜드 리스트 반환', async () => {
+  it('GET /teas/sellers - 찻집/다실 리스트 반환', async () => {
     await context.testHelper.createTea(testUser.token, {
       name: '샵테스트차',
       type: '홍차',
@@ -209,7 +209,7 @@ describe('/teas - 차 API', () => {
     }
   });
 
-  it('GET /teas/by-seller/:name - 샵별 차 목록 반환', async () => {
+  it('GET /teas/by-seller/:name - 찻집별 차 목록 반환', async () => {
     const tea = await context.testHelper.createTea(testUser.token, {
       name: '샵상세테스트',
       type: '홍차',

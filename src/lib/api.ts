@@ -597,7 +597,7 @@ class ApiClient {
             if (errorMessage.includes('Tea') || errorMessage.includes('tea')) {
               errorMessage = '차를 찾을 수 없습니다.';
             } else if (errorMessage.includes('Note') || errorMessage.includes('note')) {
-              errorMessage = '노트를 찾을 수 없습니다.';
+              errorMessage = '차록을 찾을 수 없습니다.';
             } else if (errorMessage.includes('User') || errorMessage.includes('user')) {
               errorMessage = '사용자를 찾을 수 없습니다.';
             } else {

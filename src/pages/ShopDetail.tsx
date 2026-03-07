@@ -48,7 +48,7 @@ export function ShopDetail() {
       );
     } catch (error) {
       logger.error('Failed to fetch shop teas:', error);
-      toast.error('샵 정보를 불러오는데 실패했습니다.');
+      toast.error('찻집 정보를 불러오는데 실패했습니다.');
       setTeas([]);
     } finally {
       setIsLoading(false);
@@ -68,11 +68,11 @@ export function ShopDetail() {
   if (!name) {
     return (
       <div className="min-h-screen pb-20">
-        <Header title="샵 상세" showBack showProfile />
+        <Header title="찻집 상세" showBack showProfile />
         <EmptyState
           type="search"
-          message="샵을 찾을 수 없어요."
-          action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+          message="찻집을 찾을 수 없어요."
+          action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
         />
         <BottomNav />
       </div>
@@ -83,7 +83,7 @@ export function ShopDetail() {
 
   return (
     <div className="min-h-screen pb-20">
-      <Header title="샵 상세" showBack showProfile />
+      <Header title="찻집 상세" showBack showProfile />
 
       <div className="p-4 space-y-4">
         {isLoading ? (
@@ -158,8 +158,8 @@ export function ShopDetail() {
             ) : (
               <EmptyState
                 type="search"
-                message="이 샵에 등록된 차가 없어요."
-                action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+                message="이 찻집에 등록된 차가 없어요."
+                action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </>
