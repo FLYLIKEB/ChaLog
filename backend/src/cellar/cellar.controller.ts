@@ -2,15 +2,15 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Patch,
-  Param,
   Delete,
+  Param,
+  Body,
   UseGuards,
   Request,
-  ParseIntPipe,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { CellarService } from './cellar.service';
@@ -24,37 +24,66 @@ export class CellarController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Request() req, @Body() createCellarItemDto: CreateCellarItemDto) {
-    return this.cellarService.create(req.user.userId, createCellarItemDto);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  create(@Request() req: any, @Body() dto: CreateCellarItemDto) {
+    const userId = this.parseUserId(req);
+    return this.cellarService.create(userId, dto);
   }
 
   @Get()
-  findAll(@Request() req) {
-    return this.cellarService.findAll(req.user.userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  findAll(@Request() req: any) {
+    const userId = this.parseUserId(req);
+    return this.cellarService.findAll(userId);
   }
 
   @Get('reminders')
-  findReminders(@Request() req) {
-    return this.cellarService.findReminders(req.user.userId);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  findReminders(@Request() req: any) {
+    const userId = this.parseUserId(req);
+    return this.cellarService.findReminders(userId);
   }
 
   @Get(':id')
-  findOne(@Request() req, @Param('id', ParseIntPipe) id: number) {
-    return this.cellarService.findOne(req.user.userId, id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  findOne(@Request() req: any, @Param('id') id: string) {
+    const userId = this.parseUserId(req);
+    const itemId = this.parseId(id);
+    return this.cellarService.findOne(userId, itemId);
   }
 
   @Patch(':id')
-  update(
-    @Request() req,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateCellarItemDto: UpdateCellarItemDto,
-  ) {
-    return this.cellarService.update(req.user.userId, id, updateCellarItemDto);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  update(@Request() req: any, @Param('id') id: string, @Body() dto: UpdateCellarItemDto) {
+    const userId = this.parseUserId(req);
+    const itemId = this.parseId(id);
+    return this.cellarService.update(userId, itemId, dto);
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
-    return this.cellarService.remove(req.user.userId, id);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  async remove(@Request() req: any, @Param('id') id: string) {
+    const userId = this.parseUserId(req);
+    const itemId = this.parseId(id);
+    await this.cellarService.remove(userId, itemId);
+    return { message: '셀러 아이템이 삭제되었습니다.' };
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private parseUserId(req: any): number {
+    const parsed = parseInt(req.user?.userId, 10);
+    if (Number.isNaN(parsed)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    return parsed;
+  }
+
+  private parseId(id: string): number {
+    const parsed = parseInt(id, 10);
+    if (Number.isNaN(parsed)) {
+      throw new BadRequestException('유효하지 않은 ID입니다.');
+    }
+    return parsed;
   }
 }

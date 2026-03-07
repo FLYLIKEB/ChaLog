@@ -1,5 +1,5 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User, UserOnboardingPreference } from '../types';
+import { Tea, User, UserOnboardingPreference, CellarItem } from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -1073,7 +1073,6 @@ export const notesApi = {
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
-  report: (id: number, reason: string) => apiClient.post<{ id: number; message: string }>(`/notes/${id}/report`, { reason }),
 };
 
 export const usersApi = {
@@ -1096,14 +1095,23 @@ export const followsApi = {
     apiClient.get<User[]>(`/users/${userId}/following`),
 };
 
+export interface CreateCellarItemRequest {
+  teaId: number;
+  quantity?: number;
+  unit?: 'g' | 'ml' | 'bag' | 'cake';
+  openedAt?: string | null;
+  remindAt?: string | null;
+  memo?: string | null;
+}
+
+export interface UpdateCellarItemRequest extends Partial<CreateCellarItemRequest> {}
+
 export const cellarApi = {
-  getAll: () => apiClient.get<import('../types').CellarItem[]>('/cellar'),
-  getById: (id: number) => apiClient.get<import('../types').CellarItem>(`/cellar/${id}`),
-  getReminders: () => apiClient.get<import('../types').CellarItem[]>('/cellar/reminders'),
-  create: (data: import('../types').CreateCellarItemRequest) =>
-    apiClient.post<import('../types').CellarItem>('/cellar', data),
-  update: (id: number, data: import('../types').UpdateCellarItemRequest) =>
-    apiClient.patch<import('../types').CellarItem>(`/cellar/${id}`, data),
+  getAll: () => apiClient.get<CellarItem[]>('/cellar'),
+  getById: (id: number) => apiClient.get<CellarItem>(`/cellar/${id}`),
+  getReminders: () => apiClient.get<CellarItem[]>('/cellar/reminders'),
+  create: (data: CreateCellarItemRequest) => apiClient.post<CellarItem>('/cellar', data),
+  update: (id: number, data: UpdateCellarItemRequest) => apiClient.patch<CellarItem>(`/cellar/${id}`, data),
   remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 

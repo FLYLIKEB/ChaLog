@@ -18,27 +18,27 @@ export class CellarItem {
   @Column()
   userId: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @Column()
   teaId: number;
 
-  @ManyToOne(() => Tea)
+  @ManyToOne(() => Tea, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'teaId' })
   tea: Tea;
 
   @Column({ type: 'decimal', precision: 8, scale: 1, default: 0 })
   quantity: number;
 
-  @Column({ type: 'varchar', length: 20, default: 'g' })
+  @Column({ type: 'varchar', length: 10, default: 'g' })
   unit: string;
 
   @Column({ type: 'date', nullable: true })
   openedAt: Date | null;
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'datetime', nullable: true })
   remindAt: Date | null;
 
   @Column({ type: 'text', nullable: true })

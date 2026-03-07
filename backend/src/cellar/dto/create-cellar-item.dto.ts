@@ -1,4 +1,11 @@
-import { IsNumber, IsString, IsOptional, IsIn, Min, IsDateString } from 'class-validator';
+import {
+  IsNumber,
+  IsString,
+  IsOptional,
+  IsIn,
+  IsDateString,
+  Min,
+} from 'class-validator';
 
 export class CreateCellarItemDto {
   @IsNumber()

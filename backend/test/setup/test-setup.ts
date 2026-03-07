@@ -166,6 +166,7 @@ export async function cleanupDatabase(dataSource: DataSource): Promise<void> {
     await dataSource.query('DELETE FROM note_tags');
     await dataSource.query('DELETE FROM tags');
     await dataSource.query('DELETE FROM notes');
+    await dataSource.query('DELETE FROM cellar_items');
     await dataSource.query('DELETE FROM rating_axis');
     await dataSource.query('DELETE FROM rating_schema');
     await dataSource.query('DELETE FROM teas');

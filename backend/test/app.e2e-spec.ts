@@ -12,6 +12,7 @@ import './suites/users.e2e-spec';
 import './suites/notes-crud.e2e-spec';
 import './suites/notes-schemas.e2e-spec';
 import './suites/cellar.e2e-spec';
+import './suites/cellar.e2e-spec';
 
 describe('AppController (e2e)', () => {
   let context: TestContext;

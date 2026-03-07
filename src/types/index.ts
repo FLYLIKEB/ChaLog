@@ -90,35 +90,15 @@ export interface UserOnboardingPreference {
   hasCompletedOnboarding: boolean;
 }
 
-export type CellarUnit = 'g' | 'ml' | 'bag' | 'cake';
-
 export interface CellarItem {
   id: number;
-  userId: number;
   teaId: number;
   tea: Tea;
   quantity: number;
-  unit: CellarUnit;
+  unit: 'g' | 'ml' | 'bag' | 'cake';
   openedAt: string | null;
   remindAt: string | null;
   memo: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface CreateCellarItemRequest {
-  teaId: number;
-  quantity?: number;
-  unit?: CellarUnit;
-  openedAt?: string | null;
-  remindAt?: string | null;
-  memo?: string | null;
-}
-
-export interface UpdateCellarItemRequest {
-  quantity?: number;
-  unit?: CellarUnit;
-  openedAt?: string | null;
-  remindAt?: string | null;
-  memo?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
