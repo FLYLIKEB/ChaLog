@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from './ui/utils';
+import { useIsKorean } from '../hooks/useLocale';
 
 interface ChaLogLogoProps {
   /** 아이콘만 표시 (제목과 함께 쓸 때) */
@@ -10,8 +11,10 @@ interface ChaLogLogoProps {
   onClick?: () => void;
 }
 
-/** ChaLog 브랜드 로고 - 차(茶) 잎 모티프 */
+/** 차멍 브랜드 로고 - 차(茶) 잎 모티프. 한국어권: 차멍, 영어권: ChaMeong */
 export function ChaLogLogo({ iconOnly = false, className, asButton, onClick }: ChaLogLogoProps) {
+  const isKorean = useIsKorean();
+
   const content = (
     <>
       <div
@@ -39,7 +42,11 @@ export function ChaLogLogo({ iconOnly = false, className, asButton, onClick }: C
       </div>
       {!iconOnly && (
         <span className="font-semibold text-foreground tracking-tight text-[1.05em]">
-          Cha<span className="text-primary">Log</span>
+          {isKorean ? (
+            <>차<span className="text-primary">멍</span></>
+          ) : (
+            <>Cha<span className="text-primary">Meong</span></>
+          )}
         </span>
       )}
     </>
@@ -57,7 +64,7 @@ export function ChaLogLogo({ iconOnly = false, className, asButton, onClick }: C
         type="button"
         onClick={onClick}
         className={wrapperClass}
-        aria-label="ChaLog 홈으로"
+        aria-label={isKorean ? '차멍 홈으로' : 'ChaMeong home'}
       >
         {content}
       </button>

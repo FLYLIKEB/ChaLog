@@ -422,7 +422,7 @@ export function Search() {
 
                 <Section
                   title="신규 차"
-                  description="최근에 ChaLog에 새로 등록된 차예요."
+                  description="최근에 차멍에 새로 등록된 차예요."
                   spacing="lg"
                   headerAction={
                     newTeas.length > 0 ? (

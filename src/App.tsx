@@ -113,7 +113,7 @@ export default function App() {
   const content = (
     <AuthProvider>
       <BrowserRouter>
-        <div className="max-w-2xl mx-auto bg-background min-h-screen px-4 sm:px-6">
+        <div className="max-w-2xl mx-auto bg-background min-h-screen overflow-x-hidden">
           <OnboardingRouteGuard>
             <Routes>
               <Route path="/" element={<Home />} />
