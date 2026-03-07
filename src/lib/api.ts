@@ -1045,6 +1045,12 @@ export const teasApi = {
   },
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
+  getPopularTags: (id: number) =>
+    apiClient.get<{ tags: import('../types').PopularTag[] }>(`/teas/${id}/popular-tags`),
+  getTopReviews: (id: number) =>
+    apiClient.get<import('../types').Note[]>(`/teas/${id}/top-reviews`),
+  getSimilarTeas: (id: number) =>
+    apiClient.get<Tea[]>(`/teas/${id}/similar`),
 };
 
 export const notesApi = {

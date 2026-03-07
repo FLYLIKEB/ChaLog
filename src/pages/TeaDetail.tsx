@@ -3,21 +3,42 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
+import { TeaCard } from '../components/TeaCard';
 import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
-import { Tea, Note } from '../types';
+import { Tea, Note, PopularTag } from '../types';
 import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
+
+function StarRating({ value, max = 5 }: { value: number; max?: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: max }).map((_, i) => {
+        const filled = value >= i + 1;
+        const half = !filled && value >= i + 0.5;
+        return (
+          <Star
+            key={i}
+            className={`w-4 h-4 ${filled || half ? 'fill-amber-400 text-amber-400' : 'text-gray-300'}`}
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export function TeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [tea, setTea] = useState<Tea | null>(null);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
+  const [popularTags, setPopularTags] = useState<PopularTag[]>([]);
+  const [topReviews, setTopReviews] = useState<Note[]>([]);
+  const [similarTeas, setSimilarTeas] = useState<Tea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -31,16 +52,20 @@ export function TeaDetail() {
           toast.error('유효하지 않은 차 ID입니다.');
           return;
         }
-        const [teaData, notesData] = await Promise.all([
+
+        const [teaData, notesData, tagsData, reviewsData, similarData] = await Promise.all([
           teasApi.getById(teaId),
           notesApi.getAll(undefined, true, teaId),
+          teasApi.getPopularTags(teaId),
+          teasApi.getTopReviews(teaId),
+          teasApi.getSimilarTeas(teaId),
         ]);
 
         setTea(teaData as Tea);
-        
-        // 서버에서 이미 필터링된 노트 데이터 설정
-        const notesArray = Array.isArray(notesData) ? notesData : [];
-        setPublicNotes(notesArray as Note[]);
+        setPublicNotes(Array.isArray(notesData) ? (notesData as Note[]) : []);
+        setPopularTags((tagsData as { tags: PopularTag[] }).tags ?? []);
+        setTopReviews(Array.isArray(reviewsData) ? (reviewsData as Note[]) : []);
+        setSimilarTeas(Array.isArray(similarData) ? (similarData as Tea[]) : []);
       } catch (error) {
         logger.error('Failed to fetch data:', error);
         toast.error('데이터를 불러오는데 실패했습니다.');
@@ -71,16 +96,20 @@ export function TeaDetail() {
   }
 
   const topTags = calculateTopTags(publicNotes);
+  const maxTagCount = popularTags.length > 0 ? popularTags[0].count : 1;
+
+  const topReviewIds = new Set(topReviews.map((n) => n.id));
+  const remainingNotes = publicNotes.filter((n) => !topReviewIds.has(n.id));
 
   return (
     <div className="min-h-screen bg-gray-50 pb-6">
       <Header showBack title="차 상세" />
-      
+
       <div className="p-4 space-y-6">
-        {/* 차 기본 정보 */}
+        {/* 기본 정보 */}
         <section className="bg-white rounded-lg p-4 space-y-3">
           <h1>{tea.name}</h1>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p className="text-xs text-gray-500 mb-1">종류</p>
@@ -107,47 +136,113 @@ export function TeaDetail() {
           </div>
         </section>
 
-        {/* 평점 요약 */}
+        {/* 평균 평점 */}
         <section className="bg-white rounded-lg p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-            <div className="text-center sm:text-left">
-              <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
-                <span className="text-2xl">{Number(tea.averageRating).toFixed(1)}</span>
-              </div>
-              <p className="text-xs text-gray-500">{tea.reviewCount}개 리뷰</p>
+          <h2 className="mb-3">평균 평점</h2>
+          <div className="flex items-center gap-4">
+            <div className="text-center">
+              <p className="text-4xl font-bold text-amber-500">
+                {Number(tea.averageRating).toFixed(1)}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">/ 5.0</p>
             </div>
-            
-            {tea.reviewCount >= MIN_REVIEWS_FOR_TAGS && (
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 mb-2">주요 특징</p>
-                <div className="flex flex-wrap gap-2">
-                  {topTags.map(tag => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div className="space-y-1">
+              <StarRating value={Number(tea.averageRating)} />
+              <p className="text-xs text-gray-500">{tea.reviewCount}개 리뷰 기반</p>
+            </div>
           </div>
 
+          {tea.reviewCount >= MIN_REVIEWS_FOR_TAGS && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">특징 요약</p>
+              <div className="flex flex-wrap gap-2">
+                {topTags.map((tag) => (
+                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           {tea.reviewCount < MIN_REVIEWS_FOR_TAGS && (
-            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
+            <p className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
               평가 데이터가 부족합니다. 더 많은 리뷰가 필요해요.
             </p>
           )}
         </section>
 
-        {/* 공개 노트 */}
-        <section>
-          <h2 className="mb-3">공개 노트</h2>
-          {publicNotes.length > 0 ? (
+        {/* 태그 클라우드 */}
+        {popularTags.length > 0 && (
+          <section className="bg-white rounded-lg p-4">
+            <h2 className="mb-3">자주 사용된 태그</h2>
+            <div
+              className="flex flex-wrap gap-2"
+              data-testid="tag-cloud"
+            >
+              {popularTags.map((tag) => {
+                const ratio = tag.count / maxTagCount;
+                const size =
+                  ratio >= 0.8
+                    ? 'text-base font-semibold'
+                    : ratio >= 0.5
+                      ? 'text-sm font-medium'
+                      : 'text-xs';
+                return (
+                  <span
+                    key={tag.name}
+                    className={`inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 ${size}`}
+                  >
+                    {tag.name}
+                    <span className="ml-1 text-emerald-400 text-xs">×{tag.count}</span>
+                  </span>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* 대표 리뷰 3개 */}
+        {topReviews.length > 0 && (
+          <section>
+            <h2 className="mb-3">대표 리뷰</h2>
             <div className="space-y-3">
-              {publicNotes.map(note => (
+              {topReviews.map((note) => (
                 <NoteCard key={note.id} note={note} />
               ))}
             </div>
+          </section>
+        )}
+
+        {/* 유사 차 추천 */}
+        {similarTeas.length > 0 && (
+          <section>
+            <h2 className="mb-3">비슷한 차</h2>
+            <div
+              className="flex gap-3 overflow-x-auto pb-2"
+              data-testid="similar-teas"
+            >
+              {similarTeas.map((similar) => (
+                <div key={similar.id} className="min-w-[220px]">
+                  <TeaCard tea={similar} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 전체 공개 노트 */}
+        <section>
+          <h2 className="mb-3">공개 노트 전체</h2>
+          {remainingNotes.length > 0 || topReviews.length === 0 ? (
+            <div className="space-y-3">
+              {(topReviews.length === 0 ? publicNotes : remainingNotes).map((note) => (
+                <NoteCard key={note.id} note={note} />
+              ))}
+              {publicNotes.length === 0 && (
+                <EmptyState type="feed" message="아직 공개된 노트가 없습니다." />
+              )}
+            </div>
           ) : (
-            <EmptyState type="feed" message="아직 공개된 노트가 없습니다." />
+            <EmptyState type="feed" message="모든 노트가 대표 리뷰에 표시되었습니다." />
           )}
         </section>
 
