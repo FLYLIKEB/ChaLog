@@ -63,6 +63,7 @@ const mockUseAuth = vi.fn(() => ({
   register: vi.fn(),
   loginWithKakao: vi.fn(),
   logout: vi.fn(),
+  updateUser: vi.fn(),
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
@@ -312,6 +313,7 @@ describe('NewTea 페이지', () => {
       register: vi.fn(),
       loginWithKakao: vi.fn(),
       logout: vi.fn(),
+      updateUser: vi.fn(),
     });
 
     renderNewTea();

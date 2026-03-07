@@ -18,6 +18,7 @@ const mockUseAuth = vi.fn(() => ({
   logout: vi.fn(),
   register: vi.fn(),
   loginWithKakao: vi.fn(),
+  updateUser: vi.fn(),
   refreshOnboardingStatus: vi.fn(),
 }));
 
@@ -102,6 +103,7 @@ describe('Cellar 페이지', () => {
       logout: vi.fn(),
       register: vi.fn(),
       loginWithKakao: vi.fn(),
+      updateUser: vi.fn(),
       refreshOnboardingStatus: vi.fn(),
     });
     vi.mocked(cellarApi.getAll).mockResolvedValue([]);
@@ -336,6 +338,7 @@ describe('Cellar 페이지', () => {
       logout: vi.fn(),
       register: vi.fn(),
       loginWithKakao: vi.fn(),
+      updateUser: vi.fn(),
       refreshOnboardingStatus: vi.fn(),
     });
 

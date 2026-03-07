@@ -24,6 +24,7 @@ vi.mock('../../contexts/AuthContext', () => ({
     register: vi.fn(),
     loginWithKakao: vi.fn(),
     logout: vi.fn(),
+    updateUser: vi.fn(),
   })),
 }));
 
@@ -231,6 +232,7 @@ describe('ImageUploader 컴포넌트', () => {
         register: vi.fn(),
         loginWithKakao: vi.fn(),
         logout: vi.fn(),
+        updateUser: vi.fn(),
         hasCompletedOnboarding: null,
         isOnboardingLoading: false,
         refreshOnboardingStatus: vi.fn(),

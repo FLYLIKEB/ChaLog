@@ -11,6 +11,7 @@ import { Button } from './ui/button';
 import { usersApi } from '../lib/api';
 import { toast } from 'sonner';
 import { User } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProfileEditModalProps {
   open: boolean;
@@ -25,6 +26,7 @@ export function ProfileEditModal({
   user,
   onSuccess,
 }: ProfileEditModalProps) {
+  const { updateUser } = useAuth();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState(user.name ?? '');
   const [bio, setBio] = useState(user.bio ?? '');
@@ -57,13 +59,15 @@ export function ProfileEditModal({
         blogUrl: blogUrl.trim() || null,
       });
 
-      toast.success('프로필이 업데이트되었습니다.');
-      onSuccess({
+      const updatedFields = {
         name: name.trim(),
         bio: bio.trim() || null,
         instagramUrl: instagramUrl.trim() || null,
         blogUrl: blogUrl.trim() || null,
-      });
+      };
+      toast.success('프로필이 업데이트되었습니다.');
+      updateUser(updatedFields);
+      onSuccess(updatedFields);
       onOpenChange(false);
     } catch {
       toast.error('프로필 업데이트에 실패했습니다.');

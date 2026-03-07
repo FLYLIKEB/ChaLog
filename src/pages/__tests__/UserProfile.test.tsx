@@ -10,6 +10,7 @@ const mockUseParams = vi.fn(() => ({ id: '2' }));
 const mockUseAuth = vi.fn(() => ({
   user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
   isAuthenticated: true,
+  updateUser: vi.fn(),
 }));
 
 vi.mock('../../lib/api', async () => {
@@ -97,6 +98,7 @@ describe('UserProfile', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
       isAuthenticated: true,
+      updateUser: vi.fn(),
     });
     vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
     vi.mocked(notesApi.getAll).mockResolvedValue(mockNotes);
@@ -270,6 +272,7 @@ describe('UserProfile', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
       isAuthenticated: true,
+      updateUser: vi.fn(),
     });
     
     const mockUserOwn: User = {
@@ -295,6 +298,7 @@ describe('UserProfile', () => {
     mockUseAuth.mockReturnValue({
       user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
       isAuthenticated: true,
+      updateUser: vi.fn(),
     });
     vi.mocked(usersApi.getById).mockResolvedValue(mockUser);
     
@@ -322,6 +326,7 @@ describe('UserProfile', () => {
       mockUseAuth.mockReturnValue({
         user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
         isAuthenticated: true,
+        updateUser: vi.fn(),
       });
       vi.mocked(usersApi.getById).mockResolvedValue({ ...mockUser, id: 1 });
       vi.mocked(usersApi.getOnboardingPreference).mockResolvedValue(mockOnboardingPreference);
@@ -345,6 +350,7 @@ describe('UserProfile', () => {
       mockUseAuth.mockReturnValue({
         user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
         isAuthenticated: true,
+        updateUser: vi.fn(),
       });
       vi.mocked(usersApi.getById).mockResolvedValue({ ...mockUser, id: 1 });
       vi.mocked(usersApi.getOnboardingPreference).mockResolvedValue(mockOnboardingPreference);
@@ -385,6 +391,7 @@ describe('UserProfile', () => {
       mockUseAuth.mockReturnValue({
         user: { id: 1, name: '현재 사용자', email: 'current@example.com' },
         isAuthenticated: true,
+        updateUser: vi.fn(),
       });
       vi.mocked(usersApi.getById).mockResolvedValue({ ...mockUser, id: 1 });
       vi.mocked(usersApi.getOnboardingPreference).mockRejectedValue({ statusCode: 404 });

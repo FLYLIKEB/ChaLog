@@ -22,6 +22,7 @@ vi.mock('../../lib/api', async () => {
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({
     isAuthenticated: true,
+    updateUser: vi.fn(),
   }),
 }));
 

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, IsUrl, MaxLength, ValidateIf } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -17,12 +17,14 @@ export class UpdateUserDto {
   bio?: string | null;
 
   @IsOptional()
-  @IsString()
+  @ValidateIf((o) => o.instagramUrl != null)
+  @IsUrl({ require_protocol: true })
   @MaxLength(500)
   instagramUrl?: string | null;
 
   @IsOptional()
-  @IsString()
+  @ValidateIf((o) => o.blogUrl != null)
+  @IsUrl({ require_protocol: true })
   @MaxLength(500)
   blogUrl?: string | null;
 }

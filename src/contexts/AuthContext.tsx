@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useMemo, useCall
 import { authApi, usersApi } from '../lib/api';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
+import type { User } from '../types';
 
 // 카카오 SDK 타입 선언
 declare global {
@@ -19,12 +20,6 @@ declare global {
   }
 }
 
-interface User {
-  id: number;
-  email: string | null;
-  name: string;
-}
-
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -35,6 +30,7 @@ interface AuthContextType {
   register: (email: string, name: string, password: string) => Promise<boolean | null>;
   loginWithKakao: (code?: string) => Promise<boolean | null>;
   logout: () => void;
+  updateUser: (fields: Partial<User>) => void;
   isAuthenticated: boolean;
   refreshOnboardingStatus: (userId: number) => Promise<boolean | null>;
 }
@@ -721,6 +717,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     toast.success('로그아웃되었습니다.');
   }, []);
 
+  const updateUser = useCallback((fields: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...fields };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
   // isAuthenticated 계산값 메모이제이션
   const isAuthenticated = useMemo(() => !!token && !!user, [token, user]);
 
@@ -736,10 +741,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       loginWithKakao,
       logout,
+      updateUser,
       isAuthenticated,
       refreshOnboardingStatus,
     }),
-    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, logout, isAuthenticated, refreshOnboardingStatus]
+    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, logout, updateUser, isAuthenticated, refreshOnboardingStatus]
   );
 
   return (

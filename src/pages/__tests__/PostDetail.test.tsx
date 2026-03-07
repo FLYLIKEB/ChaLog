@@ -82,6 +82,7 @@ describe('PostDetail 페이지', () => {
       register: vi.fn(),
       loginWithKakao: vi.fn(),
       logout: vi.fn(),
+      updateUser: vi.fn(),
       hasCompletedOnboarding: true,
       isOnboardingLoading: false,
       refreshOnboardingStatus: vi.fn(),
