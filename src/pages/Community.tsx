@@ -1,0 +1,108 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Loader2 } from 'lucide-react';
+import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
+import { postsApi } from '../lib/api';
+import { PostCard } from '../components/PostCard';
+import { Header } from '../components/Header';
+import { BottomNav } from '../components/BottomNav';
+import { EmptyState } from '../components/EmptyState';
+import { FloatingActionButton } from '../components/FloatingActionButton';
+import { useAuth } from '../contexts/AuthContext';
+import { cn } from '../components/ui/utils';
+import { toast } from 'sonner';
+
+const CATEGORIES: Array<{ value: PostCategory | null; label: string }> = [
+  { value: null, label: '전체' },
+  { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question },
+  { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation },
+  { value: 'tool', label: POST_CATEGORY_LABELS.tool },
+  { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review },
+];
+
+export function Community() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState<PostCategory | null>(null);
+
+  const fetchPosts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await postsApi.getAll(selectedCategory ?? undefined);
+      setPosts(data);
+    } catch {
+      toast.error('게시글을 불러오는 데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Header title="커뮤니티" />
+
+      {/* 카테고리 탭 */}
+      <div className="sticky top-14 z-10 bg-background border-b border-border/50">
+        <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-2">
+          {CATEGORIES.map(({ value, label }) => (
+            <button
+              key={label}
+              onClick={() => setSelectedCategory(value)}
+              className={cn(
+                'shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
+                selectedCategory === value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 게시글 목록 */}
+      <div className="px-4">
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : posts.length === 0 ? (
+          <EmptyState
+            type="feed"
+            message={
+              selectedCategory
+                ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없습니다.`
+                : '첫 번째 게시글을 작성해보세요!'
+            }
+          />
+        ) : (
+          <div>
+            {posts.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 새 글 작성 FAB */}
+      {user && (
+        <FloatingActionButton
+          onClick={() => navigate('/community/new')}
+          ariaLabel="새 게시글 작성"
+          position="aboveNav"
+        >
+          <Plus className="w-6 h-6" />
+        </FloatingActionButton>
+      )}
+
+      <BottomNav />
+    </div>
+  );
+}

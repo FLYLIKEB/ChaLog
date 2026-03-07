@@ -1,6 +1,6 @@
 import { HTMLAttributes } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, FileText, Bookmark, Package } from 'lucide-react';
+import { Home, Search, FileText, Bookmark, MessageSquare, Package } from 'lucide-react';
 import { cn } from './ui/utils';
 
 type BottomNavItem = {
@@ -14,6 +14,13 @@ type BottomNavItem = {
 const NAV_ITEMS: BottomNavItem[] = [
   { label: '홈', path: '/', icon: Home, activeStyle: 'fill' },
   { label: '검색', path: '/search', icon: Search, activeStyle: 'bold' },
+  {
+    label: '커뮤니티',
+    path: '/community',
+    icon: MessageSquare,
+    activeStyle: 'bold',
+    isActive: (pathname) => pathname === '/community' || pathname.startsWith('/community/'),
+  },
   {
     label: '내 노트',
     path: '/my-notes',
