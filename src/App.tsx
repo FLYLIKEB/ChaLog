@@ -99,8 +99,8 @@ function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-function AppContent() {
-  return (
+export default function App() {
+  const content = (
     <AuthProvider>
       <BrowserRouter>
         <div className="max-w-2xl mx-auto bg-white min-h-screen px-4 sm:px-6">
@@ -133,6 +133,11 @@ function AppContent() {
         </div>
       </BrowserRouter>
     </AuthProvider>
-    </GoogleOAuthProvider>
   );
+
+  if (googleClientId) {
+    return <GoogleOAuthProvider clientId={googleClientId}>{content}</GoogleOAuthProvider>;
+  }
+
+  return content;
 }
