@@ -14,6 +14,7 @@ import { TagFollow } from './entities/tag-follow.entity';
 import { TeasModule } from '../teas/teas.module';
 import { StorageModule } from '../common/storage/storage.module';
 import { FollowsModule } from '../follows/follows.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { FollowsModule } from '../follows/follows.module';
     TeasModule,
     StorageModule,
     FollowsModule,
+    NotificationsModule,
   ],
   providers: [NotesService],
   controllers: [NotesController],

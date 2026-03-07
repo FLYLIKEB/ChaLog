@@ -1199,3 +1199,16 @@ export const commentsApi = {
   delete: (commentId: number) => apiClient.delete(`/comments/${commentId}`),
 };
 
+export const notificationsApi = {
+  getAll: (page = 1, limit = 20) =>
+    apiClient.get<import('../types').NotificationListResponse>(
+      `/notifications?page=${page}&limit=${limit}`,
+    ),
+  getUnreadCount: () =>
+    apiClient.get<{ count: number }>('/notifications/unread-count'),
+  markAsRead: (id: number) =>
+    apiClient.patch<{ success: boolean }>(`/notifications/${id}/read`, {}),
+  markAllAsRead: () =>
+    apiClient.patch<{ success: boolean }>('/notifications/read-all', {}),
+};
+

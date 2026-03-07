@@ -16,6 +16,8 @@ import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
 import { DEFAULT_RATING_SCHEMA, DEFAULT_RATING_AXES } from './constants/default-rating-schema';
 import { FollowsService } from '../follows/follows.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class NotesService {
@@ -45,6 +47,7 @@ export class NotesService {
     private teasService: TeasService,
     private s3Service: S3Service,
     private followsService: FollowsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
@@ -448,7 +451,7 @@ export class NotesService {
 
   async toggleLike(noteId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
     // 트랜잭션으로 race condition 방지
-    return await this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       // 노트 존재 확인 및 권한 확인
       const note = await manager.findOne(Note, { where: { id: noteId } });
       if (!note) {
@@ -472,9 +475,11 @@ export class NotesService {
         return { liked: false, likeCount };
       } else {
         // 좋아요 추가 - unique constraint 에러 처리
+        let createdLike = false;
         try {
           const newLike = manager.create(NoteLike, { noteId, userId });
           await manager.save(NoteLike, newLike);
+          createdLike = true;
         } catch (error) {
           // 동시 요청으로 인한 unique constraint 에러 처리
           if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
@@ -484,12 +489,27 @@ export class NotesService {
             throw error;
           }
         }
-        
+
         // 트랜잭션 내에서 최신 likeCount 조회
         const likeCount = await manager.count(NoteLike, { where: { noteId } });
-        return { liked: true, likeCount };
+
+        return { liked: true, likeCount, createdLike, ownerId: note.userId };
       }
     });
+
+    // 트랜잭션 커밋 후, 실제 신규 insert된 경우에만 알림 생성
+    if (result.liked && result.createdLike && result.ownerId !== undefined) {
+      void this.notificationsService
+        .create({
+          userId: result.ownerId,
+          type: NotificationType.NOTE_LIKE,
+          actorId: userId,
+          targetId: noteId,
+        })
+        .catch((err) => this.logger.error('알림 생성 실패', err));
+    }
+
+    return { liked: result.liked, likeCount: result.likeCount };
   }
 
   async getLikeCount(noteId: number): Promise<number> {
