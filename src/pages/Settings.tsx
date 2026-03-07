@@ -17,9 +17,10 @@ export function Settings() {
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    const userId = user?.id;
+    if (!userId) return;
     const controller = new AbortController();
-    usersApi.getNotificationSetting(user.id).then((setting) => {
+    usersApi.getNotificationSetting(userId).then((setting) => {
       if (controller.signal.aborted) return;
       setIsNotificationEnabled(setting.isNotificationEnabled);
       setIsNotificationLoaded(true);
@@ -28,7 +29,7 @@ export function Settings() {
       setIsNotificationLoaded(true);
     });
     return () => controller.abort();
-  }, [user]);
+  }, [user?.id]);
 
   const handleNotificationToggle = async (checked: boolean) => {
     if (!user) return;
@@ -38,6 +39,7 @@ export function Settings() {
       setIsNotificationEnabled(updated.isNotificationEnabled);
       toast.success(updated.isNotificationEnabled ? '알림이 켜졌습니다.' : '알림이 꺼졌습니다.');
     } catch {
+      setIsNotificationEnabled(!checked);
       toast.error('알림 설정 변경에 실패했습니다.');
     } finally {
       setIsNotificationLoading(false);
