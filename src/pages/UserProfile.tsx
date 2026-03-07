@@ -12,9 +12,9 @@ import {
 } from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi } from '../lib/api';
-import { User, Note } from '../types';
+import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera, Users } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
@@ -23,6 +23,7 @@ import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 type SortType = 'latest' | 'rating';
 
@@ -37,6 +38,7 @@ export function UserProfile() {
   const [sort, setSort] = useState<SortType>('latest');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
 
@@ -54,18 +56,31 @@ export function UserProfile() {
 
       try {
         setIsLoading(true);
+        setOnboardingPreference(null);
         const isPublicFilter = isOwnProfile ? undefined : true;
         const [userData, notesData] = await Promise.all([
           usersApi.getById(userId),
           notesApi.getAll(userId, isPublicFilter),
         ]);
-        
+
         setUser(userData as User);
         const notesArray = Array.isArray(notesData) ? notesData : [];
         setNotes(notesArray as Note[]);
+
+        if (isOwnProfile) {
+          try {
+            const pref = await usersApi.getOnboardingPreference(userId);
+            setOnboardingPreference(pref);
+          } catch (error) {
+            setOnboardingPreference(null);
+            if ((error as { statusCode?: number })?.statusCode !== 404) {
+              logger.warn('Failed to fetch onboarding preference:', error);
+            }
+          }
+        }
       } catch (error: unknown) {
         logger.error('Failed to fetch user profile:', error);
-        
+
         const statusCode = (error as { statusCode?: number })?.statusCode;
         if (statusCode === 404) {
           toast.error('사용자를 찾을 수 없습니다.');
@@ -135,12 +150,12 @@ export function UserProfile() {
         noteCount: 0,
       };
     }
-    
+
     const averageRating = notes.reduce((sum, note) => sum + (note.overallRating || 0), 0) / notes.length;
     const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
-    
+
     const safeAverageRating = isNaN(averageRating) ? 0 : Number(averageRating.toFixed(1));
-    
+
     return {
       averageRating: safeAverageRating,
       totalLikes,
@@ -187,16 +202,16 @@ export function UserProfile() {
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header showBack title="사용자 프로필" />
-      
+
       <div className="p-6 space-y-6">
         {/* 프로필 헤더 섹션 */}
         <Card className="p-4 sm:p-6 md:p-8">
           <div className="flex flex-col items-center gap-3 mb-6">
             <div className="relative shrink-0">
-              <UserAvatar 
-                name={user.name} 
+              <UserAvatar
+                name={user.name}
                 profileImageUrl={user.profileImageUrl}
-                size="md" 
+                size="md"
               />
               {isOwnProfile && (
                 <Button
@@ -265,6 +280,34 @@ export function UserProfile() {
             label="작성한 노트"
           />
         </div>
+
+        {/* 취향 정보 섹션 */}
+        {isOwnProfile && onboardingPreference?.hasCompletedOnboarding && (
+          (onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0) && (
+            <Card className="p-4 sm:p-6 space-y-4">
+              {onboardingPreference.preferredTeaTypes?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {onboardingPreference.preferredTeaTypes.map(tag => (
+                      <Badge key={tag} variant="secondary">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {onboardingPreference.preferredFlavorTags?.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">향미 태그</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {onboardingPreference.preferredFlavorTags.map(tag => (
+                      <Badge key={tag} variant="outline">{tag}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+          )
+        )}
 
         {/* 정렬 드롭다운 */}
         {notes.length > 0 && (
