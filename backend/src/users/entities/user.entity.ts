@@ -21,6 +21,15 @@ export class User {
   @Column({ type: 'varchar', length: 500, nullable: true })
   profileImageUrl: string | null;
 
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  bio: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  instagramUrl: string | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  blogUrl: string | null;
+
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];
 

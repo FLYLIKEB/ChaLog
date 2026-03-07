@@ -241,9 +241,20 @@ export class UsersService {
       throw new ForbiddenException('이 프로필을 수정할 권한이 없습니다.');
     }
 
-    // 프로필 이미지 URL 업데이트
+    if (updateUserDto.name !== undefined) {
+      user.name = updateUserDto.name;
+    }
     if (updateUserDto.profileImageUrl !== undefined) {
       user.profileImageUrl = updateUserDto.profileImageUrl;
+    }
+    if (updateUserDto.bio !== undefined) {
+      user.bio = updateUserDto.bio;
+    }
+    if (updateUserDto.instagramUrl !== undefined) {
+      user.instagramUrl = updateUserDto.instagramUrl;
+    }
+    if (updateUserDto.blogUrl !== undefined) {
+      user.blogUrl = updateUserDto.blogUrl;
     }
 
     return await this.usersRepository.save(user);
