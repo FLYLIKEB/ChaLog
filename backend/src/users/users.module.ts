@@ -5,12 +5,13 @@ import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { UserAuthentication } from './entities/user-authentication.entity';
 import { UserOnboardingPreference } from './entities/user-onboarding-preference.entity';
+import { UserNotificationSetting } from './entities/user-notification-setting.entity';
 import { StorageModule } from '../common/storage/storage.module';
 import { FollowsModule } from '../follows/follows.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserAuthentication, UserOnboardingPreference]),
+    TypeOrmModule.forFeature([User, UserAuthentication, UserOnboardingPreference, UserNotificationSetting]),
     StorageModule,
     FollowsModule,
   ],

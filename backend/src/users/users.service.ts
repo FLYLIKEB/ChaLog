@@ -4,12 +4,14 @@ import { Repository, DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { UserOnboardingPreference } from './entities/user-onboarding-preference.entity';
+import { UserNotificationSetting } from './entities/user-notification-setting.entity';
 import {
   UserAuthentication,
   AuthProvider,
 } from './entities/user-authentication.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
+import { UpdateNotificationSettingDto } from './dto/update-notification-setting.dto';
 import * as bcrypt from 'bcrypt';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -23,6 +25,8 @@ export class UsersService {
     private authRepository: Repository<UserAuthentication>,
     @InjectRepository(UserOnboardingPreference)
     private onboardingPreferencesRepository: Repository<UserOnboardingPreference>,
+    @InjectRepository(UserNotificationSetting)
+    private notificationSettingRepository: Repository<UserNotificationSetting>,
     @InjectDataSource()
     private dataSource: DataSource,
   ) {}
@@ -287,5 +291,31 @@ export class UsersService {
   async hasCompletedOnboarding(userId: number): Promise<boolean> {
     const preference = await this.getOnboardingPreference(userId);
     return preference.hasCompletedOnboarding;
+  }
+
+  async getNotificationSetting(userId: number): Promise<UserNotificationSetting> {
+    const existing = await this.notificationSettingRepository.findOne({ where: { userId } });
+    if (existing) {
+      return existing;
+    }
+
+    const created = this.notificationSettingRepository.create({
+      userId,
+      isNotificationEnabled: true,
+    });
+    return await this.notificationSettingRepository.save(created);
+  }
+
+  async updateNotificationSetting(
+    userId: number,
+    dto: UpdateNotificationSettingDto,
+  ): Promise<UserNotificationSetting> {
+    const setting = await this.getNotificationSetting(userId);
+
+    if (dto.isNotificationEnabled !== undefined) {
+      setting.isNotificationEnabled = dto.isNotificationEnabled;
+    }
+
+    return await this.notificationSettingRepository.save(setting);
   }
 }

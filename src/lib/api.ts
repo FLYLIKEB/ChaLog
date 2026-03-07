@@ -1085,6 +1085,13 @@ export const REPORT_REASONS = [
 
 export type ReportReason = (typeof REPORT_REASONS)[number]['value'];
 
+export interface UserNotificationSetting {
+  userId: number;
+  isNotificationEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export const usersApi = {
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
@@ -1094,6 +1101,12 @@ export const usersApi = {
     id: number,
     data: { preferredTeaTypes: string[]; preferredFlavorTags: string[] },
   ) => apiClient.patch<UserOnboardingPreference>(`/users/${id}/onboarding`, data),
+  getNotificationSetting: (id: number) =>
+    apiClient.get<UserNotificationSetting>(`/users/${id}/notification-settings`),
+  updateNotificationSetting: (id: number, isNotificationEnabled: boolean) =>
+    apiClient.patch<UserNotificationSetting>(`/users/${id}/notification-settings`, {
+      isNotificationEnabled,
+    }),
 };
 
 export const followsApi = {
