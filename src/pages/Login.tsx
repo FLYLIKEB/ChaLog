@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 export function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { login, loginWithKakao, isAuthenticated } = useAuth();
+  const { login, loginWithKakao, isAuthenticated, hasCompletedOnboarding } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -74,10 +74,14 @@ export function Login() {
     }
 
     if (code && code !== processedCodeRef.current) {
-      // 인증 코드가 있고 아직 처리되지 않은 경우에만 처리
+      // 이미 로그인된 상태에서 코드가 URL에 남아있는 경우 바로 이동
+      if (isAuthenticated) {
+        navigate(hasCompletedOnboarding === false ? '/onboarding' : '/', { replace: true });
+        return;
+      }
       handleKakaoCallback(code);
     }
-  }, [searchParams, navigate, handleKakaoCallback]);
+  }, [searchParams, navigate, handleKakaoCallback, isAuthenticated, hasCompletedOnboarding]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

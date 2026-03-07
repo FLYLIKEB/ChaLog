@@ -113,6 +113,7 @@ step_3_run_migrations() {
     
     echo -e "${YELLOW}🔄 마이그레이션 실행 중...${NC}"
     ssh -i "$SSH_KEY" ubuntu@$LIGHTSAIL_IP << 'ENDSSH'
+set -e
 cd /home/ubuntu/chalog-backend
 
 # .env 파일 확인
@@ -121,22 +122,20 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
-# 환경 변수 로드
-export $(cat .env | xargs)
-
-# 마이그레이션 실행
-if [ -f "dist/src/database/data-source.ts" ]; then
-    DATA_SOURCE_PATH="dist/src/database/data-source.ts"
-elif [ -f "src/database/data-source.ts" ]; then
-    DATA_SOURCE_PATH="src/database/data-source.ts"
-else
-    echo "⚠️ data-source.ts 파일을 찾을 수 없습니다."
+if [ ! -f "src/database/data-source.ts" ]; then
+    echo "❌ data-source.ts 파일이 없습니다!"
     exit 1
 fi
 
+# 환경 변수 로드 (NODE_ENV=production 강제해 DATABASE_URL 사용)
+set -o allexport
+source .env
+set +o allexport
+export NODE_ENV=production
+
 if [ -d "migrations" ]; then
     echo "마이그레이션 실행 중..."
-    npx typeorm-ts-node-commonjs migration:run -d "$DATA_SOURCE_PATH"
+    npx typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts
     echo "✅ 마이그레이션 완료"
 else
     echo "⚠️ migrations 폴더가 없습니다."

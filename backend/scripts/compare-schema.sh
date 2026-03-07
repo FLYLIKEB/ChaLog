@@ -5,16 +5,31 @@
 
 set -e
 
+# .env 자동 로드
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/../.env"
+if [ -f "$ENV_FILE" ]; then
+  set -a
+  source "$ENV_FILE"
+  set +a
+fi
+
+# TEST_DATABASE_URL 미설정 시 LOCAL_DATABASE_URL로 대체
+if [ -z "${TEST_DATABASE_URL:-}" ] && [ -n "${LOCAL_DATABASE_URL:-}" ]; then
+  TEST_DATABASE_URL="$LOCAL_DATABASE_URL"
+  export TEST_DATABASE_URL
+fi
+
 echo "🔍 테스트 DB와 프로덕션 DB 스키마 비교 시작..."
 
 # 환경 변수 확인
-if [ -z "$DATABASE_URL" ]; then
+if [ -z "${DATABASE_URL:-}" ]; then
   echo "❌ DATABASE_URL 환경 변수가 설정되지 않았습니다."
   exit 1
 fi
 
-if [ -z "$TEST_DATABASE_URL" ]; then
-  echo "❌ TEST_DATABASE_URL 환경 변수가 설정되지 않았습니다."
+if [ -z "${TEST_DATABASE_URL:-}" ]; then
+  echo "❌ TEST_DATABASE_URL / LOCAL_DATABASE_URL 환경 변수가 설정되지 않았습니다."
   exit 1
 fi
 
@@ -26,19 +41,19 @@ parse_db_url() {
 
 # 프로덕션 DB 정보 추출
 PROD_INFO=$(parse_db_url "$DATABASE_URL")
-PROD_HOST=$(echo "$PROD_INFO" | grep -oP 'host=\K[^ ]+')
-PROD_PORT=$(echo "$PROD_INFO" | grep -oP 'port=\K[^ ]+')
-PROD_USER=$(echo "$PROD_INFO" | grep -oP 'user=\K[^ ]+')
-PROD_PASS=$(echo "$PROD_INFO" | grep -oP 'password=\K[^ ]+')
-PROD_DB=$(echo "$PROD_INFO" | grep -oP 'database=\K[^ ]+')
+PROD_HOST=$(echo "$PROD_INFO" | sed -n 's/.*host=\([^ ]*\).*/\1/p')
+PROD_PORT=$(echo "$PROD_INFO" | sed -n 's/.*port=\([^ ]*\).*/\1/p')
+PROD_USER=$(echo "$PROD_INFO" | sed -n 's/.*user=\([^ ]*\).*/\1/p')
+PROD_PASS=$(echo "$PROD_INFO" | sed -n 's/.*password=\([^ ]*\).*/\1/p')
+PROD_DB=$(echo "$PROD_INFO" | sed -n 's/.*database=\([^ ]*\).*/\1/p')
 
 # 테스트 DB 정보 추출
 TEST_INFO=$(parse_db_url "$TEST_DATABASE_URL")
-TEST_HOST=$(echo "$TEST_INFO" | grep -oP 'host=\K[^ ]+')
-TEST_PORT=$(echo "$TEST_INFO" | grep -oP 'port=\K[^ ]+')
-TEST_USER=$(echo "$TEST_INFO" | grep -oP 'user=\K[^ ]+')
-TEST_PASS=$(echo "$TEST_INFO" | grep -oP 'password=\K[^ ]+')
-TEST_DB=$(echo "$TEST_INFO" | grep -oP 'database=\K[^ ]+')
+TEST_HOST=$(echo "$TEST_INFO" | sed -n 's/.*host=\([^ ]*\).*/\1/p')
+TEST_PORT=$(echo "$TEST_INFO" | sed -n 's/.*port=\([^ ]*\).*/\1/p')
+TEST_USER=$(echo "$TEST_INFO" | sed -n 's/.*user=\([^ ]*\).*/\1/p')
+TEST_PASS=$(echo "$TEST_INFO" | sed -n 's/.*password=\([^ ]*\).*/\1/p')
+TEST_DB=$(echo "$TEST_INFO" | sed -n 's/.*database=\([^ ]*\).*/\1/p')
 
 echo "📊 프로덕션 DB: $PROD_DB @ $PROD_HOST:$PROD_PORT"
 echo "📊 테스트 DB: $TEST_DB @ $TEST_HOST:$TEST_PORT"
@@ -57,14 +72,14 @@ for table in "${TABLES[@]}"; do
     -e "SHOW CREATE TABLE \`$table\`" 2>/dev/null | tail -n 1 | cut -f 2 | \
     sed -E 's/AUTO_INCREMENT=[0-9]+ //g' | \
     sed -E 's/ROW_FORMAT=[A-Z_]+ //g' | \
-    sed -E 's/COMMENT=.+? //g') || PROD_SCHEMA=""
+    sed -E "s/COMMENT='[^']*' //g") || PROD_SCHEMA=""
   
   # 테스트 DB 스키마 추출 (환경 의존적인 부분 제거)
   TEST_SCHEMA=$(mysql -h "$TEST_HOST" -P "$TEST_PORT" -u "$TEST_USER" -p"$TEST_PASS" "$TEST_DB" \
     -e "SHOW CREATE TABLE \`$table\`" 2>/dev/null | tail -n 1 | cut -f 2 | \
     sed -E 's/AUTO_INCREMENT=[0-9]+ //g' | \
     sed -E 's/ROW_FORMAT=[A-Z_]+ //g' | \
-    sed -E 's/COMMENT=.+? //g') || TEST_SCHEMA=""
+    sed -E "s/COMMENT='[^']*' //g") || TEST_SCHEMA=""
   
   if [ -z "$PROD_SCHEMA" ] && [ -z "$TEST_SCHEMA" ]; then
     echo "  ⚠️  두 DB 모두에 $table 테이블이 없습니다."

@@ -36,6 +36,7 @@ interface AuthContextType {
   loginWithKakao: (code?: string) => Promise<boolean | null>;
   logout: () => void;
   isAuthenticated: boolean;
+  refreshOnboardingStatus: (userId: number) => Promise<boolean | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -343,15 +344,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!tokenResponse.ok) {
             const errorData = await tokenResponse.json().catch(() => ({}));
-            logger.error('[리다이렉트 후 처리] 토큰 교환 실패:', errorData);
-            
+
             // authorization code not found 에러는 이미 처리된 코드이므로 조용히 처리
             if (errorData.error === 'invalid_grant' || errorData.error_description?.includes('authorization code not found')) {
               logger.warn('[리다이렉트 후 처리] 인증 코드가 이미 사용되었거나 만료되었습니다. 이는 정상적인 상황일 수 있습니다.');
-              // 이미 처리된 코드이므로 null 반환하여 에러를 표시하지 않음
               return null;
             }
-            
+
+            logger.error('[리다이렉트 후 처리] 토큰 교환 실패:', errorData);
             throw new Error(`토큰 교환 실패: ${errorData.error_description || errorData.error || '알 수 없는 오류'}`);
           }
 
@@ -737,8 +737,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithKakao,
       logout,
       isAuthenticated,
+      refreshOnboardingStatus,
     }),
-    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, logout, isAuthenticated]
+    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, logout, isAuthenticated, refreshOnboardingStatus]
   );
 
   return (

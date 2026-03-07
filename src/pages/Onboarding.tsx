@@ -12,7 +12,7 @@ type OnboardingStep = 1 | 2;
 
 export function Onboarding() {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, refreshOnboardingStatus } = useAuth();
   const [step, setStep] = useState<OnboardingStep>(1);
   const [selectedTeaTypes, setSelectedTeaTypes] = useState<string[]>([]);
   const [selectedFlavorTags, setSelectedFlavorTags] = useState<string[]>([]);
@@ -35,10 +35,6 @@ export function Onboarding() {
       try {
         setIsLoading(true);
         const preference = await usersApi.getOnboardingPreference(user.id);
-        if (preference.hasCompletedOnboarding) {
-          navigate('/', { replace: true });
-          return;
-        }
         setSelectedTeaTypes(preference.preferredTeaTypes ?? []);
         setSelectedFlavorTags(preference.preferredFlavorTags ?? []);
       } catch (error) {
@@ -87,7 +83,7 @@ export function Onboarding() {
         preferredFlavorTags: selectedFlavorTags,
       });
       toast.success('온보딩이 완료되었습니다.');
-      navigate('/', { replace: true });
+      await refreshOnboardingStatus(user.id);
     } catch (error) {
       toast.error('온보딩 저장에 실패했습니다.');
     } finally {
