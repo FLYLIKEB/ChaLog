@@ -54,7 +54,7 @@ export function Header({ title, showBack, onBack, showProfile, showLogo }: Heade
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-[100] bg-card/95 backdrop-blur-md border-b border-border/50 rounded-b-2xl py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
+      <header className="fixed top-0 left-0 right-0 z-100 bg-card/95 backdrop-blur-md border-b border-border/50 rounded-b-2xl py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <div className="max-w-2xl mx-auto flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {showBack && (

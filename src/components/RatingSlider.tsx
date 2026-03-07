@@ -35,7 +35,7 @@ export function RatingSlider({ label, value, onChange, compact = false }: Rating
           }
         `}</style>
         <div className={cn('rating-slider-compact flex items-center gap-3 py-2')}>
-          <label className="min-w-[4rem] shrink-0 text-sm font-medium text-foreground">
+          <label className="min-w-16 shrink-0 text-sm font-medium text-foreground">
             {label}
           </label>
           <div className="flex-1 min-w-0">

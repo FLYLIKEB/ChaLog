@@ -21,7 +21,7 @@ export function ChaLogLogo({ iconOnly = false, className, asButton, onClick }: C
         className={cn(
           'flex items-center justify-center shrink-0 overflow-hidden',
           'w-9 h-9 rounded-xl',
-          'bg-gradient-to-br from-primary to-primary/90',
+          'bg-linear-to-br from-primary to-primary/90',
           'shadow-[0_2px_8px_rgba(29,185,60,0.3)]',
           iconOnly ? '' : 'ring-1 ring-primary/20',
         )}

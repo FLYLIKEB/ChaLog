@@ -66,8 +66,8 @@ export function Search() {
     setSectionsLoading(true);
     const [popularRes, newRes, curationRes, sellersRes] = await Promise.allSettled([
       teasApi.getPopularRankings(10),
-      teasApi.getNewRankings(10),
-      teasApi.getCuration(10),
+      teasApi.getNewRankings(3),
+      teasApi.getCuration(3),
       teasApi.getSellers(),
     ]);
     if (popularRes.status === 'fulfilled') {
@@ -453,7 +453,7 @@ export function Search() {
                 >
                   {newTeas.length > 0 ? (
                     <div className="space-y-2">
-                      {newTeas.slice(0, 5).map((tea) => (
+                      {newTeas.slice(0, 3).map((tea) => (
                         <TeaNewCard key={tea.id} tea={tea} />
                       ))}
                     </div>
@@ -480,7 +480,7 @@ export function Search() {
                 >
                   {curationTeas.length > 0 ? (
                     <div className="space-y-3">
-                      {curationTeas.slice(0, 5).map((tea) => (
+                      {curationTeas.slice(0, 3).map((tea) => (
                         <TeaCard key={tea.id} tea={tea} />
                       ))}
                     </div>
@@ -519,7 +519,7 @@ export function Search() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => navigate('/tea/new')}
+                    onClick={() => navigate('/shop/new')}
                   >
                     <Store className="w-4 h-4 mr-2" />
                     샵 신규추가
