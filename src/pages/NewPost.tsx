@@ -56,7 +56,7 @@ export function NewPost() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showBack title="새 게시글" />
+      <Header showBack title="새 게시글" showProfile />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">
         {/* 카테고리 선택 */}

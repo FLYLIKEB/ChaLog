@@ -203,16 +203,16 @@ export function Search() {
   const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
 
   const SECTION_TITLES: Record<string, string> = {
-    popular: '인기 차 랭킹',
-    new: '신규 차',
-    curation: '추천 큐레이션',
+    popular: '🏆 인기 차 랭킹',
+    new: '🆕 신규 차',
+    curation: '✨ 추천 큐레이션',
   };
   const resultsTitle =
     urlSection && SECTION_TITLES[urlSection]
       ? SECTION_TITLES[urlSection]
       : searchQuery.trim()
-        ? '검색 결과'
-        : '차 탐색';
+        ? '🔍 검색 결과'
+        : '🔍 차 탐색';
 
   const goBackToExplore = useCallback(() => {
     setSearchParams({});
@@ -240,6 +240,7 @@ export function Search() {
         showBack={showResults}
         onBack={showResults ? goBackToExplore : undefined}
         showLogo={!showResults}
+        showProfile
       />
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
@@ -355,7 +356,7 @@ export function Search() {
               onClick={() => navigate('/tea/new')}
             >
               <Plus className="w-4 h-4 mr-2" />
-              새 차 등록
+              🍵 새 차 등록
             </Button>
           </>
         )}
@@ -365,7 +366,7 @@ export function Search() {
           <>
             {sectionsLoading ? (
               <div className="space-y-8">
-                <Section title="인기 차 랭킹" spacing="lg">
+                <Section title="🏆 인기 차 랭킹" spacing="lg">
                   <div className="flex gap-3 overflow-x-hidden">
                     {[1, 2, 3].map((i) => (
                       <div key={i} className="shrink-0 w-[200px]">
@@ -374,14 +375,14 @@ export function Search() {
                     ))}
                   </div>
                 </Section>
-                <Section title="신규 차" spacing="lg">
+                <Section title="🆕 신규 차" spacing="lg">
                   <div className="space-y-2">
                     {[1, 2, 3].map((i) => (
                       <TeaCardSkeleton key={i} />
                     ))}
                   </div>
                 </Section>
-                <Section title="추천 큐레이션" spacing="lg">
+                <Section title="✨ 추천 큐레이션" spacing="lg">
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
                       <TeaCardSkeleton key={i} />
@@ -392,7 +393,7 @@ export function Search() {
             ) : (
               <div className="space-y-8">
                 <Section
-                  title="인기 차 랭킹"
+                  title="🏆 인기 차 랭킹"
                   description="리뷰가 많은 순으로 인기 있는 차를 모았어요."
                   spacing="lg"
                   headerAction={
@@ -421,7 +422,7 @@ export function Search() {
                 </Section>
 
                 <Section
-                  title="신규 차"
+                  title="🆕 신규 차"
                   description="최근에 차멍에 새로 등록된 차예요."
                   spacing="lg"
                   headerAction={
@@ -448,7 +449,7 @@ export function Search() {
                 </Section>
 
                 <Section
-                  title="추천 큐레이션"
+                  title="✨ 추천 큐레이션"
                   description="다양한 기준으로 엄선한 추천 차 목록이에요."
                   spacing="lg"
                   headerAction={
@@ -474,8 +475,8 @@ export function Search() {
                   )}
                 </Section>
 
-                <Section
-                  title="샵/브랜드"
+<Section
+                title="🏪 샵/브랜드"
                   description="차를 구매할 수 있는 샵과 브랜드를 둘러보세요."
                   spacing="lg"
                 >

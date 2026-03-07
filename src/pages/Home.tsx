@@ -149,13 +149,13 @@ export function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20">
+      <div className="min-h-screen bg-gradient-to-b from-white to-background dark:from-background dark:to-background pb-20">
         <Header showProfile showLogo />
         <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
-          <Section title="오늘의 차" spacing="lg">
+          <Section title="☕ 오늘의 차" spacing="lg">
             <TeaCardSkeleton />
           </Section>
-          <Section title="피드" spacing="lg">
+          <Section title="📝 피드" spacing="lg">
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
@@ -169,12 +169,12 @@ export function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header showProfile />
+    <div className="min-h-screen bg-gradient-to-b from-white to-background dark:from-background dark:to-background pb-20">
+      <Header showProfile showLogo />
       
       <div className="px-4 py-6 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* 지금 핫한 차 섹션 */}
-        <Section title="지금 핫한 차" spacing="lg">
+        <Section title="🔥 지금 핫한 차" spacing="lg">
           {trendingTeas.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingTeas.map((tea) => (
@@ -189,7 +189,7 @@ export function Home() {
         </Section>
 
         {/* 인기 크리에이터 섹션 */}
-        <Section title="인기 크리에이터" spacing="lg">
+        <Section title="✨ 인기 크리에이터" spacing="lg">
           {trendingCreators.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingCreators.map((creator) => (
@@ -204,14 +204,14 @@ export function Home() {
         </Section>
 
         {/* 오늘의 차 섹션 */}
-        <Section title="오늘의 차" spacing="lg">
+        <Section title="☕ 오늘의 차" spacing="lg">
           {todayTea ? (
             <TeaCard tea={todayTea} />
           ) : (
             <EmptyState
               type="feed"
               message="등록된 차가 없어요. 첫 차를 등록해 보세요!"
-              action={{ label: '새 차 등록', onClick: () => navigate('/tea/new') }}
+              action={{ label: '🍵 새 차 등록', onClick: () => navigate('/tea/new') }}
             />
           )}
         </Section>
@@ -244,7 +244,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="아직 등록된 노트가 없어요. 첫 차 노트를 남겨볼까요?"
-                action={{ label: '첫 노트 쓰기', onClick: () => navigate('/note/new') }}
+                action={{ label: '✍️ 첫 노트 쓰기', onClick: () => navigate('/note/new') }}
               />
             )}
           </TabsContent>
@@ -273,7 +273,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="팔로잉한 리뷰어의 노트가 없어요. 리뷰어를 팔로우해 보세요!"
-                action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+                action={{ label: '🔍 탐색하기', onClick: () => navigate('/search') }}
               />
             )}
           </TabsContent>
@@ -329,7 +329,7 @@ export function Home() {
                   <EmptyState
                     type="feed"
                     message="팔로우한 태그의 공개 노트가 없어요."
-                    action={{ label: '태그 탐색하기', onClick: () => navigate('/search') }}
+                    action={{ label: '🔍 태그 탐색하기', onClick: () => navigate('/search') }}
                   />
                 )}
               </>

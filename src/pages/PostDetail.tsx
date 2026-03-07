@@ -133,7 +133,7 @@ export function PostDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header showBack title="게시글" />
+      <Header showBack title="게시글" showProfile />
 
       <div className="px-4 py-4 flex flex-col gap-5">
         {/* 카테고리 + 협찬 뱃지 */}

@@ -71,10 +71,10 @@ export function Saved() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header showBack showProfile title="저장함" />
+      <Header showBack showProfile title="📌 저장함" />
       
       <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
-        <Section title="저장한 노트" spacing="lg">
+        <Section title="📌 저장한 노트" spacing="lg">
           {bookmarkedNotes.length > 0 ? (
             <div className="space-y-3">
               {bookmarkedNotes.map(note => (
@@ -94,7 +94,7 @@ export function Saved() {
             <EmptyState
               type="notes"
               message="아직 저장한 노트가 없어요."
-              action={{ label: '탐색하기', onClick: () => navigate('/search') }}
+              action={{ label: '🔍 탐색하기', onClick: () => navigate('/search') }}
             />
           )}
         </Section>

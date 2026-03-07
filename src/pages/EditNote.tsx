@@ -340,7 +340,7 @@ export function EditNote() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      <Header showBack title="노트 수정" />
+      <Header showBack title="노트 수정" showProfile />
       
       <div className="p-4 space-y-6">
         {/* 차 선택 영역 */}

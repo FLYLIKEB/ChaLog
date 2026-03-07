@@ -51,7 +51,9 @@ export function Header({ title, showBack, onBack, showProfile, showLogo }: Heade
   }, [isAuthenticated]);
 
   return (
-    <header className="sticky top-0 z-10 w-screen relative left-1/2 -ml-[50vw] bg-card/95 backdrop-blur-md border-b border-border/50 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] flex items-center justify-between px-4 sm:px-6">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-[100] bg-card/95 backdrop-blur-md border-b border-border/50 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))]">
+      <div className="max-w-2xl mx-auto flex items-center justify-between px-4 sm:px-6">
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {showBack && (
           <button
@@ -98,6 +100,10 @@ export function Header({ title, showBack, onBack, showProfile, showLogo }: Heade
           </button>
         )}
       </div>
+      </div>
     </header>
+    {/* 고정 헤더 높이만큼 스페이서 (레이아웃 시프트 방지) */}
+    <div className="h-[calc(4.25rem+env(safe-area-inset-top))]" aria-hidden />
+    </>
   );
 }

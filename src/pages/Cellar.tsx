@@ -232,7 +232,7 @@ export function Cellar() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background pb-32">
-        <Header showProfile title="내 찻장" showLogo />
+        <Header showProfile title="📦 내 찻장" showLogo />
         <div className="px-4 sm:px-6 py-4 space-y-4">
           <div className="flex gap-2 overflow-x-hidden py-3">
             {[1, 2, 3, 4].map((i) => (
@@ -252,7 +252,7 @@ export function Cellar() {
 
   return (
     <div className="min-h-screen bg-background pb-32">
-      <Header showProfile title="내 찻장" showLogo />
+      <Header showProfile title="📦 내 찻장" showLogo />
 
       <div className="space-y-0">
         {/* 리마인더 배너 */}

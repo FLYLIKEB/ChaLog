@@ -127,7 +127,7 @@ export function TeaDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      <Header showBack title="차 상세" />
+      <Header showBack title="차 상세" showProfile />
 
       <div className="p-4 space-y-6">
         {/* 기본 정보 */}

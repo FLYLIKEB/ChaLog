@@ -198,7 +198,7 @@ export function UserProfile() {
   if (!user) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <Header showBack title="사용자 프로필" />
+        <Header showBack title="사용자 프로필" showProfile />
         <div className="p-4">
           <EmptyState
             type="notes"

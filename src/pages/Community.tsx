@@ -46,10 +46,10 @@ export function Community() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header title="커뮤니티" showLogo />
+      <Header title="커뮤니티" showLogo showProfile />
 
-      {/* 카테고리 탭 */}
-      <div className="sticky top-14 z-10 bg-background border-b border-border/50">
+      {/* 카테고리 탭 - 헤더 높이만큼 아래에서 고정 */}
+      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-10 bg-background border-b border-border/50">
         <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-2">
           {CATEGORIES.map(({ value, label }) => (
             <button
@@ -84,7 +84,7 @@ export function Community() {
                 ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없어요.`
                 : '첫 번째 게시글을 작성해보세요!'
             }
-            action={{ label: '첫 글 쓰기', onClick: () => navigate('/community/new') }}
+            action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/community/new') }}
           />
         ) : (
           <div>

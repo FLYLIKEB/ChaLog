@@ -58,7 +58,7 @@ export function Settings() {
   if (!isAuthenticated || !user) {
     return (
       <div className="min-h-screen bg-background pb-20">
-        <Header showBack title="설정" />
+        <Header showBack title="설정" showProfile />
         <div className="p-4 sm:p-6">
           <Card className="p-6">
             <p className="text-muted-foreground mb-4">로그인이 필요합니다.</p>
@@ -73,7 +73,7 @@ export function Settings() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header showBack title="설정" />
+      <Header showBack title="설정" showProfile />
 
       <div className="p-4 sm:p-6 space-y-4">
         {/* 프로필 */}
