@@ -313,9 +313,10 @@ describe('Cellar 페이지', () => {
       expect(cards[0]).toHaveTextContent('많은차');
     });
 
-    // 방향 토글 버튼 클릭 → asc(적은순)
-    const dirBtn = screen.getByRole('button', { name: '내림차순' });
-    await userEvent.click(dirBtn);
+    // 같은 옵션 다시 선택 → 방향 토글 (desc → asc, 적은순)
+    const sortBtn2 = screen.getByRole('button', { name: '정렬 기준' });
+    await userEvent.click(sortBtn2); // 목록 열기
+    await userEvent.click(screen.getByRole('option', { name: '잔량' })); // 같은 옵션 → 방향 토글
 
     await waitFor(() => {
       const cards = screen.getAllByRole('heading', { level: 3 });

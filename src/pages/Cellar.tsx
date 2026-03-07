@@ -313,19 +313,10 @@ export function Cellar() {
                 className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-primary transition-colors px-1 py-1"
               >
                 {SORT_OPTIONS.find((o) => o.key === sortKey)?.label}
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
-              </button>
-              {/* 방향 토글 */}
-              <button
-                type="button"
-                aria-label={sortDir === 'asc' ? '오름차순' : '내림차순'}
-                onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
-                className="text-muted-foreground hover:text-foreground transition-colors p-1"
-              >
                 {sortDir === 'asc' ? (
-                  <ChevronUp className="w-4 h-4" />
+                  <ChevronUp className="w-3.5 h-3.5" />
                 ) : (
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-3.5 h-3.5" />
                 )}
               </button>
               {/* 커스텀 드롭다운 목록 */}
