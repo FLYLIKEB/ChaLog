@@ -16,6 +16,8 @@ import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
 import { DEFAULT_RATING_SCHEMA, DEFAULT_RATING_AXES } from './constants/default-rating-schema';
 import { FollowsService } from '../follows/follows.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class NotesService {
@@ -45,6 +47,7 @@ export class NotesService {
     private teasService: TeasService,
     private s3Service: S3Service,
     private followsService: FollowsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
@@ -487,6 +490,15 @@ export class NotesService {
         
         // 트랜잭션 내에서 최신 likeCount 조회
         const likeCount = await manager.count(NoteLike, { where: { noteId } });
+
+        // 노트 소유자에게 알림 생성 (비동기, 실패해도 무시)
+        this.notificationsService.create({
+          userId: note.userId,
+          type: NotificationType.NOTE_LIKE,
+          actorId: userId,
+          targetId: noteId,
+        }).catch((err) => this.logger.error('알림 생성 실패', err));
+
         return { liked: true, likeCount };
       }
     });
