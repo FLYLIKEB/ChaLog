@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -12,12 +12,17 @@ import {
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import { UpdateNotificationSettingDto } from './dto/update-notification-setting.dto';
+import { FollowsService } from '../follows/follows.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 import * as bcrypt from 'bcrypt';
 
 const BCRYPT_SALT_ROUNDS = 10;
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
+
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
@@ -29,6 +34,8 @@ export class UsersService {
     private notificationSettingRepository: Repository<UserNotificationSetting>,
     @InjectDataSource()
     private dataSource: DataSource,
+    private followsService: FollowsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(email: string, name: string, password: string): Promise<User> {
@@ -320,5 +327,24 @@ export class UsersService {
     }
 
     return await this.notificationSettingRepository.save(setting);
+  }
+
+  async toggleFollow(
+    followerId: number,
+    followingId: number,
+  ): Promise<{ isFollowing: boolean }> {
+    const result = await this.followsService.toggle(followerId, followingId);
+
+    if (result.isFollowing) {
+      this.notificationsService
+        .create({
+          userId: followingId,
+          type: NotificationType.FOLLOW,
+          actorId: followerId,
+        })
+        .catch((err) => this.logger.error('알림 생성 실패', err));
+    }
+
+    return result;
   }
 }
