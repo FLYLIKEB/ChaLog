@@ -312,6 +312,11 @@ export class UsersService {
       return existing;
     }
 
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
     const created = this.onboardingPreferencesRepository.create({
       userId,
       preferredTeaTypes: [],

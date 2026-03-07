@@ -97,9 +97,10 @@ function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export default function App() {
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+function AppContent() {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <AuthProvider>
       <BrowserRouter>
         <div className="max-w-2xl mx-auto bg-white min-h-screen px-4 sm:px-6">
