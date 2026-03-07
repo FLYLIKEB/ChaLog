@@ -231,6 +231,9 @@ describe('ImageUploader 컴포넌트', () => {
         register: vi.fn(),
         loginWithKakao: vi.fn(),
         logout: vi.fn(),
+        hasCompletedOnboarding: null,
+        isOnboardingLoading: false,
+        refreshOnboardingStatus: vi.fn(),
       });
 
       render(<ImageUploader images={[]} onChange={mockOnChange} />);

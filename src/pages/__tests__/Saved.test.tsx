@@ -94,6 +94,9 @@ describe('Saved 페이지', () => {
       register: vi.fn(),
       loginWithKakao: vi.fn(),
       logout: vi.fn(),
+      hasCompletedOnboarding: null,
+      isOnboardingLoading: false,
+      refreshOnboardingStatus: vi.fn(),
     });
     vi.mocked(notesApi.getAll).mockResolvedValue(mockBookmarkedNotes);
   });
@@ -113,6 +116,9 @@ describe('Saved 페이지', () => {
       register: vi.fn(),
       loginWithKakao: vi.fn(),
       logout: vi.fn(),
+      hasCompletedOnboarding: null,
+      isOnboardingLoading: false,
+      refreshOnboardingStatus: vi.fn(),
     });
 
     renderWithRouter(<Saved />, { route: '/saved' });
@@ -185,6 +191,9 @@ describe('Saved 페이지', () => {
       register: vi.fn(),
       loginWithKakao: vi.fn(),
       logout: vi.fn(),
+      hasCompletedOnboarding: null,
+      isOnboardingLoading: false,
+      refreshOnboardingStatus: vi.fn(),
     });
 
     renderWithRouter(<Saved />, { route: '/saved' });
