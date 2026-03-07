@@ -34,23 +34,27 @@ vi.mock('../../lib/api', () => ({
   },
   notesApi: {
     create: vi.fn(() => Promise.resolve({ id: 1 })),
-    getActiveSchemas: vi.fn(() => Promise.resolve([
-      {
-        id: 1,
-        code: 'STANDARD',
-        version: '1.0.0',
-        nameKo: '표준 평가',
-        nameEn: 'Standard Rating',
-        axes: [
-          { id: 1, code: 'RICHNESS', nameKo: '풍부함', minValue: 1, maxValue: 5, stepValue: 1 },
-          { id: 2, code: 'STRENGTH', nameKo: '강도', minValue: 1, maxValue: 5, stepValue: 1 },
-        ],
-      },
-    ])),
+    getActiveSchemas: vi.fn(() => Promise.resolve({
+      schemas: [
+        {
+          id: 1,
+          code: 'STANDARD',
+          version: '1.0.0',
+          nameKo: '표준 평가',
+          nameEn: 'Standard Rating',
+          axes: [
+            { id: 1, code: 'RICHNESS', nameKo: '풍부함', minValue: 1, maxValue: 5, stepValue: 1 },
+            { id: 2, code: 'STRENGTH', nameKo: '강도', minValue: 1, maxValue: 5, stepValue: 1 },
+          ],
+        },
+      ],
+      pinnedSchemaIds: [],
+    })),
     getSchemaAxes: vi.fn(() => Promise.resolve([
       { id: 1, code: 'RICHNESS', nameKo: '풍부함', minValue: 1, maxValue: 5, stepValue: 1 },
       { id: 2, code: 'STRENGTH', nameKo: '강도', minValue: 1, maxValue: 5, stepValue: 1 },
     ])),
+    toggleSchemaPin: vi.fn(() => Promise.resolve({ pinned: true })),
   },
 }));
 
@@ -113,6 +117,11 @@ describe('NewNote 페이지', () => {
     expect(toastMock.error).toHaveBeenCalledWith('차를 선택해주세요.');
   });
 
+  it('저장 버튼이 항상 하단에 표시된다', async () => {
+    renderNewNote();
+    expect(screen.getByRole('button', { name: '저장' })).toBeInTheDocument();
+  });
+
   it.skip('메모 없이 저장하면 메모 관련 오류를 노출한다 - 메모는 선택적 필드로 변경됨', async () => {
     const user = userEvent.setup();
     renderNewNote();
@@ -138,6 +147,14 @@ describe('NewNote 페이지', () => {
 
     const option = await screen.findByRole('button', { name: /정산소종/ });
     await user.click(option);
+
+    // 1-5 평점 선택 (4점) - 평점 선택 후 아래 컴포넌트들이 로드됨
+    const star4 = screen.getByRole('button', { name: '4점' });
+    await user.click(star4);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '저장' })).toBeInTheDocument();
+    });
 
     const memoInput = screen.getByPlaceholderText('향·맛·여운에 대해 자유롭게 기록해보세요.');
     await user.type(memoInput, '기록 테스트');

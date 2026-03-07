@@ -28,10 +28,12 @@ describe('/notes/schemas - 평가 스키마 API', () => {
       .get('/notes/schemas/active')
       .expect(200);
 
-    expect(Array.isArray(response.body)).toBe(true);
-    expect(response.body.length).toBeGreaterThan(0);
+    expect(response.body).toHaveProperty('schemas');
+    expect(response.body).toHaveProperty('pinnedSchemaIds');
+    expect(Array.isArray(response.body.schemas)).toBe(true);
+    expect(response.body.schemas.length).toBeGreaterThan(0);
     
-    const schema = response.body[0];
+    const schema = response.body.schemas[0];
     expect(schema).toHaveProperty('id');
     expect(schema).toHaveProperty('code');
     expect(schema).toHaveProperty('version');
@@ -46,7 +48,7 @@ describe('/notes/schemas - 평가 스키마 API', () => {
       .get('/notes/schemas/active')
       .expect(200);
 
-    const schema = schemasResponse.body[0];
+    const schema = schemasResponse.body.schemas[0];
     expect(schema).toBeDefined();
 
     // 스키마의 축 목록 조회
@@ -79,7 +81,7 @@ describe('/notes/schemas - 평가 스키마 API', () => {
       .get('/notes/schemas/active')
       .expect(200);
 
-    const schema = schemasResponse.body[0];
+    const schema = schemasResponse.body.schemas[0];
 
     // 스키마의 축 목록 조회
     const axesResponse = await context.testHelper.unauthenticatedRequest()

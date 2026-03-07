@@ -8,6 +8,7 @@ import {
   Seller,
   PopularTag,
   Note,
+  RatingSchema,
 } from '../types';
 import { logger } from './logger';
 
@@ -1095,9 +1096,33 @@ export const teasApi = {
     apiClient.get<Tea[]>(`/teas/${id}/similar`),
 };
 
+export interface CreateRatingSchemaRequest {
+  nameKo: string;
+  descriptionKo?: string;
+  nameEn?: string;
+  descriptionEn?: string;
+  axes: Array<{
+    nameKo: string;
+    nameEn: string;
+    minValue?: number;
+    maxValue?: number;
+    stepValue?: number;
+    displayOrder?: number;
+  }>;
+}
+
+export interface ActiveSchemasResponse {
+  schemas: RatingSchema[];
+  pinnedSchemaIds: number[];
+}
+
 export const notesApi = {
-  getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
+  getActiveSchemas: () => apiClient.get<ActiveSchemasResponse>('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
+  createSchema: (data: CreateRatingSchemaRequest) =>
+    apiClient.post<RatingSchema>('/notes/schemas', data),
+  toggleSchemaPin: (schemaId: number) =>
+    apiClient.post<{ pinned: boolean }>(`/notes/schemas/${schemaId}/pin`),
   getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags') => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));

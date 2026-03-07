@@ -11,6 +11,7 @@ import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
 import { TagFollow } from './entities/tag-follow.entity';
+import { UserSchemaPin } from './entities/user-schema-pin.entity';
 import { TeasModule } from '../teas/teas.module';
 import { StorageModule } from '../common/storage/storage.module';
 import { FollowsModule } from '../follows/follows.module';
@@ -18,7 +19,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Note, Tag, NoteTag, NoteLike, NoteBookmark, RatingSchema, RatingAxis, NoteAxisValue, TagFollow]),
+    TypeOrmModule.forFeature([Note, Tag, NoteTag, NoteLike, NoteBookmark, RatingSchema, RatingAxis, NoteAxisValue, TagFollow, UserSchemaPin]),
     TeasModule,
     StorageModule,
     FollowsModule,

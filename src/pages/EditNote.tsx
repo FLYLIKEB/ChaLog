@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
-import { RatingSlider } from '../components/RatingSlider';
+import { AxisStarRow } from '../components/AxisStarRow';
 import { ImageUploader } from '../components/ImageUploader';
 import { TagInput } from '../components/TagInput';
 import { Input } from '../components/ui/input';
@@ -339,13 +339,13 @@ export function EditNote() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen bg-background">
       <Header showBack title="노트 수정" showProfile />
       
-      <div className="p-4 space-y-6">
+      <div className="p-4 pb-24 space-y-6">
         {/* 차 선택 영역 */}
-        <section className="bg-card rounded-lg p-4">
-          <Label className="mb-2 block">차 선택</Label>
+        <section className="bg-card rounded-lg p-3">
+          <Label className="mb-1.5 block text-sm">차 선택</Label>
           <Input
             ref={teaInputRef}
             type="text"
@@ -388,8 +388,8 @@ export function EditNote() {
 
           {/* 검색 결과가 없을 때 새 차 추가 옵션 */}
           {searchQuery && !selectedTea && filteredTeas.length === 0 && (
-            <div className="mt-2 p-4 border border-dashed border-border rounded-lg text-center">
-              <p className="text-sm text-muted-foreground mb-3">
+            <div className="mt-2 py-3 px-4 border border-dashed border-border rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">
                 "{searchQuery}"에 대한 검색 결과가 없습니다.
               </p>
               <Button
@@ -407,12 +407,12 @@ export function EditNote() {
           )}
 
           {selectedTeaData && (
-            <div className="mt-3 p-3 bg-success/10 border border-success/30 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="w-4 h-4 text-success" />
+            <div className="mt-2 py-2.5 px-3 bg-success/10 border border-success/30 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Check className="w-3.5 h-3.5 text-success" />
                 <span className="text-sm text-foreground font-medium">{selectedTeaData.name}</span>
               </div>
-              <div className="text-xs text-muted-foreground space-y-1">
+              <div className="text-xs text-muted-foreground space-y-0.5">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
                 {selectedTeaData.seller && <p>구매처: {selectedTeaData.seller}</p>}
@@ -422,21 +422,27 @@ export function EditNote() {
         </section>
 
         {/* 평점 슬라이더 */}
-        <section className="bg-card rounded-lg p-4 space-y-4">
-          <h3>평가</h3>
-          {axes
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((axis) => (
-              <React.Fragment key={axis.id}>
-                <RatingSlider
+        <section className="bg-card rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3>평가</h3>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              1 ~ 5점
+            </span>
+          </div>
+          <div className="space-y-0 divide-y divide-border/60">
+            {axes
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((axis) => (
+                <AxisStarRow
+                  key={axis.id}
                   label={axis.nameKo}
                   value={axisValues[axis.id] ?? RATING_DEFAULT}
                   onChange={(value) =>
                     setAxisValues(prev => ({ ...prev, [axis.id]: value }))
                   }
                 />
-              </React.Fragment>
-            ))}
+              ))}
+          </div>
         </section>
 
         {/* 사진 업로드 */}
@@ -494,10 +500,13 @@ export function EditNote() {
           </div>
         </section>
 
-        {/* 저장 버튼 */}
+      </div>
+
+      {/* 저장 버튼 - 하단 고정 플로팅 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/70 backdrop-blur-sm z-40">
         <Button 
           onClick={handleSave} 
-          className="w-full"
+          className="w-full opacity-70 hover:opacity-100 transition-opacity"
           disabled={isSaving}
         >
           {isSaving ? (

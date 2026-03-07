@@ -126,7 +126,7 @@ export function ImageUploader({ images, imageThumbnails = [], onChange, maxImage
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium">사진</label>
         <span className="text-xs text-gray-500">
@@ -219,16 +219,16 @@ export function ImageUploader({ images, imageThumbnails = [], onChange, maxImage
               </>
             )}
           </Button>
-          <p className="text-xs text-gray-500 mt-1 text-center">
+          <p className="text-xs text-gray-500 mt-0.5 text-center">
             갤러리에서 선택하거나 카메라로 촬영할 수 있습니다
           </p>
         </div>
       )}
 
       {images.length === 0 && (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-          <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500 mb-2">사진을 추가해보세요</p>
+        <div className="border-2 border-dashed border-gray-300 rounded-lg py-4 px-5 text-center">
+          <ImageIcon className="w-8 h-8 text-gray-400 mx-auto mb-1.5" />
+          <p className="text-sm text-gray-500 mb-1">사진을 추가해보세요</p>
           <p className="text-xs text-gray-400">최대 {maxImages}장까지 업로드 가능</p>
         </div>
       )}
