@@ -30,14 +30,14 @@ export function Section({ title, description, headerAction, titleAlign = "left",
           )}>
             {title && (
               <h2 className={cn(
-                "text-lg font-semibold text-foreground tracking-tight",
+                "text-[15px] font-semibold text-foreground tracking-tight",
                 isCenter && "block"
               )}>{title}</h2>
             )}
             {!isCenter && headerAction}
           </div>
           {description && (
-            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+            <p className="mt-1 text-[13px] text-muted-foreground leading-relaxed">{description}</p>
           )}
         </div>
       )}

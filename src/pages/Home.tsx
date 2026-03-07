@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
+import { HeroSection } from '../components/HeroSection';
 import { NoteCard } from '../components/NoteCard';
 import { EmptyState } from '../components/EmptyState';
 import { TeaCard } from '../components/TeaCard';
@@ -159,6 +160,7 @@ export function Home() {
       <div className="min-h-screen pb-20">
         <Header showProfile showLogo />
         <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+          <HeroSection />
           <Section title="📝 피드" description="다양한 차 노트를 둘러보세요." spacing="lg">
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
@@ -186,6 +188,9 @@ export function Home() {
     <div className="min-h-screen pb-20">
       <Header showProfile showLogo />
       <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+        {/* Hero - 차멍 설명 */}
+        <HeroSection />
+
         {/* 지금 핫한 차 섹션 */}
         <Section title="🔥 지금 핫한 차" description="최근 7일간 리뷰가 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
@@ -341,7 +346,7 @@ export function Home() {
 
         {/* 최근 기여자 - 아주 작게 가로 스크롤 */}
         {recentContributors.length > 0 && (
-          <div className="mt-8 pt-4 border-t border-border/30">
+          <div className="mt-8 pt-4 border-t border-black/5">
             <p className="text-[10px] text-muted-foreground mb-2 px-1">최근 기여자</p>
             <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 scrollbar-hide">
               {recentContributors.map((c) => (
@@ -361,13 +366,13 @@ export function Home() {
         )}
 
         {/* 하단 푸터 - 오픈톡 + 개발정보 (미니멀) */}
-        <footer className="mt-12 pt-8 pb-6 border-t border-border/30">
+        <footer className="mt-12 pt-8 pb-6 border-t border-black/5">
           {import.meta.env.VITE_KAKAO_OPEN_CHAT_URL && (
             <a
               href={import.meta.env.VITE_KAKAO_OPEN_CHAT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-2.5 px-4 rounded-lg bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-sm font-medium transition-colors mb-5"
+              className="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-2.5 px-4 rounded-xl bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-sm font-medium transition-colors mb-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
             >
               <MessageCircle className="w-4 h-4" />
               카톡 오픈톡방 참여하기

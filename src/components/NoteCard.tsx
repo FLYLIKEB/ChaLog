@@ -170,9 +170,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-border/50 shadow-[0_1px_2px_rgba(0,0,0,0.04)]',
+        'relative overflow-hidden rounded-2xl border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]',
         'bg-card transition-shadow duration-200',
-        canView && 'hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
+        canView && 'hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]',
         !canView && 'opacity-60'
       )}
     >
