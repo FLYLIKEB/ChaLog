@@ -120,8 +120,6 @@ export default function App() {
               <Route path="/cellar" element={<Cellar />} />
               <Route path="/cellar/new" element={<NewCellarItem />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/cellar" element={<Cellar />} />
-              <Route path="/cellar/new" element={<NewCellarItem />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/onboarding" element={<Onboarding />} />
