@@ -18,6 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import { Link } from 'react-router-dom';
 import { notesApi, teasApi } from '../lib/api';
 import { Note, Tea } from '../types';
 import { toast } from 'sonner';
@@ -329,9 +330,11 @@ export function NoteDetail() {
             <h3 className="mb-3 text-primary">태그</h3>
             <div className="flex flex-wrap gap-2">
               {note.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary">
-                  {tag}
-                </Badge>
+                <Link key={index} to={`/tag/${encodeURIComponent(tag)}`}>
+                  <Badge variant="secondary" className="cursor-pointer hover:bg-muted/80 transition-colors">
+                    {tag}
+                  </Badge>
+                </Link>
               ))}
             </div>
           </section>

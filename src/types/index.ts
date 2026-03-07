@@ -129,6 +129,44 @@ export interface Post {
   updatedAt: Date;
 }
 
+export interface TagDetail {
+  name: string;
+  noteCount: number;
+  isFollowing: boolean;
+  followerCount: number;
+}
+
+export interface PopularTagItem {
+  name: string;
+  noteCount: number;
+  isFollowing?: boolean;
+}
+
+export interface TagNoteItem {
+  id: number;
+  teaId: number;
+  teaName: string;
+  teaImageUrl: string | null;
+  userId: number;
+  userName: string;
+  userProfileImageUrl: string | null;
+  overallRating: number | null;
+  memo: string | null;
+  tags: string[];
+  likeCount: number;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  createdAt: Date;
+}
+
+export interface TagNoteList {
+  tag: TagDetail;
+  notes: TagNoteItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 export interface Comment {
   id: number;
   postId: number;

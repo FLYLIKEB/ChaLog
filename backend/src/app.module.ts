@@ -11,6 +11,7 @@ import { CellarModule } from './cellar/cellar.module';
 import { PostsModule } from './posts/posts.module';
 import { CommentsModule } from './comments/comments.module';
 import { ReportsModule } from './reports/reports.module';
+import { TagsModule } from './tags/tags.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
 import { User } from './users/entities/user.entity';
@@ -50,6 +51,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     PostsModule,
     CommentsModule,
     ReportsModule,
+    TagsModule,
   ],
   controllers: [HealthController],
   providers: [
