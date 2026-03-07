@@ -1125,3 +1125,41 @@ export const cellarApi = {
   remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 
+export interface CreatePostRequest {
+  title: string;
+  content: string;
+  category: import('../types').PostCategory;
+  isSponsored?: boolean;
+  sponsorNote?: string;
+}
+
+export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
+
+export const postsApi = {
+  getAll: (category?: import('../types').PostCategory, page = 1, limit = 20) => {
+    const params = new URLSearchParams();
+    if (category) params.append('category', category);
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    return apiClient.get<import('../types').Post[]>(`/posts?${params.toString()}`);
+  },
+  getById: (id: number) => apiClient.get<import('../types').Post>(`/posts/${id}`),
+  create: (data: CreatePostRequest) => apiClient.post<import('../types').Post>('/posts', data),
+  update: (id: number, data: UpdatePostRequest) => apiClient.patch<import('../types').Post>(`/posts/${id}`, data),
+  delete: (id: number) => apiClient.delete(`/posts/${id}`),
+  toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/posts/${id}/like`),
+  toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/posts/${id}/bookmark`),
+  report: (id: number, reason: ReportReason) =>
+    apiClient.post<{ id: number; message: string }>(`/posts/${id}/report`, { reason }),
+};
+
+export const commentsApi = {
+  getByPost: (postId: number) =>
+    apiClient.get<import('../types').Comment[]>(`/posts/${postId}/comments`),
+  create: (postId: number, content: string) =>
+    apiClient.post<import('../types').Comment>(`/posts/${postId}/comments`, { content }),
+  update: (commentId: number, content: string) =>
+    apiClient.patch<import('../types').Comment>(`/comments/${commentId}`, { content }),
+  delete: (commentId: number) => apiClient.delete(`/comments/${commentId}`),
+};
+

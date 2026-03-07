@@ -102,3 +102,39 @@ export interface CellarItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export type PostCategory = 'brewing_question' | 'recommendation' | 'tool' | 'tea_room_review';
+
+export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
+  brewing_question: '우림 질문',
+  recommendation: '추천',
+  tool: '도구',
+  tea_room_review: '찻집 후기',
+};
+
+export interface Post {
+  id: number;
+  userId: number;
+  user: Pick<User, 'id' | 'name' | 'profileImageUrl'>;
+  title: string;
+  content: string;
+  category: PostCategory;
+  isSponsored: boolean;
+  sponsorNote: string | null;
+  viewCount: number;
+  likeCount: number;
+  isLiked: boolean;
+  isBookmarked: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Comment {
+  id: number;
+  postId: number;
+  userId: number;
+  user: Pick<User, 'id' | 'name' | 'profileImageUrl'>;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}

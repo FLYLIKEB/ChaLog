@@ -16,6 +16,10 @@ import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Cellar } from './pages/Cellar';
 import { NewCellarItem } from './pages/NewCellarItem';
+import { Community } from './pages/Community';
+import { PostDetail } from './pages/PostDetail';
+import { NewPost } from './pages/NewPost';
+import { EditPost } from './pages/EditPost';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
@@ -53,6 +57,8 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/tea/new' ||
     location.pathname === '/cellar' ||
     location.pathname === '/cellar/new' ||
+    location.pathname === '/community/new' ||
+    location.pathname.startsWith('/community/') && location.pathname.endsWith('/edit') ||
     location.pathname === '/onboarding';
   
   const override = floatingActionRouteOverrides[location.pathname];
@@ -116,9 +122,11 @@ export default function App() {
               <Route path="/saved" element={<Saved />} />
               <Route path="/cellar" element={<Cellar />} />
               <Route path="/cellar/new" element={<NewCellarItem />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/community/new" element={<NewPost />} />
+              <Route path="/community/:id" element={<PostDetail />} />
+              <Route path="/community/:id/edit" element={<EditPost />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/cellar" element={<Cellar />} />
-              <Route path="/cellar/new" element={<NewCellarItem />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/onboarding" element={<Onboarding />} />
