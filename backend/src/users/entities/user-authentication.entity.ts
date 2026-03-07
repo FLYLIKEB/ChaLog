@@ -15,6 +15,7 @@ export enum AuthProvider {
   EMAIL = 'email',
   KAKAO = 'kakao',
   GOOGLE = 'google',
+  APPLE = 'apple',
   NAVER = 'naver',
 }
 

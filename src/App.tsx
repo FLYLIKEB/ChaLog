@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Home } from './pages/Home';
 import { Search } from './pages/Search';
@@ -98,6 +99,7 @@ function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || ''}>
     <AuthProvider>
       <BrowserRouter>
         <div className="max-w-2xl mx-auto bg-white min-h-screen px-4 sm:px-6">
@@ -130,5 +132,6 @@ export default function App() {
         </div>
       </BrowserRouter>
     </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }

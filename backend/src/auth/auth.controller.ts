@@ -4,6 +4,8 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { KakaoLoginDto } from './dto/kakao-login.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
+import { AppleLoginDto } from './dto/apple-login.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
@@ -31,6 +33,18 @@ export class AuthController {
   @Post('kakao')
   async loginWithKakao(@Body() kakaoLoginDto: KakaoLoginDto) {
     return await this.authService.loginWithKakao(kakaoLoginDto.accessToken);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('google')
+  async loginWithGoogle(@Body() googleLoginDto: GoogleLoginDto) {
+    return await this.authService.loginWithGoogle(googleLoginDto.accessToken);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('apple')
+  async loginWithApple(@Body() appleLoginDto: AppleLoginDto) {
+    return await this.authService.loginWithApple(appleLoginDto.idToken, appleLoginDto.name);
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -996,6 +996,15 @@ export interface KakaoLoginRequest {
   accessToken: string;
 }
 
+export interface GoogleLoginRequest {
+  accessToken: string;
+}
+
+export interface AppleLoginRequest {
+  idToken: string;
+  name?: string;
+}
+
 export interface AuthResponse {
   access_token: string;
   user: {
@@ -1035,6 +1044,8 @@ export const authApi = {
   login: (data: LoginRequest) => apiClient.post<AuthResponse>('/auth/login', data),
   register: (data: RegisterRequest) => apiClient.post<AuthResponse>('/auth/register', data),
   loginWithKakao: (data: KakaoLoginRequest) => apiClient.post<AuthResponse>('/auth/kakao', data),
+  loginWithGoogle: (data: GoogleLoginRequest) => apiClient.post<AuthResponse>('/auth/google', data),
+  loginWithApple: (data: AppleLoginRequest) => apiClient.post<AuthResponse>('/auth/apple', data),
   getProfile: () => apiClient.post('/auth/profile'),
 };
 
