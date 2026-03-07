@@ -1066,6 +1066,7 @@ export const notesApi = {
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
+  report: (id: number, reason: string) => apiClient.post<{ id: number; message: string }>(`/notes/${id}/report`, { reason }),
 };
 
 export const usersApi = {
