@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { TeasService } from './teas.service';
 import { Tea } from './entities/tea.entity';
+import { UsersService } from '../users/users.service';
 
 const mockTea = (overrides: Partial<Tea> = {}): Tea => ({
   id: 1,
@@ -49,6 +50,10 @@ describe('TeasService', () => {
     query: jest.fn(),
   };
 
+  const mockUsersService = {
+    getOnboardingPreference: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -57,6 +62,7 @@ describe('TeasService', () => {
         TeasService,
         { provide: getRepositoryToken(Tea), useValue: mockTeasRepository },
         { provide: DataSource, useValue: mockDataSource },
+        { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 
@@ -226,6 +232,172 @@ describe('TeasService', () => {
       const result = await service.getSimilarTeas(1);
 
       expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('findPopularTeas', () => {
+    it('reviewCount, averageRating 내림차순으로 limit 개수를 반환해야 한다', async () => {
+      mockTeasRepository.find.mockResolvedValue([
+        mockTea({ id: 1, reviewCount: 10 }),
+        mockTea({ id: 2, reviewCount: 5 }),
+      ]);
+
+      const result = await service.findPopularTeas(10);
+
+      expect(result).toHaveLength(2);
+      expect(mockTeasRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
+          take: 10,
+        }),
+      );
+    });
+
+    it('limit을 50으로 제한해야 한다', async () => {
+      mockTeasRepository.find.mockResolvedValue([]);
+
+      await service.findPopularTeas(100);
+
+      expect(mockTeasRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 50 }),
+      );
+    });
+  });
+
+  describe('findNewTeas', () => {
+    it('createdAt 내림차순으로 limit 개수를 반환해야 한다', async () => {
+      mockTeasRepository.find.mockResolvedValue([mockTea({ id: 1 }), mockTea({ id: 2 })]);
+
+      const result = await service.findNewTeas(5);
+
+      expect(result).toHaveLength(2);
+      expect(mockTeasRepository.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          order: { createdAt: 'DESC', id: 'ASC' },
+          take: 5,
+        }),
+      );
+    });
+  });
+
+  describe('findSellers', () => {
+    it('seller별 teaCount를 집계하여 반환해야 한다', async () => {
+      mockDataSource.query.mockResolvedValue([
+        { seller: '차향', teaCount: '5' },
+        { seller: '티하우스', teaCount: '3' },
+      ]);
+
+      const result = await service.findSellers();
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({ name: '차향', teaCount: 5 });
+      expect(result[1]).toEqual({ name: '티하우스', teaCount: 3 });
+    });
+
+    it('seller가 null이거나 빈 문자열인 행은 제외해야 한다', async () => {
+      mockDataSource.query.mockResolvedValue([]);
+
+      const result = await service.findSellers();
+
+      expect(mockDataSource.query).toHaveBeenCalledWith(
+        expect.stringContaining('WHERE seller IS NOT NULL AND seller != \'\''),
+      );
+    });
+  });
+
+  describe('findBySeller', () => {
+    it('해당 seller의 차 목록을 반환해야 한다', async () => {
+      mockTeasRepository.find.mockResolvedValue([
+        mockTea({ id: 1, seller: '차향' }),
+        mockTea({ id: 2, seller: '차향' }),
+      ]);
+
+      const result = await service.findBySeller('차향');
+
+      expect(result).toHaveLength(2);
+      expect(mockTeasRepository.find).toHaveBeenCalledWith({
+        where: { seller: '차향' },
+        order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
+      });
+    });
+  });
+
+  describe('findWithFilters', () => {
+    it('q 파라미터로 검색어 필터링을 적용해야 한다', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockTea({ name: '정산소종' })]);
+
+      const result = await service.findWithFilters({ q: '정산' });
+
+      expect(result).toHaveLength(1);
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
+    });
+
+    it('type 파라미터로 차종 필터링을 적용해야 한다', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([mockTea({ type: '홍차' })]);
+
+      const result = await service.findWithFilters({ type: '홍차' });
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('tea.type = :type', {
+        type: '홍차',
+      });
+    });
+
+    it('minRating 파라미터로 최소 평점 필터링을 적용해야 한다', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.findWithFilters({ minRating: 4 });
+
+      expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith(
+        'tea.averageRating >= :minRating',
+        { minRating: 4 },
+      );
+    });
+
+    it('sort=popular일 때 reviewCount DESC로 정렬해야 한다', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.findWithFilters({ sort: 'popular' });
+
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('tea.reviewCount', 'DESC');
+    });
+
+    it('sort=rating일 때 averageRating DESC로 정렬해야 한다', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([]);
+
+      await service.findWithFilters({ sort: 'rating' });
+
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('tea.averageRating', 'DESC');
+    });
+  });
+
+  describe('findCurationTeas', () => {
+    it('userId 없을 때 인기+신규 차를 혼합하여 반환해야 한다', async () => {
+      mockTeasRepository.find
+        .mockResolvedValueOnce([mockTea({ id: 1 }), mockTea({ id: 2 })])
+        .mockResolvedValueOnce([mockTea({ id: 3 })]);
+
+      const result = await service.findCurationTeas(10);
+
+      expect(result.length).toBeGreaterThan(0);
+      expect(mockTeasRepository.find).toHaveBeenCalled();
+    });
+
+    it('userId와 온보딩 완료 시 preferredTeaTypes 기반으로 반환해야 한다', async () => {
+      mockUsersService.getOnboardingPreference.mockResolvedValue({
+        preferredTeaTypes: ['홍차', '녹차'],
+        hasCompletedOnboarding: true,
+      });
+      mockQueryBuilder.getMany.mockResolvedValue([
+        mockTea({ id: 1, type: '홍차' }),
+        mockTea({ id: 2, type: '녹차' }),
+      ]);
+
+      const result = await service.findCurationTeas(10, 1);
+
+      expect(result).toHaveLength(2);
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith('tea.type IN (:...types)', {
+        types: ['홍차', '녹차'],
+      });
     });
   });
 });

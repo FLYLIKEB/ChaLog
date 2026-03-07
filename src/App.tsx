@@ -25,6 +25,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
 import { TagDetail } from './pages/TagDetail';
+import { ShopDetail } from './pages/ShopDetail';
 import { FloatingActionButton } from './components/FloatingActionButton';
 
 type FloatingActionRouteConfig = {
@@ -131,6 +132,7 @@ export default function App() {
               <Route path="/community/:id" element={<PostDetail />} />
               <Route path="/community/:id/edit" element={<EditPost />} />
               <Route path="/tag/:name" element={<TagDetail />} />
+              <Route path="/shop/:name" element={<ShopDetail />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

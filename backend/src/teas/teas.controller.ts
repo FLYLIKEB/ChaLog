@@ -22,11 +22,54 @@ export class TeasController {
   }
 
   @Get()
-  findAll(@Query('q') query?: string) {
-    if (query) {
-      return this.teasService.search(query);
+  findAll(
+    @Query('q') query?: string,
+    @Query('type') type?: string,
+    @Query('minRating') minRatingStr?: string,
+    @Query('sort') sort?: 'popular' | 'new' | 'rating',
+  ) {
+    const hasFilters = query || type || minRatingStr || sort;
+    if (hasFilters) {
+      const minRating = minRatingStr ? parseFloat(minRatingStr) : undefined;
+      return this.teasService.findWithFilters({
+        q: query,
+        type,
+        minRating: Number.isNaN(minRating as number) ? undefined : minRating,
+        sort,
+      });
     }
     return this.teasService.findAll();
+  }
+
+  @Get('rankings/popular')
+  getPopularRankings(@Query('limit') limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.teasService.findPopularTeas(Number.isNaN(limitNum) ? 10 : limitNum);
+  }
+
+  @Get('rankings/new')
+  getNewRankings(@Query('limit') limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.teasService.findNewTeas(Number.isNaN(limitNum) ? 10 : limitNum);
+  }
+
+  @Get('sellers')
+  async getSellers() {
+    const sellers = await this.teasService.findSellers();
+    return { sellers };
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
+  @Get('curation')
+  getCuration(@Query('limit') limit?: string, @Request() req?: { user?: { userId: number } }) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const userId = req?.user?.userId;
+    return this.teasService.findCurationTeas(Number.isNaN(limitNum) ? 10 : limitNum, userId);
+  }
+
+  @Get('by-seller/:name')
+  getBySeller(@Param('name') name: string) {
+    return this.teasService.findBySeller(decodeURIComponent(name));
   }
 
   @Get(':id')

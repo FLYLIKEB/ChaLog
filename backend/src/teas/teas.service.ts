@@ -4,6 +4,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Tea } from './entities/tea.entity';
 import { CreateTeaDto } from './dto/create-tea.dto';
 import { PopularTagDto, PopularTagsResponseDto } from './dto/popular-tag.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class TeasService {
@@ -12,6 +13,7 @@ export class TeasService {
     private teasRepository: Repository<Tea>,
     @InjectDataSource()
     private dataSource: DataSource,
+    private usersService: UsersService,
   ) {}
 
   async create(createTeaDto: CreateTeaDto): Promise<Tea> {
@@ -27,6 +29,98 @@ export class TeasService {
     return await this.teasRepository.find({
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async findPopularTeas(limit = 10): Promise<Tea[]> {
+    return this.teasRepository.find({
+      order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
+      take: Math.min(Math.max(1, limit), 50),
+    });
+  }
+
+  async findNewTeas(limit = 10): Promise<Tea[]> {
+    return this.teasRepository.find({
+      order: { createdAt: 'DESC', id: 'ASC' },
+      take: Math.min(Math.max(1, limit), 50),
+    });
+  }
+
+  async findSellers(): Promise<{ name: string; teaCount: number }[]> {
+    const rows: { seller: string; teaCount: string }[] = await this.dataSource.query(
+      `SELECT seller AS seller, COUNT(*) AS teaCount
+       FROM teas
+       WHERE seller IS NOT NULL AND seller != ''
+       GROUP BY seller
+       ORDER BY teaCount DESC`,
+    );
+    return rows.map((r) => ({ name: r.seller, teaCount: Number(r.teaCount) }));
+  }
+
+  async findBySeller(sellerName: string): Promise<Tea[]> {
+    return this.teasRepository.find({
+      where: { seller: sellerName },
+      order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
+    });
+  }
+
+  async findCurationTeas(limit = 10, userId?: number): Promise<Tea[]> {
+    const take = Math.min(Math.max(1, limit), 50);
+
+    if (userId) {
+      try {
+        const preference = await this.usersService.getOnboardingPreference(userId);
+        if (
+          preference.hasCompletedOnboarding &&
+          preference.preferredTeaTypes &&
+          preference.preferredTeaTypes.length > 0
+        ) {
+          const types = preference.preferredTeaTypes;
+          const popularByType = await this.teasRepository
+            .createQueryBuilder('tea')
+            .where('tea.type IN (:...types)', { types })
+            .orderBy('tea.reviewCount', 'DESC')
+            .addOrderBy('tea.averageRating', 'DESC')
+            .take(take)
+            .getMany();
+          if (popularByType.length >= take) {
+            return popularByType;
+          }
+          const remaining = take - popularByType.length;
+          const ids = popularByType.map((t) => t.id);
+          const additional = await this.teasRepository
+            .createQueryBuilder('tea')
+            .where('tea.id NOT IN (:...ids)', { ids: ids.length ? ids : [0] })
+            .orderBy('tea.reviewCount', 'DESC')
+            .take(remaining)
+            .getMany();
+          return [...popularByType, ...additional].slice(0, take);
+        }
+      } catch {
+        // Fall through to default
+      }
+    }
+
+    const popularCount = Math.ceil(take * 0.7);
+    const newCount = take - popularCount;
+    const [popular, newTeas] = await Promise.all([
+      this.findPopularTeas(popularCount),
+      this.findNewTeas(newCount),
+    ]);
+    const seen = new Set<number>();
+    const result: Tea[] = [];
+    for (const t of popular) {
+      if (!seen.has(t.id)) {
+        seen.add(t.id);
+        result.push(t);
+      }
+    }
+    for (const t of newTeas) {
+      if (!seen.has(t.id) && result.length < take) {
+        seen.add(t.id);
+        result.push(t);
+      }
+    }
+    return result;
   }
 
   async findOne(id: number): Promise<Tea> {
@@ -48,6 +142,49 @@ export class TeasService {
       .orWhere('tea.seller LIKE :query', { query: `%${query}%` })
       .orderBy('tea.createdAt', 'DESC')
       .getMany();
+  }
+
+  async findWithFilters(params: {
+    q?: string;
+    type?: string;
+    minRating?: number;
+    sort?: 'popular' | 'new' | 'rating';
+  }): Promise<Tea[]> {
+    const qb = this.teasRepository.createQueryBuilder('tea');
+
+    if (params.q?.trim()) {
+      const query = `%${params.q.trim()}%`;
+      qb.andWhere(
+        '(tea.name LIKE :query OR tea.type LIKE :query OR tea.seller LIKE :query)',
+        { query },
+      );
+    }
+    if (params.type?.trim()) {
+      qb.andWhere('tea.type = :type', { type: params.type.trim() });
+    }
+    if (params.minRating != null && !Number.isNaN(params.minRating)) {
+      const min = Math.max(0, Math.min(5, params.minRating));
+      qb.andWhere('tea.averageRating >= :minRating', { minRating: min });
+    }
+
+    switch (params.sort) {
+      case 'popular':
+        qb.orderBy('tea.reviewCount', 'DESC')
+          .addOrderBy('tea.averageRating', 'DESC')
+          .addOrderBy('tea.id', 'ASC');
+        break;
+      case 'rating':
+        qb.orderBy('tea.averageRating', 'DESC')
+          .addOrderBy('tea.reviewCount', 'DESC')
+          .addOrderBy('tea.id', 'ASC');
+        break;
+      case 'new':
+      default:
+        qb.orderBy('tea.createdAt', 'DESC').addOrderBy('tea.id', 'ASC');
+        break;
+    }
+
+    return qb.getMany();
   }
 
   async updateRating(teaId: number, averageRating: number, reviewCount: number): Promise<void> {
