@@ -49,7 +49,7 @@ export class CellarService {
   async findOne(userId: number, id: number): Promise<CellarItem> {
     const item = await this.findOneOrFail(id);
     if (item.userId !== userId) {
-      throw new ForbiddenException('이 셀러 아이템에 접근할 권한이 없습니다.');
+      throw new ForbiddenException('이 찻장 아이템에 접근할 권한이 없습니다.');
     }
     return item;
   }
@@ -61,7 +61,7 @@ export class CellarService {
   ): Promise<CellarItem> {
     const item = await this.findOneOrFail(id);
     if (item.userId !== userId) {
-      throw new ForbiddenException('이 셀러 아이템을 수정할 권한이 없습니다.');
+      throw new ForbiddenException('이 찻장 아이템을 수정할 권한이 없습니다.');
     }
 
     if (dto.teaId !== undefined && dto.teaId !== item.teaId) {
@@ -83,7 +83,7 @@ export class CellarService {
   async remove(userId: number, id: number): Promise<void> {
     const item = await this.findOneOrFail(id);
     if (item.userId !== userId) {
-      throw new ForbiddenException('이 셀러 아이템을 삭제할 권한이 없습니다.');
+      throw new ForbiddenException('이 찻장 아이템을 삭제할 권한이 없습니다.');
     }
     await this.cellarItemsRepository.remove(item);
   }
@@ -105,7 +105,7 @@ export class CellarService {
       relations: ['tea'],
     });
     if (!item) {
-      throw new NotFoundException(`셀러 아이템(id: ${id})을 찾을 수 없습니다.`);
+      throw new NotFoundException(`찻장 아이템(id: ${id})을 찾을 수 없습니다.`);
     }
     return item;
   }

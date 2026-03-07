@@ -29,7 +29,7 @@ const NAV_ITEMS: BottomNavItem[] = [
     isActive: (pathname) => pathname === '/my-notes' || pathname.startsWith('/user/'),
   },
   {
-    label: '셀러',
+    label: '찻장',
     path: '/cellar',
     icon: Package,
     activeStyle: 'bold',
@@ -73,8 +73,8 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
             key={item.path}
             onClick={() => handleNavigate(item.path)}
             className={cn(
-              'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors',
-              isActive ? 'text-black' : 'text-muted-foreground',
+              'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95',
+              isActive ? 'text-primary' : 'text-muted-foreground',
             )}
             aria-label={item.label}
           >
@@ -85,7 +85,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
               )}
             >
               <Icon
-                className={cn('w-5 h-5', isActive && 'text-black')}
+                className={cn('w-5 h-5 transition-all duration-200', isActive && 'text-primary')}
                 fill={fill}
                 stroke="currentColor"
                 strokeWidth={strokeWidth}
