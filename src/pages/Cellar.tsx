@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Bell, Package, FileText, Trash2 } from 'lucide-react';
+import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { Button } from '../components/ui/button';
@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { logger } from '../lib/logger';
+import { TEA_TYPES } from '../constants';
 
 const UNIT_LABELS: Record<string, string> = {
   g: 'g',
@@ -18,6 +19,17 @@ const UNIT_LABELS: Record<string, string> = {
   bag: '개',
   cake: '병',
 };
+
+type SortKey = 'createdAt' | 'quantity' | 'remindAt' | 'openedAt' | 'name';
+type SortDir = 'asc' | 'desc';
+
+const SORT_OPTIONS: { key: SortKey; label: string; defaultDir: SortDir }[] = [
+  { key: 'createdAt', label: '추가일', defaultDir: 'desc' },
+  { key: 'quantity', label: '잔량', defaultDir: 'desc' },
+  { key: 'remindAt', label: '리마인더', defaultDir: 'asc' },
+  { key: 'openedAt', label: '개봉일', defaultDir: 'desc' },
+  { key: 'name', label: '이름', defaultDir: 'asc' },
+];
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '';
@@ -112,6 +124,11 @@ export function Cellar() {
   const [reminders, setReminders] = useState<CellarItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 필터·정렬 상태
+  const [activeType, setActiveType] = useState<'all' | string>('all');
+  const [sortKey, setSortKey] = useState<SortKey>('createdAt');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated || !user) {
@@ -139,6 +156,59 @@ export function Cellar() {
     fetchData();
   }, [isAuthenticated, user, authLoading, navigate]);
 
+  // 차 종류별 아이템 수 집계
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const item of items) {
+      counts[item.tea.type] = (counts[item.tea.type] ?? 0) + 1;
+    }
+    return counts;
+  }, [items]);
+
+  // 필터·정렬 적용
+  const displayedItems = useMemo(() => {
+    const filtered =
+      activeType === 'all'
+        ? items
+        : items.filter((item) => item.tea.type === activeType);
+
+    return [...filtered].sort((a, b) => {
+      let result = 0;
+
+      if (sortKey === 'name') {
+        result = a.tea.name.localeCompare(b.tea.name, 'ko');
+      } else if (sortKey === 'quantity') {
+        result = Number(a.quantity) - Number(b.quantity);
+      } else if (sortKey === 'createdAt') {
+        result = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortKey === 'remindAt') {
+        // null은 항상 뒤로
+        if (!a.remindAt && !b.remindAt) result = 0;
+        else if (!a.remindAt) result = 1;
+        else if (!b.remindAt) result = -1;
+        else result = new Date(a.remindAt).getTime() - new Date(b.remindAt).getTime();
+      } else if (sortKey === 'openedAt') {
+        // null은 항상 뒤로
+        if (!a.openedAt && !b.openedAt) result = 0;
+        else if (!a.openedAt) result = 1;
+        else if (!b.openedAt) result = -1;
+        else result = new Date(a.openedAt).getTime() - new Date(b.openedAt).getTime();
+      }
+
+      return sortDir === 'asc' ? result : -result;
+    });
+  }, [items, activeType, sortKey, sortDir]);
+
+  const handleSortChange = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      const option = SORT_OPTIONS.find((o) => o.key === key);
+      setSortKey(key);
+      setSortDir(option?.defaultDir ?? 'desc');
+    }
+  };
+
   const handleDelete = (id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
     setReminders((prev) => prev.filter((item) => item.id !== id));
@@ -164,15 +234,17 @@ export function Cellar() {
     );
   }
 
+  const currentSortOption = SORT_OPTIONS.find((o) => o.key === sortKey)!;
+
   return (
     <div className="min-h-screen bg-background pb-32">
       <Header showProfile title="내 셀러" />
 
-      <div className="p-4 sm:p-6 space-y-5">
+      <div className="space-y-0">
         {/* 리마인더 배너 */}
         {reminders.length > 0 && (
-          <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-            <Bell className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="mx-4 mt-4 sm:mx-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
+            <Bell className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-amber-800">리마인더 알림</p>
               <p className="text-xs text-amber-700 mt-0.5">
@@ -182,33 +254,127 @@ export function Cellar() {
           </div>
         )}
 
-        {/* 셀러 목록 */}
-        {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
-            <Package className="w-12 h-12 opacity-30" />
-            <p className="text-sm">아직 셀러에 차가 없습니다.</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/cellar/new')}
-              className="gap-1"
+        {/* 차 종류 필터 칩 */}
+        {items.length > 0 && (
+          <div
+            className="flex gap-2 overflow-x-auto px-4 sm:px-6 py-3 no-scrollbar"
+            role="group"
+            aria-label="차 종류 필터"
+          >
+            {/* 전체 칩 */}
+            <button
+              type="button"
+              onClick={() => setActiveType('all')}
+              className={[
+                'shrink-0 px-3 py-1 rounded-full text-sm font-medium transition-colors border',
+                activeType === 'all'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground border-border hover:bg-secondary',
+              ].join(' ')}
             >
-              <Plus className="w-4 h-4" />
-              차 추가하기
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {items.map((item) => (
-              <CellarCard
-                key={item.id}
-                item={item}
-                onDelete={handleDelete}
-                onNoteClick={handleNoteClick}
-              />
-            ))}
+              전체 {items.length}
+            </button>
+
+            {/* 각 차 종류 칩 */}
+            {TEA_TYPES.map((type) => {
+              const count = typeCounts[type] ?? 0;
+              const isActive = activeType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setActiveType(type)}
+                  className={[
+                    'shrink-0 px-3 py-1 rounded-full text-sm font-medium transition-colors border',
+                    isActive
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background text-foreground border-border hover:bg-secondary',
+                    count === 0 ? 'opacity-40' : '',
+                  ].join(' ')}
+                >
+                  {type} {count}
+                </button>
+              );
+            })}
           </div>
         )}
+
+        {/* 아이템 수 + 정렬 드롭다운 */}
+        {items.length > 0 && (
+          <div className="flex items-center justify-between px-4 sm:px-6 pb-2">
+            <p className="text-sm text-muted-foreground">{displayedItems.length}개</p>
+            <div className="relative flex items-center gap-1">
+              <select
+                aria-label="정렬 기준"
+                value={sortKey}
+                onChange={(e) => handleSortChange(e.target.value as SortKey)}
+                className="appearance-none bg-transparent text-sm font-medium text-foreground pr-6 py-1 focus:outline-none cursor-pointer"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                aria-label={sortDir === 'asc' ? '오름차순' : '내림차순'}
+                onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {sortDir === 'asc' ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 셀러 목록 */}
+        <div className="px-4 sm:px-6 pb-4">
+          {items.length === 0 ? (
+            // 아이템 자체가 없는 전체 빈 상태
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+              <Package className="w-12 h-12 opacity-30" />
+              <p className="text-sm">아직 셀러에 차가 없습니다.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/cellar/new')}
+                className="gap-1"
+              >
+                <Plus className="w-4 h-4" />
+                차 추가하기
+              </Button>
+            </div>
+          ) : displayedItems.length === 0 ? (
+            // 필터 결과가 없는 빈 상태
+            <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
+              <Package className="w-10 h-10 opacity-30" />
+              <p className="text-sm">해당 종류의 차가 없습니다.</p>
+              <button
+                type="button"
+                onClick={() => setActiveType('all')}
+                className="text-xs text-primary hover:underline"
+              >
+                전체 보기
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {displayedItems.map((item) => (
+                <CellarCard
+                  key={item.id}
+                  item={item}
+                  onDelete={handleDelete}
+                  onNoteClick={handleNoteClick}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <FloatingActionButton
