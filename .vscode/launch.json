@@ -52,6 +52,34 @@
             "request": "launch",
             "command": "bash scripts/copy-remote-to-local.sh",
             "cwd": "${workspaceFolder}/backend"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📡 원격 백엔드 로그 실시간",
+            "request": "launch",
+            "command": "bash scripts/remote-logs.sh backend",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📡 원격 백엔드 에러 로그",
+            "request": "launch",
+            "command": "bash scripts/remote-logs.sh error",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📡 원격 MySQL 로그",
+            "request": "launch",
+            "command": "bash scripts/remote-logs.sh mysql",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📡 원격 서버 상태",
+            "request": "launch",
+            "command": "bash scripts/remote-logs.sh status",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }
