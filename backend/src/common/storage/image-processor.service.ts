@@ -6,6 +6,7 @@ export class ImageProcessorService {
   private readonly MAX_WIDTH = 1920;
   private readonly MAX_HEIGHT = 1920;
   private readonly QUALITY = 85;
+  private readonly THUMBNAIL_SIZE = 300;
 
   async processImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
     // 지원하지 않는 형식은 sharp 호출 전에 검증하여 원본 반환
@@ -47,6 +48,30 @@ export class ImageProcessorService {
     }
     
     // 위에서 이미 검증했으므로 여기 도달하지 않아야 함
+    return buffer;
+  }
+
+  /**
+   * 목록 페이지용 썸네일 생성 (300x300, cover)
+   */
+  async generateThumbnail(buffer: Buffer, mimeType: string): Promise<Buffer> {
+    if (!this.validateImageType(mimeType)) {
+      return buffer;
+    }
+
+    let image = sharp(buffer).resize(this.THUMBNAIL_SIZE, this.THUMBNAIL_SIZE, {
+      fit: 'cover',
+      position: 'center',
+    });
+
+    if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+      return await image.jpeg({ quality: this.QUALITY, mozjpeg: true }).toBuffer();
+    } else if (mimeType === 'image/png') {
+      return await image.png({ quality: this.QUALITY, compressionLevel: 9 }).toBuffer();
+    } else if (mimeType === 'image/webp') {
+      return await image.webp({ quality: this.QUALITY }).toBuffer();
+    }
+
     return buffer;
   }
 

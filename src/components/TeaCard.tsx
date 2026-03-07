@@ -29,7 +29,7 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+            <Star className="w-4 h-4 fill-rating text-rating" />
             <span className="text-sm">{Number(tea.averageRating).toFixed(1)}</span>
           </div>
           <span className="text-xs text-muted-foreground">{tea.reviewCount}개 리뷰</span>

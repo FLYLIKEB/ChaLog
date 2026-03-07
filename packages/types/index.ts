@@ -61,6 +61,7 @@ export interface Note {
   }>;
   memo: string | null;
   images?: string[] | null;
+  imageThumbnails?: string[] | null;
   tags?: string[] | null;
   isPublic: boolean;
   createdAt: Date;

@@ -25,6 +25,8 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { Onboarding } from './pages/Onboarding';
 import { TagDetail } from './pages/TagDetail';
+import { ShopDetail } from './pages/ShopDetail';
+import { Notifications } from './pages/Notifications';
 import { FloatingActionButton } from './components/FloatingActionButton';
 
 type FloatingActionRouteConfig = {
@@ -40,6 +42,7 @@ const DEFAULT_FLOATING_ACTION_CONFIG: FloatingActionRouteConfig = {
 
 const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = {
   '/my-notes': { position: 'aboveNav' },
+  '/notifications': { hidden: true },
   '/note/new': { hidden: true },
   '/note/:id/edit': { hidden: true },
   '/tea/new': { hidden: true },
@@ -131,6 +134,8 @@ export default function App() {
               <Route path="/community/:id" element={<PostDetail />} />
               <Route path="/community/:id/edit" element={<EditPost />} />
               <Route path="/tag/:name" element={<TagDetail />} />
+              <Route path="/shop/:name" element={<ShopDetail />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

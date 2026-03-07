@@ -79,7 +79,7 @@ export class UsersController {
       throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     }
 
-    return this.followsService.toggle(parsedUserId, parsedId);
+    return this.usersService.toggleFollow(parsedUserId, parsedId);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

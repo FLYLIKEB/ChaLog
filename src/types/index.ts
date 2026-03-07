@@ -14,6 +14,18 @@ export interface Tea {
   reviewCount: number;
 }
 
+export interface Seller {
+  name: string;
+  teaCount: number;
+}
+
+export interface TeaFilterParams {
+  q?: string;
+  type?: string;
+  minRating?: number;
+  sort?: 'popular' | 'new' | 'rating';
+}
+
 export interface RatingSchema {
   id: number;
   code: string;
@@ -66,6 +78,7 @@ export interface Note {
   }>;
   memo: string | null;
   images?: string[] | null;
+  imageThumbnails?: string[] | null;
   tags?: string[] | null;
   isPublic: boolean;
   createdAt: Date;
@@ -178,4 +191,22 @@ export interface Comment {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export type NotificationType = 'note_like' | 'follow';
+
+export interface Notification {
+  id: number;
+  userId: number;
+  type: NotificationType;
+  actorId: number;
+  actor: Pick<User, 'id' | 'name' | 'profileImageUrl'>;
+  targetId: number | null;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  total: number;
 }

@@ -16,6 +16,8 @@ import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
 import { DEFAULT_RATING_SCHEMA, DEFAULT_RATING_AXES } from './constants/default-rating-schema';
 import { FollowsService } from '../follows/follows.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class NotesService {
@@ -45,6 +47,7 @@ export class NotesService {
     private teasService: TeasService,
     private s3Service: S3Service,
     private followsService: FollowsService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
@@ -292,6 +295,15 @@ export class NotesService {
     // tags와 axisValues 필드를 분리
     const { tags, axisValues, ...noteData } = updateNoteDto;
 
+    // 이미지 변경 시 제거된 이미지 S3에서 삭제
+    if (noteData.images !== undefined && note.images && note.images.length > 0) {
+      const newUrls = new Set(noteData.images);
+      const removedUrls = note.images.filter((url) => !newUrls.has(url));
+      if (removedUrls.length > 0) {
+        await this.deleteNoteImages(removedUrls);
+      }
+    }
+
     Object.assign(note, noteData);
     const updatedNote = await this.notesRepository.save(note);
 
@@ -342,7 +354,7 @@ export class NotesService {
   }
 
   /**
-   * 노트의 이미지 URL들에서 S3 key를 추출하여 삭제
+   * 노트의 이미지 URL들에서 S3 key를 추출하여 삭제 (원본 + 썸네일)
    */
   private async deleteNoteImages(imageUrls: string[]): Promise<void> {
     if (!imageUrls || imageUrls.length === 0) {
@@ -355,10 +367,16 @@ export class NotesService {
         if (key) {
           await this.s3Service.deleteFile(key);
           this.logger.log(`S3 이미지 삭제 성공: ${key}`);
+          const thumbnailKey = this.s3Service.getThumbnailKey(key);
+          try {
+            await this.s3Service.deleteFile(thumbnailKey);
+            this.logger.log(`S3 썸네일 삭제 성공: ${thumbnailKey}`);
+          } catch {
+            // 레거시 노트는 썸네일이 없을 수 있음
+          }
         }
       } catch (error) {
         // 이미지 삭제 실패해도 노트 삭제는 계속 진행
-        // (이미지가 이미 삭제되었거나 존재하지 않을 수 있음)
         this.logger.warn(`S3 이미지 삭제 실패 (URL: ${url}): ${error instanceof Error ? error.message : String(error)}`);
       }
     });
@@ -448,7 +466,7 @@ export class NotesService {
 
   async toggleLike(noteId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
     // 트랜잭션으로 race condition 방지
-    return await this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       // 노트 존재 확인 및 권한 확인
       const note = await manager.findOne(Note, { where: { id: noteId } });
       if (!note) {
@@ -472,9 +490,11 @@ export class NotesService {
         return { liked: false, likeCount };
       } else {
         // 좋아요 추가 - unique constraint 에러 처리
+        let createdLike = false;
         try {
           const newLike = manager.create(NoteLike, { noteId, userId });
           await manager.save(NoteLike, newLike);
+          createdLike = true;
         } catch (error) {
           // 동시 요청으로 인한 unique constraint 에러 처리
           if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
@@ -484,12 +504,27 @@ export class NotesService {
             throw error;
           }
         }
-        
+
         // 트랜잭션 내에서 최신 likeCount 조회
         const likeCount = await manager.count(NoteLike, { where: { noteId } });
-        return { liked: true, likeCount };
+
+        return { liked: true, likeCount, createdLike, ownerId: note.userId };
       }
     });
+
+    // 트랜잭션 커밋 후, 실제 신규 insert된 경우에만 알림 생성
+    if (result.liked && result.createdLike && result.ownerId !== undefined) {
+      void this.notificationsService
+        .create({
+          userId: result.ownerId,
+          type: NotificationType.NOTE_LIKE,
+          actorId: userId,
+          targetId: noteId,
+        })
+        .catch((err) => this.logger.error('알림 생성 실패', err));
+    }
+
+    return { liked: result.liked, likeCount: result.likeCount };
   }
 
   async getLikeCount(noteId: number): Promise<number> {

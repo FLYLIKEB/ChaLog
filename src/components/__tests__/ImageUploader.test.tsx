@@ -62,7 +62,7 @@ describe('ImageUploader 컴포넌트', () => {
     it('이미지 파일을 선택하면 업로드해야 함', async () => {
       const user = userEvent.setup();
       const mockFile = new File(['image content'], 'test.jpg', { type: 'image/jpeg' });
-      const mockResponse = { url: 'https://example.com/image.jpg' };
+      const mockResponse = { url: 'https://example.com/image.jpg', thumbnailUrl: 'https://example.com/thumb.jpg' };
 
       vi.mocked(notesApi.uploadImage).mockResolvedValue(mockResponse);
 
@@ -74,7 +74,7 @@ describe('ImageUploader 컴포넌트', () => {
 
       await waitFor(() => {
         expect(notesApi.uploadImage).toHaveBeenCalledWith(mockFile);
-        expect(mockOnChange).toHaveBeenCalledWith([mockResponse.url]);
+        expect(mockOnChange).toHaveBeenCalledWith([mockResponse.url], [mockResponse.thumbnailUrl]);
         expect(toast.success).toHaveBeenCalledWith('1장의 이미지가 업로드되었습니다.');
       });
     });
@@ -86,8 +86,8 @@ describe('ImageUploader 컴포넌트', () => {
         new File(['image2'], 'test2.jpg', { type: 'image/jpeg' }),
       ];
       const mockResponses = [
-        { url: 'https://example.com/image1.jpg' },
-        { url: 'https://example.com/image2.jpg' },
+        { url: 'https://example.com/image1.jpg', thumbnailUrl: 'https://example.com/thumb1.jpg' },
+        { url: 'https://example.com/image2.jpg', thumbnailUrl: 'https://example.com/thumb2.jpg' },
       ];
 
       vi.mocked(notesApi.uploadImage)
@@ -102,10 +102,10 @@ describe('ImageUploader 컴포넌트', () => {
 
       await waitFor(() => {
         expect(notesApi.uploadImage).toHaveBeenCalledTimes(2);
-        expect(mockOnChange).toHaveBeenCalledWith([
-          mockResponses[0].url,
-          mockResponses[1].url,
-        ]);
+        expect(mockOnChange).toHaveBeenCalledWith(
+          [mockResponses[0].url, mockResponses[1].url],
+          [mockResponses[0].thumbnailUrl, mockResponses[1].thumbnailUrl],
+        );
         expect(toast.success).toHaveBeenCalledWith('2장의 이미지가 업로드되었습니다.');
       });
     });
@@ -115,8 +115,8 @@ describe('ImageUploader 컴포넌트', () => {
       const mockFile = new File(['image'], 'test.jpg', { type: 'image/jpeg' });
       
       // 업로드를 완료하지 않도록 Promise를 보류
-      let resolveUpload: (value: { url: string }) => void;
-      const uploadPromise = new Promise<{ url: string }>((resolve) => {
+      let resolveUpload: (value: { url: string; thumbnailUrl: string }) => void;
+      const uploadPromise = new Promise<{ url: string; thumbnailUrl: string }>((resolve) => {
         resolveUpload = resolve;
       });
       vi.mocked(notesApi.uploadImage).mockReturnValue(uploadPromise);
@@ -134,7 +134,7 @@ describe('ImageUploader 컴포넌트', () => {
       expect(uploadButton).toBeDisabled();
 
       // 업로드 완료
-      resolveUpload!({ url: 'https://example.com/image.jpg' });
+      resolveUpload!({ url: 'https://example.com/image.jpg', thumbnailUrl: 'https://example.com/thumb.jpg' });
       await waitFor(() => {
         expect(screen.queryByText(/업로드 중/i)).not.toBeInTheDocument();
       });
@@ -298,7 +298,7 @@ describe('ImageUploader 컴포넌트', () => {
       ];
 
       vi.mocked(notesApi.uploadImage)
-        .mockResolvedValueOnce({ url: 'https://example.com/image1.jpg' })
+        .mockResolvedValueOnce({ url: 'https://example.com/image1.jpg', thumbnailUrl: 'https://example.com/thumb1.jpg' })
         .mockRejectedValueOnce(new Error('Upload failed'));
 
       render(<ImageUploader images={[]} onChange={mockOnChange} />);
@@ -309,7 +309,7 @@ describe('ImageUploader 컴포넌트', () => {
       await waitFor(() => {
         expect(toast.success).toHaveBeenCalledWith('1장의 이미지가 업로드되었습니다.');
         expect(toast.error).toHaveBeenCalledWith('1장의 이미지 업로드에 실패했습니다.');
-        expect(mockOnChange).toHaveBeenCalledWith(['https://example.com/image1.jpg']);
+        expect(mockOnChange).toHaveBeenCalledWith(['https://example.com/image1.jpg'], ['https://example.com/thumb1.jpg']);
       });
     });
 
@@ -349,7 +349,7 @@ describe('ImageUploader 컴포넌트', () => {
       const deleteButtons = screen.getAllByTitle('삭제');
       await user.click(deleteButtons[0]);
 
-      expect(mockOnChange).toHaveBeenCalledWith([images[1]]);
+      expect(mockOnChange).toHaveBeenCalledWith([images[1]], [null]);
     });
 
     it('같은 URL이 여러 개 있을 때 인덱스 기반으로 정확히 삭제해야 함', async () => {
@@ -368,7 +368,7 @@ describe('ImageUploader 컴포넌트', () => {
       await user.click(deleteButtons[1]);
 
       // 두 번째 이미지만 삭제되어야 함 (같은 URL이 있어도 첫 번째와 세 번째는 유지)
-      expect(mockOnChange).toHaveBeenCalledWith([sameUrl, sameUrl]);
+      expect(mockOnChange).toHaveBeenCalledWith([sameUrl, sameUrl], [null, null]);
     });
 
     it('이미지가 없을 때 빈 상태 UI를 표시해야 함', () => {
@@ -409,7 +409,7 @@ describe('ImageUploader 컴포넌트', () => {
     it('업로드 완료 후 파일 입력을 초기화해야 함', async () => {
       const user = userEvent.setup();
       const mockFile = new File(['image'], 'test.jpg', { type: 'image/jpeg' });
-      const mockResponse = { url: 'https://example.com/image.jpg' };
+      const mockResponse = { url: 'https://example.com/image.jpg', thumbnailUrl: 'https://example.com/thumb.jpg' };
 
       vi.mocked(notesApi.uploadImage).mockResolvedValue(mockResponse);
 

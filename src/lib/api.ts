@@ -1,5 +1,14 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User, UserOnboardingPreference, CellarItem } from '../types';
+import {
+  Tea,
+  User,
+  UserOnboardingPreference,
+  CellarItem,
+  TeaFilterParams,
+  Seller,
+  PopularTag,
+  Note,
+} from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -159,6 +168,7 @@ interface BackendNote {
   }>;
   memo: string | null;
   images?: string[] | null;
+  imageThumbnails?: string[] | null;
   noteTags?: Array<{ tag: { name: string } }>;
   tags?: string[] | null; // 레거시 지원 (직접 tags 필드가 있는 경우)
   isPublic: boolean;
@@ -208,6 +218,7 @@ interface NormalizedNote {
   }>;
   memo: string | null;
   images?: string[];
+  imageThumbnails?: string[] | null;
   tags?: string[];
   isPublic: boolean;
   createdAt: Date;
@@ -240,6 +251,7 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     memo: note.memo,
     // images가 null이면 undefined로 변환, 빈 배열이면 undefined로 변환
     images: note.images && note.images.length > 0 ? note.images : undefined,
+    imageThumbnails: note.imageThumbnails && note.imageThumbnails.length > 0 ? note.imageThumbnails : undefined,
     // tags 추출: noteTags 관계에서 추출하거나 직접 tags 필드 사용
     tags: tags && tags.length > 0 ? tags : undefined,
     createdAt: typeof note.createdAt === 'string' ? new Date(note.createdAt) : note.createdAt,
@@ -1029,6 +1041,7 @@ export interface CreateNoteRequest {
   }>;
   memo?: string | null;
   images?: string[] | null;
+  imageThumbnails?: string[] | null;
   tags?: string[];
   isPublic: boolean;
 }
@@ -1053,12 +1066,31 @@ export const teasApi = {
     const endpoint = query ? `/teas?q=${encodeURIComponent(query)}` : '/teas';
     return apiClient.get<Tea[]>(endpoint);
   },
+  getWithFilters: (params: TeaFilterParams) => {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.type) searchParams.set('type', params.type);
+    if (params.minRating != null) searchParams.set('minRating', String(params.minRating));
+    if (params.sort) searchParams.set('sort', params.sort);
+    const query = searchParams.toString();
+    return apiClient.get<Tea[]>(`/teas${query ? `?${query}` : ''}`);
+  },
+  getPopularRankings: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/rankings/popular?limit=${limit}`),
+  getNewRankings: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/rankings/new?limit=${limit}`),
+  getSellers: () =>
+    apiClient.get<{ sellers: Seller[] }>('/teas/sellers'),
+  getCuration: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/curation?limit=${limit}`),
+  getBySeller: (name: string) =>
+    apiClient.get<Tea[]>(`/teas/by-seller/${encodeURIComponent(name)}`),
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
   getPopularTags: (id: number) =>
-    apiClient.get<{ tags: import('../types').PopularTag[] }>(`/teas/${id}/popular-tags`),
+    apiClient.get<{ tags: PopularTag[] }>(`/teas/${id}/popular-tags`),
   getTopReviews: (id: number) =>
-    apiClient.get<import('../types').Note[]>(`/teas/${id}/top-reviews`),
+    apiClient.get<Note[]>(`/teas/${id}/top-reviews`),
   getSimilarTeas: (id: number) =>
     apiClient.get<Tea[]>(`/teas/${id}/similar`),
 };
@@ -1077,7 +1109,7 @@ export const notesApi = {
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
   getById: (id: number) => apiClient.get(`/notes/${id}`),
-  uploadImage: (file: File) => apiClient.uploadFile<{ url: string }>('/notes/images', file),
+  uploadImage: (file: File) => apiClient.uploadFile<{ url: string; thumbnailUrl: string }>('/notes/images', file),
   create: (data: CreateNoteRequest) => apiClient.post('/notes', data),
   update: (id: number, data: UpdateNoteRequest) => apiClient.patch(`/notes/${id}`, data),
   delete: (id: number) => apiClient.delete(`/notes/${id}`),
@@ -1212,5 +1244,18 @@ export const commentsApi = {
   update: (commentId: number, content: string) =>
     apiClient.patch<import('../types').Comment>(`/comments/${commentId}`, { content }),
   delete: (commentId: number) => apiClient.delete(`/comments/${commentId}`),
+};
+
+export const notificationsApi = {
+  getAll: (page = 1, limit = 20) =>
+    apiClient.get<import('../types').NotificationListResponse>(
+      `/notifications?page=${page}&limit=${limit}`,
+    ),
+  getUnreadCount: () =>
+    apiClient.get<{ count: number }>('/notifications/unread-count'),
+  markAsRead: (id: number) =>
+    apiClient.patch<{ success: boolean }>(`/notifications/${id}/read`, {}),
+  markAllAsRead: () =>
+    apiClient.patch<{ success: boolean }>('/notifications/read-all', {}),
 };
 

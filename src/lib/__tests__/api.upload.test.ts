@@ -17,7 +17,7 @@ describe('ApiClient - uploadFile', () => {
   describe('정상적인 업로드', () => {
     it('이미지 파일을 업로드해야 함', async () => {
       const mockFile = new File(['image content'], 'test.jpg', { type: 'image/jpeg' });
-      const mockResponse = { url: 'https://example.com/image.jpg' };
+      const mockResponse = { url: 'https://example.com/image.jpg', thumbnailUrl: 'https://example.com/thumb.jpg' };
       const mockToken = 'test-token';
 
       localStorage.setItem('access_token', mockToken);
@@ -28,7 +28,7 @@ describe('ApiClient - uploadFile', () => {
         headers: new Headers({ 'content-type': 'application/json' }),
       } as Response);
 
-      const result = await apiClient.uploadFile<{ url: string }>('/notes/images', mockFile);
+      const result = await apiClient.uploadFile<{ url: string; thumbnailUrl: string }>('/notes/images', mockFile);
 
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining('/notes/images'),
@@ -56,7 +56,7 @@ describe('ApiClient - uploadFile', () => {
 
         return {
           ok: true,
-          json: async () => ({ url: 'https://example.com/image.jpg' }),
+          json: async () => ({ url: 'https://example.com/image.jpg', thumbnailUrl: 'https://example.com/thumb.jpg' }),
           headers: new Headers({ 'content-type': 'application/json' }),
         } as Response;
       });

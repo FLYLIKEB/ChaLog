@@ -111,11 +111,11 @@ describe('Cellar 페이지', () => {
     renderCellar();
 
     await waitFor(() => {
-      expect(screen.getByText('아직 셀러에 차가 없습니다.')).toBeInTheDocument();
+      expect(screen.getByText('아직 찻장에 차가 없습니다.')).toBeInTheDocument();
     });
   });
 
-  it('셀러 아이템 목록을 렌더링한다', async () => {
+  it('찻장 아이템 목록을 렌더링한다', async () => {
     const items = [
       makeItem({ id: 1, tea: makeTea(1, '동방미인') as any }),
       makeItem({ id: 2, teaId: 2, tea: makeTea(2, '대홍포') as any, quantity: 30 }),
