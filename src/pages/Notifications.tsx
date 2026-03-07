@@ -62,13 +62,14 @@ export function Notifications() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [total, setTotal] = useState(0);
+  const [unreadTotal, setUnreadTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const LIMIT = 20;
 
-  const fetchNotifications = useCallback(async (pageNum: number, append = false) => {
+  const fetchNotifications = useCallback(async (pageNum: number, append = false): Promise<boolean> => {
     try {
       if (pageNum === 1) setLoading(true);
       else setLoadingMore(true);
@@ -81,8 +82,13 @@ export function Notifications() {
         setNotifications(data.notifications);
       }
       setTotal(data.total);
+
+      const { count } = await notificationsApi.getUnreadCount();
+      setUnreadTotal(count);
+      return true;
     } catch {
       toast.error('알림을 불러오지 못했습니다.');
+      return false;
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -101,6 +107,7 @@ export function Notifications() {
     try {
       await notificationsApi.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadTotal(0);
       toast.success('모든 알림을 읽음 처리했습니다.');
     } catch {
       toast.error('읽음 처리에 실패했습니다.');
@@ -114,6 +121,7 @@ export function Notifications() {
         setNotifications((prev) =>
           prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n)),
         );
+        setUnreadTotal((prev) => Math.max(0, prev - 1));
       } catch {
         // 읽음 처리 실패는 조용히 무시
       }
@@ -125,13 +133,12 @@ export function Notifications() {
     }
   };
 
-  const handleLoadMore = () => {
+  const handleLoadMore = async () => {
     const nextPage = page + 1;
-    setPage(nextPage);
-    fetchNotifications(nextPage, true);
+    const loaded = await fetchNotifications(nextPage, true);
+    if (loaded) setPage(nextPage);
   };
 
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
   const hasMore = notifications.length < total;
 
   return (
@@ -149,7 +156,7 @@ export function Notifications() {
           </div>
         ) : (
           <>
-            {unreadCount > 0 && (
+            {unreadTotal > 0 && (
               <div className="flex justify-end px-4 pt-4">
                 <Button
                   variant="ghost"

@@ -4,13 +4,13 @@ import {
   Patch,
   Param,
   Query,
-  Request,
   UseGuards,
   BadRequestException,
   ParseIntPipe,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
+import { UserId } from '../auth/decorators/user-id.decorator';
 
 @Controller('notifications')
 @UseGuards(AuthGuard('jwt'))
@@ -19,15 +19,10 @@ export class NotificationsController {
 
   @Get()
   async findAll(
-    @Request() req,
+    @UserId() userId: number,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    const userId = parseInt(req.user.userId, 10);
-    if (Number.isNaN(userId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
@@ -42,31 +37,19 @@ export class NotificationsController {
   }
 
   @Get('unread-count')
-  async getUnreadCount(@Request() req) {
-    const userId = parseInt(req.user.userId, 10);
-    if (Number.isNaN(userId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
+  async getUnreadCount(@UserId() userId: number) {
     const count = await this.notificationsService.getUnreadCount(userId);
     return { count };
   }
 
   @Patch('read-all')
-  async markAllAsRead(@Request() req) {
-    const userId = parseInt(req.user.userId, 10);
-    if (Number.isNaN(userId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
+  async markAllAsRead(@UserId() userId: number) {
     await this.notificationsService.markAllAsRead(userId);
     return { success: true };
   }
 
   @Patch(':id/read')
-  async markAsRead(@Param('id', ParseIntPipe) id: number, @Request() req) {
-    const userId = parseInt(req.user.userId, 10);
-    if (Number.isNaN(userId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
+  async markAsRead(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
     await this.notificationsService.markAsRead(id, userId);
     return { success: true };
   }

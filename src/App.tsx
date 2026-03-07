@@ -41,6 +41,7 @@ const DEFAULT_FLOATING_ACTION_CONFIG: FloatingActionRouteConfig = {
 
 const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = {
   '/my-notes': { position: 'aboveNav' },
+  '/notifications': { hidden: true },
   '/note/new': { hidden: true },
   '/note/:id/edit': { hidden: true },
   '/tea/new': { hidden: true },

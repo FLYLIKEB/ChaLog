@@ -53,12 +53,15 @@ export class NotificationsService {
     page = 1,
     limit = 20,
   ): Promise<{ notifications: Notification[]; total: number }> {
+    const safePage = Math.max(1, page);
+    const safeLimit = Math.min(100, Math.max(1, limit));
+
     const [notifications, total] = await this.notificationsRepository.findAndCount({
       where: { userId },
       relations: ['actor'],
       order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
     });
 
     return { notifications, total };
