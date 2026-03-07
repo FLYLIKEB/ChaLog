@@ -217,6 +217,10 @@ jobs:
           EC2_JWT_SECRET: ${{ secrets.EC2_JWT_SECRET }}
           EC2_FRONTEND_URL: ${{ secrets.EC2_FRONTEND_URL }}
           EC2_FRONTEND_URLS: ${{ secrets.EC2_FRONTEND_URLS }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_S3_BUCKET_NAME: ${{ secrets.AWS_S3_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
           if [ -z "${EC2_HOST:-}" ] || [ -z "${EC2_USER:-}" ]; then
             echo "❌ EC2_HOST 또는 EC2_USER가 설정되지 않았습니다!"
@@ -258,6 +262,10 @@ jobs:
             printf 'NODE_ENV=production\n'
             printf 'FRONTEND_URL=%s\n' "${EC2_FRONTEND_URL:-https://cha-log-gilt.vercel.app}"
             printf 'FRONTEND_URLS=%s\n' "${EC2_FRONTEND_URLS:-https://cha-log-gilt.vercel.app,http://localhost:5173,http://localhost:5174}"
+            if [ -n "${AWS_REGION:-}" ]; then printf 'AWS_REGION=%s\n' "$AWS_REGION"; fi
+            if [ -n "${AWS_S3_BUCKET_NAME:-}" ]; then printf 'AWS_S3_BUCKET_NAME=%s\n' "$AWS_S3_BUCKET_NAME"; fi
+            if [ -n "${AWS_ACCESS_KEY_ID:-}" ]; then printf 'AWS_ACCESS_KEY_ID=%s\n' "$AWS_ACCESS_KEY_ID"; fi
+            if [ -n "${AWS_SECRET_ACCESS_KEY:-}" ]; then printf 'AWS_SECRET_ACCESS_KEY=%s\n' "$AWS_SECRET_ACCESS_KEY"; fi
           } > /tmp/deploy_env/.env
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "mkdir -p /home/ubuntu/chalog-backend"
           scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no /tmp/deploy_env/.env "$EC2_USER@$EC2_HOST:/home/ubuntu/chalog-backend/.env"
@@ -485,6 +493,59 @@ jobs:
             
             # 정리
             rm -f /tmp/deploy.tar.gz
+          ENDSSH
+
+      - name: Setup Nginx
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+              -o StrictHostKeyChecking=no \
+              "$EC2_USER@$EC2_HOST" << 'ENDSSH'
+            set -e
+
+            if ! command -v nginx &> /dev/null; then
+              echo "📦 nginx 설치 중..."
+              sudo apt-get update -qq
+              sudo apt-get install -y nginx
+            fi
+
+            {
+              echo 'server {'
+              echo '    listen 80 default_server;'
+              echo '    server_name _;'
+              echo ''
+              echo '    access_log /var/log/nginx/chalog-backend-access.log;'
+              echo '    error_log /var/log/nginx/chalog-backend-error.log;'
+              echo ''
+              echo '    client_max_body_size 50M;'
+              echo ''
+              echo '    location / {'
+              echo '        proxy_pass http://localhost:3000;'
+              echo '        proxy_http_version 1.1;'
+              echo "        proxy_set_header Upgrade \$http_upgrade;"
+              echo "        proxy_set_header Connection 'upgrade';"
+              echo "        proxy_set_header Host \$host;"
+              echo "        proxy_set_header X-Real-IP \$remote_addr;"
+              echo "        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;"
+              echo "        proxy_set_header X-Forwarded-Proto \$scheme;"
+              echo "        proxy_cache_bypass \$http_upgrade;"
+              echo ''
+              echo '        proxy_connect_timeout 60s;'
+              echo '        proxy_send_timeout 60s;'
+              echo '        proxy_read_timeout 60s;'
+              echo '    }'
+              echo '}'
+            } | sudo tee /etc/nginx/sites-available/chalog-backend > /dev/null
+
+            sudo rm -f /etc/nginx/sites-enabled/default
+            sudo ln -sf /etc/nginx/sites-available/chalog-backend /etc/nginx/sites-enabled/chalog-backend
+
+            sudo nginx -t
+            sudo systemctl enable nginx
+            sudo systemctl reload nginx || sudo systemctl restart nginx
+            echo "✅ Nginx 설정 완료"
           ENDSSH
 
       - name: Cleanup
