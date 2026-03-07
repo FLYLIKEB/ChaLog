@@ -108,6 +108,7 @@ export class NotesController {
     @Query('public') isPublic?: string,
     @Query('teaId') teaId?: string,
     @Query('bookmarked') bookmarked?: string,
+    @Query('feed') feed?: string,
     @Request() req?: any,
   ) {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
@@ -123,7 +124,7 @@ export class NotesController {
       }
     }
     
-    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId, bookmarkedFilter);
+    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId, bookmarkedFilter, feed);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

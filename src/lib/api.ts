@@ -1,5 +1,5 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User, UserOnboardingPreference } from '../types';
+import { Tea, User, UserOnboardingPreference, CellarItem } from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -1045,17 +1045,24 @@ export const teasApi = {
   },
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
+  getPopularTags: (id: number) =>
+    apiClient.get<{ tags: import('../types').PopularTag[] }>(`/teas/${id}/popular-tags`),
+  getTopReviews: (id: number) =>
+    apiClient.get<import('../types').Note[]>(`/teas/${id}/top-reviews`),
+  getSimilarTeas: (id: number) =>
+    apiClient.get<Tea[]>(`/teas/${id}/similar`),
 };
 
 export const notesApi = {
   getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean) => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following') => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
     if (teaId !== undefined) params.append('teaId', String(teaId));
     if (bookmarked !== undefined) params.append('bookmarked', String(bookmarked));
+    if (feed !== undefined) params.append('feed', feed);
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
@@ -1087,5 +1094,34 @@ export const usersApi = {
     id: number,
     data: { preferredTeaTypes: string[]; preferredFlavorTags: string[] },
   ) => apiClient.patch<UserOnboardingPreference>(`/users/${id}/onboarding`, data),
+};
+
+export const followsApi = {
+  toggle: (userId: number) =>
+    apiClient.post<{ isFollowing: boolean }>(`/users/${userId}/follow`),
+  getFollowers: (userId: number) =>
+    apiClient.get<User[]>(`/users/${userId}/followers`),
+  getFollowing: (userId: number) =>
+    apiClient.get<User[]>(`/users/${userId}/following`),
+};
+
+export interface CreateCellarItemRequest {
+  teaId: number;
+  quantity?: number;
+  unit?: 'g' | 'ml' | 'bag' | 'cake';
+  openedAt?: string | null;
+  remindAt?: string | null;
+  memo?: string | null;
+}
+
+export interface UpdateCellarItemRequest extends Partial<CreateCellarItemRequest> {}
+
+export const cellarApi = {
+  getAll: () => apiClient.get<CellarItem[]>('/cellar'),
+  getById: (id: number) => apiClient.get<CellarItem>(`/cellar/${id}`),
+  getReminders: () => apiClient.get<CellarItem[]>('/cellar/reminders'),
+  create: (data: CreateCellarItemRequest) => apiClient.post<CellarItem>('/cellar', data),
+  update: (id: number, data: UpdateCellarItemRequest) => apiClient.patch<CellarItem>(`/cellar/${id}`, data),
+  remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 

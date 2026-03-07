@@ -1,3 +1,8 @@
+export interface PopularTag {
+  name: string;
+  count: number;
+}
+
 export interface Tea {
   id: number;
   name: string;
@@ -74,10 +79,26 @@ export interface User {
   name: string;
   email: string | null;
   profileImageUrl?: string | null;
+  followerCount?: number;
+  followingCount?: number;
+  isFollowing?: boolean;
 }
 
 export interface UserOnboardingPreference {
   preferredTeaTypes: string[];
   preferredFlavorTags: string[];
   hasCompletedOnboarding: boolean;
+}
+
+export interface CellarItem {
+  id: number;
+  teaId: number;
+  tea: Tea;
+  quantity: number;
+  unit: 'g' | 'ml' | 'bag' | 'cake';
+  openedAt: string | null;
+  remindAt: string | null;
+  memo: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

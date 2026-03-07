@@ -80,6 +80,13 @@
             "request": "launch",
             "command": "bash scripts/remote-logs.sh status",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "🗄️ 원격 DB 마이그레이션 실행 (run-remote-migrations.sh)",
+            "request": "launch",
+            "command": "bash scripts/run-remote-migrations.sh",
+            "cwd": "${workspaceFolder}"
         }
     ]
 }

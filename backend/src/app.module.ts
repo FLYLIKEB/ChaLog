@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { TeasModule } from './teas/teas.module';
 import { NotesModule } from './notes/notes.module';
+import { CellarModule } from './cellar/cellar.module';
 import { ReportsModule } from './reports/reports.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
@@ -27,7 +28,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
         return [
           {
             ttl: 60000, // 1분
-            limit: isTest ? 10000 : (isDevelopment ? 300 : 10), // 개발 환경은 300회, 프로덕션은 10회
+            limit: isTest ? 10000 : (isDevelopment ? 300 : 200), // 개발 환경은 300회, 프로덕션은 200회
           },
         ];
       },
@@ -43,6 +44,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     UsersModule,
     TeasModule,
     NotesModule,
+    CellarModule,
     ReportsModule,
   ],
   controllers: [HealthController],
