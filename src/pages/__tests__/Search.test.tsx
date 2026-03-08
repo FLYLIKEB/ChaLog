@@ -85,11 +85,11 @@ describe('Search 페이지', () => {
     renderWithRouter(<Search />, { route: '/sasaek' });
 
     await waitFor(() => {
-      expect(screen.getByText('사랑받는 차')).toBeInTheDocument();
+      expect(screen.getByText(/사랑받는 차/)).toBeInTheDocument();
     });
-    expect(screen.getByText('신규 차')).toBeInTheDocument();
+    expect(screen.getByText(/신규 차/)).toBeInTheDocument();
     expect(screen.getByText(/차선/)).toBeInTheDocument();
-    expect(screen.getByText('찻집/다실')).toBeInTheDocument();
+    expect(screen.getByText(/찻집\/다실/)).toBeInTheDocument();
   });
 
   it('검색어와 일치하는 차를 렌더링한다', async () => {

@@ -33,7 +33,7 @@ const mockBookmarkedNotes = [
     schemaId: 1,
     overallRating: 4.2,
     isRatingIncluded: true,
-    memo: '저장한 노트 2',
+    memo: '저장한 차록 2',
     isPublic: true,
     createdAt: mockDate,
     isBookmarked: true,
@@ -136,7 +136,7 @@ describe('Saved 페이지', () => {
       expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
     }, { timeout: 5000 });
 
-    expect(screen.getByText('저장한 차록')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /저장한 차록/ })).toBeInTheDocument();
     expect(screen.getByText('저장한 차록 1')).toBeInTheDocument();
     expect(screen.getByText('저장한 차록 2')).toBeInTheDocument();
   });
@@ -150,7 +150,7 @@ describe('Saved 페이지', () => {
       expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
     }, { timeout: 5000 });
 
-    expect(screen.getByText('저장한 차록')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /저장한 차록/ })).toBeInTheDocument();
     expect(screen.getByText('아직 저장한 차록이 없어요.')).toBeInTheDocument();
   });
 

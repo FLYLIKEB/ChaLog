@@ -16,6 +16,10 @@ vi.mock('../../lib/api', async () => {
       getById: vi.fn(),
       delete: vi.fn(),
     },
+    teasApi: {
+      ...(actual as any).teasApi,
+      getById: vi.fn(() => Promise.resolve({ id: 1, name: '테스트 차', type: '녹차' })),
+    },
   };
 });
 

@@ -15,13 +15,17 @@ vi.mock('../../contexts/AuthContext', async () => {
 
 const mockSetTheme = vi.fn();
 
-vi.mock('next-themes', () => ({
-  useTheme: () => ({
-    theme: 'system',
-    setTheme: mockSetTheme,
-    resolvedTheme: 'light',
-  }),
-}));
+vi.mock('next-themes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next-themes')>();
+  return {
+    ...actual,
+    useTheme: vi.fn(() => ({
+      theme: 'system',
+      setTheme: mockSetTheme,
+      resolvedTheme: 'light',
+    })),
+  };
+});
 
 const mockNavigate = vi.fn();
 
@@ -93,6 +97,12 @@ describe('Settings 페이지', () => {
 
     it('시스템 버튼 클릭 시 setTheme을 호출해야 함', async () => {
       const user = userEvent.setup();
+      const { useTheme } = await import('next-themes');
+      vi.mocked(useTheme).mockReturnValue({
+        theme: 'light',
+        setTheme: mockSetTheme,
+        resolvedTheme: 'light',
+      } as ReturnType<typeof useTheme>);
       renderWithRouter(<Settings />, { route: '/settings' });
       await user.click(screen.getByLabelText('시스템 설정 따르기'));
       expect(mockSetTheme).toHaveBeenCalledWith('system');
