@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { useTheme } from 'next-themes';
 import { Settings } from '../Settings';
 import { renderWithRouter } from '../../test/renderWithRouter';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,11 +20,7 @@ vi.mock('next-themes', async (importOriginal) => {
   const actual = await importOriginal<typeof import('next-themes')>();
   return {
     ...actual,
-    useTheme: vi.fn(() => ({
-      theme: 'system',
-      setTheme: mockSetTheme,
-      resolvedTheme: 'light',
-    })),
+    useTheme: vi.fn(),
   };
 });
 
@@ -52,6 +49,11 @@ vi.mock('@react-oauth/google', () => ({
 describe('Settings 페이지', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useTheme).mockReturnValue({
+      theme: 'system',
+      setTheme: mockSetTheme,
+      resolvedTheme: 'light',
+    } as ReturnType<typeof useTheme>);
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
@@ -95,17 +97,21 @@ describe('Settings 페이지', () => {
       expect(mockSetTheme).toHaveBeenCalledWith('light');
     });
 
-    it('시스템 버튼 클릭 시 setTheme을 호출해야 함', async () => {
-      const user = userEvent.setup();
-      const { useTheme } = await import('next-themes');
-      vi.mocked(useTheme).mockReturnValue({
-        theme: 'light',
-        setTheme: mockSetTheme,
-        resolvedTheme: 'light',
-      } as ReturnType<typeof useTheme>);
-      renderWithRouter(<Settings />, { route: '/settings' });
-      await user.click(screen.getByLabelText('시스템 설정 따르기'));
-      expect(mockSetTheme).toHaveBeenCalledWith('system');
+    describe('시스템 버튼 클릭', () => {
+      beforeEach(() => {
+        vi.mocked(useTheme).mockReturnValue({
+          theme: 'light',
+          setTheme: mockSetTheme,
+          resolvedTheme: 'light',
+        } as ReturnType<typeof useTheme>);
+      });
+
+      it('setTheme을 호출해야 함', async () => {
+        const user = userEvent.setup();
+        renderWithRouter(<Settings />, { route: '/settings' });
+        await user.click(screen.getByLabelText('시스템 설정 따르기'));
+        expect(mockSetTheme).toHaveBeenCalledWith('system');
+      });
     });
   });
 });

@@ -13,7 +13,7 @@ export function renderWithRouter(
   { route = '/', ...options }: RouterRenderOptions = {},
 ) {
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="chalog-theme">
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="chalog-theme-test">
       <MemoryRouter initialEntries={[route]}>
         <AuthProvider>
           {children}

@@ -4,29 +4,22 @@ import { cleanup } from '@testing-library/react';
 
 afterEach(() => {
   cleanup();
+  localStorage.removeItem('chalog-theme-test');
 });
 
-// 테스트 환경에서 실제 네트워크 호출 방지 (ECONNREFUSED 에러 방지)
-// API를 mock하지 않은 테스트에서 fetch가 호출되면 404 응답 반환
-const originalFetch = globalThis.fetch;
-const defaultFetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-  const url = typeof input === 'string' ? input : input.toString();
-  if (
-    url.includes('localhost') ||
-    url.includes('127.0.0.1') ||
-    url.includes('[::1]') ||
-    url.includes('/api') ||
-    url.startsWith('/')
-  ) {
-    return Promise.resolve(
-      new Response(JSON.stringify({ message: 'Not found' }), {
-        status: 404,
-        statusText: 'Not Found',
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
-  }
-  return originalFetch.call(globalThis, input, init);
+// 테스트 환경에서 실제 네트워크 호출 방지
+// 모든 unmocked 요청에 404 반환 (외부 API 포함). 테스트는 vi.spyOn 등으로 개별 mock.
+const canned404 = (): Promise<Response> =>
+  Promise.resolve(
+    new Response(JSON.stringify({ message: 'Not found' }), {
+      status: 404,
+      statusText: 'Not Found',
+      headers: { 'Content-Type': 'application/json' },
+    })
+  );
+
+const defaultFetch = (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
+  return canned404();
 };
 globalThis.fetch = defaultFetch;
 

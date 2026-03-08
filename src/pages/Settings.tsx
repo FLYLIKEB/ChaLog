@@ -20,9 +20,37 @@ const PROVIDER_LABELS: Record<string, string> = {
   google: '구글',
 };
 
+function ThemeSection() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Card className="p-4">
+      <h3 className="text-lg font-semibold text-foreground mb-4">테마</h3>
+      <ToggleGroup
+        type="single"
+        value={theme ?? 'system'}
+        onValueChange={(v) => v && setTheme(v)}
+        variant="outline"
+        className="w-full grid grid-cols-3"
+      >
+        <ToggleGroupItem value="light" aria-label="라이트 모드" className="flex flex-col gap-1 py-3">
+          <Sun className="w-4 h-4" />
+          <span className="text-xs">라이트</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="dark" aria-label="다크 모드" className="flex flex-col gap-1 py-3">
+          <Moon className="w-4 h-4" />
+          <span className="text-xs">다크</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="system" aria-label="시스템 설정 따르기" className="flex flex-col gap-1 py-3">
+          <Monitor className="w-4 h-4" />
+          <span className="text-xs">시스템</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
+    </Card>
+  );
+}
+
 export function Settings() {
   const { user, logout, isAuthenticated } = useAuth();
-  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean | null>(null);
@@ -209,29 +237,7 @@ export function Settings() {
         <Header showBack title="설정" showProfile />
         <div className="p-4 sm:p-6 space-y-4">
           {/* 테마 - 비로그인 사용자도 전환 가능 */}
-          <Card className="p-4">
-            <h3 className="text-lg font-semibold text-foreground mb-4">테마</h3>
-            <ToggleGroup
-              type="single"
-              value={theme ?? 'system'}
-              onValueChange={(v) => v && setTheme(v)}
-              variant="outline"
-              className="w-full grid grid-cols-3"
-            >
-              <ToggleGroupItem value="light" aria-label="라이트 모드" className="flex flex-col gap-1 py-3">
-                <Sun className="w-4 h-4" />
-                <span className="text-xs">라이트</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="dark" aria-label="다크 모드" className="flex flex-col gap-1 py-3">
-                <Moon className="w-4 h-4" />
-                <span className="text-xs">다크</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="system" aria-label="시스템 설정 따르기" className="flex flex-col gap-1 py-3">
-                <Monitor className="w-4 h-4" />
-                <span className="text-xs">시스템</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </Card>
+          <ThemeSection />
           <Card className="p-6">
             <p className="text-muted-foreground mb-4">로그인이 필요합니다.</p>
             <Button onClick={() => navigate('/login')} className="w-full">
@@ -264,29 +270,7 @@ export function Settings() {
         </Card>
 
         {/* 테마 */}
-        <Card className="p-4">
-          <h3 className="text-lg font-semibold text-foreground mb-4">테마</h3>
-          <ToggleGroup
-            type="single"
-            value={theme ?? 'system'}
-            onValueChange={(v) => v && setTheme(v)}
-            variant="outline"
-            className="w-full grid grid-cols-3"
-          >
-            <ToggleGroupItem value="light" aria-label="라이트 모드" className="flex flex-col gap-1 py-3">
-              <Sun className="w-4 h-4" />
-              <span className="text-xs">라이트</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="dark" aria-label="다크 모드" className="flex flex-col gap-1 py-3">
-              <Moon className="w-4 h-4" />
-              <span className="text-xs">다크</span>
-            </ToggleGroupItem>
-            <ToggleGroupItem value="system" aria-label="시스템 설정 따르기" className="flex flex-col gap-1 py-3">
-              <Monitor className="w-4 h-4" />
-              <span className="text-xs">시스템</span>
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </Card>
+        <ThemeSection />
 
         {/* 계정 연동 */}
         <Card className="p-4">
