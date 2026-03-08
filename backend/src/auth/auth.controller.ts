@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request, BadRequestException, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, BadRequestException, HttpCode } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -38,6 +38,19 @@ export class AuthController {
   @Post('google')
   async loginWithGoogle(@Body() googleLoginDto: GoogleLoginDto) {
     return await this.authService.loginWithGoogle(googleLoginDto.accessToken);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  async getMe(@Request() req) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    return { user: await this.authService.getMe(userId) };
   }
 
   @UseGuards(AuthGuard('jwt'))

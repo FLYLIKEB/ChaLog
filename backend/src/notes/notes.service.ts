@@ -357,6 +357,20 @@ export class NotesService {
     await this.updateTeaRating(teaId);
   }
 
+  /** 운영자 강제 삭제 (소유권 검사 없음) */
+  async removeByAdmin(id: number): Promise<void> {
+    const note = await this.notesRepository.findOne({ where: { id } });
+    if (!note) {
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
+    }
+    if (note.images && note.images.length > 0) {
+      await this.deleteNoteImages(note.images);
+    }
+    const teaId = note.teaId;
+    await this.notesRepository.remove(note);
+    await this.updateTeaRating(teaId);
+  }
+
   /**
    * 노트의 이미지 URL들에서 S3 key를 추출하여 삭제 (원본 + 썸네일)
    */

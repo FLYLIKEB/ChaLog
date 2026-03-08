@@ -9,6 +9,12 @@ export enum ReportReason {
   OTHER = 'other',
 }
 
+export enum ReportStatus {
+  PENDING = 'pending',
+  DISMISSED = 'dismissed',
+  ACTED = 'acted',
+}
+
 @Entity('note_reports')
 @Unique(['noteId', 'reporterId'])
 export class NoteReport {
@@ -31,6 +37,9 @@ export class NoteReport {
 
   @Column({ type: 'enum', enum: ReportReason })
   reason: ReportReason;
+
+  @Column({ type: 'enum', enum: ReportStatus, default: ReportStatus.PENDING })
+  status: ReportStatus;
 
   @CreateDateColumn()
   createdAt: Date;

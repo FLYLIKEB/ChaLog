@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { Post } from '../../posts/entities/post.entity';
 import { User } from '../../users/entities/user.entity';
-import { ReportReason } from './note-report.entity';
+import { ReportReason, ReportStatus } from './note-report.entity';
 
 @Entity('post_reports')
 @Unique(['postId', 'reporterId'])
@@ -33,6 +33,9 @@ export class PostReport {
 
   @Column({ type: 'enum', enum: ReportReason })
   reason: ReportReason;
+
+  @Column({ type: 'enum', enum: ReportStatus, default: ReportStatus.PENDING })
+  status: ReportStatus;
 
   @CreateDateColumn()
   createdAt: Date;

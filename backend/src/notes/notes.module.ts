@@ -27,5 +27,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
   ],
   providers: [NotesService],
   controllers: [NotesController],
+  exports: [NotesService],
 })
 export class NotesModule {}

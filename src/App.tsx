@@ -36,6 +36,15 @@ import { ShopDetail } from './pages/ShopDetail';
 import { NewShop } from './pages/NewShop';
 import { Notifications } from './pages/Notifications';
 import { FloatingActionButton } from './components/FloatingActionButton';
+import { AdminRouteGuard } from './components/AdminRouteGuard';
+import { AdminLayout } from './components/AdminLayout';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminReports } from './pages/admin/AdminReports';
+import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminNotes } from './pages/admin/AdminNotes';
+import { AdminPosts } from './pages/admin/AdminPosts';
+import { AdminAudit } from './pages/admin/AdminAudit';
+import { AdminMaster } from './pages/admin/AdminMaster';
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
 type FloatingActionRouteConfig = {
@@ -75,7 +84,8 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/cellar/new' ||
     location.pathname === '/chadam' ||
     location.pathname.startsWith('/chadam/') ||
-    location.pathname === '/onboarding';
+    location.pathname === '/onboarding' ||
+    location.pathname.startsWith('/admin');
   
   const override = floatingActionRouteOverrides[location.pathname];
   const config = {
@@ -120,51 +130,81 @@ function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return (
+      <AdminRouteGuard>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="users/:id" element={<AdminUsers />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="notes" element={<AdminNotes />} />
+            <Route path="posts" element={<AdminPosts />} />
+            <Route path="posts/:id" element={<AdminPosts />} />
+            <Route path="master" element={<AdminMaster />} />
+            <Route path="audit" element={<AdminAudit />} />
+          </Route>
+        </Routes>
+      </AdminRouteGuard>
+    );
+  }
+
+  return (
+    <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
+      <OnboardingRouteGuard>
+        <PullToRefreshProvider>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
+            <Route path="/sasaek" element={<Search />} />
+            <Route path="/tea/new" element={<NewTea />} />
+            <Route path="/tea/:id" element={<TeaDetail />} />
+            <Route path="/note/new" element={<NewNote />} />
+            <Route path="/note/:id/edit" element={<EditNote />} />
+            <Route path="/note/:id" element={<NoteDetail />} />
+            <Route path="/user/:id" element={<UserProfile />} />
+            <Route path="/my-notes" element={<MyNotes />} />
+            <Route path="/saved" element={<Saved />} />
+            <Route path="/cellar" element={<Cellar />} />
+            <Route path="/cellar/new" element={<NewCellarItem />} />
+            <Route path="/chadam" element={<Community />} />
+            <Route path="/chadam/new" element={<NewPost />} />
+            <Route path="/chadam/:id" element={<PostDetail />} />
+            <Route path="/chadam/:id/edit" element={<EditPost />} />
+            <Route path="/tag/:name" element={<TagDetail />} />
+            <Route path="/teahouse/new" element={<NewShop />} />
+            <Route path="/teahouse/:name" element={<ShopDetail />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+            <Route path="/search" element={<Navigate to="/sasaek" replace />} />
+            <Route path="/community/*" element={<CommunityRedirect />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </PullToRefreshProvider>
+      </OnboardingRouteGuard>
+      <FloatingActionButtonSwitcher />
+    </div>
+  );
+}
+
 export default function App() {
   const content = (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="chalog-theme">
       <AuthProvider>
-      <BrowserRouter>
-        <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
-          <OnboardingRouteGuard>
-            <PullToRefreshProvider>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-              <Route path="/sasaek" element={<Search />} />
-              <Route path="/tea/new" element={<NewTea />} />
-              <Route path="/tea/:id" element={<TeaDetail />} />
-              <Route path="/note/new" element={<NewNote />} />
-              <Route path="/note/:id/edit" element={<EditNote />} />
-              <Route path="/note/:id" element={<NoteDetail />} />
-              <Route path="/user/:id" element={<UserProfile />} />
-              <Route path="/my-notes" element={<MyNotes />} />
-              <Route path="/saved" element={<Saved />} />
-              <Route path="/cellar" element={<Cellar />} />
-              <Route path="/cellar/new" element={<NewCellarItem />} />
-              <Route path="/chadam" element={<Community />} />
-              <Route path="/chadam/new" element={<NewPost />} />
-              <Route path="/chadam/:id" element={<PostDetail />} />
-              <Route path="/chadam/:id/edit" element={<EditPost />} />
-              <Route path="/tag/:name" element={<TagDetail />} />
-              <Route path="/teahouse/new" element={<NewShop />} />
-              <Route path="/teahouse/:name" element={<ShopDetail />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/search" element={<Navigate to="/sasaek" replace />} />
-              <Route path="/community/*" element={<CommunityRedirect />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-            </PullToRefreshProvider>
-          </OnboardingRouteGuard>
-          <FloatingActionButtonSwitcher />
+        <BrowserRouter>
+          <AppContent />
           <Toaster />
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+        </BrowserRouter>
+      </AuthProvider>
     </ThemeProvider>
   );
 
