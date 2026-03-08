@@ -33,7 +33,7 @@ export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
               <span className="text-sm">{label}</span>
               <span className="text-sm text-gray-500">{value}</span>
             </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all"
                 style={{ width: `${(value / maxValue) * 100}%` }}

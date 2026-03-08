@@ -169,7 +169,7 @@ export function NewCellarItem() {
                   <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border">
+                <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border bg-card">
                   {filteredTeas.length === 0 ? (
                     <div className="p-3 text-center space-y-2">
                       <p className="text-sm text-muted-foreground">

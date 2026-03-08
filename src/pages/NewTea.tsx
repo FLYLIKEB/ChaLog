@@ -217,11 +217,11 @@ export function NewTea() {
                 <p className="text-xs text-muted-foreground">중복 확인 중...</p>
               )}
               {duplicateWarning && (
-                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
                     <div className="flex-1">
-                      <p className="text-sm text-amber-800">{duplicateWarning}</p>
+                      <p className="text-sm text-amber-800 dark:text-amber-200">{duplicateWarning}</p>
                       {duplicateTeaId && (
                         <Button
                           type="button"

@@ -174,7 +174,7 @@ export function TeaDetail() {
         </section>
 
         {/* 평균 평점 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <h2 className="mb-3">평균 평점</h2>
           <div className="flex items-center gap-4">
             <div className="text-center">
@@ -211,7 +211,7 @@ export function TeaDetail() {
 
         {/* 태그 클라우드 */}
         {popularTags.length > 0 && (
-          <section className="bg-white rounded-lg p-4">
+          <section className="bg-card rounded-lg p-4">
             <h2 className="mb-3">자주 사용된 향미</h2>
             <div
               className="flex flex-wrap gap-2"

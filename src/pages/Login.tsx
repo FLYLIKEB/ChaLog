@@ -31,7 +31,7 @@ function GoogleLoginButton({ onSuccess, disabled, isLoading }: GoogleLoginButton
       type="button"
       onClick={() => googleLogin()}
       disabled={disabled}
-      className="w-full bg-white text-[#3c4043] border border-[#dadce0] hover:bg-gray-50"
+      className="w-full bg-card text-foreground border border-border hover:bg-muted/50"
     >
       {isLoading ? (
         <>
@@ -187,7 +187,7 @@ export function Login() {
       <Header showBack title="로그인" showProfile />
       
       <div className="p-4 sm:max-w-md sm:mx-auto">
-        <div className="bg-white rounded-lg p-6 space-y-6">
+        <div className="bg-card rounded-lg p-6 space-y-6">
           <div>
             <h1 className="text-2xl font-bold mb-2">로그인</h1>
             <p className="text-gray-600 text-sm">
@@ -245,7 +245,7 @@ export function Login() {
               <span className="w-full border-t" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">또는</span>
+              <span className="bg-background px-2 text-muted-foreground">또는</span>
             </div>
           </div>
 

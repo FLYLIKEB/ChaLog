@@ -87,8 +87,8 @@ export function RatingSlider({ label, value, onChange, compact = false }: Rating
       `}</style>
       <div className="py-3 rating-slider">
         <div className="flex items-center justify-between mb-3">
-          <label className="text-sm font-medium text-gray-900">{label}</label>
-          <span className="text-sm font-semibold text-gray-900 tabular-nums">
+          <label className="text-sm font-medium text-foreground">{label}</label>
+          <span className="text-sm font-semibold text-foreground tabular-nums">
             {validatedValue.toFixed(1)}
           </span>
         </div>

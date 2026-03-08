@@ -111,11 +111,11 @@ export function Onboarding() {
     <div className="min-h-screen pb-safe">
       <Header title="온보딩" showProfile />
       <div className="px-4 pb-6 pt-4 sm:max-w-md sm:mx-auto">
-        <div className="bg-white rounded-lg p-6 space-y-6">
+        <div className="bg-card rounded-lg p-6 space-y-6">
           <div className="space-y-2">
             <span className="text-xs text-gray-500">{stepLabel}</span>
-            <h1 className="text-2xl font-bold text-gray-900">차 취향을 알려주세요</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-2xl font-bold text-foreground">차 취향을 알려주세요</h1>
+            <p className="text-sm text-muted-foreground">
               맞춤 차선을 위해 관심 차종과 향미를 선택해주세요.
             </p>
           </div>
