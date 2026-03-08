@@ -6,6 +6,7 @@ import { Repository, DataSource } from 'typeorm';
 import { Tea } from './entities/tea.entity';
 import { Seller } from './entities/seller.entity';
 import { CreateTeaDto } from './dto/create-tea.dto';
+import { UpdateTeaDto } from './dto/update-tea.dto';
 import { PopularTagDto, PopularTagsResponseDto } from './dto/popular-tag.dto';
 import { UsersService } from '../users/users.service';
 
@@ -31,6 +32,15 @@ export class TeasService {
       averageRating: 0,
       reviewCount: 0,
     });
+    return await this.teasRepository.save(tea);
+  }
+
+  async update(id: number, dto: UpdateTeaDto): Promise<Tea> {
+    const tea = await this.teasRepository.findOne({ where: { id } });
+    if (!tea) {
+      throw new NotFoundException('차를 찾을 수 없습니다.');
+    }
+    Object.assign(tea, dto);
     return await this.teasRepository.save(tea);
   }
 

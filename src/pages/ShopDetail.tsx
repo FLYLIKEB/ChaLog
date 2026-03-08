@@ -6,14 +6,16 @@ import { EmptyState } from '../components/EmptyState';
 import { BottomNav } from '../components/BottomNav';
 import { teasApi } from '../lib/api';
 import { Tea } from '../types';
-import { Loader2, Store, MapPin, Globe, Phone, Clock, ExternalLink } from 'lucide-react';
+import { Loader2, Store, MapPin, Globe, Phone, Clock, ExternalLink, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export function ShopDetail() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [teas, setTeas] = useState<Tea[]>([]);
   const [sellerDetail, setSellerDetail] = useState<{
     address?: string | null;
@@ -98,6 +100,17 @@ export function ShopDetail() {
                 <h2 className="text-lg font-bold">{displayName}</h2>
                 <p className="text-sm text-muted-foreground">{teas.length}종의 차</p>
               </div>
+              {isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/teahouse/${encodeURIComponent(displayName)}/edit`)}
+                  className="shrink-0 p-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  aria-label="찻집 정보 수정"
+                  title="찻집 정보 수정"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
             {sellerDetail && (

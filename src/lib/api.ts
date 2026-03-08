@@ -1037,6 +1037,16 @@ export interface CreateTeaRequest {
   price?: number;
 }
 
+export interface UpdateTeaRequest {
+  name?: string;
+  year?: number;
+  type?: string;
+  seller?: string;
+  origin?: string;
+  price?: number;
+}
+
+
 export interface CreateSellerRequest {
   name: string;
   address?: string;
@@ -1124,6 +1134,7 @@ export const teasApi = {
     apiClient.get<Tea[]>(`/teas/by-seller/${encodeURIComponent(name)}`),
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
+  update: (id: number, data: UpdateTeaRequest) => apiClient.patch<Tea>(`/teas/${id}`, data),
   getPopularTags: (id: number) =>
     apiClient.get<{ tags: PopularTag[] }>(`/teas/${id}/popular-tags`),
   getTopReviews: (id: number) =>

@@ -15,6 +15,7 @@ import { Home } from './pages/Home';
 import { Search } from './pages/Search';
 import { TeaDetail } from './pages/TeaDetail';
 import { NewTea } from './pages/NewTea';
+import { EditTea } from './pages/EditTea';
 import { NewNote } from './pages/NewNote';
 import { EditNote } from './pages/EditNote';
 import { NoteDetail } from './pages/NoteDetail';
@@ -34,6 +35,7 @@ import { Onboarding } from './pages/Onboarding';
 import { TagDetail } from './pages/TagDetail';
 import { ShopDetail } from './pages/ShopDetail';
 import { NewShop } from './pages/NewShop';
+import { EditShop } from './pages/EditShop';
 import { Notifications } from './pages/Notifications';
 import { FloatingActionButton } from './components/FloatingActionButton';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
@@ -80,6 +82,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname === '/tea/new' ||
     location.pathname === '/teahouse/new' ||
+    location.pathname.match(/^\/teahouse\/[^/]+\/edit$/) ||
     location.pathname === '/cellar' ||
     location.pathname === '/cellar/new' ||
     location.pathname === '/chadam' ||
@@ -163,6 +166,7 @@ function AppContent() {
             <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
             <Route path="/sasaek" element={<Search />} />
             <Route path="/tea/new" element={<NewTea />} />
+            <Route path="/tea/:id/edit" element={<EditTea />} />
             <Route path="/tea/:id" element={<TeaDetail />} />
             <Route path="/note/new" element={<NewNote />} />
             <Route path="/note/:id/edit" element={<EditNote />} />
@@ -178,6 +182,7 @@ function AppContent() {
             <Route path="/chadam/:id/edit" element={<EditPost />} />
             <Route path="/tag/:name" element={<TagDetail />} />
             <Route path="/teahouse/new" element={<NewShop />} />
+            <Route path="/teahouse/:name/edit" element={<EditShop />} />
             <Route path="/teahouse/:name" element={<ShopDetail />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/settings" element={<Settings />} />

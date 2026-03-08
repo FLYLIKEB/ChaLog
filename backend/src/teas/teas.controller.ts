@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards, BadRequest
 import { AuthGuard } from '@nestjs/passport';
 import { TeasService } from './teas.service';
 import { CreateTeaDto } from './dto/create-tea.dto';
+import { UpdateTeaDto } from './dto/update-tea.dto';
 import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
@@ -105,6 +106,12 @@ export class TeasController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.teasService.findOne(parseTeaId(id));
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateTeaDto) {
+    return this.teasService.update(parseTeaId(id), dto);
   }
 
   @Get(':id/popular-tags')

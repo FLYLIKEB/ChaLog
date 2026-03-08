@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Loader2 } from 'lucide-react';
+import { Star, Loader2, Pencil } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { TeaCard } from '../components/TeaCard';
@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note, PopularTag } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
@@ -42,6 +43,7 @@ function StarRating({ value, max = 5 }: { value: number; max?: number }) {
 export function TeaDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [tea, setTea] = useState<Tea | null>(null);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
   const [popularTags, setPopularTags] = useState<PopularTag[]>([]);
@@ -139,7 +141,21 @@ export function TeaDetail() {
       <div className="p-4 space-y-6">
         {/* 기본 정보 */}
         <section className="bg-card rounded-lg p-4 space-y-3">
-          <h1>{tea.name}</h1>
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="flex-1">{tea.name}</h1>
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/tea/${tea.id}/edit`)}
+                className="shrink-0"
+                aria-label="차 정보 수정"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                수정
+              </Button>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
