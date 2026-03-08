@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Delete,
   Param,
   Query,
@@ -13,8 +14,10 @@ import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
 import { AdminGuard } from './guards/admin.guard';
 import { UserId } from '../auth/decorators/user-id.decorator';
-import { PaginationDto } from './dto/pagination.dto';
 import { ReportActionDto } from './dto/report-action.dto';
+import { UpdateTeaDto } from './dto/update-tea.dto';
+import { UpdateSellerDto } from '../teas/dto/update-seller.dto';
+import { MergeTagDto } from './dto/merge-tag.dto';
 import { ReportStatus, ReportReason } from '../reports/entities/note-report.entity';
 
 @Controller('admin')
@@ -139,6 +142,14 @@ export class AdminController {
     return this.adminService.suspendUser(id, adminId);
   }
 
+  @Delete('users/:id')
+  deleteUser(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.deleteUser(id, adminId);
+  }
+
   @Post('users/:id/promote')
   promoteUser(
     @Param('id', ParseIntPipe) id: number,
@@ -227,5 +238,121 @@ export class AdminController {
     @Query('adminId') adminId?: number,
   ) {
     return this.adminService.getAuditLogs({ page, limit, adminId });
+  }
+
+  @Get('teas')
+  getTeas(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('type') type?: string,
+    @Query('seller') seller?: string,
+    @Query('sortBy') sortBy?: 'createdAt' | 'reviewCount' | 'averageRating',
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ) {
+    return this.adminService.getTeas({
+      page,
+      limit,
+      search,
+      type,
+      seller,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @Get('teas/:id')
+  getTeaDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getTeaDetail(id);
+  }
+
+  @Patch('teas/:id')
+  updateTea(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTeaDto,
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.updateTea(id, dto as Record<string, unknown>, adminId);
+  }
+
+  @Delete('teas/:id')
+  deleteTea(@Param('id', ParseIntPipe) id: number, @UserId() adminId: number) {
+    return this.adminService.deleteTea(id, adminId);
+  }
+
+  @Get('sellers')
+  getSellers(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: 'createdAt' | 'name',
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ) {
+    return this.adminService.getSellers({
+      page,
+      limit,
+      search,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @Get('sellers/:id')
+  getSellerDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getSellerDetail(id);
+  }
+
+  @Patch('sellers/:id')
+  updateSeller(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSellerDto,
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.updateSeller(id, dto as Record<string, unknown>, adminId);
+  }
+
+  @Delete('sellers/:id')
+  deleteSeller(@Param('id', ParseIntPipe) id: number, @UserId() adminId: number) {
+    return this.adminService.deleteSeller(id, adminId);
+  }
+
+  @Get('tags')
+  getTags(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: 'createdAt' | 'name' | 'usageCount',
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
+  ) {
+    return this.adminService.getTags({
+      page,
+      limit,
+      search,
+      sortBy,
+      sortOrder,
+    });
+  }
+
+  @Patch('tags/:id')
+  updateTag(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: { name: string },
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.updateTag(id, dto, adminId);
+  }
+
+  @Delete('tags/:id')
+  deleteTag(@Param('id', ParseIntPipe) id: number, @UserId() adminId: number) {
+    return this.adminService.deleteTag(id, adminId);
+  }
+
+  @Post('tags/:id/merge')
+  mergeTag(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: MergeTagDto,
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.mergeTag(id, dto.targetTagId, adminId);
   }
 }

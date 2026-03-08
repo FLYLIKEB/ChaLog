@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Flag, Users, FileText, MessageSquare, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Flag, Users, FileText, MessageSquare, ClipboardList, Database } from 'lucide-react';
 
 const navItems = [
   { path: '/admin', label: '대시보드', icon: LayoutDashboard },
@@ -8,6 +8,7 @@ const navItems = [
   { path: '/admin/users', label: '사용자', icon: Users },
   { path: '/admin/notes', label: '차록', icon: FileText },
   { path: '/admin/posts', label: '게시글', icon: MessageSquare },
+  { path: '/admin/master', label: '마스터 데이터', icon: Database },
   { path: '/admin/audit', label: '감사 로그', icon: ClipboardList },
 ];
 

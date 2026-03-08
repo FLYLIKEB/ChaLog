@@ -1357,6 +1357,7 @@ export const adminApi = {
   getUserDetail: (id: number) => apiClient.get(`/admin/users/${id}`),
   suspendUser: (id: number) => apiClient.post(`/admin/users/${id}/suspend`),
   promoteUser: (id: number) => apiClient.post(`/admin/users/${id}/promote`),
+  deleteUser: (id: number) => apiClient.delete(`/admin/users/${id}`),
   getNotes: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
     const search = new URLSearchParams();
     if (params?.page) search.set('page', String(params.page));
@@ -1388,5 +1389,43 @@ export const adminApi = {
     if (params?.adminId) search.set('adminId', String(params.adminId));
     return apiClient.get(`/admin/audit-log?${search.toString()}`);
   },
+  getTeas: (params?: { page?: number; limit?: number; search?: string; type?: string; seller?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.search) search.set('search', params.search);
+    if (params?.type) search.set('type', params.type);
+    if (params?.seller) search.set('seller', params.seller);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/teas?${search.toString()}`);
+  },
+  getTeaDetail: (id: number) => apiClient.get(`/admin/teas/${id}`),
+  updateTea: (id: number, dto: Record<string, unknown>) => apiClient.patch(`/admin/teas/${id}`, dto),
+  deleteTea: (id: number) => apiClient.delete(`/admin/teas/${id}`),
+  getSellers: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.search) search.set('search', params.search);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/sellers?${search.toString()}`);
+  },
+  getSellerDetail: (id: number) => apiClient.get(`/admin/sellers/${id}`),
+  updateSeller: (id: number, dto: Record<string, unknown>) => apiClient.patch(`/admin/sellers/${id}`, dto),
+  deleteSeller: (id: number) => apiClient.delete(`/admin/sellers/${id}`),
+  getTags: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.search) search.set('search', params.search);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/tags?${search.toString()}`);
+  },
+  updateTag: (id: number, dto: { name: string }) => apiClient.patch(`/admin/tags/${id}`, dto),
+  deleteTag: (id: number) => apiClient.delete(`/admin/tags/${id}`),
+  mergeTag: (id: number, targetTagId: number) => apiClient.post(`/admin/tags/${id}/merge`, { targetTagId }),
 };
 

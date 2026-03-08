@@ -24,7 +24,7 @@ export function AdminDashboard() {
 
   if (!data) return null;
 
-  const { stats, recentNoteReports, recentPostReports } = data;
+  const { stats, recentNoteReports, recentPostReports, reportTrendByDay, recentSignupCount } = data;
 
   const cards = [
     { label: '사용자', value: stats.userCount, icon: Users },
@@ -48,6 +48,30 @@ export function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {(reportTrendByDay?.length || recentSignupCount != null) && (
+        <div className="grid md:grid-cols-2 gap-4">
+          {reportTrendByDay?.length > 0 && (
+            <div className="bg-white rounded-lg border p-4">
+              <h2 className="font-semibold mb-3">최근 7일 신고 추이</h2>
+              <div className="space-y-1 text-sm">
+                {reportTrendByDay.map((d: any) => (
+                  <div key={d.date} className="flex justify-between">
+                    <span>{d.date}</span>
+                    <span>차록 {d.noteReports ?? 0} · 게시글 {d.postReports ?? 0}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {recentSignupCount != null && (
+            <div className="bg-white rounded-lg border p-4">
+              <h2 className="font-semibold mb-3">최근 7일 가입자</h2>
+              <p className="text-2xl font-bold">{recentSignupCount}명</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
         <Link to="/admin/reports" className="flex items-center justify-between">
