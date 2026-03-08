@@ -3,6 +3,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 const PULL_THRESHOLD = 72; // 배민 스타일: 이 거리 이상 당기면 새로고침
 const MAX_PULL = 100; // 최대 당김 거리 (고무밴드 한계)
 const RESISTANCE = 0.55; // 당김 저항 (0.5~0.6이 자연스러움)
+const PULL_CAPTURE_THRESHOLD = 12; // 이 거리 이상 당겼을 때만 pointer capture (헤더/하단바 클릭 방해 방지)
 const REFRESH_COOLDOWN_MS = 2000;
 const MIN_LOADING_DURATION_MS = 2000;
 const TEA_TYPES = [
@@ -67,6 +68,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
   const pullDistanceRef = useRef(0);
   const lastRefreshAtRef = useRef(0);
   const isPointerDownRef = useRef(false);
+  const capturedPointerIdRef = useRef<number | null>(null);
 
   const handleRefresh = useCallback(async () => {
     const now = Date.now();
@@ -163,11 +165,12 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     const handleTouchEnd = () => finishPull();
 
     // 데스크톱: 마우스 드래그로 당겨서 새로고침 (테스트/접근성)
+    // pointer capture는 실제 당김 동작이 감지된 후에만 적용 (헤더/하단바 클릭 방해 방지)
     const handlePointerDown = (e: PointerEvent) => {
       if (e.pointerType === 'mouse') {
         isPointerDownRef.current = true;
         touchStartY.current = e.clientY;
-        el.setPointerCapture(e.pointerId);
+        // capture 하지 않음 - pointer move에서 당김 감지 시에만 capture
       }
     };
 
@@ -183,13 +186,35 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
         return;
       }
       const deltaY = e.clientY - touchStartY.current;
+      if (deltaY > PULL_CAPTURE_THRESHOLD && capturedPointerIdRef.current === null) {
+        capturedPointerIdRef.current = e.pointerId;
+        el.setPointerCapture(e.pointerId);
+      }
       applyPull(deltaY);
+    };
+
+    const releaseCapture = (pointerId: number) => {
+      try {
+        if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId);
+      } catch {
+        /* ignore */
+      }
     };
 
     const handlePointerUp = (e: PointerEvent) => {
       if (e.pointerType === 'mouse') {
         isPointerDownRef.current = false;
-        el.releasePointerCapture(e.pointerId);
+        capturedPointerIdRef.current = null;
+        releaseCapture(e.pointerId);
+        finishPull();
+      }
+    };
+
+    const handlePointerCancel = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse') {
+        isPointerDownRef.current = false;
+        capturedPointerIdRef.current = null;
+        releaseCapture(e.pointerId);
         finishPull();
       }
     };
@@ -216,7 +241,33 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     el.addEventListener('pointermove', handlePointerMove);
     el.addEventListener('pointerup', handlePointerUp);
     el.addEventListener('pointerleave', handlePointerUp);
+    el.addEventListener('pointercancel', handlePointerCancel);
     el.addEventListener('wheel', handleWheel, { passive: false });
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && isPointerDownRef.current) {
+        isPointerDownRef.current = false;
+        const pid = capturedPointerIdRef.current;
+        if (pid != null) {
+          capturedPointerIdRef.current = null;
+          releaseCapture(pid);
+        }
+      }
+    };
+
+    const handleResize = () => {
+      if (isPointerDownRef.current) {
+        isPointerDownRef.current = false;
+        const pid = capturedPointerIdRef.current;
+        if (pid != null) {
+          capturedPointerIdRef.current = null;
+          releaseCapture(pid);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('resize', handleResize);
 
     return () => {
       el.removeEventListener('touchstart', handleTouchStart);
@@ -226,7 +277,10 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
       el.removeEventListener('pointermove', handlePointerMove);
       el.removeEventListener('pointerup', handlePointerUp);
       el.removeEventListener('pointerleave', handlePointerUp);
+      el.removeEventListener('pointercancel', handlePointerCancel);
       el.removeEventListener('wheel', handleWheel);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('resize', handleResize);
       if (rafIdRef.current != null) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;
