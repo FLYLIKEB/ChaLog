@@ -119,3 +119,41 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
   });
 });
 
+describe('NoteCard - 구입처(whereToBuy)', () => {
+  it('whereToBuy가 URL일 때 <a> 요소가 존재하고 target="_blank" 속성을 가져야 함', () => {
+    const noteWithUrl = { ...mockNote, whereToBuy: 'https://shop.com/buy' };
+    render(
+      <MemoryRouter>
+        <NoteCard note={noteWithUrl} />
+      </MemoryRouter>,
+    );
+
+    const link = screen.getByRole('link', { name: /shop\.com/ });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute('target', '_blank');
+  });
+
+  it('whereToBuy가 샵 이름일 때 텍스트로 표시해야 함', () => {
+    const noteWithShop = { ...mockNote, whereToBuy: '티하우스' };
+    render(
+      <MemoryRouter>
+        <NoteCard note={noteWithShop} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('티하우스')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('whereToBuy가 없을 때 구입처 영역을 렌더하지 않아야 함', () => {
+    render(
+      <MemoryRouter>
+        <NoteCard note={mockNote} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByText('shop.com')).not.toBeInTheDocument();
+    expect(screen.queryByText('티하우스')).not.toBeInTheDocument();
+  });
+});
+

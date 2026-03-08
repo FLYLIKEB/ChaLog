@@ -90,6 +90,7 @@ export interface Note {
     axis?: RatingAxis;
   }>;
   memo: string | null;
+  whereToBuy?: string | null;
   images?: string[] | null;
   imageThumbnails?: string[] | null;
   tags?: string[] | null;

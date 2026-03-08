@@ -317,4 +317,72 @@ describe('TeaDetail', () => {
       expect(screen.getByRole('button', { name: '이 차로 차록 작성하기' })).toBeInTheDocument();
     });
   });
+
+  describe('리뷰에서 언급된 구입처', () => {
+    it('동일 hostname URL이 여러 개일 때 1개만 표시해야 한다', async () => {
+      const notesWithSameHost: Note[] = [
+        { ...mockNote(1), whereToBuy: 'https://shop.com/a' },
+        { ...mockNote(2), whereToBuy: 'https://shop.com/b' },
+      ];
+      vi.mocked(teasApi.getById).mockResolvedValue(mockTea);
+      vi.mocked(notesApi.getAll).mockResolvedValue(notesWithSameHost);
+      vi.mocked(teasApi.getPopularTags).mockResolvedValue({ tags: [] });
+      vi.mocked(teasApi.getTopReviews).mockResolvedValue([]);
+      vi.mocked(teasApi.getSimilarTeas).mockResolvedValue([]);
+
+      render(
+        <MemoryRouter>
+          <TeaDetail />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('리뷰에서 언급된 구입처')).toBeInTheDocument();
+      });
+
+      const shopLinks = screen.getAllByText('shop.com');
+      expect(shopLinks).toHaveLength(1);
+    });
+
+    it('동일 샵 이름이 여러 개일 때 1개만 표시해야 한다', async () => {
+      const notesWithSameShop: Note[] = [
+        { ...mockNote(1), whereToBuy: '티하우스' },
+        { ...mockNote(2), whereToBuy: '티하우스' },
+      ];
+      vi.mocked(teasApi.getById).mockResolvedValue(mockTea);
+      vi.mocked(notesApi.getAll).mockResolvedValue(notesWithSameShop);
+      vi.mocked(teasApi.getPopularTags).mockResolvedValue({ tags: [] });
+      vi.mocked(teasApi.getTopReviews).mockResolvedValue([]);
+      vi.mocked(teasApi.getSimilarTeas).mockResolvedValue([]);
+
+      render(
+        <MemoryRouter>
+          <TeaDetail />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('리뷰에서 언급된 구입처')).toBeInTheDocument();
+      });
+
+      const shopTexts = screen.getAllByText('티하우스');
+      expect(shopTexts).toHaveLength(1);
+    });
+
+    it('구입처가 없으면 해당 섹션을 렌더하지 않아야 한다', async () => {
+      setupMocks();
+
+      render(
+        <MemoryRouter>
+          <TeaDetail />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText('정산소종')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText('리뷰에서 언급된 구입처')).not.toBeInTheDocument();
+    });
+  });
 });

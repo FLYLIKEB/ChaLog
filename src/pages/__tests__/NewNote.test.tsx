@@ -215,6 +215,21 @@ describe('NewNote 페이지', () => {
     expect(getNavigateSpy()).toHaveBeenCalledWith(expectedUrl);
   });
 
+  it('구입처 Input에 maxLength 500이 적용되어 있어야 한다', () => {
+    renderNewNote();
+    const whereToBuyInput = screen.getByPlaceholderText('샵 이름 또는 구매 링크 (예: https://example.com)');
+    expect(whereToBuyInput).toHaveAttribute('maxLength', '500');
+  });
+
+  it('구입처에 500자 초과 입력 시 500자로 잘려야 한다', async () => {
+    const user = userEvent.setup();
+    renderNewNote();
+    const whereToBuyInput = screen.getByPlaceholderText('샵 이름 또는 구매 링크 (예: https://example.com)');
+    const longString = 'a'.repeat(600);
+    await user.type(whereToBuyInput, longString);
+    expect(whereToBuyInput).toHaveValue('a'.repeat(500));
+  });
+
   it('teaId로 새로 등록한 차를 가져와서 자동 선택한다', async () => {
     const { teasApi } = await import('../../lib/api');
     const newTea = {

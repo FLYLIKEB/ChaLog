@@ -437,7 +437,8 @@ export function NewNote() {
             type="text"
             placeholder="샵 이름 또는 구매 링크 (예: https://example.com)"
             value={whereToBuy}
-            onChange={(e) => setWhereToBuy(e.target.value)}
+            onChange={(e) => setWhereToBuy(e.target.value.slice(0, 500))}
+            maxLength={500}
           />
           <p className="text-xs text-gray-500 mt-1">
             링크를 입력하면 클릭 시 외부 브라우저에서 열립니다.

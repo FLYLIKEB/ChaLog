@@ -1,9 +1,10 @@
 import React, { type FC, useState, memo } from 'react';
-import { Star, Lock, Heart, Bookmark, Loader2, ExternalLink } from 'lucide-react';
+import { Star, Lock, Heart, Bookmark, Loader2 } from 'lucide-react';
 import teaCupSvg from '../assets/tea-cup.svg';
 import { Note } from '../types';
 import { useNavigate, Link } from 'react-router-dom';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { WhereToBuyLink } from './WhereToBuyLink';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { notesApi } from '../lib/api';
@@ -270,35 +271,12 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
 
             {/* 구입처 */}
             {note.whereToBuy && (
-              <div
-                className={cn(
-                  'flex items-center gap-1 text-xs',
-                  /^https?:\/\//i.test(note.whereToBuy)
-                    ? 'text-primary hover:underline cursor-pointer'
-                    : 'text-muted-foreground'
-                )}
-                onClick={(e) => {
-                  if (/^https?:\/\//i.test(note.whereToBuy!)) {
-                    e.stopPropagation();
-                    window.open(note.whereToBuy!, '_blank', 'noopener,noreferrer');
-                  }
-                }}
-                role={/^https?:\/\//i.test(note.whereToBuy!) ? 'link' : undefined}
-              >
-                {/^https?:\/\//i.test(note.whereToBuy!) && (
-                  <ExternalLink className="w-3 h-3 shrink-0" />
-                )}
-                <span className="truncate">
-                  {/^https?:\/\//i.test(note.whereToBuy!)
-                    ? (() => {
-                        try {
-                          return new URL(note.whereToBuy!).hostname;
-                        } catch {
-                          return note.whereToBuy;
-                        }
-                      })()
-                    : note.whereToBuy}
-                </span>
+              <div onClick={(e) => e.stopPropagation()}>
+                <WhereToBuyLink
+                  value={note.whereToBuy}
+                  variant="inline"
+                  onClick={(e) => e.stopPropagation()}
+                />
               </div>
             )}
 

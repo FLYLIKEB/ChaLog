@@ -116,3 +116,60 @@ describe('NoteDetail - 이미지 가운데 정렬', () => {
   });
 });
 
+describe('NoteDetail - 구입처(whereToBuy)', () => {
+  beforeEach(() => {
+    vi.mocked(notesApi.getById).mockResolvedValue(mockNote);
+  });
+
+  it('whereToBuy가 URL일 때 구입처 섹션에 <a target="_blank">를 렌더해야 함', async () => {
+    const noteWithUrl = { ...mockNote, whereToBuy: 'https://shop.com/buy' };
+    vi.mocked(notesApi.getById).mockResolvedValue(noteWithUrl);
+
+    render(
+      <MemoryRouter>
+        <NoteDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('구입처')).toBeInTheDocument();
+    });
+
+    const link = screen.getByRole('link', { name: /shop\.com/ });
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('href', 'https://shop.com/buy');
+  });
+
+  it('whereToBuy가 텍스트일 때 구입처 섹션에 일반 텍스트를 표시해야 함', async () => {
+    const noteWithShop = { ...mockNote, whereToBuy: '티하우스' };
+    vi.mocked(notesApi.getById).mockResolvedValue(noteWithShop);
+
+    render(
+      <MemoryRouter>
+        <NoteDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('구입처')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('티하우스')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('whereToBuy가 없을 때 구입처 섹션을 렌더하지 않아야 함', async () => {
+    render(
+      <MemoryRouter>
+        <NoteDetail />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('테스트 사용자')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('구입처')).not.toBeInTheDocument();
+  });
+});
+
