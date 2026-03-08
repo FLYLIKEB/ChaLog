@@ -5,14 +5,24 @@ import { Loader2 } from 'lucide-react';
 export function AdminAudit() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    adminApi.getAuditLogs({ limit: 100 }).then(setData).finally(() => setLoading(false));
+    setLoading(true);
+    setError(null);
+    adminApi
+      .getAuditLogs({ limit: 100 })
+      .then(setData)
+      .catch((e: any) => setError(e?.message || '감사 로그 로딩에 실패했습니다.'))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">감사 로그</h1>
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>
+      )}
       {loading ? (
         <Loader2 className="w-8 h-8 animate-spin" />
       ) : (
@@ -34,7 +44,7 @@ export function AdminAudit() {
                   <td className="p-3 text-sm">{log.id}</td>
                   <td className="p-3 text-sm">{log.adminId}</td>
                   <td className="p-3 text-sm">{log.action}</td>
-                  <td className="p-3 text-sm">{log.targetType} #{log.targetId}</td>
+                  <td className="p-3 text-sm">{log.targetType != null && log.targetId != null ? `${log.targetType} #${log.targetId}` : '-'}</td>
                   <td className="p-3 text-sm max-w-[200px] truncate">{log.reason || '-'}</td>
                   <td className="p-3 text-sm">{log.createdAt ? new Date(log.createdAt).toLocaleString() : '-'}</td>
                 </tr>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -9,18 +10,19 @@ import { toast } from 'sonner';
 export function AdminNotes() {
   const [list, setList] = useState<any>(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.getNotes({ search: search || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
-  }, [search]);
+    adminApi.getNotes({ search: debouncedSearch || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
+  }, [debouncedSearch]);
 
   const handleDelete = async (id: number) => {
     if (!confirm('이 차록을 삭제하시겠습니까?')) return;
     try {
       await adminApi.deleteNote(id);
       toast.success('삭제했습니다.');
-      adminApi.getNotes({ search: search || undefined }).then(setList);
+      adminApi.getNotes({ search: debouncedSearch || undefined, limit: 50 }).then(setList);
     } catch (e: any) {
       toast.error(e?.message || '실패');
     }

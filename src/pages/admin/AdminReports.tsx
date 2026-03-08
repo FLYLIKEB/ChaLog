@@ -16,63 +16,18 @@ import {
   AlertDialogTitle,
 } from '../../components/ui/alert-dialog';
 
-export function AdminReports() {
-  const [tab, setTab] = useState<'notes' | 'posts'>('notes');
-  const [noteData, setNoteData] = useState<any>(null);
-  const [postData, setPostData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [actionReport, setActionReport] = useState<{ type: 'note' | 'post'; id: number } | null>(null);
-  const [actionReason, setActionReason] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('pending');
-
-  const fetchNoteReports = () => {
-    adminApi.getNoteReports({ status: statusFilter || undefined, limit: 50 }).then(setNoteData);
-  };
-
-  const fetchPostReports = () => {
-    adminApi.getPostReports({ status: statusFilter || undefined, limit: 50 }).then(setPostData);
-  };
-
-  useEffect(() => {
-    setLoading(true);
-    Promise.all([
-      adminApi.getNoteReports({ status: statusFilter || undefined, limit: 50 }),
-      adminApi.getPostReports({ status: statusFilter || undefined, limit: 50 }),
-    ]).then(([notes, posts]) => {
-      setNoteData(notes);
-      setPostData(posts);
-      setLoading(false);
-    });
-  }, [statusFilter]);
-
-  const handleDismiss = async (type: 'note' | 'post', id: number) => {
-    try {
-      if (type === 'note') await adminApi.dismissNoteReport(id);
-      else await adminApi.dismissPostReport(id);
-      toast.success('신고를 무시했습니다.');
-      fetchNoteReports();
-      fetchPostReports();
-    } catch (e: any) {
-      toast.error(e?.message || '실패');
-    }
-  };
-
-  const handleAction = async () => {
-    if (!actionReport) return;
-    try {
-      if (actionReport.type === 'note') await adminApi.actionNoteReport(actionReport.id, actionReason);
-      else await adminApi.actionPostReport(actionReport.id, actionReason);
-      toast.success('조치를 완료했습니다.');
-      setActionReport(null);
-      setActionReason('');
-      fetchNoteReports();
-      fetchPostReports();
-    } catch (e: any) {
-      toast.error(e?.message || '실패');
-    }
-  };
-
-  const ReportRow = ({ r, type }: { r: any; type: 'note' | 'post' }) => (
+function ReportRow({
+  r,
+  type,
+  onDismiss,
+  onAction,
+}: {
+  r: any;
+  type: 'note' | 'post';
+  onDismiss: (type: 'note' | 'post', id: number) => void;
+  onAction: (report: { type: 'note' | 'post'; id: number }) => void;
+}) {
+  return (
     <tr className="border-b">
       <td className="p-3 text-sm">{r.id}</td>
       <td className="p-3 text-sm">{r.reason}</td>
@@ -97,11 +52,11 @@ export function AdminReports() {
           )}
           {r.status === 'pending' && (
             <>
-              <Button size="sm" variant="outline" onClick={() => handleDismiss(type, r.id)}>
+              <Button size="sm" variant="outline" onClick={() => onDismiss(type, r.id)}>
                 <Check className="w-4 h-4 mr-1" />
                 무시
               </Button>
-              <Button size="sm" variant="destructive" onClick={() => setActionReport({ type, id: r.id })}>
+              <Button size="sm" variant="destructive" onClick={() => onAction({ type, id: r.id })}>
                 <Trash2 className="w-4 h-4 mr-1" />
                 조치
               </Button>
@@ -111,6 +66,54 @@ export function AdminReports() {
       </td>
     </tr>
   );
+}
+
+export function AdminReports() {
+  const [tab, setTab] = useState<'notes' | 'posts'>('notes');
+  const [noteData, setNoteData] = useState<any>(null);
+  const [postData, setPostData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [actionReport, setActionReport] = useState<{ type: 'note' | 'post'; id: number } | null>(null);
+  const [actionReason, setActionReason] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('pending');
+
+  const fetchNoteReports = () =>
+    adminApi.getNoteReports({ status: statusFilter || undefined, limit: 50 }).then(setNoteData);
+
+  const fetchPostReports = () =>
+    adminApi.getPostReports({ status: statusFilter || undefined, limit: 50 }).then(setPostData);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([fetchNoteReports(), fetchPostReports()]).finally(() => setLoading(false));
+  }, [statusFilter]);
+
+  const handleDismiss = async (type: 'note' | 'post', id: number) => {
+    try {
+      if (type === 'note') await adminApi.dismissNoteReport(id);
+      else await adminApi.dismissPostReport(id);
+      toast.success('신고를 무시했습니다.');
+      if (type === 'note') fetchNoteReports();
+      else fetchPostReports();
+    } catch (e: any) {
+      toast.error(e?.message || '실패');
+    }
+  };
+
+  const handleAction = async () => {
+    if (!actionReport) return;
+    try {
+      if (actionReport.type === 'note') await adminApi.actionNoteReport(actionReport.id, actionReason);
+      else await adminApi.actionPostReport(actionReport.id, actionReason);
+      toast.success('조치를 완료했습니다.');
+      setActionReport(null);
+      setActionReason('');
+      if (actionReport.type === 'note') fetchNoteReports();
+      else fetchPostReports();
+    } catch (e: any) {
+      toast.error(e?.message || '실패');
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -151,7 +154,9 @@ export function AdminReports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {noteData?.items?.map((r: any) => <ReportRow key={r.id} r={r} type="note" />)}
+                  {noteData?.items?.map((r: any) => (
+                  <ReportRow key={r.id} r={r} type="note" onDismiss={handleDismiss} onAction={setActionReport} />
+                ))}
                 </tbody>
               </table>
             </div>
@@ -174,7 +179,9 @@ export function AdminReports() {
                   </tr>
                 </thead>
                 <tbody>
-                  {postData?.items?.map((r: any) => <ReportRow key={r.id} r={r} type="post" />)}
+                  {postData?.items?.map((r: any) => (
+                  <ReportRow key={r.id} r={r} type="post" onDismiss={handleDismiss} onAction={setActionReport} />
+                ))}
                 </tbody>
               </table>
             </div>

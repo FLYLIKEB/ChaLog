@@ -27,6 +27,15 @@ import { UsersService } from '../users/users.service';
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
+  private validateSort(allowedSortBy: readonly string[], sortBy: string, sortOrder: string) {
+    if (!allowedSortBy.includes(sortBy)) {
+      throw new BadRequestException('잘못된 정렬 기준입니다.');
+    }
+    if (sortOrder !== 'ASC' && sortOrder !== 'DESC') {
+      throw new BadRequestException('잘못된 정렬 순서입니다.');
+    }
+  }
+
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
@@ -191,6 +200,7 @@ export class AdminService {
 
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
+    this.validateSort(['createdAt', 'reportCount'], sortBy, sortOrder);
     qb.orderBy(`report.${sortBy}`, sortOrder);
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
@@ -263,6 +273,7 @@ export class AdminService {
 
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
+    this.validateSort(['createdAt', 'reportCount'], sortBy, sortOrder);
     qb.orderBy(`report.${sortBy}`, sortOrder);
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
@@ -367,13 +378,12 @@ export class AdminService {
     });
     if (!report) throw new NotFoundException('신고를 찾을 수 없습니다.');
     const noteId = report.noteId;
-    await this.notesService.removeByAdmin(noteId);
-    report.status = ReportStatus.ACTED;
-    await this.noteReportsRepository.save(report);
+
     await this.noteReportsRepository.update(
       { noteId },
       { status: ReportStatus.ACTED },
     );
+    await this.notesService.removeByAdmin(noteId);
     await this.logAudit(adminId, AuditAction.REPORT_ACTION, 'note', noteId, reason, {
       reportId,
     });
@@ -386,13 +396,12 @@ export class AdminService {
     });
     if (!report) throw new NotFoundException('신고를 찾을 수 없습니다.');
     const postId = report.postId;
-    await this.postsService.removeByAdmin(postId);
-    report.status = ReportStatus.ACTED;
-    await this.postReportsRepository.save(report);
+
     await this.postReportsRepository.update(
       { postId },
       { status: ReportStatus.ACTED },
     );
+    await this.postsService.removeByAdmin(postId);
     await this.logAudit(adminId, AuditAction.REPORT_ACTION, 'post', postId, reason, {
       reportId,
     });
@@ -419,6 +428,7 @@ export class AdminService {
 
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
+    this.validateSort(['createdAt', 'updatedAt'], sortBy, sortOrder);
     qb.orderBy(`user.${sortBy}`, sortOrder);
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
@@ -625,6 +635,7 @@ export class AdminService {
 
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
+    this.validateSort(['createdAt', 'updatedAt'], sortBy, sortOrder);
     qb.orderBy(`note.${sortBy}`, sortOrder);
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
@@ -684,6 +695,7 @@ export class AdminService {
 
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
+    this.validateSort(['createdAt', 'viewCount'], sortBy, sortOrder);
     qb.orderBy(`post.${sortBy}`, sortOrder);
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
@@ -735,6 +747,7 @@ export class AdminService {
   async promoteUser(userId: number, adminId: number) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    if (user.role === UserRole.ADMIN) return { success: true };
     user.role = UserRole.ADMIN;
     await this.usersRepository.save(user);
     await this.logAudit(adminId, AuditAction.USER_PROMOTE, 'user', userId);

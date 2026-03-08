@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Loader2, Trash2 } from 'lucide-react';
@@ -13,11 +14,12 @@ export function AdminPosts() {
   const [detail, setDetail] = useState<any>(null);
   const [comments, setComments] = useState<any[]>([]);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.getPosts({ search: search || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
-  }, [search]);
+    adminApi.getPosts({ search: debouncedSearch || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (postId) {
@@ -35,7 +37,7 @@ export function AdminPosts() {
       await adminApi.deletePost(id);
       toast.success('삭제했습니다.');
       setDetail(null);
-      adminApi.getPosts({ search: search || undefined }).then(setList);
+      adminApi.getPosts({ search: debouncedSearch || undefined, limit: 50 }).then(setList);
     } catch (e: any) {
       toast.error(e?.message || '실패');
     }

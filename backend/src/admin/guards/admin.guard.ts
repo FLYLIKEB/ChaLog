@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -19,7 +20,7 @@ export class AdminGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const userId = request.user?.userId;
     if (!userId) {
-      throw new ForbiddenException('운영자 권한이 필요합니다.');
+      throw new UnauthorizedException('인증이 필요합니다.');
     }
 
     const user = await this.usersRepository.findOne({

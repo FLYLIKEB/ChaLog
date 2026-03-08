@@ -275,6 +275,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     refreshOnboardingStatus(user.id);
   }, [refreshOnboardingStatus, token, user]);
 
+  useEffect(() => {
+    if (!token || !user || user.role) {
+      return;
+    }
+    authApi
+      .getMe()
+      .then((res) => {
+        const updated = { ...user, ...res.user };
+        setUser(updated);
+        localStorage.setItem('user', JSON.stringify(updated));
+      })
+      .catch((err) => {
+        logger.error('Failed to revalidate user role', err);
+      });
+  }, [token, user]);
+
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await authApi.login({ email, password });

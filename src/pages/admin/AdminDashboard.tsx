@@ -6,18 +6,47 @@ import { Users, FileText, MessageSquare, Coffee, Flag, Loader2 } from 'lucide-re
 export function AdminDashboard() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchDashboard = () => {
+    setLoading(true);
+    setError(null);
+    adminApi
+      .getDashboard()
+      .then((res) => {
+        setData(res);
+      })
+      .catch((e: any) => {
+        setError(e?.message || '대시보드 로딩에 실패했습니다.');
+      })
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    adminApi.getDashboard().then((res) => {
-      setData(res);
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    fetchDashboard();
   }, []);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error && !data) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">대시보드</h1>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          <p>{error}</p>
+          <button
+            onClick={fetchDashboard}
+            className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 rounded text-sm font-medium"
+          >
+            다시 시도
+          </button>
+        </div>
       </div>
     );
   }

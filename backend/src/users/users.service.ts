@@ -111,7 +111,7 @@ export class UsersService {
     }
 
     if (auth.user.bannedAt) {
-      return null;
+      throw new UnauthorizedException('정지된 계정입니다.');
     }
 
     return auth.user;

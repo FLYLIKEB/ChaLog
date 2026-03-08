@@ -32,8 +32,8 @@ export class AdminController {
 
   @Get('reports/notes')
   getNoteReports(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('status') status?: ReportStatus,
     @Query('reason') reason?: ReportReason,
     @Query('sortBy') sortBy?: 'createdAt' | 'reportCount',
@@ -51,8 +51,8 @@ export class AdminController {
 
   @Get('reports/posts')
   getPostReports(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('status') status?: ReportStatus,
     @Query('reason') reason?: ReportReason,
     @Query('sortBy') sortBy?: 'createdAt' | 'reportCount',
@@ -114,8 +114,8 @@ export class AdminController {
 
   @Get('users')
   getUsers(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: 'createdAt' | 'updatedAt',
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
@@ -160,8 +160,8 @@ export class AdminController {
 
   @Get('notes')
   getNotes(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: 'createdAt' | 'updatedAt',
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
@@ -190,8 +190,8 @@ export class AdminController {
 
   @Get('posts')
   getPosts(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: 'createdAt' | 'viewCount',
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
@@ -233,17 +233,17 @@ export class AdminController {
 
   @Get('audit-log')
   getAuditLogs(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('adminId') adminId?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('adminId', new ParseIntPipe({ optional: true })) adminId?: number,
   ) {
     return this.adminService.getAuditLogs({ page, limit, adminId });
   }
 
   @Get('teas')
   getTeas(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
     @Query('type') type?: string,
     @Query('seller') seller?: string,
@@ -282,8 +282,8 @@ export class AdminController {
 
   @Get('sellers')
   getSellers(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: 'createdAt' | 'name',
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',
@@ -318,8 +318,8 @@ export class AdminController {
 
   @Get('tags')
   getTags(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: 'createdAt' | 'name' | 'usageCount',
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC',

@@ -16,6 +16,17 @@ export class AuthService {
     return await this.usersService.validateUser(email, password);
   }
 
+  async getMe(userId: number) {
+    const user = await this.usersService.findOne(userId);
+    const email = await this.usersService.getUserEmail(user.id);
+    return {
+      id: user.id,
+      email: email || null,
+      name: user.name,
+      role: user.role,
+    };
+  }
+
   async login(user: User) {
     // 이메일 인증 정보 가져오기 (없을 수도 있음)
     const email = await this.usersService.getUserEmail(user.id);

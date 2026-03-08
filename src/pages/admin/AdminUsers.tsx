@@ -1,26 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
+import { useDebounce } from '../../hooks/useDebounce';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Loader2, Ban, Shield, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AdminUsers() {
-  const { id } = useParams();
-  const userId = id;
+  const { id: userId } = useParams();
   const [list, setList] = useState<any>(null);
   const [detail, setDetail] = useState<any>(null);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 300);
   const [loading, setLoading] = useState(true);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
-    adminApi.getUsers({ search: search || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
-  }, [search]);
+    adminApi.getUsers({ search: debouncedSearch || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
+  }, [debouncedSearch]);
 
   useEffect(() => {
     if (userId) {
-      adminApi.getUserDetail(Number(userId)).then(setDetail);
+      setDetailLoading(true);
+      adminApi.getUserDetail(Number(userId)).then(setDetail).finally(() => setDetailLoading(false));
     } else {
       setDetail(null);
     }
@@ -31,7 +34,7 @@ export function AdminUsers() {
       await adminApi.suspendUser(id);
       toast.success('계정을 정지했습니다.');
       if (Number(userId) === id) setDetail(null);
-      adminApi.getUsers({ search: search || undefined }).then(setList);
+      adminApi.getUsers({ search: debouncedSearch || undefined, limit: 50 }).then(setList);
     } catch (e: any) {
       toast.error(e?.message || '실패');
     }
@@ -42,7 +45,7 @@ export function AdminUsers() {
       await adminApi.promoteUser(id);
       toast.success('운영자로 승격했습니다.');
       if (Number(userId) === id) adminApi.getUserDetail(id).then(setDetail);
-      adminApi.getUsers({ search: search || undefined }).then(setList);
+      adminApi.getUsers({ search: debouncedSearch || undefined, limit: 50 }).then(setList);
     } catch (e: any) {
       toast.error(e?.message || '실패');
     }
@@ -54,11 +57,23 @@ export function AdminUsers() {
       await adminApi.deleteUser(id);
       toast.success('삭제했습니다.');
       setDetail(null);
-      adminApi.getUsers({ search: search || undefined }).then(setList);
+      adminApi.getUsers({ search: debouncedSearch || undefined, limit: 50 }).then(setList);
     } catch (e: any) {
       toast.error(e?.message || '실패');
     }
   };
+
+  if (detailLoading) {
+    return (
+      <div className="space-y-6">
+        <Link to="/admin/users" className="text-primary text-sm">← 목록으로</Link>
+        <h1 className="text-2xl font-bold">사용자 상세</h1>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   if (detail) {
     return (
