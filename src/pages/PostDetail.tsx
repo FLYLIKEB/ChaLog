@@ -200,7 +200,14 @@ export function PostDetail() {
 
         {/* 작성자 정보 + 메타 */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{post.user?.name}</span>
+          <button
+            type="button"
+            onClick={() => post.user?.id && navigate(`/user/${post.user.id}`)}
+            className="font-medium text-foreground hover:underline"
+            aria-label="작성자 프로필 보기"
+          >
+            {post.user?.name}
+          </button>
           <span>·</span>
           <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
           <span>·</span>
