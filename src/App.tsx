@@ -5,6 +5,7 @@ function CommunityRedirect() {
   const { pathname } = useLocation();
   return <Navigate to={pathname.replace('/community', '/chadam')} replace />;
 }
+import { ThemeProvider } from 'next-themes';
 import { PAGE_BG_GRADIENT } from './constants';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
@@ -121,7 +122,8 @@ const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefin
 
 export default function App() {
   const content = (
-    <AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="chalog-theme">
+      <AuthProvider>
       <BrowserRouter>
         <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
           <OnboardingRouteGuard>
@@ -163,6 +165,7 @@ export default function App() {
         </div>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 
   if (googleClientId) {
