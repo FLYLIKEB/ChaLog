@@ -100,6 +100,15 @@ export class PostsService {
     await this.postsRepository.remove(post);
   }
 
+  /** 운영자 강제 삭제 (소유권 검사 없음) */
+  async removeByAdmin(id: number): Promise<void> {
+    const post = await this.postsRepository.findOne({ where: { id } });
+    if (!post) {
+      throw new NotFoundException('게시글을 찾을 수 없습니다.');
+    }
+    await this.postsRepository.remove(post);
+  }
+
   async toggleLike(postId: number, userId: number): Promise<{ liked: boolean; likeCount: number }> {
     return this.dataSource.transaction(async (manager) => {
       const post = await manager.findOne(Post, { where: { id: postId } });

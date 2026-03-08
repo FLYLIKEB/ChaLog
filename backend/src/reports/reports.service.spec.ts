@@ -4,7 +4,9 @@ import { Repository } from 'typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { NoteReport, ReportReason } from './entities/note-report.entity';
+import { PostReport } from './entities/post-report.entity';
 import { Note } from '../notes/entities/note.entity';
+import { Post } from '../posts/entities/post.entity';
 import { CreateReportDto } from './dto/create-report.dto';
 
 describe('ReportsService', () => {
@@ -15,11 +17,15 @@ describe('ReportsService', () => {
   const mockNoteReportsRepository = {
     create: jest.fn(),
     save: jest.fn(),
+    exist: jest.fn().mockResolvedValue(false),
   };
 
   const mockNotesRepository = {
     findOne: jest.fn(),
   };
+
+  const mockPostReportsRepository = { create: jest.fn(), save: jest.fn(), exist: jest.fn().mockResolvedValue(false) };
+  const mockPostsRepository = { findOne: jest.fn() };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -32,6 +38,14 @@ describe('ReportsService', () => {
         {
           provide: getRepositoryToken(Note),
           useValue: mockNotesRepository,
+        },
+        {
+          provide: getRepositoryToken(PostReport),
+          useValue: mockPostReportsRepository,
+        },
+        {
+          provide: getRepositoryToken(Post),
+          useValue: mockPostsRepository,
         },
       ],
     }).compile();
@@ -59,11 +73,13 @@ describe('ReportsService', () => {
       const result = await service.reportNote(noteId, reporterId, dto);
 
       expect(notesRepository.findOne).toHaveBeenCalledWith({ where: { id: noteId } });
-      expect(noteReportsRepository.create).toHaveBeenCalledWith({
-        noteId,
-        reporterId,
-        reason: dto.reason,
-      });
+      expect(noteReportsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          noteId,
+          reporterId,
+          reason: dto.reason,
+        }),
+      );
       expect(noteReportsRepository.save).toHaveBeenCalledWith(created);
       expect(result).toEqual(created);
     });
