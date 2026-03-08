@@ -40,6 +40,9 @@ export class Note {
   @Column({ type: 'text', nullable: true })
   memo: string | null;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  whereToBuy: string | null;
+
   @Column({ type: 'json', nullable: true })
   images: string[] | null;
 

@@ -34,6 +34,7 @@ export function NewNote() {
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
   const [overallRating, setOverallRating] = useState<number | null>(null);
   const [memo, setMemo] = useState('');
+  const [whereToBuy, setWhereToBuy] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imageThumbnails, setImageThumbnails] = useState<(string | null)[]>([]);
   const [tags, setTags] = useState<string[]>([]);
@@ -173,6 +174,7 @@ export function NewNote() {
       // 백엔드 API는 @IsOptional()로 memo를 선택적 필드로 허용하지만,
       // 빈 문자열 대신 null을 전송하는 것이 일관성 있음
       const processedMemo = memo && memo.trim() ? memo.trim() : null;
+      const processedWhereToBuy = whereToBuy && whereToBuy.trim() ? whereToBuy.trim() : null;
 
       await notesApi.create({
         teaId: selectedTea,
@@ -181,6 +183,7 @@ export function NewNote() {
         isRatingIncluded: true,
         axisValues: axisValuesArray,
         memo: processedMemo,
+        whereToBuy: processedWhereToBuy,
         images: images.length > 0 ? images : null,
         imageThumbnails:
           images.length > 0 && imageThumbnails.length === images.length
@@ -335,6 +338,20 @@ export function NewNote() {
             onChange={setTags}
             maxTags={10}
           />
+        </section>
+
+        {/* 구입처 입력 */}
+        <section className="bg-white rounded-lg p-4">
+          <Label className="mb-2 block">구입처 (선택)</Label>
+          <Input
+            type="text"
+            placeholder="샵 이름 또는 구매 링크 (예: https://example.com)"
+            value={whereToBuy}
+            onChange={(e) => setWhereToBuy(e.target.value)}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            링크를 입력하면 클릭 시 외부 브라우저에서 열립니다.
+          </p>
         </section>
 
         {/* 메모 입력 */}

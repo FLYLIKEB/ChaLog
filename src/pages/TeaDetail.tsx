@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Loader2 } from 'lucide-react';
+import { Star, Loader2, ExternalLink } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { TeaCard } from '../components/TeaCard';
@@ -118,6 +118,15 @@ export function TeaDetail() {
   const topTags = calculateTopTags(publicNotes);
   const maxTagCount = popularTags.length > 0 ? popularTags[0].count : 1;
 
+  // 리뷰에서 언급된 구입처 집계 (중복 제거, 빈 값 제외)
+  const whereToBuyList = Array.from(
+    new Set(
+      publicNotes
+        .map((n) => n.whereToBuy)
+        .filter((v): v is string => !!v && v.trim().length > 0)
+    )
+  );
+
   const topReviewIds = new Set(topReviews.map((n) => n.id));
   const remainingNotes = publicNotes.filter((n) => !topReviewIds.has(n.id));
 
@@ -191,6 +200,42 @@ export function TeaDetail() {
             </p>
           )}
         </section>
+
+        {/* 리뷰에서 언급된 구입처 */}
+        {whereToBuyList.length > 0 && (
+          <section className="bg-white rounded-lg p-4">
+            <h2 className="mb-3">리뷰에서 언급된 구입처</h2>
+            <div className="flex flex-wrap gap-2">
+              {whereToBuyList.map((item) =>
+                /^https?:\/\//i.test(item) ? (
+                  <a
+                    key={item}
+                    href={item}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors text-sm"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    {(() => {
+                      try {
+                        return new URL(item).hostname;
+                      } catch {
+                        return item;
+                      }
+                    })()}
+                  </a>
+                ) : (
+                  <span
+                    key={item}
+                    className="inline-flex px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 text-sm"
+                  >
+                    {item}
+                  </span>
+                )
+              )}
+            </div>
+          </section>
+        )}
 
         {/* 태그 클라우드 */}
         {popularTags.length > 0 && (

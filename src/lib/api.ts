@@ -158,6 +158,7 @@ interface BackendNote {
     };
   }>;
   memo: string | null;
+  whereToBuy?: string | null;
   images?: string[] | null;
   imageThumbnails?: string[] | null;
   noteTags?: Array<{ tag: { name: string } }>;
@@ -208,6 +209,7 @@ interface NormalizedNote {
     };
   }>;
   memo: string | null;
+  whereToBuy?: string | null;
   images?: string[];
   imageThumbnails?: string[] | null;
   tags?: string[];
@@ -240,6 +242,7 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     userName: note.user?.name || '',
     // memo는 null을 유지 (이제 nullable)
     memo: note.memo,
+    whereToBuy: note.whereToBuy || undefined,
     // images가 null이면 undefined로 변환, 빈 배열이면 undefined로 변환
     images: note.images && note.images.length > 0 ? note.images : undefined,
     imageThumbnails: note.imageThumbnails && note.imageThumbnails.length > 0 ? note.imageThumbnails : undefined,
@@ -1031,6 +1034,7 @@ export interface CreateNoteRequest {
     value: number;
   }>;
   memo?: string | null;
+  whereToBuy?: string | null;
   images?: string[] | null;
   imageThumbnails?: string[] | null;
   tags?: string[];

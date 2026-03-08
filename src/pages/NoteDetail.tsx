@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag, ExternalLink } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
@@ -337,6 +337,34 @@ export function NoteDetail() {
                 </Link>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* 구입처 */}
+        {note.whereToBuy && (
+          <section className="bg-card rounded-lg p-4">
+            <h3 className="mb-3 text-primary">구입처</h3>
+            {/^https?:\/\//i.test(note.whereToBuy) ? (
+              <a
+                href={note.whereToBuy}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-primary hover:underline"
+              >
+                <ExternalLink className="w-4 h-4 shrink-0" />
+                <span className="break-all">
+                  {(() => {
+                    try {
+                      return new URL(note.whereToBuy!).hostname;
+                    } catch {
+                      return note.whereToBuy;
+                    }
+                  })()}
+                </span>
+              </a>
+            ) : (
+              <p className="text-foreground">{note.whereToBuy}</p>
+            )}
           </section>
         )}
 

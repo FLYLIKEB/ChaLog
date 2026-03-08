@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, IsObject } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, MaxLength, IsUrl, ValidateIf } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 class AxisValueDto {
@@ -37,6 +37,14 @@ export class CreateNoteDto {
   @Transform(({ value }) => value === null ? null : value)
   @IsString()
   memo?: string | null;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === null || value === '' ? null : (typeof value === 'string' ? value.trim() : value)))
+  @IsString()
+  @MaxLength(500, { message: '구입처는 500자 이내로 입력해주세요.' })
+  @ValidateIf((o) => o.whereToBuy != null && /^https?:\/\//i.test(o.whereToBuy))
+  @IsUrl({}, { message: 'URL 형식이 올바르지 않습니다. http:// 또는 https://로 시작하는 유효한 URL을 입력해주세요.' })
+  whereToBuy?: string | null;
 
   @IsOptional()
   @Transform(({ value }) => value === null ? null : value)
