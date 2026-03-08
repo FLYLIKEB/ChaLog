@@ -732,6 +732,17 @@ export class AdminService {
     return { success: true };
   }
 
+  async togglePostPin(postId: number, adminId: number) {
+    const post = await this.postsRepository.findOne({ where: { id: postId } });
+    if (!post) throw new NotFoundException('게시글을 찾을 수 없습니다.');
+    post.isPinned = !post.isPinned;
+    await this.postsRepository.save(post);
+    await this.logAudit(adminId, AuditAction.POST_UPDATE, 'post', postId, undefined, {
+      isPinned: post.isPinned,
+    });
+    return { isPinned: post.isPinned };
+  }
+
   async suspendUser(userId: number, adminId: number) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');

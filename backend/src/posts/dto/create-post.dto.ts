@@ -20,6 +20,10 @@ export class CreatePostDto {
 
   @IsBoolean()
   @IsOptional()
+  isPinned?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
   isSponsored?: boolean;
 
   @IsString()

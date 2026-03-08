@@ -11,6 +11,8 @@ import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { UsersService } from '../users/users.service';
+import { UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class PostsService {
@@ -25,13 +27,25 @@ export class PostsService {
     private postBookmarksRepository: Repository<PostBookmark>,
     @InjectDataSource()
     private dataSource: DataSource,
+    private usersService: UsersService,
   ) {}
 
   async create(userId: number, dto: CreatePostDto): Promise<any> {
+    const user = await this.usersService.findOne(userId);
+    if (!user) throw new ForbiddenException('사용자를 찾을 수 없습니다.');
+
+    if (dto.category === PostCategory.ANNOUNCEMENT && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('공지사항 게시판에는 관리자만 글을 작성할 수 있습니다.');
+    }
+
+    const isAdmin = user.role === UserRole.ADMIN;
+    const isPinned = isAdmin && (dto.isPinned === true);
+
     const post = this.postsRepository.create({
       ...dto,
       userId,
       isAnonymous: dto.isAnonymous ?? false,
+      isPinned,
       isSponsored: dto.isSponsored ?? false,
       sponsorNote: dto.sponsorNote ?? null,
     });
@@ -49,7 +63,8 @@ export class PostsService {
     const qb = this.postsRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
-      .orderBy('post.createdAt', 'DESC')
+      .orderBy('post.isPinned', 'DESC')
+      .addOrderBy('post.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
 
@@ -85,7 +100,13 @@ export class PostsService {
     if (post.userId !== userId) {
       throw new ForbiddenException('이 게시글을 수정할 권한이 없습니다.');
     }
-    Object.assign(post, dto);
+    const user = await this.usersService.findOne(userId);
+    const isAdmin = user?.role === UserRole.ADMIN;
+    const updateDto = { ...dto };
+    if (!isAdmin && 'isPinned' in dto) {
+      delete (updateDto as any).isPinned;
+    }
+    Object.assign(post, updateDto);
     await this.postsRepository.save(post);
     return this.findOne(id, userId);
   }

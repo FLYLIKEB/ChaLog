@@ -20,6 +20,8 @@ const CATEGORIES: Array<{ value: PostCategory | null; label: string }> = [
   { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation },
   { value: 'tool', label: POST_CATEGORY_LABELS.tool },
   { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review },
+  { value: 'announcement', label: POST_CATEGORY_LABELS.announcement },
+  { value: 'bug_report', label: POST_CATEGORY_LABELS.bug_report },
 ];
 
 export function Community() {
@@ -91,7 +93,7 @@ export function Community() {
                 ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없어요.`
                 : '첫 번째 게시글을 작성해보세요!'
             }
-            action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/community/new') }}
+            action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
           />
         ) : (
           <div>

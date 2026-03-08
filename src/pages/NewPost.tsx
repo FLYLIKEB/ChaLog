@@ -10,16 +10,24 @@ import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
-const CATEGORIES: PostCategory[] = ['brewing_question', 'recommendation', 'tool', 'tea_room_review'];
+const ALL_CATEGORIES: PostCategory[] = [
+  'brewing_question',
+  'recommendation',
+  'tool',
+  'tea_room_review',
+  'announcement',
+  'bug_report',
+];
 
 export function NewPost() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<PostCategory>('brewing_question');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
   const [isSponsored, setIsSponsored] = useState(false);
   const [sponsorNote, setSponsorNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +49,7 @@ export function NewPost() {
       content: content.trim(),
       category,
       isAnonymous,
+      isPinned: isAdmin ? isPinned : undefined,
       isSponsored,
       sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
     };
@@ -72,21 +81,28 @@ export function NewPost() {
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-foreground">카테고리</label>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setCategory(cat)}
-                className={cn(
-                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                  category === cat
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
-                )}
-              >
-                {POST_CATEGORY_LABELS[cat]}
-              </button>
-            ))}
+            {ALL_CATEGORIES.map((cat) => {
+              const isAnnouncement = cat === 'announcement';
+              const disabled = isAnnouncement && !isAdmin;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => !disabled && setCategory(cat)}
+                  disabled={disabled}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                    category === cat
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : disabled
+                        ? 'border-border text-muted-foreground/50 cursor-not-allowed opacity-60'
+                        : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                  )}
+                >
+                  {POST_CATEGORY_LABELS[cat]}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -129,6 +145,21 @@ export function NewPost() {
             )}
           />
         </div>
+
+        {/* 공지 고정 (관리자만) */}
+        {isAdmin && (
+          <div className="flex flex-col gap-3">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isPinned}
+                onChange={(e) => setIsPinned(e.target.checked)}
+                className="w-4 h-4 rounded border-border accent-primary"
+              />
+              <span className="text-sm font-medium text-foreground">공지로 고정</span>
+            </label>
+          </div>
+        )}
 
         {/* 익명 */}
         <div className="flex flex-col gap-3">

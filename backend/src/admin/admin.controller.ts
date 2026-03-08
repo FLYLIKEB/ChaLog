@@ -210,6 +210,14 @@ export class AdminController {
     return this.adminService.getPostDetail(id);
   }
 
+  @Patch('posts/:id/pin')
+  togglePostPin(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.togglePostPin(id, adminId);
+  }
+
   @Delete('posts/:id')
   deletePost(
     @Param('id', ParseIntPipe) id: number,

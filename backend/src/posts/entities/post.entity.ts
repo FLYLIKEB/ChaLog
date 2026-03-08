@@ -17,6 +17,8 @@ export enum PostCategory {
   RECOMMENDATION = 'recommendation',
   TOOL = 'tool',
   TEA_ROOM_REVIEW = 'tea_room_review',
+  ANNOUNCEMENT = 'announcement',
+  BUG_REPORT = 'bug_report',
 }
 
 @Entity('posts')
@@ -45,6 +47,9 @@ export class Post {
 
   @Column({ default: false })
   isAnonymous: boolean;
+
+  @Column({ default: false })
+  isPinned: boolean;
 
   @Column({ type: 'varchar', length: 300, nullable: true })
   sponsorNote: string | null;

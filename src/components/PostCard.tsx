@@ -83,11 +83,16 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
       }}
     >
       <div className="flex flex-col gap-2">
-        {/* 카테고리 + 협찬 뱃지 */}
+        {/* 카테고리 + 공지 + 협찬 뱃지 */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
             {POST_CATEGORY_LABELS[post.category]}
           </span>
+          {post.isPinned && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+              공지
+            </span>
+          )}
           {post.isSponsored && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium flex items-center gap-1">
               <Megaphone className="w-3 h-3" />
@@ -112,17 +117,24 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
             {post.isAnonymous ? (
               <span className="font-medium truncate">익명</span>
             ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (post.user?.id) navigate(`/user/${post.user.id}`);
-                }}
-                className="font-medium truncate hover:text-foreground hover:underline text-left"
-                aria-label="작성자 프로필 보기"
-              >
-                {post.user?.name}
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (post.user?.id) navigate(`/user/${post.user.id}`);
+                  }}
+                  className="font-medium truncate hover:text-foreground hover:underline text-left"
+                  aria-label="작성자 프로필 보기"
+                >
+                  {post.user?.name}
+                </button>
+                {post.user?.role === 'admin' && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium shrink-0">
+                    관리자
+                  </span>
+                )}
+              </>
             )}
             <span>·</span>
             <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>

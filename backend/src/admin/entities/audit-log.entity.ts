@@ -9,6 +9,7 @@ export enum AuditAction {
   REPORT_DISMISS = 'report_dismiss',
   REPORT_ACTION = 'report_action',
   NOTE_DELETE = 'note_delete',
+  POST_UPDATE = 'post_update',
   POST_DELETE = 'post_delete',
   COMMENT_DELETE = 'comment_delete',
   USER_SUSPEND = 'user_suspend',

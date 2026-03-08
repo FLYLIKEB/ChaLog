@@ -1270,6 +1270,7 @@ export interface CreatePostRequest {
   content: string;
   category: import('../types').PostCategory;
   isAnonymous?: boolean;
+  isPinned?: boolean;
   isSponsored?: boolean;
   sponsorNote?: string;
 }
@@ -1396,6 +1397,7 @@ export const adminApi = {
     return apiClient.get(`/admin/posts?${search.toString()}`);
   },
   getPostDetail: (id: number) => apiClient.get(`/admin/posts/${id}`),
+  togglePostPin: (id: number) => apiClient.patch<{ isPinned: boolean }>(`/admin/posts/${id}/pin`),
   deletePost: (id: number) => apiClient.delete(`/admin/posts/${id}`),
   getPostComments: (postId: number) => apiClient.get(`/admin/posts/${postId}/comments`),
   deleteComment: (id: number) => apiClient.delete(`/admin/comments/${id}`),
