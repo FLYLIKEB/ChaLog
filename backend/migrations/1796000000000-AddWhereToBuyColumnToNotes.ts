@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddWhereToBuyColumnToNotes1792000000000 implements MigrationInterface {
-  name = 'AddWhereToBuyColumnToNotes1792000000000';
+export class AddWhereToBuyColumnToNotes1796000000000 implements MigrationInterface {
+  name = 'AddWhereToBuyColumnToNotes1796000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`

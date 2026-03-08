@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Loader2,
@@ -18,6 +18,7 @@ import { BottomNav } from '../components/BottomNav';
 import { CommentList } from '../components/CommentList';
 import { PostReportModal } from '../components/PostReportModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 import {
@@ -43,34 +44,40 @@ export function PostDetail() {
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
 
+  const fetchData = useCallback(async () => {
+    if (!postId || isNaN(postId)) return;
+    setIsLoading(true);
+    try {
+      const [postData, commentsData] = await Promise.all([
+        postsApi.getById(postId),
+        commentsApi.getByPost(postId),
+      ]);
+      setPost(postData);
+      setIsLiked(postData.isLiked ?? false);
+      setLikeCount(postData.likeCount ?? 0);
+      setIsBookmarked(postData.isBookmarked ?? false);
+      setComments(commentsData);
+    } catch {
+      toast.error('게시글을 불러오는 데 실패했습니다.');
+      navigate('/chadam', { replace: true });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [postId, navigate]);
+
   useEffect(() => {
     if (!postId || isNaN(postId)) {
-      navigate('/community', { replace: true });
+      navigate('/chadam', { replace: true });
       return;
     }
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [postData, commentsData] = await Promise.all([
-          postsApi.getById(postId),
-          commentsApi.getByPost(postId),
-        ]);
-        setPost(postData);
-        setIsLiked(postData.isLiked ?? false);
-        setLikeCount(postData.likeCount ?? 0);
-        setIsBookmarked(postData.isBookmarked ?? false);
-        setComments(commentsData);
-      } catch {
-        toast.error('게시글을 불러오는 데 실패했습니다.');
-        navigate('/community', { replace: true });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
-  }, [postId, navigate]);
+  }, [postId, navigate, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchData);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData]);
 
   const handleToggleLike = async () => {
     if (!user) {
@@ -113,7 +120,7 @@ export function PostDetail() {
     try {
       await postsApi.delete(postId);
       toast.success('게시글이 삭제되었습니다.');
-      navigate('/community', { replace: true });
+      navigate('/chadam', { replace: true });
     } catch {
       toast.error('게시글 삭제에 실패했습니다.');
     }
@@ -121,7 +128,7 @@ export function PostDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -132,8 +139,8 @@ export function PostDetail() {
   const isAuthor = user?.id === post.userId;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header showBack title="게시글" />
+    <div className="min-h-screen pb-20">
+      <Header showBack title="게시글" showProfile />
 
       <div className="px-4 py-4 flex flex-col gap-5">
         {/* 카테고리 + 협찬 뱃지 */}
@@ -164,7 +171,7 @@ export function PostDetail() {
             <DropdownMenuContent align="end">
               {isAuthor ? (
                 <>
-                  <DropdownMenuItem onClick={() => navigate(`/community/${postId}/edit`)}>
+                  <DropdownMenuItem onClick={() => navigate(`/chadam/${postId}/edit`)}>
                     <Pencil className="w-4 h-4 mr-2" />
                     수정
                   </DropdownMenuItem>

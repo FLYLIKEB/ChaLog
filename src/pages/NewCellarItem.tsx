@@ -8,6 +8,7 @@ import { Textarea } from '../components/ui/textarea';
 import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { logger } from '../lib/logger';
@@ -71,6 +72,12 @@ export function NewCellarItem() {
     fetchTeas();
   }, [isAuthenticated, authLoading, navigate, returnedTeaId]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   const filteredTeas = teaSearch.trim()
     ? teas.filter(
         (t) =>
@@ -106,11 +113,11 @@ export function NewCellarItem() {
         remindAt: remindAt ? new Date(remindAt).toISOString() : null,
         memo: memo.trim() || null,
       });
-      toast.success('셀러에 추가되었습니다.');
+      toast.success('찻장에 추가되었습니다.');
       navigate('/cellar');
     } catch (error) {
       logger.error('Failed to create cellar item:', error);
-      toast.error('셀러 추가에 실패했습니다.');
+      toast.error('찻장 추가에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -118,15 +125,15 @@ export function NewCellarItem() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header showBack title="셀러에 차 추가" />
+    <div className="min-h-screen">
+      <Header showBack title="찻장에 차 추가" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 pb-10">
         {/* 차 선택 */}
@@ -193,7 +200,10 @@ export function NewCellarItem() {
                         }}
                       >
                         <p className="text-sm font-medium">{tea.name}</p>
-                        <p className="text-xs text-muted-foreground">{tea.type}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {tea.type}
+                          {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
+                        </p>
                       </button>
                     ))
                   )}
@@ -272,7 +282,7 @@ export function NewCellarItem() {
               추가 중...
             </>
           ) : (
-            '셀러에 추가'
+            '찻장에 추가'
           )}
         </Button>
       </form>

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { NewTea } from '../NewTea';
@@ -13,6 +13,7 @@ const mockTeas = [
     seller: '차향',
     year: 2023,
     origin: '중국',
+    price: 25000,
     averageRating: 4.4,
     reviewCount: 15,
   },
@@ -43,7 +44,7 @@ vi.mock('../../lib/api', () => ({
   teasApi: {
     getAll: vi.fn((query?: string) => {
       if (!query) return Promise.resolve(mockTeas);
-      const filtered = mockTeas.filter(tea => 
+      const filtered = mockTeas.filter(tea =>
         tea.name.toLowerCase().includes(query.toLowerCase())
       );
       return Promise.resolve(filtered);
@@ -52,6 +53,9 @@ vi.mock('../../lib/api', () => ({
       const tea = mockTeas.find(t => t.id === id);
       return Promise.resolve(tea || null);
     }),
+    getSellers: vi.fn((_query?: string) =>
+      Promise.resolve({ sellers: [{ name: '차향', teaCount: 5 }, { name: '티하우스', teaCount: 3 }] }),
+    ),
     create: vi.fn(() => Promise.resolve(mockCreatedTea)),
   },
 }));
@@ -125,6 +129,7 @@ describe('NewTea 페이지', () => {
     expect(screen.getByLabelText(/차 이름/)).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '차 종류 선택' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '녹차' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/가격/)).toBeInTheDocument();
   });
 
   it('searchQuery 파라미터가 있으면 차 이름 필드가 자동 채워진다', () => {
@@ -180,29 +185,20 @@ describe('NewTea 페이지', () => {
 
     const nameInput = screen.getByLabelText(/차 이름/);
     const 녹차Button = screen.getByRole('button', { name: '녹차' });
-    const yearInput = screen.getByLabelText(/연도/) as HTMLInputElement;
 
     await user.type(nameInput, '테스트 차');
     await user.click(녹차Button);
-    
-    // HTML5 min 속성을 우회하기 위해 form에 noValidate 추가
-    const submitButton = screen.getByRole('button', { name: '등록하기' });
-    const form = submitButton.closest('form');
-    if (form) {
-      form.setAttribute('noValidate', '');
-    }
-    
-    // yearInput의 value를 직접 설정하고 React의 onChange를 트리거
-    await user.clear(yearInput);
-    // React state를 업데이트하기 위해 실제 입력 이벤트 시뮬레이션
-    await user.type(yearInput, '1800');
 
-    // form submit 이벤트 직접 트리거 (HTML5 validation 우회)
-    if (form) {
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-      Object.defineProperty(submitEvent, 'preventDefault', { value: vi.fn() });
-      form.dispatchEvent(submitEvent);
-    }
+    // 연도 Select에서 "그 외 (직접 입력)" 선택
+    const yearTrigger = screen.getByRole('combobox', { name: /연도/ });
+    await user.click(yearTrigger);
+    const customOption = await screen.findByRole('option', { name: '그 외 (직접 입력)' });
+    await user.click(customOption);
+
+    const yearCustomInput = screen.getByLabelText(/연도 직접 입력/);
+    await user.type(yearCustomInput, '1800');
+
+    await user.click(screen.getByRole('button', { name: '등록하기' }));
 
     await waitFor(() => {
       expect(toastMock.error).toHaveBeenCalledWith('연도는 1900년 이상이어야 합니다.');
@@ -217,15 +213,21 @@ describe('NewTea 페이지', () => {
 
     const nameInput = screen.getByLabelText(/차 이름/);
     const 녹차Button = screen.getByRole('button', { name: '녹차' });
-    const yearInput = screen.getByLabelText(/연도/);
-    const sellerInput = screen.getByLabelText(/구매처/);
-    const originInput = screen.getByLabelText(/산지/);
+    const sellerInput = screen.getByTestId('seller-input');
 
     await user.type(nameInput, '새로운 차');
     await user.click(녹차Button);
-    await user.type(yearInput, '2024');
-    await user.type(sellerInput, '새 찻집');
-    await user.type(originInput, '한국');
+
+    // 구매처 입력 (fireEvent로 직접 설정 - Combobox 내부 이벤트 처리 이슈 회피)
+    fireEvent.change(sellerInput, { target: { value: '새 찻집' } });
+
+    // 연도 Select에서 2024년 선택
+    const yearTrigger = screen.getByRole('combobox', { name: /연도/ });
+    await user.click(yearTrigger);
+    const year2024Option = await screen.findByRole('option', { name: '2024년' });
+    await user.click(year2024Option);
+
+    await user.click(screen.getByRole('button', { name: '한국' }));
 
     await user.click(screen.getByRole('button', { name: '등록하기' }));
 
@@ -235,6 +237,7 @@ describe('NewTea 페이지', () => {
       year: 2024,
       seller: '새 찻집',
       origin: '한국',
+      price: undefined,
     });
 
     await waitFor(() => {
@@ -344,7 +347,33 @@ describe('NewTea 페이지', () => {
       year: undefined,
       seller: undefined,
       origin: undefined,
+      price: undefined,
     });
+  });
+
+  it('가격을 입력하면 등록 시 함께 전달된다', async () => {
+    const user = userEvent.setup();
+    const { teasApi } = await import('../../lib/api');
+
+    renderNewTea();
+
+    const nameInput = screen.getByLabelText(/차 이름/);
+    const 녹차Button = screen.getByRole('button', { name: '녹차' });
+    const priceInput = screen.getByLabelText(/가격/);
+
+    await user.type(nameInput, '가격 테스트 차');
+    await user.click(녹차Button);
+    await user.type(priceInput, '15000');
+
+    await user.click(screen.getByRole('button', { name: '등록하기' }));
+
+    expect(teasApi.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: '가격 테스트 차',
+        type: '녹차',
+        price: 15000,
+      }),
+    );
   });
 
   it('모든 차 종류 버튼이 표시된다', () => {

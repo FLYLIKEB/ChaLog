@@ -1,4 +1,6 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException, Logger, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -34,6 +36,8 @@ export class UsersService {
     private notificationSettingRepository: Repository<UserNotificationSetting>,
     @InjectDataSource()
     private dataSource: DataSource,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
     private followsService: FollowsService,
     private notificationsService: NotificationsService,
   ) {}
@@ -230,6 +234,68 @@ export class UsersService {
     return auth?.providerId || null;
   }
 
+  async getLinkedAccounts(userId: number): Promise<
+    Array<{ id: number; provider: AuthProvider; providerId: string; hasCredential: boolean }>
+  > {
+    const auths = await this.authRepository.find({
+      where: { userId },
+      order: { provider: 'ASC' },
+    });
+    return auths.map((a) => ({
+      id: a.id,
+      provider: a.provider,
+      providerId: a.providerId,
+      hasCredential: !!a.credential,
+    }));
+  }
+
+  async unlinkAccount(userId: number, authId: number): Promise<void> {
+    const auth = await this.authRepository.findOne({
+      where: { id: authId },
+      relations: ['user'],
+    });
+    if (!auth) {
+      throw new NotFoundException('연동 계정을 찾을 수 없습니다.');
+    }
+    if (auth.userId !== userId) {
+      throw new ForbiddenException('이 연동 계정을 해제할 권한이 없습니다.');
+    }
+    const count = await this.authRepository.count({ where: { userId } });
+    if (count <= 1) {
+      throw new BadRequestException('최소 1개의 로그인 수단은 유지해야 합니다.');
+    }
+    await this.authRepository.remove(auth);
+  }
+
+  async linkOAuthAccount(
+    userId: number,
+    provider: AuthProvider,
+    providerId: string,
+    email: string | null,
+  ): Promise<void> {
+    const existingAuth = await this.authRepository.findOne({
+      where: { provider, providerId },
+      relations: ['user'],
+    });
+    if (existingAuth) {
+      if (existingAuth.userId === userId) {
+        throw new BadRequestException('이미 연동된 계정입니다.');
+      }
+      throw new ConflictException('다른 계정에 이미 연동된 소셜 계정입니다.');
+    }
+    await this.authRepository.save(
+      this.authRepository.create({
+        userId,
+        provider,
+        providerId,
+        credential: null,
+      }),
+    );
+    if (email) {
+      await this.addEmailAuthIfNotExists(userId, email);
+    }
+  }
+
   async update(id: number, userId: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
     
@@ -327,6 +393,51 @@ export class UsersService {
     }
 
     return await this.notificationSettingRepository.save(setting);
+  }
+
+  async getTrendingCreators(
+    period: '7d' | '30d' = '7d',
+  ): Promise<Array<Pick<User, 'id' | 'name' | 'profileImageUrl' | 'bio' | 'instagramUrl' | 'blogUrl' | 'createdAt' | 'updatedAt'> & { followerCount: number }>> {
+    const cacheKey = `trending:creators:${period}`;
+    const cached = await this.cacheManager.get<
+      Array<Pick<User, 'id' | 'name' | 'profileImageUrl' | 'bio' | 'instagramUrl' | 'blogUrl' | 'createdAt' | 'updatedAt'> & { followerCount: number }>
+    >(cacheKey);
+    if (cached) return cached;
+
+    const days = period === '30d' ? 30 : 7;
+    const w1 = 0.3;
+    const w2 = 0.4;
+    const w3 = 0.3;
+
+    const rows: Array<{
+      id: number;
+      name: string;
+      profileImageUrl: string | null;
+      bio: string | null;
+      instagramUrl: string | null;
+      blogUrl: string | null;
+      createdAt: Date;
+      updatedAt: Date;
+      followerCount: string;
+    }> = await this.dataSource.query(
+      `SELECT u.id, u.name, u.profileImageUrl, u.bio, u.instagramUrl, u.blogUrl, u.createdAt, u.updatedAt,
+              COALESCE(fc.cnt, 0) AS followerCount
+       FROM users u
+       INNER JOIN notes n ON n.userId = u.id AND n.isPublic = 1 AND n.createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+       LEFT JOIN note_likes nl ON nl.noteId = n.id
+       LEFT JOIN (SELECT followingId, COUNT(*) AS cnt FROM follows GROUP BY followingId) fc ON fc.followingId = u.id
+       GROUP BY u.id, u.name, u.profileImageUrl, u.bio, u.instagramUrl, u.blogUrl, u.createdAt, u.updatedAt, fc.cnt
+       ORDER BY COALESCE(fc.cnt, 0) * ? + COUNT(DISTINCT n.id) * ? + COUNT(DISTINCT nl.id) * ? DESC
+       LIMIT 10`,
+      [days, w1, w2, w3],
+    );
+
+    const result = rows.map((r) => ({
+      ...r,
+      followerCount: Number(r.followerCount),
+    }));
+    await this.cacheManager.set(cacheKey, result, 600000); // 10분 TTL
+    return result;
   }
 
   async toggleFollow(

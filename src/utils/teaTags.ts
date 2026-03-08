@@ -58,7 +58,7 @@ export function calculateTopTags(notes: Note[]): string[] {
 }
 
 /**
- * 태그를 표시하기 위한 최소 리뷰 개수
+ * 태그를 표시하기 위한 최소 차록 개수
  */
 export const MIN_REVIEWS_FOR_TAGS = 3;
 

@@ -10,8 +10,10 @@ import { TagFollow } from './entities/tag-follow.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
+import { UserSchemaPin } from './entities/user-schema-pin.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
+import { CreateRatingSchemaDto } from './dto/create-rating-schema.dto';
 import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
 import { DEFAULT_RATING_SCHEMA, DEFAULT_RATING_AXES } from './constants/default-rating-schema';
@@ -42,6 +44,8 @@ export class NotesService {
     private ratingAxisRepository: Repository<RatingAxis>,
     @InjectRepository(NoteAxisValue)
     private noteAxisValueRepository: Repository<NoteAxisValue>,
+    @InjectRepository(UserSchemaPin)
+    private userSchemaPinRepository: Repository<UserSchemaPin>,
     @InjectDataSource()
     private dataSource: DataSource,
     private teasService: TeasService,
@@ -725,7 +729,46 @@ export class NotesService {
     await this.noteAxisValueRepository.save(noteAxisValues);
   }
 
-  async getActiveSchemas(): Promise<RatingSchema[]> {
+  async createSchema(userId: number, dto: CreateRatingSchemaDto): Promise<RatingSchema> {
+    const code = `CUSTOM_${userId}_${Date.now()}`;
+    const version = '1.0.0';
+
+    const schema = this.ratingSchemaRepository.create({
+      code,
+      version,
+      nameKo: dto.nameKo,
+      nameEn: dto.nameEn ?? dto.nameKo,
+      descriptionKo: dto.descriptionKo ?? null,
+      descriptionEn: dto.descriptionEn ?? null,
+      overallMinValue: 1,
+      overallMaxValue: 5,
+      overallStep: 0.5,
+      isActive: true,
+    });
+
+    const savedSchema = await this.ratingSchemaRepository.save(schema);
+
+    const axes = dto.axes.map((axis, index) =>
+      this.ratingAxisRepository.create({
+        schemaId: savedSchema.id,
+        code: axis.nameKo.replace(/\s/g, '_').toUpperCase().slice(0, 50) || `AXIS_${index + 1}`,
+        nameKo: axis.nameKo,
+        nameEn: axis.nameEn,
+        descriptionKo: null,
+        descriptionEn: null,
+        minValue: axis.minValue ?? 1,
+        maxValue: axis.maxValue ?? 5,
+        stepValue: axis.stepValue ?? 1,
+        displayOrder: axis.displayOrder ?? index,
+        isRequired: false,
+      }),
+    );
+
+    await this.ratingAxisRepository.save(axes);
+    return savedSchema;
+  }
+
+  async getActiveSchemas(userId?: number): Promise<{ schemas: RatingSchema[]; pinnedSchemaIds: number[] }> {
     const activeSchemas = await this.ratingSchemaRepository.find({
       where: { isActive: true },
       order: { createdAt: 'DESC' },
@@ -735,11 +778,9 @@ export class NotesService {
     if (activeSchemas.length === 0) {
       this.logger.warn('No active schema found. Creating default schema...');
       
-      // 기본 스키마 생성
       const defaultSchema = this.ratingSchemaRepository.create(DEFAULT_RATING_SCHEMA);
       const savedSchema = await this.ratingSchemaRepository.save(defaultSchema);
       
-      // 기본 축들 생성
       const defaultAxes = DEFAULT_RATING_AXES.map(axis => ({
         ...axis,
         schemaId: savedSchema.id,
@@ -751,11 +792,43 @@ export class NotesService {
 
       this.logger.log('Default schema created successfully');
       
-      // 생성된 스키마 반환
-      return [savedSchema];
+      return {
+        schemas: [savedSchema],
+        pinnedSchemaIds: [],
+      };
     }
 
-    return activeSchemas;
+    let pinnedSchemaIds: number[] = [];
+    if (userId) {
+      const pins = await this.userSchemaPinRepository.find({
+        where: { userId },
+        select: ['schemaId'],
+      });
+      pinnedSchemaIds = pins.map(p => p.schemaId);
+    }
+
+    return { schemas: activeSchemas, pinnedSchemaIds };
+  }
+
+  async toggleSchemaPin(userId: number, schemaId: number): Promise<{ pinned: boolean }> {
+    const schema = await this.ratingSchemaRepository.findOne({ where: { id: schemaId } });
+    if (!schema) {
+      throw new NotFoundException('평가 스키마를 찾을 수 없습니다.');
+    }
+
+    const existing = await this.userSchemaPinRepository.findOne({
+      where: { userId, schemaId },
+    });
+
+    if (existing) {
+      await this.userSchemaPinRepository.remove(existing);
+      return { pinned: false };
+    }
+
+    await this.userSchemaPinRepository.save(
+      this.userSchemaPinRepository.create({ userId, schemaId }),
+    );
+    return { pinned: true };
   }
 
   async getSchemaAxes(schemaId: number): Promise<RatingAxis[]> {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -14,7 +14,7 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
@@ -23,6 +23,7 @@ import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 
@@ -44,62 +45,61 @@ export function UserProfile() {
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
 
-  useEffect(() => {
-    if (authLoading) {
+  const fetchData = useCallback(async () => {
+    if (isNaN(userId)) {
+      toast.error('유효하지 않은 사용자 ID입니다.');
+      setIsLoading(false);
       return;
     }
-
-    const fetchData = async () => {
-      if (isNaN(userId)) {
-        toast.error('유효하지 않은 사용자 ID입니다.');
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setOnboardingPreference(null);
-        const isPublicFilter = isOwnProfile ? undefined : true;
-        const [userData, notesData] = await Promise.all([
-          usersApi.getById(userId),
-          notesApi.getAll(userId, isPublicFilter),
-        ]);
-
-        setUser(userData as User);
-        const notesArray = Array.isArray(notesData) ? notesData : [];
-        setNotes(notesArray as Note[]);
-
-        if (isOwnProfile) {
-          try {
-            const pref = await usersApi.getOnboardingPreference(userId);
-            setOnboardingPreference(pref);
-          } catch (error) {
-            setOnboardingPreference(null);
-            if ((error as { statusCode?: number })?.statusCode !== 404) {
-              logger.warn('Failed to fetch onboarding preference:', error);
-            }
+    try {
+      setIsLoading(true);
+      setOnboardingPreference(null);
+      const isPublicFilter = isOwnProfile ? undefined : true;
+      const [userData, notesData] = await Promise.all([
+        usersApi.getById(userId),
+        notesApi.getAll(userId, isPublicFilter),
+      ]);
+      setUser(userData as User);
+      const notesArray = Array.isArray(notesData) ? notesData : [];
+      setNotes(notesArray as Note[]);
+      if (isOwnProfile) {
+        try {
+          const pref = await usersApi.getOnboardingPreference(userId);
+          setOnboardingPreference(pref);
+        } catch (error) {
+          setOnboardingPreference(null);
+          if ((error as { statusCode?: number })?.statusCode !== 404) {
+            logger.warn('Failed to fetch onboarding preference:', error);
           }
         }
-      } catch (error: unknown) {
-        logger.error('Failed to fetch user profile:', error);
-
-        const statusCode = (error as { statusCode?: number })?.statusCode;
-        if (statusCode === 404) {
-          toast.error('사용자를 찾을 수 없습니다.');
-        } else {
-          toast.error('사용자를 불러오는데 실패했습니다.');
-        }
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error: unknown) {
+      logger.error('Failed to fetch user profile:', error);
+      const statusCode = (error as { statusCode?: number })?.statusCode;
+      if (statusCode === 404) {
+        toast.error('사용자를 찾을 수 없습니다.');
+      } else {
+        toast.error('사용자를 불러오는데 실패했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId, isOwnProfile]);
 
+  useEffect(() => {
+    if (authLoading) return;
     fetchData();
-  }, [userId, isOwnProfile, authLoading]);
+  }, [authLoading, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchData);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
-      toast.error('팔로우하려면 로그인이 필요합니다.');
+      toast.error('구독하려면 로그인이 필요합니다.');
       navigate('/login');
       return;
     }
@@ -138,7 +138,7 @@ export function UserProfile() {
             }
           : prev,
       );
-      toast.error('팔로우 처리 중 오류가 발생했습니다.');
+      toast.error('구독 처리 중 오류가 발생했습니다.');
     } finally {
       setIsFollowLoading(false);
     }
@@ -189,7 +189,7 @@ export function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+      <div className="min-h-screen pb-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
@@ -197,10 +197,14 @@ export function UserProfile() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-background pb-20">
-        <Header showBack title="사용자 프로필" />
+      <div className="min-h-screen pb-20">
+        <Header showBack title="사용자 프로필" showProfile />
         <div className="p-4">
-          <EmptyState type="notes" message="사용자를 찾을 수 없습니다." />
+          <EmptyState
+            type="notes"
+            message="사용자를 찾을 수 없어요."
+            action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+          />
         </div>
         <BottomNav />
       </div>
@@ -208,8 +212,13 @@ export function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header showBack title="사용자 프로필" />
+    <div className="min-h-screen pb-20">
+      <Header
+        showBack={!isOwnProfile}
+        showProfile={isOwnProfile}
+        showLogo={isOwnProfile}
+        title={isOwnProfile ? '내 차록' : '사용자 프로필'}
+      />
 
       <div className="p-6 space-y-6">
         {/* 프로필 헤더 섹션 */}
@@ -277,8 +286,8 @@ export function UserProfile() {
                 </div>
               )}
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>팔로워 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
-                <span>팔로잉 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
+                <span>구독자 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
+                <span>구독 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
               </div>
               {!isOwnProfile && !authLoading && (
                 <Button
@@ -291,9 +300,9 @@ export function UserProfile() {
                   {isFollowLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : user.isFollowing ? (
-                    '팔로잉'
+                    '구독 중'
                   ) : (
-                    '팔로우'
+                    '구독'
                   )}
                 </Button>
               )}
@@ -337,7 +346,7 @@ export function UserProfile() {
           <StatCard
             icon={FileText}
             value={stats.noteCount}
-            label="작성한 노트"
+            label="작성한 차록"
           />
         </div>
 
@@ -357,7 +366,7 @@ export function UserProfile() {
               )}
               {onboardingPreference.preferredFlavorTags?.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">향미 태그</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
                   <div className="flex flex-wrap gap-1.5">
                     {onboardingPreference.preferredFlavorTags.map(tag => (
                       <Badge key={tag} variant="outline">{tag}</Badge>
@@ -388,7 +397,23 @@ export function UserProfile() {
         )}
 
         {/* 노트 목록 섹션 */}
-        <Section spacing="lg">
+        <Section
+          title="차록"
+          spacing="lg"
+          headerAction={
+            isOwnProfile ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/saved')}
+                className="text-muted-foreground hover:text-foreground gap-1.5"
+              >
+                <Bookmark className="w-4 h-4" />
+                저장함
+              </Button>
+            ) : undefined
+          }
+        >
           {sortedNotes.length > 0 ? (
             <div className="space-y-3">
               {sortedNotes.map(note => (
@@ -396,7 +421,11 @@ export function UserProfile() {
               ))}
             </div>
           ) : (
-            <EmptyState type="notes" message="아직 작성한 노트가 없습니다." />
+            <EmptyState
+              type="notes"
+              message="아직 작성한 차록이 없어요."
+              action={{ label: '첫 차록 쓰기', onClick: () => navigate('/note/new') }}
+            />
           )}
         </Section>
       </div>

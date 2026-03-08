@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Request, BadRequestException, HttpCode } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -44,5 +44,33 @@ export class AuthController {
   @Post('profile')
   async getProfile(@Request() req) {
     return req.user;
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(204)
+  @Post('link/kakao')
+  async linkKakao(@Request() req, @Body() kakaoLoginDto: KakaoLoginDto) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    await this.authService.linkKakao(userId, kakaoLoginDto.accessToken);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(204)
+  @Post('link/google')
+  async linkGoogle(@Request() req, @Body() googleLoginDto: GoogleLoginDto) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    await this.authService.linkGoogle(userId, googleLoginDto.accessToken);
   }
 }

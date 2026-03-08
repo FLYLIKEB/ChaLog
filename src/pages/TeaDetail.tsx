@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Star, Loader2, ExternalLink } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -13,6 +13,7 @@ import { Tea, Note, PopularTag } from '../types';
 import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 function StarRating({ value, max = 5 }: { value: number; max?: number }) {
   return (
@@ -22,13 +23,13 @@ function StarRating({ value, max = 5 }: { value: number; max?: number }) {
         const half = !filled && value >= i + 0.5;
         return (
           <span key={i} className="relative inline-flex">
-            <Star className="w-4 h-4 text-gray-300" />
+            <Star className="w-4 h-4 text-muted" />
             {(filled || half) && (
               <span
                 className="absolute inset-0 overflow-hidden"
                 style={{ width: filled ? '100%' : '50%' }}
               >
-                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <Star className="w-4 h-4 fill-rating text-rating" />
               </span>
             )}
           </span>
@@ -48,60 +49,66 @@ export function TeaDetail() {
   const [similarTeas, setSimilarTeas] = useState<Tea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) return;
+  const fetchData = useCallback(async () => {
+    if (!id) return;
 
-      try {
-        setIsLoading(true);
-        const teaId = parseInt(id, 10);
-        if (isNaN(teaId)) {
-          toast.error('유효하지 않은 차 ID입니다.');
-          return;
-        }
-
-        const [teaData, notesData] = await Promise.all([
-          teasApi.getById(teaId),
-          notesApi.getAll(undefined, true, teaId),
-        ]);
-
-        const [tagsResult, reviewsResult, similarResult] = await Promise.allSettled([
-          teasApi.getPopularTags(teaId),
-          teasApi.getTopReviews(teaId),
-          teasApi.getSimilarTeas(teaId),
-        ]);
-
-        setTea(teaData as Tea);
-        setPublicNotes(Array.isArray(notesData) ? (notesData as Note[]) : []);
-        setPopularTags(
-          tagsResult.status === 'fulfilled' ? (tagsResult.value as { tags: PopularTag[] }).tags ?? [] : [],
-        );
-        setTopReviews(
-          reviewsResult.status === 'fulfilled' && Array.isArray(reviewsResult.value)
-            ? (reviewsResult.value as Note[])
-            : [],
-        );
-        setSimilarTeas(
-          similarResult.status === 'fulfilled' && Array.isArray(similarResult.value)
-            ? (similarResult.value as Tea[])
-            : [],
-        );
-      } catch (error) {
-        logger.error('Failed to fetch data:', error);
-        toast.error('데이터를 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
+    try {
+      setIsLoading(true);
+      const teaId = parseInt(id, 10);
+      if (isNaN(teaId)) {
+        toast.error('유효하지 않은 차 ID입니다.');
+        return;
       }
-    };
 
-    fetchData();
+      const [teaData, notesData] = await Promise.all([
+        teasApi.getById(teaId),
+        notesApi.getAll(undefined, true, teaId),
+      ]);
+
+      const [tagsResult, reviewsResult, similarResult] = await Promise.allSettled([
+        teasApi.getPopularTags(teaId),
+        teasApi.getTopReviews(teaId),
+        teasApi.getSimilarTeas(teaId),
+      ]);
+
+      setTea(teaData as Tea);
+      setPublicNotes(Array.isArray(notesData) ? (notesData as Note[]) : []);
+      setPopularTags(
+        tagsResult.status === 'fulfilled' ? (tagsResult.value as { tags: PopularTag[] }).tags ?? [] : [],
+      );
+      setTopReviews(
+        reviewsResult.status === 'fulfilled' && Array.isArray(reviewsResult.value)
+          ? (reviewsResult.value as Note[])
+          : [],
+      );
+      setSimilarTeas(
+        similarResult.status === 'fulfilled' && Array.isArray(similarResult.value)
+          ? (similarResult.value as Tea[])
+          : [],
+      );
+    } catch (error) {
+      logger.error('Failed to fetch data:', error);
+      toast.error('데이터를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchData);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData]);
 
   if (isLoading) {
     return (
       <DetailFallback title="차 상세">
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       </DetailFallback>
     );
@@ -110,7 +117,11 @@ export function TeaDetail() {
   if (!tea) {
     return (
       <DetailFallback title="차 상세">
-        <EmptyState type="server" message="차 정보를 찾을 수 없습니다." />
+        <EmptyState
+          type="server"
+          message="차 정보를 찾을 수 없어요."
+          onRetry={fetchData}
+        />
       </DetailFallback>
     );
   }
@@ -131,35 +142,41 @@ export function TeaDetail() {
   const remainingNotes = publicNotes.filter((n) => !topReviewIds.has(n.id));
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-6">
-      <Header showBack title="차 상세" />
+    <div className="min-h-screen pb-6">
+      <Header showBack title="차 상세" showProfile />
 
       <div className="p-4 space-y-6">
         {/* 기본 정보 */}
-        <section className="bg-white rounded-lg p-4 space-y-3">
+        <section className="bg-card rounded-lg p-4 space-y-3">
           <h1>{tea.name}</h1>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <p className="text-xs text-gray-500 mb-1">종류</p>
+              <p className="text-xs text-muted-foreground mb-1">종류</p>
               <p className="text-sm">{tea.type}</p>
             </div>
             {tea.year && (
               <div>
-                <p className="text-xs text-gray-500 mb-1">연도</p>
+                <p className="text-xs text-muted-foreground mb-1">연도</p>
                 <p className="text-sm">{tea.year}년</p>
               </div>
             )}
             {tea.seller && (
               <div>
-                <p className="text-xs text-gray-500 mb-1">구매처</p>
+                <p className="text-xs text-muted-foreground mb-1">구매처</p>
                 <p className="text-sm">{tea.seller}</p>
               </div>
             )}
             {tea.origin && (
               <div>
-                <p className="text-xs text-gray-500 mb-1">산지</p>
+                <p className="text-xs text-muted-foreground mb-1">산지</p>
                 <p className="text-sm">{tea.origin}</p>
+              </div>
+            )}
+            {tea.price != null && tea.price > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">가격</p>
+                <p className="text-sm">{tea.price.toLocaleString()}원</p>
               </div>
             )}
           </div>
@@ -170,20 +187,20 @@ export function TeaDetail() {
           <h2 className="mb-3">평균 평점</h2>
           <div className="flex items-center gap-4">
             <div className="text-center">
-              <p className="text-4xl font-bold text-amber-500">
+              <p className="text-4xl font-bold text-rating">
                 {Number(tea.averageRating).toFixed(1)}
               </p>
-              <p className="text-xs text-gray-400 mt-1">/ 5.0</p>
+              <p className="text-xs text-muted-foreground mt-1">/ 5.0</p>
             </div>
             <div className="space-y-1">
               <StarRating value={Number(tea.averageRating)} />
-              <p className="text-xs text-gray-500">{tea.reviewCount}개 리뷰 기반</p>
+              <p className="text-xs text-muted-foreground">{tea.reviewCount}개 차록 기반</p>
             </div>
           </div>
 
           {tea.reviewCount >= MIN_REVIEWS_FOR_TAGS && (
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">특징 요약</p>
+            <div className="mt-3 pt-3 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-2">특징 요약</p>
               <div className="flex flex-wrap gap-2">
                 {topTags.map((tag) => (
                   <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`}>
@@ -195,8 +212,8 @@ export function TeaDetail() {
           )}
 
           {tea.reviewCount < MIN_REVIEWS_FOR_TAGS && (
-            <p className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">
-              평가 데이터가 부족합니다. 더 많은 리뷰가 필요해요.
+            <p className="mt-3 text-sm text-rating bg-rating/10 p-3 rounded-lg">
+              평가 데이터가 부족합니다. 더 많은 차록이 필요해요.
             </p>
           )}
         </section>
@@ -240,7 +257,7 @@ export function TeaDetail() {
         {/* 태그 클라우드 */}
         {popularTags.length > 0 && (
           <section className="bg-white rounded-lg p-4">
-            <h2 className="mb-3">자주 사용된 태그</h2>
+            <h2 className="mb-3">자주 사용된 향미</h2>
             <div
               className="flex flex-wrap gap-2"
               data-testid="tag-cloud"
@@ -257,10 +274,10 @@ export function TeaDetail() {
                   <Link
                     key={tag.name}
                     to={`/tag/${encodeURIComponent(tag.name)}`}
-                    className={`inline-flex items-center px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors ${size}`}
+                    className={`inline-flex items-center px-3 py-1 rounded-full bg-success/10 text-success hover:bg-success/20 transition-colors ${size}`}
                   >
                     {tag.name}
-                    <span className="ml-1 text-emerald-400 text-xs">×{tag.count}</span>
+                    <span className="ml-1 text-success/80 text-xs">×{tag.count}</span>
                   </Link>
                 );
               })}
@@ -268,10 +285,10 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 대표 리뷰 3개 */}
+        {/* 대표 차록 3개 */}
         {topReviews.length > 0 && (
           <section>
-            <h2 className="mb-3">대표 리뷰</h2>
+            <h2 className="mb-3">대표 차록</h2>
             <div className="space-y-3">
               {topReviews.map((note) => (
                 <NoteCard key={note.id} note={note} />
@@ -280,7 +297,7 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 유사 차 추천 */}
+        {/* 유사 차선 */}
         {similarTeas.length > 0 && (
           <section>
             <h2 className="mb-3">비슷한 차</h2>
@@ -299,18 +316,22 @@ export function TeaDetail() {
 
         {/* 전체 공개 노트 */}
         <section>
-          <h2 className="mb-3">공개 노트 전체</h2>
+          <h2 className="mb-3">공개 차록 전체</h2>
           {remainingNotes.length > 0 || topReviews.length === 0 ? (
             <div className="space-y-3">
               {(topReviews.length === 0 ? publicNotes : remainingNotes).map((note) => (
                 <NoteCard key={note.id} note={note} />
               ))}
               {publicNotes.length === 0 && (
-                <EmptyState type="feed" message="아직 공개된 노트가 없습니다." />
+                <EmptyState
+                type="feed"
+                message="아직 공개된 차록이 없어요."
+                action={{ label: '차록 작성하기', onClick: () => navigate(`/note/new?teaId=${tea.id}`) }}
+              />
               )}
             </div>
           ) : (
-            <EmptyState type="feed" message="모든 노트가 대표 리뷰에 표시되었습니다." />
+            <EmptyState type="feed" message="모든 차록이 대표 차록에 표시되었습니다." />
           )}
         </section>
 
@@ -319,7 +340,7 @@ export function TeaDetail() {
           onClick={() => navigate(`/note/new?teaId=${tea.id}`)}
           className="w-full"
         >
-          이 차로 노트 작성하기
+          이 차로 차록 작성하기
         </Button>
       </div>
     </div>

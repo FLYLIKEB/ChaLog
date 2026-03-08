@@ -6,6 +6,7 @@ import { postsApi } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
@@ -28,7 +29,7 @@ export function EditPost() {
 
   useEffect(() => {
     if (!postId || isNaN(postId)) {
-      navigate('/community', { replace: true });
+      navigate('/chadam', { replace: true });
       return;
     }
 
@@ -37,7 +38,7 @@ export function EditPost() {
         const data = await postsApi.getById(postId);
         if (data.userId !== user?.id) {
           toast.error('수정 권한이 없습니다.');
-          navigate(`/community/${postId}`, { replace: true });
+          navigate(`/chadam/${postId}`, { replace: true });
           return;
         }
         setPost(data);
@@ -48,7 +49,7 @@ export function EditPost() {
         setSponsorNote(data.sponsorNote ?? '');
       } catch {
         toast.error('게시글을 불러오는 데 실패했습니다.');
-        navigate('/community', { replace: true });
+        navigate('/chadam', { replace: true });
       } finally {
         setIsLoadingPost(false);
       }
@@ -57,9 +58,15 @@ export function EditPost() {
     fetchPost();
   }, [postId, user, navigate]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   if (isLoadingPost) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
@@ -84,7 +91,7 @@ export function EditPost() {
         sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
       });
       toast.success('게시글이 수정되었습니다.');
-      navigate(`/community/${postId}`, { replace: true });
+      navigate(`/chadam/${postId}`, { replace: true });
     } catch {
       toast.error('게시글 수정에 실패했습니다.');
     } finally {
@@ -93,8 +100,8 @@ export function EditPost() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header showBack title="게시글 수정" />
+    <div className="min-h-screen">
+      <Header showBack title="게시글 수정" showProfile />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">
         {/* 카테고리 선택 */}
@@ -176,7 +183,7 @@ export function EditPost() {
               type="text"
               value={sponsorNote}
               onChange={(e) => setSponsorNote(e.target.value)}
-              placeholder="협찬 브랜드 또는 내용을 입력하세요 (선택)"
+              placeholder="협찬 다실 또는 내용을 입력하세요 (선택)"
               maxLength={300}
               className={cn(
                 'w-full text-sm border border-border rounded-lg px-3 py-2.5',

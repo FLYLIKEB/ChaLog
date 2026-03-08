@@ -1,6 +1,6 @@
 import { HTMLAttributes } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, FileText, Bookmark, MessageSquare, Package } from 'lucide-react';
+import { Home, Search, FileText, MessageSquare, Package } from 'lucide-react';
 import { cn } from './ui/utils';
 
 type BottomNavItem = {
@@ -13,29 +13,28 @@ type BottomNavItem = {
 
 const NAV_ITEMS: BottomNavItem[] = [
   { label: '홈', path: '/', icon: Home, activeStyle: 'fill' },
-  { label: '검색', path: '/search', icon: Search, activeStyle: 'bold' },
+  { label: '사색', path: '/sasaek', icon: Search, activeStyle: 'bold' },
   {
-    label: '커뮤니티',
-    path: '/community',
+    label: '차담',
+    path: '/chadam',
     icon: MessageSquare,
     activeStyle: 'bold',
-    isActive: (pathname) => pathname === '/community' || pathname.startsWith('/community/'),
+    isActive: (pathname) => pathname === '/chadam' || pathname.startsWith('/chadam/'),
   },
   {
-    label: '내 노트',
+    label: '내 차록',
     path: '/my-notes',
     icon: FileText,
     activeStyle: 'bold',
     isActive: (pathname) => pathname === '/my-notes' || pathname.startsWith('/user/'),
   },
   {
-    label: '셀러',
+    label: '찻장',
     path: '/cellar',
     icon: Package,
     activeStyle: 'bold',
     isActive: (pathname) => pathname === '/cellar' || pathname.startsWith('/cellar/'),
   },
-  { label: '저장함', path: '/saved', icon: Bookmark, activeStyle: 'fill' },
 ];
 
 type BottomNavProps = HTMLAttributes<HTMLElement>;
@@ -53,7 +52,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
   return (
     <nav
       className={cn(
-        'fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3',
+        'fixed bottom-0 left-0 right-0 z-60 bg-card/95 backdrop-blur-md border-t border-black/5 rounded-t-2xl shadow-[0_-2px_12px_rgba(0,0,0,0.04)] px-4 py-3',
         'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
         'flex items-center justify-around',
         className,
@@ -74,8 +73,8 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
             key={item.path}
             onClick={() => handleNavigate(item.path)}
             className={cn(
-              'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors',
-              isActive ? 'text-black' : 'text-muted-foreground',
+              'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95',
+              isActive ? 'text-primary' : 'text-muted-foreground',
             )}
             aria-label={item.label}
           >
@@ -86,7 +85,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
               )}
             >
               <Icon
-                className={cn('w-5 h-5', isActive && 'text-black')}
+                className={cn('w-5 h-5 transition-all duration-200', isActive && 'text-primary')}
                 fill={fill}
                 stroke="currentColor"
                 strokeWidth={strokeWidth}

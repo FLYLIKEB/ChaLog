@@ -5,7 +5,7 @@ export class CreatePostReportsTable1785000000002 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE \`post_reports\` (
+      CREATE TABLE IF NOT EXISTS \`post_reports\` (
         \`id\` int NOT NULL AUTO_INCREMENT,
         \`postId\` int NOT NULL,
         \`reporterId\` int NOT NULL,

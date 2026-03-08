@@ -3,7 +3,7 @@ import { TestContext, setupTestApp, teardownTestApp } from '../setup/test-setup'
 import { TestUser, TestTea } from '../helpers/test-helper';
 import { TEST_CONSTANTS } from '../constants/test-constants';
 
-describe('/cellar - 셀러 CRUD API', () => {
+describe('/cellar - 찻장 CRUD API', () => {
   let context: TestContext;
   let testUser: TestUser;
   let testTea: TestTea;
@@ -12,7 +12,7 @@ describe('/cellar - 셀러 CRUD API', () => {
     context = await setupTestApp();
     testUser = await context.testHelper.createUser('Cellar Test User');
     testTea = await context.testHelper.createTea(testUser.token, {
-      name: '셀러 테스트 차',
+      name: '찻장 테스트 차',
       type: '녹차',
     });
   }, TEST_CONSTANTS.TEST_TIMEOUT);
@@ -35,12 +35,12 @@ describe('/cellar - 셀러 CRUD API', () => {
       }
       await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
     } catch (error) {
-      console.warn('셀러 테스트 데이터 정리 중 오류 (무시 가능):', error.message);
+      console.warn('찻장 테스트 데이터 정리 중 오류 (무시 가능):', error.message);
     }
     await teardownTestApp(context);
   });
 
-  it('POST /cellar - 셀러 아이템 생성 성공', async () => {
+  it('POST /cellar - 찻장 아이템 생성 성공', async () => {
     const response = await context.testHelper
       .authenticatedRequest(testUser.token)
       .post('/cellar')

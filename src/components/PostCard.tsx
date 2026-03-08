@@ -24,7 +24,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
 
   const handleClick = () => {
-    navigate(`/community/${post.id}`);
+    navigate(`/chadam/${post.id}`);
   };
 
   const handleLikeClick = async (e: React.MouseEvent) => {
@@ -135,7 +135,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
               onClick={handleLikeClick}
               disabled={isTogglingLike}
               className={cn(
-                'flex items-center gap-1 text-xs transition-colors disabled:opacity-50',
+                'flex items-center gap-1 text-xs transition-all duration-150 disabled:opacity-50 active:scale-110',
                 isLiked ? 'text-rose-500' : 'text-muted-foreground hover:text-rose-400',
               )}
               aria-label={isLiked ? '좋아요 취소' : '좋아요'}
@@ -143,7 +143,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
               {isTogglingLike ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
               ) : (
-                <Heart className={cn('w-3 h-3', isLiked ? 'fill-rose-500' : 'fill-none')} />
+                <Heart className={cn('w-3 h-3 transition-colors duration-150', isLiked ? 'fill-rose-500' : 'fill-none')} />
               )}
               {likeCount}
             </button>
@@ -155,7 +155,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
                 onClick={handleBookmarkClick}
                 disabled={isTogglingBookmark}
                 className={cn(
-                  'flex items-center text-xs transition-colors disabled:opacity-50',
+                  'flex items-center text-xs transition-all duration-150 disabled:opacity-50 active:scale-110',
                   isBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-primary',
                 )}
                 aria-label={isBookmarked ? '북마크 해제' : '북마크'}
@@ -165,7 +165,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
                 ) : (
                   <Bookmark
                     className={cn(
-                      'w-3 h-3',
+                      'w-3 h-3 transition-colors duration-150',
                       isBookmarked ? 'fill-primary text-primary' : 'fill-none',
                     )}
                   />

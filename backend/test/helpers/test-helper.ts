@@ -142,11 +142,12 @@ export class TestHelper {
       .get('/notes/schemas/active')
       .expect(200);
 
-    if (!response.body || response.body.length === 0) {
+    const schemas = response.body?.schemas;
+    if (!schemas || schemas.length === 0) {
       throw new Error('No active schema found');
     }
 
-    return response.body[0];
+    return schemas[0];
   }
 
   /**

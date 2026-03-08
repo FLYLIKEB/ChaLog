@@ -1,16 +1,64 @@
 import { Slider } from './ui/slider';
 import { RATING_MIN, RATING_MAX } from '../constants';
+import { cn } from './ui/utils';
 
 interface RatingSliderProps {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  compact?: boolean;
 }
 
-export function RatingSlider({ label, value, onChange }: RatingSliderProps) {
-  // value가 최소값보다 작으면 최소값으로 보정
+export function RatingSlider({ label, value, onChange, compact = false }: RatingSliderProps) {
   const validatedValue = Math.max(RATING_MIN, Math.min(RATING_MAX, value));
-  
+
+  if (compact) {
+    return (
+      <>
+        <style>{`
+          .rating-slider-compact [data-slot="slider-thumb"] {
+            width: 16px !important;
+            height: 16px !important;
+            border-width: 2px !important;
+            border-color: white !important;
+            background-color: var(--primary) !important;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15) !important;
+          }
+          .rating-slider-compact [data-slot="slider-track"] {
+            height: 6px !important;
+            background-color: #e5e7eb !important;
+            border-radius: 3px !important;
+          }
+          .rating-slider-compact [data-slot="slider-range"] {
+            background-color: var(--primary) !important;
+            border-radius: 3px !important;
+          }
+        `}</style>
+        <div className={cn('rating-slider-compact flex items-center gap-3 py-2')}>
+          <label className="min-w-16 shrink-0 text-sm font-medium text-foreground">
+            {label}
+          </label>
+          <div className="flex-1 min-w-0">
+            <Slider
+              value={[validatedValue]}
+              onValueChange={(values) => {
+                const newValue = Math.max(RATING_MIN, Math.min(RATING_MAX, values[0]));
+                onChange(newValue);
+              }}
+              min={RATING_MIN}
+              max={RATING_MAX}
+              step={0.5}
+              className="w-full"
+            />
+          </div>
+          <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+            {validatedValue.toFixed(1)}
+          </span>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <style>{`
@@ -48,7 +96,6 @@ export function RatingSlider({ label, value, onChange }: RatingSliderProps) {
           <Slider
             value={[validatedValue]}
             onValueChange={(values) => {
-              // 최소값과 최대값 사이로 제한
               const newValue = Math.max(RATING_MIN, Math.min(RATING_MAX, values[0]));
               onChange(newValue);
             }}

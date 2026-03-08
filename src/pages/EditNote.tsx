@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
-import { RatingSlider } from '../components/RatingSlider';
+import { AxisStarRow } from '../components/AxisStarRow';
 import { ImageUploader } from '../components/ImageUploader';
 import { TagInput } from '../components/TagInput';
 import { Input } from '../components/ui/input';
@@ -15,6 +15,7 @@ import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 
@@ -123,11 +124,17 @@ export function EditNote() {
     }
   }, [preselectedTeaId]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   // 노트 데이터 불러오기
   useEffect(() => {
     const fetchNote = async () => {
       if (isNaN(noteId)) {
-        toast.error('유효하지 않은 노트 ID입니다.');
+        toast.error('유효하지 않은 차록 ID입니다.');
         navigate('/my-notes');
         return;
       }
@@ -139,7 +146,7 @@ export function EditNote() {
 
         // 권한 확인
         if (normalizedNote.userId !== user?.id) {
-          toast.error('이 노트를 수정할 권한이 없습니다.');
+          toast.error('이 차록을 수정할 권한이 없습니다.');
           navigate(`/note/${noteId}`);
           return;
         }
@@ -195,11 +202,11 @@ export function EditNote() {
       } catch (error: any) {
         logger.error('Failed to fetch note:', error);
         if (error?.statusCode === 403) {
-          toast.error('이 노트를 수정할 권한이 없습니다.');
+          toast.error('이 차록을 수정할 권한이 없습니다.');
         } else if (error?.statusCode === 404) {
-          toast.error('노트를 찾을 수 없습니다.');
+          toast.error('차록을 찾을 수 없습니다.');
         } else {
-          toast.error('노트를 불러오는데 실패했습니다.');
+          toast.error('차록을 불러오는데 실패했습니다.');
         }
         navigate('/my-notes');
       } finally {
@@ -258,7 +265,7 @@ export function EditNote() {
     }
 
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
 
@@ -309,12 +316,12 @@ export function EditNote() {
         isPublic,
       });
 
-      toast.success('노트가 수정되었습니다.');
+      toast.success('차록이 수정되었습니다.');
       setTimeout(() => navigate(`/note/${noteId}`, { replace: true }), NAVIGATION_DELAY);
     } catch (error: any) {
       logger.error('Failed to update note:', error);
       if (error?.statusCode === 403) {
-        toast.error('이 노트를 수정할 권한이 없습니다.');
+        toast.error('이 차록을 수정할 권한이 없습니다.');
       } else {
         toast.error(error instanceof Error ? error.message : '수정에 실패했습니다.');
       }
@@ -325,9 +332,9 @@ export function EditNote() {
 
   if (isLoading) {
     return (
-      <DetailFallback title="노트 수정">
+      <DetailFallback title="차록 수정">
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       </DetailFallback>
     );
@@ -336,20 +343,20 @@ export function EditNote() {
   if (!note) {
     return (
       <DetailFallback 
-        title="노트 수정" 
-        message="노트를 찾을 수 없거나 수정할 권한이 없습니다." 
+        title="차록 수정"
+        message="차록을 찾을 수 없거나 수정할 권한이 없습니다."
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-6">
-      <Header showBack title="노트 수정" />
+    <div className="min-h-screen">
+      <Header showBack title="차록 수정" showProfile />
       
-      <div className="p-4 space-y-6">
+      <div className="p-4 pb-24 space-y-6">
         {/* 차 선택 영역 */}
-        <section className="bg-white rounded-lg p-4">
-          <Label className="mb-2 block">차 선택</Label>
+        <section className="bg-card rounded-lg p-3">
+          <Label className="mb-1.5 block text-sm">차 선택</Label>
           <Input
             ref={teaInputRef}
             type="text"
@@ -379,11 +386,14 @@ export function EditNote() {
                     setSelectedTea(tea.id);
                     setSearchQuery(tea.name);
                   }}
-                  className="w-full text-left p-3 hover:bg-gray-50 transition-colors min-h-[44px]"
+                  className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {tea.type} · {tea.seller || '구매처 미상'}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {tea.type}
+                    {tea.seller && ` · ${tea.seller}`}
+                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
+                    {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}
                   </p>
                 </button>
               ))}
@@ -392,8 +402,8 @@ export function EditNote() {
 
           {/* 검색 결과가 없을 때 새 차 추가 옵션 */}
           {searchQuery && !selectedTea && filteredTeas.length === 0 && (
-            <div className="mt-2 p-4 border border-dashed border-gray-300 rounded-lg text-center">
-              <p className="text-sm text-gray-600 mb-3">
+            <div className="mt-2 py-3 px-4 border border-dashed border-border rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">
                 "{searchQuery}"에 대한 검색 결과가 없습니다.
               </p>
               <Button
@@ -411,12 +421,12 @@ export function EditNote() {
           )}
 
           {selectedTeaData && (
-            <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <Check className="w-4 h-4 text-emerald-600" />
-                <span className="text-sm text-emerald-900">{selectedTeaData.name}</span>
+            <div className="mt-2 py-2.5 px-3 bg-success/10 border border-success/30 rounded-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Check className="w-3.5 h-3.5 text-success" />
+                <span className="text-sm text-foreground font-medium">{selectedTeaData.name}</span>
               </div>
-              <div className="text-xs text-emerald-700 space-y-1">
+              <div className="text-xs text-muted-foreground space-y-0.5">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
                 {selectedTeaData.seller && <p>구매처: {selectedTeaData.seller}</p>}
@@ -426,25 +436,31 @@ export function EditNote() {
         </section>
 
         {/* 평점 슬라이더 */}
-        <section className="bg-white rounded-lg p-4 space-y-4">
-          <h3>평가</h3>
-          {axes
-            .sort((a, b) => a.displayOrder - b.displayOrder)
-            .map((axis) => (
-              <React.Fragment key={axis.id}>
-                <RatingSlider
+        <section className="bg-card rounded-lg p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3>평가</h3>
+            <span className="text-xs text-muted-foreground tabular-nums">
+              1 ~ 5점
+            </span>
+          </div>
+          <div className="space-y-0 divide-y divide-border/60">
+            {axes
+              .sort((a, b) => a.displayOrder - b.displayOrder)
+              .map((axis) => (
+                <AxisStarRow
+                  key={axis.id}
                   label={axis.nameKo}
                   value={axisValues[axis.id] ?? RATING_DEFAULT}
                   onChange={(value) =>
                     setAxisValues(prev => ({ ...prev, [axis.id]: value }))
                   }
                 />
-              </React.Fragment>
-            ))}
+              ))}
+          </div>
         </section>
 
         {/* 사진 업로드 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <ImageUploader
             images={images}
             imageThumbnails={imageThumbnails}
@@ -458,7 +474,7 @@ export function EditNote() {
 
         {/* 태그 입력 */}
         <section 
-          className="bg-white rounded-lg p-4"
+          className="bg-card rounded-lg p-4"
           onKeyDown={(e) => {
             // 태그 입력 섹션에서 Enter 키가 폼 제출을 트리거하지 않도록 방지
             if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
@@ -489,7 +505,7 @@ export function EditNote() {
         </section>
 
         {/* 메모 입력 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <Label className="mb-2 block">메모</Label>
           <Textarea
             placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
@@ -500,22 +516,25 @@ export function EditNote() {
         </section>
 
         {/* 공개 여부 스위치 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <Label>공개 설정</Label>
-              <p className="text-xs text-gray-500 mt-1">
-                다른 사용자에게 이 노트를 공개합니다
+              <p className="text-xs text-muted-foreground mt-1">
+                다른 사용자에게 이 차록을 공개합니다
               </p>
             </div>
             <Switch checked={isPublic} onCheckedChange={setIsPublic} />
           </div>
         </section>
 
-        {/* 저장 버튼 */}
+      </div>
+
+      {/* 저장 버튼 - 하단 고정 플로팅 */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/70 backdrop-blur-sm z-40">
         <Button 
           onClick={handleSave} 
-          className="w-full"
+          className="w-full opacity-70 hover:opacity-100 transition-opacity"
           disabled={isSaving}
         >
           {isSaving ? (

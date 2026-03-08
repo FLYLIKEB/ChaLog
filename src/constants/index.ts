@@ -15,7 +15,11 @@ export const RATING_FIELDS_COUNT = 5;
 export const NAVIGATION_DELAY = 500; // 밀리초
 export const SEARCH_DEBOUNCE_DELAY = 600; // 밀리초
 
-// 리뷰 관련 상수
+/** 앱 전체 페이지 배경 그라데이션 (라이트: 흰색→배경, 다크: 단색) */
+export const PAGE_BG_GRADIENT =
+  'bg-gradient-to-b from-white to-background dark:from-background dark:to-background';
+
+// 차록 관련 상수
 export const MIN_REVIEWS_FOR_TAGS = 3;
 
 // 기본 태그 (차 상세 페이지용 - 평점 기반 계산)
@@ -35,6 +39,13 @@ export const RECOMMENDED_NOTE_TAGS = [
 
 // 차 종류
 export const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'] as const;
+
+// 새 차 등록 - 연도 선택 (현재년 ~ 1990)
+const currentYear = new Date().getFullYear();
+export const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i);
+
+// 새 차 등록 - 자주 쓰는 산지
+export const COMMON_ORIGINS = ['중국', '한국', '일본', '대만', '인도', '스리랑카', '베트남', '케냐'] as const;
 
 export type TeaType = typeof TEA_TYPES[number];
 

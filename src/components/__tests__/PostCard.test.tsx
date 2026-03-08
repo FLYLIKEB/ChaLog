@@ -72,33 +72,33 @@ describe('PostCard 컴포넌트', () => {
   afterEach(() => { vi.clearAllMocks(); });
 
   it('제목과 내용을 표시한다', () => {
-    renderWithRouter(<PostCard post={mockPost} />, { route: '/community' });
+    renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
 
     expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
     expect(screen.getByText('어떻게 우리면 좋을까요?')).toBeInTheDocument();
   });
 
   it('카테고리 뱃지를 표시한다', () => {
-    renderWithRouter(<PostCard post={mockPost} />, { route: '/community' });
+    renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
     expect(screen.getByText('우림 질문')).toBeInTheDocument();
   });
 
   it('협찬 뱃지를 표시한다', () => {
-    const sponsoredPost = { ...mockPost, isSponsored: true, sponsorNote: '브랜드 A' };
-    renderWithRouter(<PostCard post={sponsoredPost} />, { route: '/community' });
+    const sponsoredPost = { ...mockPost, isSponsored: true, sponsorNote: '다실 A' };
+    renderWithRouter(<PostCard post={sponsoredPost} />, { route: '/chadam' });
     expect(screen.getByText('협찬')).toBeInTheDocument();
   });
 
   it('클릭 시 상세 페이지로 이동한다', () => {
-    renderWithRouter(<PostCard post={mockPost} />, { route: '/community' });
+    renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
     fireEvent.click(screen.getByText('우림 질문입니다'));
-    expect(mockNavigate).toHaveBeenCalledWith('/community/1');
+    expect(mockNavigate).toHaveBeenCalledWith('/chadam/1');
   });
 
   it('좋아요 버튼 클릭 시 API를 호출한다', async () => {
     vi.mocked(postsApi.toggleLike).mockResolvedValue({ liked: true, likeCount: 4 });
 
-    renderWithRouter(<PostCard post={mockPost} />, { route: '/community' });
+    renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
 
     const likeButton = screen.getByLabelText('좋아요');
     fireEvent.click(likeButton);
@@ -111,7 +111,7 @@ describe('PostCard 컴포넌트', () => {
   it('북마크 버튼 클릭 시 API를 호출한다', async () => {
     vi.mocked(postsApi.toggleBookmark).mockResolvedValue({ bookmarked: true });
 
-    renderWithRouter(<PostCard post={mockPost} />, { route: '/community' });
+    renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
 
     const bookmarkButton = screen.getByLabelText('북마크');
     fireEvent.click(bookmarkButton);
@@ -137,7 +137,7 @@ describe('PostCard 컴포넌트', () => {
       refreshOnboardingStatus: vi.fn(),
     });
 
-    renderWithRouter(<PostCard post={mockPost} />, { route: '/community' });
+    renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
 
     const likeButton = screen.getByLabelText('좋아요');
     fireEvent.click(likeButton);

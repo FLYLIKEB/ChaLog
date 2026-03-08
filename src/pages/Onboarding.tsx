@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { usersApi } from '../lib/api';
 import { ONBOARDING_FLAVOR_TAGS, ONBOARDING_TEA_TYPES } from '../constants';
 import { OnboardingTagSelector } from '../components/OnboardingTagSelector';
@@ -47,6 +48,12 @@ export function Onboarding() {
     fetchPreference();
   }, [authLoading, navigate, user]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   const toggleTeaType = (tag: string) => {
     setSelectedTeaTypes((prev) =>
       prev.includes(tag) ? prev.filter((item) => item !== tag) : [...prev, tag],
@@ -72,7 +79,7 @@ export function Onboarding() {
       return;
     }
     if (selectedFlavorTags.length === 0) {
-      toast.error('향미 태그를 최소 1개 선택해주세요.');
+      toast.error('향미를 최소 1개 선택해주세요.');
       return;
     }
 
@@ -93,23 +100,23 @@ export function Onboarding() {
 
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Header title="온보딩" />
+      <div className="min-h-screen">
+        <Header title="온보딩" showProfile />
         <div className="p-6 text-center text-sm text-gray-500">불러오는 중...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-safe">
-      <Header title="온보딩" />
+    <div className="min-h-screen pb-safe">
+      <Header title="온보딩" showProfile />
       <div className="px-4 pb-6 pt-4 sm:max-w-md sm:mx-auto">
         <div className="bg-white rounded-lg p-6 space-y-6">
           <div className="space-y-2">
             <span className="text-xs text-gray-500">{stepLabel}</span>
             <h1 className="text-2xl font-bold text-gray-900">차 취향을 알려주세요</h1>
             <p className="text-sm text-gray-600">
-              맞춤 추천을 위해 관심 차종과 향미 태그를 선택해주세요.
+              맞춤 차선을 위해 관심 차종과 향미를 선택해주세요.
             </p>
           </div>
 
@@ -131,7 +138,7 @@ export function Onboarding() {
           {step === 2 && (
             <>
               <OnboardingTagSelector
-                title="향미 태그"
+                title="향미"
                 description="좋아하는 향미를 선택해주세요."
                 tags={ONBOARDING_FLAVOR_TAGS}
                 selectedTags={selectedFlavorTags}

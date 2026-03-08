@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -8,8 +8,10 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import { cellarApi } from '../lib/api';
 import { CellarItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { CellarCardSkeleton } from '../components/CellarCardSkeleton';
 import { logger } from '../lib/logger';
 import { TEA_TYPES } from '../constants';
 
@@ -50,12 +52,12 @@ function CellarCard({
   const [deleting, setDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm(`"${item.tea.name}" 셀러 아이템을 삭제하시겠습니까?`)) return;
+    if (!confirm(`"${item.tea.name}" 찻장 아이템을 삭제하시겠습니까?`)) return;
     setDeleting(true);
     try {
       await cellarApi.remove(item.id);
       onDelete(item.id);
-      toast.success('셀러 아이템이 삭제되었습니다.');
+      toast.success('찻장 아이템이 삭제되었습니다.');
     } catch (error) {
       logger.error('Failed to delete cellar item:', error);
       toast.error('삭제에 실패했습니다.');
@@ -74,6 +76,11 @@ function CellarCard({
             {item.tea.type && (
               <span className="ml-2 text-xs bg-secondary px-1.5 py-0.5 rounded-full">
                 {item.tea.type}
+              </span>
+            )}
+            {item.tea.price != null && item.tea.price > 0 && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                {item.tea.price.toLocaleString()}원
               </span>
             )}
           </p>
@@ -110,7 +117,7 @@ function CellarCard({
           onClick={() => onNoteClick(item.teaId)}
         >
           <FileText className="w-3.5 h-3.5" />
-          노트 작성
+          차록 작성
         </Button>
       </div>
     </div>
@@ -130,32 +137,41 @@ export function Cellar() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [sortOpen, setSortOpen] = useState(false);
 
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const [allItems, reminderItems] = await Promise.all([
+        cellarApi.getAll(),
+        cellarApi.getReminders(),
+      ]);
+      setItems(Array.isArray(allItems) ? allItems : []);
+      setReminders(Array.isArray(reminderItems) ? reminderItems : []);
+    } catch (error) {
+      logger.error('Failed to fetch cellar items:', error);
+      toast.error('찻장 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated || !user) {
       navigate('/login', { replace: true });
       return;
     }
-
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [allItems, reminderItems] = await Promise.all([
-          cellarApi.getAll(),
-          cellarApi.getReminders(),
-        ]);
-        setItems(Array.isArray(allItems) ? allItems : []);
-        setReminders(Array.isArray(reminderItems) ? reminderItems : []);
-      } catch (error) {
-        logger.error('Failed to fetch cellar items:', error);
-        toast.error('셀러 목록을 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchData();
-  }, [isAuthenticated, user, authLoading, navigate]);
+  }, [isAuthenticated, user, authLoading, navigate, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      registerRefresh(fetchData);
+    } else {
+      registerRefresh(undefined);
+    }
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData, isAuthenticated, user]);
 
   // 차 종류별 아이템 수 집계
   const typeCounts = useMemo(() => {
@@ -222,7 +238,7 @@ export function Cellar() {
 
   if (authLoading || !isAuthenticated || !user) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
+      <div className="min-h-screen pb-20 flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
       </div>
     );
@@ -230,24 +246,37 @@ export function Cellar() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
+      <div className="min-h-screen pb-32">
+        <Header showProfile title="📦 내 찻장" showLogo />
+        <div className="px-4 sm:px-6 py-4 space-y-4">
+          <div className="flex gap-2 overflow-x-hidden py-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="shrink-0 w-20 h-8 rounded-full bg-accent animate-pulse" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <CellarCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
+        <BottomNav />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
-      <Header showProfile title="내 셀러" />
+    <div className="min-h-screen pb-32">
+      <Header showProfile title="📦 내 찻장" showLogo />
 
       <div className="space-y-0">
         {/* 리마인더 배너 */}
         {reminders.length > 0 && (
-          <div className="mx-4 mt-4 sm:mx-6 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-3">
-            <Bell className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div className="mx-4 mt-4 sm:mx-6 flex items-start gap-3 bg-rating/10 border border-rating/30 rounded-xl p-3">
+            <Bell className="w-4 h-4 text-rating shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-amber-800">리마인더 알림</p>
-              <p className="text-xs text-amber-700 mt-0.5">
+              <p className="text-sm font-medium text-foreground">리마인더 알림</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 {reminders.map((r) => r.tea.name).join(', ')} — 확인이 필요합니다.
               </p>
             </div>
@@ -357,13 +386,13 @@ export function Cellar() {
           </div>
         )}
 
-        {/* 셀러 목록 */}
+        {/* 찻장 목록 */}
         <div className="px-4 sm:px-6 pb-4">
           {items.length === 0 ? (
             // 아이템 자체가 없는 전체 빈 상태
             <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
               <Package className="w-12 h-12 opacity-30" />
-              <p className="text-sm">아직 셀러에 차가 없습니다.</p>
+              <p className="text-sm">아직 찻장에 차가 없습니다.</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -389,13 +418,18 @@ export function Cellar() {
             </div>
           ) : (
             <div className="space-y-3">
-              {displayedItems.map((item) => (
-                <CellarCard
+              {displayedItems.map((item, i) => (
+                <div
                   key={item.id}
-                  item={item}
-                  onDelete={handleDelete}
-                  onNoteClick={handleNoteClick}
-                />
+                  className="animate-fade-in-up opacity-0"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <CellarCard
+                    item={item}
+                    onDelete={handleDelete}
+                    onNoteClick={handleNoteClick}
+                  />
+                </div>
               ))}
             </div>
           )}
@@ -404,7 +438,7 @@ export function Cellar() {
 
       <FloatingActionButton
         onClick={() => navigate('/cellar/new')}
-        ariaLabel="셀러 아이템 추가"
+        ariaLabel="찻장 아이템 추가"
         position="aboveNav"
       >
         <Plus className="w-6 h-6" />

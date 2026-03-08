@@ -40,6 +40,7 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.943.0",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.1.9",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.9",
@@ -52,6 +53,7 @@
     "@types/multer": "^2.0.0",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
+    "cache-manager": "^7.2.8",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "jsonwebtoken": "^9.0.3",

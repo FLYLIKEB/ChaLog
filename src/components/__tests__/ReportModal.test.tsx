@@ -34,7 +34,7 @@ describe('ReportModal', () => {
   it('모달이 열렸을 때 제목과 신고 사유 목록을 표시해야 함', () => {
     render(<ReportModal open={true} onOpenChange={mockOnOpenChange} noteId={noteId} />);
 
-    expect(screen.getByText('노트 신고')).toBeInTheDocument();
+    expect(screen.getByText('차록 신고')).toBeInTheDocument();
     expect(screen.getByText('신고 사유를 선택해주세요.')).toBeInTheDocument();
     expect(screen.getByText('스팸')).toBeInTheDocument();
     expect(screen.getByText('부적절한 내용')).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('ReportModal', () => {
   it('모달이 닫혔을 때 내용을 표시하지 않아야 함', () => {
     render(<ReportModal open={false} onOpenChange={mockOnOpenChange} noteId={noteId} />);
 
-    expect(screen.queryByText('노트 신고')).not.toBeInTheDocument();
+    expect(screen.queryByText('차록 신고')).not.toBeInTheDocument();
   });
 
   it('사유를 선택하지 않으면 신고하기 버튼이 비활성화되어야 함', () => {

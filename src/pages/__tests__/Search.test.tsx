@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect } from 'vitest';
 import { Search } from '../Search';
 import { renderWithRouter } from '../../test/renderWithRouter';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
 const mockTeas = [
   {
@@ -24,20 +23,30 @@ const mockTeas = [
   },
 ];
 
+const mockSellers = [
+  { name: '탐색전용샵', teaCount: 5 },
+  { name: '다실A', teaCount: 3 },
+];
+
 vi.mock('../../lib/api', () => ({
   teasApi: {
     getAll: vi.fn((query?: string) => {
       if (!query) {
         return Promise.resolve(mockTeas);
       }
-      // 검색 쿼리에 따라 필터링된 결과 반환
-      const filtered = mockTeas.filter(tea =>
-        tea.name.toLowerCase().includes(query.toLowerCase()) ||
-        tea.type.toLowerCase().includes(query.toLowerCase()) ||
-        (tea.seller && tea.seller.toLowerCase().includes(query.toLowerCase()))
+      const filtered = mockTeas.filter(
+        (tea) =>
+          tea.name.toLowerCase().includes(query.toLowerCase()) ||
+          tea.type.toLowerCase().includes(query.toLowerCase()) ||
+          (tea.seller && tea.seller.toLowerCase().includes(query.toLowerCase())),
       );
       return Promise.resolve(filtered);
     }),
+    getWithFilters: vi.fn(() => Promise.resolve(mockTeas)),
+    getPopularRankings: vi.fn(() => Promise.resolve(mockTeas)),
+    getNewRankings: vi.fn(() => Promise.resolve(mockTeas)),
+    getCuration: vi.fn(() => Promise.resolve(mockTeas)),
+    getSellers: vi.fn(() => Promise.resolve({ sellers: mockSellers })),
   },
 }));
 
@@ -52,15 +61,19 @@ vi.mock('sonner', () => ({
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
   const navigate = vi.fn();
+  const setSearchParams = vi.fn();
   (globalThis as Record<string, unknown>).__navigate_spy__ = navigate;
+  (globalThis as Record<string, unknown>).__setSearchParams_spy__ = setSearchParams;
   return {
     ...actual,
     useNavigate: () => navigate,
+    useSearchParams: () => [new URLSearchParams(), setSearchParams],
   };
 });
 
 const getNavigateSpy = () => {
-  const navigate = (globalThis as unknown as Record<string, ReturnType<typeof vi.fn> | undefined>).__navigate_spy__;
+  const navigate = (globalThis as unknown as Record<string, ReturnType<typeof vi.fn> | undefined>)
+    .__navigate_spy__;
   if (!navigate) {
     throw new Error('navigate spy is not initialised');
   }
@@ -68,15 +81,20 @@ const getNavigateSpy = () => {
 };
 
 describe('Search 페이지', () => {
-  it('검색어가 없으면 안내 메시지를 보여준다', () => {
-    renderWithRouter(<Search />, { route: '/search' });
+  it('사색 섹션(인기, 신규, 차선, 찻집)을 렌더링한다', async () => {
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
-    expect(screen.getByText('검색어를 입력해주세요.')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('사랑받는 차')).toBeInTheDocument();
+    });
+    expect(screen.getByText('신규 차')).toBeInTheDocument();
+    expect(screen.getByText(/차선/)).toBeInTheDocument();
+    expect(screen.getByText('찻집/다실')).toBeInTheDocument();
   });
 
   it('검색어와 일치하는 차를 렌더링한다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '무이');
@@ -87,17 +105,26 @@ describe('Search 페이지', () => {
 
   it('일치하는 차가 없으면 빈 상태를 보여준다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '없는차');
 
-    expect(await screen.findByText('검색 결과가 없습니다.')).toBeInTheDocument();
+    expect(await screen.findByText('검색 결과가 없어요.')).toBeInTheDocument();
+  });
+
+  it('찻집/다실 섹션에 찻집 목록을 표시한다', async () => {
+    renderWithRouter(<Search />, { route: '/sasaek' });
+
+    await waitFor(() => {
+      expect(screen.getByText('탐색전용샵')).toBeInTheDocument();
+    });
+    expect(screen.getByText('다실A')).toBeInTheDocument();
   });
 
   it('새 차 등록 버튼이 표시된다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '테스트');
@@ -109,7 +136,7 @@ describe('Search 페이지', () => {
 
   it('새 차 등록 버튼 클릭 시 새 차 등록 페이지로 이동한다', async () => {
     const user = userEvent.setup();
-    renderWithRouter(<Search />, { route: '/search' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
     const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
     await user.type(input, '테스트');
@@ -123,5 +150,17 @@ describe('Search 페이지', () => {
 
     expect(getNavigateSpy()).toHaveBeenCalledWith('/tea/new');
   });
-});
 
+  it('필터 UI(차종, 평점, 정렬)가 검색 결과 시 표시된다', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
+    await user.type(input, '무이');
+
+    await waitFor(() => {
+      expect(screen.getByText('필터')).toBeInTheDocument();
+    });
+    expect(screen.getByText('인기순')).toBeInTheDocument();
+  });
+});

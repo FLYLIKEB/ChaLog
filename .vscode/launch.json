@@ -83,9 +83,30 @@
         },
         {
             "type": "node-terminal",
+            "name": "🗄️ 로컬 DB 마이그레이션 실행 (run-local-migrations.sh)",
+            "request": "launch",
+            "command": "bash scripts/run-local-migrations.sh",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
             "name": "🗄️ 원격 DB 마이그레이션 실행 (run-remote-migrations.sh)",
             "request": "launch",
             "command": "bash scripts/run-remote-migrations.sh",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "🔀 원격 main → 현재 브랜치 머지 (merge-main-into-current.sh)",
+            "request": "launch",
+            "command": "bash scripts/merge-main-into-current.sh",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📤 원격 .env 동기화 (sync-remote-env.sh)",
+            "request": "launch",
+            "command": "bash scripts/sync-remote-env.sh",
             "cwd": "${workspaceFolder}"
         }
     ]

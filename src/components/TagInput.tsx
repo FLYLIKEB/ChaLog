@@ -157,7 +157,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
       className="space-y-2"
       onTouchStart={() => setShowSuggestions(true)}
     >
-      <Label>태그</Label>
+      <Label>향미</Label>
       
       {/* 입력된 태그 표시 */}
       {tags.length > 0 && (
@@ -173,7 +173,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
                 type="button"
                 onClick={() => removeTag(index)}
                 className="ml-1 hover:bg-gray-300 rounded-full p-0.5"
-                aria-label={`${tag} 태그 삭제`}
+                aria-label={`${tag} 향미 삭제`}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -187,7 +187,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
         <Input
           ref={inputRef}
           type="text"
-          placeholder="태그를 입력하거나 추천 태그를 선택하세요"
+          placeholder="향미를 입력하거나 차선 향미를 선택하세요"
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
@@ -217,7 +217,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
             className="absolute z-50 mt-2 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto"
           >
             <div className="p-2">
-              <p className="text-xs text-gray-500 mb-2 px-2">추천 태그</p>
+              <p className="text-xs text-gray-500 mb-2 px-2">차선 향미</p>
               <div className="flex flex-wrap gap-2">
                 {filteredSuggestions.slice(0, 12).map((tag) => (
                   <Button
@@ -244,7 +244,7 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
       <p className="text-xs text-gray-500">
         {tags.length >= maxTags
           ? `최대 ${maxTags}개까지 추가할 수 있습니다.`
-          : `Enter 키로 태그를 추가하거나 추천 태그를 클릭하세요. (${tags.length}/${maxTags})`}
+          : `Enter 키로 향미를 추가하거나 차선 향미를 클릭하세요. (${tags.length}/${maxTags})`}
       </p>
     </div>
   );

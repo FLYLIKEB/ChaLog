@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag, ExternalLink } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -24,6 +24,7 @@ import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 export function NoteDetail() {
   const { id } = useParams();
@@ -44,59 +45,59 @@ export function NoteDetail() {
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
 
-  useEffect(() => {
-    // 삭제된 노트는 API 호출하지 않음
-    if (isDeleted) {
+  const fetchData = useCallback(async () => {
+    if (isNaN(noteId)) {
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
-
-    const fetchData = async () => {
-      if (isNaN(noteId)) {
-        toast.error('유효하지 않은 노트 ID입니다.');
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const noteData = await notesApi.getById(noteId);
-        // API 레이어에서 이미 정규화 및 날짜 변환이 완료됨
-        const normalizedNote = noteData as Note;
-        setNote(normalizedNote);
-        setIsLiked(normalizedNote.isLiked ?? false);
-        setLikeCount(normalizedNote.likeCount ?? 0);
-        setIsBookmarked(normalizedNote.isBookmarked ?? false);
-
-        // 차 정보 가져오기
-        if (normalizedNote.teaId) {
-          try {
-            const teaData = await teasApi.getById(normalizedNote.teaId);
-            setTea(teaData as Tea);
-          } catch (error) {
-            logger.error('Failed to fetch tea:', error);
-          }
+    try {
+      setIsLoading(true);
+      const noteData = await notesApi.getById(noteId);
+      const normalizedNote = noteData as Note;
+      setNote(normalizedNote);
+      setIsLiked(normalizedNote.isLiked ?? false);
+      setLikeCount(normalizedNote.likeCount ?? 0);
+      setIsBookmarked(normalizedNote.isBookmarked ?? false);
+      if (normalizedNote.teaId) {
+        try {
+          const teaData = await teasApi.getById(normalizedNote.teaId);
+          setTea(teaData as Tea);
+        } catch (error) {
+          logger.error('Failed to fetch tea:', error);
         }
-      } catch (error: any) {
-        logger.error('Failed to fetch note:', error);
-        
-        // 403 에러인 경우 권한 없음 메시지 표시
-        if (error?.statusCode === 403) {
-          toast.error('이 노트를 볼 권한이 없습니다.');
-        } else if (error?.statusCode === 404) {
-          toast.error('노트를 찾을 수 없습니다.');
-        } else {
-          toast.error('노트를 불러오는데 실패했습니다.');
-        }
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error: any) {
+      logger.error('Failed to fetch note:', error);
+      if (error?.statusCode === 403) {
+        toast.error('이 차록을 볼 권한이 없습니다.');
+      } else if (error?.statusCode === 404) {
+        toast.error('차록을 찾을 수 없습니다.');
+      } else {
+        toast.error('차록을 불러오는데 실패했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, [noteId]);
 
+  useEffect(() => {
+    if (isDeleted) return;
     fetchData();
-  }, [noteId, isDeleted]);
+  }, [noteId, isDeleted, fetchData]);
+
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    if (!isDeleted) {
+      registerRefresh(fetchData);
+    } else {
+      registerRefresh(undefined);
+    }
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchData, isDeleted]);
 
   if (isLoading) {
     return (
-      <DetailFallback title="노트 상세">
+      <DetailFallback title="차록 상세">
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
@@ -107,8 +108,8 @@ export function NoteDetail() {
   if (!note) {
     return (
       <DetailFallback 
-        title="노트 상세" 
-        message="노트를 찾을 수 없거나 볼 권한이 없습니다." 
+        title="차록 상세"
+        message="차록을 찾을 수 없거나 볼 권한이 없습니다."
       />
     );
   }
@@ -117,7 +118,7 @@ export function NoteDetail() {
 
   const handleTogglePublic = async () => {
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
 
@@ -125,7 +126,7 @@ export function NoteDetail() {
       setIsUpdating(true);
       await notesApi.update(noteId, { isPublic: !note.isPublic });
       setNote({ ...note, isPublic: !note.isPublic });
-      toast.success(note.isPublic ? '노트가 비공개로 전환되었습니다.' : '노트가 공개되었습니다.');
+      toast.success(note.isPublic ? '차록이 비공개로 전환되었습니다.' : '차록이 공개되었습니다.');
     } catch (error) {
       logger.error('Failed to update note:', error);
       toast.error('업데이트에 실패했습니다.');
@@ -136,7 +137,7 @@ export function NoteDetail() {
 
   const handleDelete = async () => {
     if (isNaN(noteId)) {
-      toast.error('유효하지 않은 노트 ID입니다.');
+      toast.error('유효하지 않은 차록 ID입니다.');
       return;
     }
 
@@ -144,7 +145,7 @@ export function NoteDetail() {
       setIsDeleting(true);
       await notesApi.delete(noteId);
       setIsDeleted(true); // 삭제 상태 설정하여 API 재호출 방지
-      toast.success('노트가 삭제되었습니다.');
+      toast.success('차록이 삭제되었습니다.');
       // 이전 화면으로 돌아가기
       navigate(-1);
     } catch (error) {
@@ -206,8 +207,8 @@ export function NoteDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-6">
-      <Header showBack title="노트 상세" />
+    <div className="min-h-screen pb-6">
+      <Header showBack title="차록 상세" showProfile />
       
       <div className="p-4 space-y-6">
         {/* 차 정보 요약 */}
@@ -222,6 +223,9 @@ export function NoteDetail() {
                 <span>{tea.type}</span>
                 {tea.year && <span>· {tea.year}년</span>}
                 {tea.seller && <span>· {tea.seller}</span>}
+                {tea.price != null && tea.price > 0 && (
+                  <span>· {tea.price.toLocaleString()}원</span>
+                )}
               </div>
             </button>
           </section>
@@ -233,7 +237,7 @@ export function NoteDetail() {
             <div className="flex items-center gap-3">
               {note.overallRating !== null && (
                 <div className="flex items-center gap-2">
-                  <Star className="w-6 h-6 fill-amber-400 text-amber-400" />
+                  <Star className="w-6 h-6 fill-rating text-rating" />
                   <span className="text-2xl text-primary">{Number(note.overallRating).toFixed(1)}</span>
                 </div>
               )}
@@ -327,7 +331,7 @@ export function NoteDetail() {
         {/* 태그 */}
         {note.tags && note.tags.length > 0 && (
           <section className="bg-card rounded-lg p-4">
-            <h3 className="mb-3 text-primary">태그</h3>
+            <h3 className="mb-3 text-primary">향미</h3>
             <div className="flex flex-wrap gap-2">
               {note.tags.map((tag, index) => (
                 <Link key={index} to={`/tag/${encodeURIComponent(tag)}`}>
@@ -436,7 +440,7 @@ export function NoteDetail() {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>노트 삭제</AlertDialogTitle>
+            <AlertDialogTitle>차록 삭제</AlertDialogTitle>
             <AlertDialogDescription>
               정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </AlertDialogDescription>

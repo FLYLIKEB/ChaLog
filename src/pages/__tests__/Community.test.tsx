@@ -28,11 +28,11 @@ const mockPosts = [
     id: 2,
     userId: 2,
     user: { id: 2, name: '이다원', profileImageUrl: null },
-    title: '추천 게시글',
+    title: '엄선 게시글',
     content: '이 차 강추합니다!',
     category: 'recommendation' as const,
     isSponsored: true,
-    sponsorNote: '브랜드 A',
+    sponsorNote: '다실 A',
     viewCount: 5,
     likeCount: 1,
     isLiked: false,
@@ -86,26 +86,26 @@ describe('Community 페이지', () => {
   afterEach(() => { vi.clearAllMocks(); });
 
   it('게시글 목록을 표시한다', async () => {
-    renderWithRouter(<Community />, { route: '/community' });
+    renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
       expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
-      expect(screen.getByText('추천 게시글')).toBeInTheDocument();
+      expect(screen.getByText('엄선 게시글')).toBeInTheDocument();
     });
   });
 
   it('카테고리 탭을 표시한다', () => {
-    renderWithRouter(<Community />, { route: '/community' });
+    renderWithRouter(<Community />, { route: '/chadam' });
     expect(screen.getByText('전체')).toBeInTheDocument();
     expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('추천')).toBeInTheDocument();
+    expect(screen.getByText('차선')).toBeInTheDocument();
     expect(screen.getByText('도구')).toBeInTheDocument();
     expect(screen.getByText('찻집 후기')).toBeInTheDocument();
   });
 
   it('게시글이 없을 때 빈 상태를 표시한다', async () => {
     vi.mocked(postsApi.getAll).mockResolvedValue([]);
-    renderWithRouter(<Community />, { route: '/community' });
+    renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
       expect(screen.getByText('첫 번째 게시글을 작성해보세요!')).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe('Community 페이지', () => {
   });
 
   it('로그인 사용자에게 새 글 작성 버튼을 표시한다', async () => {
-    renderWithRouter(<Community />, { route: '/community' });
+    renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
       expect(screen.getByLabelText('새 게시글 작성')).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe('Community 페이지', () => {
     });
     vi.mocked(postsApi.getAll).mockResolvedValue(mockPosts);
 
-    renderWithRouter(<Community />, { route: '/community' });
+    renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
       expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();

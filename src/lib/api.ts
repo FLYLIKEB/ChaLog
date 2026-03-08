@@ -1,5 +1,16 @@
 import { API_TIMEOUT } from '../constants';
-import { Tea, User, UserOnboardingPreference, CellarItem } from '../types';
+import {
+  Tea,
+  User,
+  UserOnboardingPreference,
+  CellarItem,
+  TeaFilterParams,
+  Seller,
+  SellerDetail,
+  PopularTag,
+  Note,
+  RatingSchema,
+} from '../types';
 import { logger } from './logger';
 
 // API Base URL 설정
@@ -589,7 +600,7 @@ class ApiClient {
             if (errorMessage.includes('Tea') || errorMessage.includes('tea')) {
               errorMessage = '차를 찾을 수 없습니다.';
             } else if (errorMessage.includes('Note') || errorMessage.includes('note')) {
-              errorMessage = '노트를 찾을 수 없습니다.';
+              errorMessage = '차록을 찾을 수 없습니다.';
             } else if (errorMessage.includes('User') || errorMessage.includes('user')) {
               errorMessage = '사용자를 찾을 수 없습니다.';
             } else {
@@ -1022,6 +1033,26 @@ export interface CreateTeaRequest {
   type: string;
   seller?: string;
   origin?: string;
+  price?: number;
+}
+
+export interface CreateSellerRequest {
+  name: string;
+  address?: string;
+  mapUrl?: string;
+  websiteUrl?: string;
+  phone?: string;
+  description?: string;
+  businessHours?: string;
+}
+
+export interface UpdateSellerRequest {
+  address?: string;
+  mapUrl?: string;
+  websiteUrl?: string;
+  phone?: string;
+  description?: string;
+  businessHours?: string;
 }
 
 export interface CreateNoteRequest {
@@ -1050,6 +1081,10 @@ export const authApi = {
   loginWithKakao: (data: KakaoLoginRequest) => apiClient.post<AuthResponse>('/auth/kakao', data),
   loginWithGoogle: (data: GoogleLoginRequest) => apiClient.post<AuthResponse>('/auth/google', data),
   getProfile: () => apiClient.post('/auth/profile'),
+  linkKakao: (accessToken: string) =>
+    apiClient.post<null>('/auth/link/kakao', { accessToken }),
+  linkGoogle: (accessToken: string) =>
+    apiClient.post<null>('/auth/link/google', { accessToken }),
 };
 
 export const teasApi = {
@@ -1057,19 +1092,72 @@ export const teasApi = {
     const endpoint = query ? `/teas?q=${encodeURIComponent(query)}` : '/teas';
     return apiClient.get<Tea[]>(endpoint);
   },
+  getTrending: (period?: '7d' | '30d') =>
+    apiClient.get<Tea[]>(`/teas/trending?period=${period || '7d'}`),
+  getWithFilters: (params: TeaFilterParams) => {
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set('q', params.q);
+    if (params.type) searchParams.set('type', params.type);
+    if (params.minRating != null) searchParams.set('minRating', String(params.minRating));
+    if (params.sort) searchParams.set('sort', params.sort);
+    const query = searchParams.toString();
+    return apiClient.get<Tea[]>(`/teas${query ? `?${query}` : ''}`);
+  },
+  getPopularRankings: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/rankings/popular?limit=${limit}`),
+  getNewRankings: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/rankings/new?limit=${limit}`),
+  getSellers: (query?: string) => {
+    const params = query?.trim() ? `?q=${encodeURIComponent(query.trim())}` : '';
+    return apiClient.get<{ sellers: Seller[] }>(`/teas/sellers${params}`);
+  },
+  createSeller: (data: CreateSellerRequest) =>
+    apiClient.post<SellerDetail>('/teas/sellers', data),
+  getSellerByName: (name: string) =>
+    apiClient.get<SellerDetail | null>(`/teas/sellers/by-name/${encodeURIComponent(name)}`),
+  updateSeller: (name: string, data: UpdateSellerRequest) =>
+    apiClient.patch<SellerDetail>(`/teas/sellers/by-name/${encodeURIComponent(name)}`, data),
+  getCuration: (limit = 10) =>
+    apiClient.get<Tea[]>(`/teas/curation?limit=${limit}`),
+  getBySeller: (name: string) =>
+    apiClient.get<Tea[]>(`/teas/by-seller/${encodeURIComponent(name)}`),
   getById: (id: number) => apiClient.get<Tea>(`/teas/${id}`),
   create: (data: CreateTeaRequest) => apiClient.post<Tea>('/teas', data),
   getPopularTags: (id: number) =>
-    apiClient.get<{ tags: import('../types').PopularTag[] }>(`/teas/${id}/popular-tags`),
+    apiClient.get<{ tags: PopularTag[] }>(`/teas/${id}/popular-tags`),
   getTopReviews: (id: number) =>
-    apiClient.get<import('../types').Note[]>(`/teas/${id}/top-reviews`),
+    apiClient.get<Note[]>(`/teas/${id}/top-reviews`),
   getSimilarTeas: (id: number) =>
     apiClient.get<Tea[]>(`/teas/${id}/similar`),
 };
 
+export interface CreateRatingSchemaRequest {
+  nameKo: string;
+  descriptionKo?: string;
+  nameEn?: string;
+  descriptionEn?: string;
+  axes: Array<{
+    nameKo: string;
+    nameEn: string;
+    minValue?: number;
+    maxValue?: number;
+    stepValue?: number;
+    displayOrder?: number;
+  }>;
+}
+
+export interface ActiveSchemasResponse {
+  schemas: RatingSchema[];
+  pinnedSchemaIds: number[];
+}
+
 export const notesApi = {
-  getActiveSchemas: () => apiClient.get('/notes/schemas/active'),
+  getActiveSchemas: () => apiClient.get<ActiveSchemasResponse>('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
+  createSchema: (data: CreateRatingSchemaRequest) =>
+    apiClient.post<RatingSchema>('/notes/schemas', data),
+  toggleSchemaPin: (schemaId: number) =>
+    apiClient.post<{ pinned: boolean }>(`/notes/schemas/${schemaId}/pin`),
   getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags') => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
@@ -1106,8 +1194,21 @@ export interface UserNotificationSetting {
   updatedAt: Date;
 }
 
+export interface LinkedAccount {
+  id: number;
+  provider: 'email' | 'kakao' | 'google' | 'naver' | 'apple';
+  providerId: string;
+  hasCredential: boolean;
+}
+
 export const usersApi = {
+  getTrending: (period?: '7d' | '30d') =>
+    apiClient.get<Array<User & { followerCount: number }>>(`/users/trending?period=${period || '7d'}`),
   getById: (id: number) => apiClient.get<User>(`/users/${id}`),
+  getLinkedAccounts: (id: number) =>
+    apiClient.get<LinkedAccount[]>(`/users/${id}/authentications`),
+  unlinkAccount: (userId: number, authId: number) =>
+    apiClient.delete(`/users/${userId}/authentications/${authId}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
   updateProfile: (id: number, data: { name?: string; profileImageUrl?: string | null; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
   getOnboardingPreference: (id: number) => apiClient.get<UserOnboardingPreference>(`/users/${id}/onboarding`),

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2 } from 'lucide-react';
+import { PostCardSkeleton } from '../components/PostCardSkeleton';
 import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
 import { postsApi } from '../lib/api';
 import { PostCard } from '../components/PostCard';
@@ -9,6 +10,7 @@ import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/EmptyState';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { cn } from '../components/ui/utils';
 import { toast } from 'sonner';
 
@@ -43,12 +45,18 @@ export function Community() {
     fetchPosts();
   }, [fetchPosts]);
 
-  return (
-    <div className="min-h-screen bg-background pb-20">
-      <Header title="커뮤니티" />
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(fetchPosts);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchPosts]);
 
-      {/* 카테고리 탭 */}
-      <div className="sticky top-14 z-10 bg-background border-b border-border/50">
+  return (
+    <div className="min-h-screen pb-20">
+      <Header title="차담" showLogo showProfile />
+
+      {/* 카테고리 탭 - 헤더 높이만큼 아래에서 고정 */}
+      <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-10 bg-background border-b border-border/50">
         <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-2">
           {CATEGORIES.map(({ value, label }) => (
             <button
@@ -70,22 +78,31 @@ export function Community() {
       {/* 게시글 목록 */}
       <div className="px-4">
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <div className="space-y-0">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <PostCardSkeleton key={i} />
+            ))}
           </div>
         ) : posts.length === 0 ? (
           <EmptyState
             type="feed"
             message={
               selectedCategory
-                ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없습니다.`
+                ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없어요.`
                 : '첫 번째 게시글을 작성해보세요!'
             }
+            action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/community/new') }}
           />
         ) : (
           <div>
-            {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+            {posts.map((post, i) => (
+              <div
+                key={post.id}
+                className="animate-fade-in-up opacity-0"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
+                <PostCard post={post} />
+              </div>
             ))}
           </div>
         )}
@@ -94,7 +111,7 @@ export function Community() {
       {/* 새 글 작성 FAB */}
       {user && (
         <FloatingActionButton
-          onClick={() => navigate('/community/new')}
+          onClick={() => navigate('/chadam/new')}
           ariaLabel="새 게시글 작성"
           position="aboveNav"
         >

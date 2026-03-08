@@ -10,10 +10,14 @@ import { NoteBookmark } from './entities/note-bookmark.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
+import { UserSchemaPin } from './entities/user-schema-pin.entity';
+import { TagFollow } from './entities/tag-follow.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { TeasService } from '../teas/teas.service';
 import { S3Service } from '../common/storage/s3.service';
+import { FollowsService } from '../follows/follows.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 
 describe('NotesService', () => {
@@ -106,6 +110,26 @@ describe('NotesService', () => {
     save: jest.fn(),
   };
 
+  const mockUserSchemaPinRepository = {
+    find: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn(),
+    save: jest.fn(),
+    remove: jest.fn(),
+    create: jest.fn(),
+  };
+
+  const mockTagFollowsRepository = {
+    find: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockFollowsService = {
+    getFollowingIds: jest.fn().mockResolvedValue([]),
+  };
+
+  const mockNotificationsService = {
+    create: jest.fn(),
+  };
+
   const mockTeasService = {
     findOne: jest.fn(),
     updateRating: jest.fn(),
@@ -163,6 +187,22 @@ describe('NotesService', () => {
           useValue: mockNoteAxisValueRepository,
         },
         {
+          provide: getRepositoryToken(UserSchemaPin),
+          useValue: mockUserSchemaPinRepository,
+        },
+        {
+          provide: getRepositoryToken(TagFollow),
+          useValue: mockTagFollowsRepository,
+        },
+        {
+          provide: FollowsService,
+          useValue: mockFollowsService,
+        },
+        {
+          provide: NotificationsService,
+          useValue: mockNotificationsService,
+        },
+        {
           provide: DataSource,
           useValue: mockDataSource,
         },
@@ -216,7 +256,7 @@ describe('NotesService', () => {
         where: { isActive: true },
         order: { createdAt: 'DESC' },
       });
-      expect(result).toEqual(mockSchemas);
+      expect(result).toEqual({ schemas: mockSchemas, pinnedSchemaIds: [] });
     });
   });
 

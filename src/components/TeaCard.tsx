@@ -14,14 +14,17 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-4 hover:shadow-md transition-shadow cursor-pointer"
+      className="w-full text-left p-4 hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="truncate text-primary">{tea.name}</h3>
+          <h3 className="truncate font-medium text-foreground">{tea.name}</h3>
           <div className="flex items-center gap-3 mt-2 text-muted-foreground">
             <span className="text-sm">{tea.type}</span>
             {tea.year && <span className="text-sm">{tea.year}년</span>}
+            {tea.price != null && tea.price > 0 && (
+              <span className="text-sm">{tea.price.toLocaleString()}원</span>
+            )}
           </div>
           {tea.seller && (
             <p className="text-sm text-muted-foreground mt-1">{tea.seller}</p>
@@ -29,10 +32,10 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="flex items-center gap-1">
-            <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+            <Star className="w-4 h-4 fill-rating text-rating" />
             <span className="text-sm">{Number(tea.averageRating).toFixed(1)}</span>
           </div>
-          <span className="text-xs text-muted-foreground">{tea.reviewCount}개 리뷰</span>
+          <span className="text-xs text-muted-foreground">{tea.reviewCount}개 차록</span>
         </div>
       </div>
     </Card>

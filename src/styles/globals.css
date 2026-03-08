@@ -1,39 +1,42 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  --header-spacer: calc(4.25rem + env(safe-area-inset-top, 0px));
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
+  --background: #f5f6f8;
+  --foreground: oklch(0.18 0 0);
   --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.18 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
+  --popover-foreground: oklch(0.18 0 0);
+  --primary: #1db93c;
+  --primary-foreground: #ffffff;
+  --secondary: oklch(0.97 0.005 150);
+  --secondary-foreground: oklch(0.2 0 0);
+  --muted: #f0f1f3;
+  --muted-foreground: #6b7280;
+  --accent: #e8eaed;
+  --accent-foreground: oklch(0.2 0 0);
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
+  --border: rgba(0, 0, 0, 0.05);
   --input: transparent;
-  --input-background: #f3f3f5;
+  --input-background: #f5f5f7;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --ring: oklch(0.708 0 0);
+  --rating: #22c55e;
+  --success: oklch(0.55 0.15 160);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
+  --sidebar-primary: #1db93c;
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
@@ -61,6 +64,8 @@
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
+  --rating: #22c55e;
+  --success: oklch(0.6 0.15 160);
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -100,6 +105,8 @@
   --color-input-background: var(--input-background);
   --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
+  --color-rating: var(--rating);
+  --color-success: var(--success);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -126,6 +133,9 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -186,5 +196,178 @@
 
 html {
   font-size: var(--font-size);
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar,
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide,
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
+/* 당겨서 새로고침 애니메이션 */
+@keyframes bounce-soft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.9; filter: brightness(1.1); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes wiggle-ready {
+  0%, 100% { transform: rotate(177deg); }
+  50% { transform: rotate(183deg); }
+}
+
+@keyframes text-shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes float-in {
+  0% { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-bounce-soft {
+  animation: bounce-soft 1.2s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+.animate-wiggle-ready {
+  animation: wiggle-ready 0.5s ease-in-out infinite;
+}
+
+.animate-float-in {
+  animation: float-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* 배민 스타일: 차분한 당겨서 새로고침 */
+@keyframes pull-refresh-in {
+  0% { opacity: 0; transform: translateY(-4px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pull-refresh-in {
+  animation: pull-refresh-in 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* 찻잎: 차분한 느린 회전 (차의 여유) */
+@keyframes teacup-calm {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-teacup-calm {
+  animation: teacup-calm 4.5s linear infinite;
+}
+
+/* 말줄임 애니메이션: . .. ... .... (글자는 고정, 점만 변화) */
+.animate-ellipsis {
+  display: inline-block;
+  animation: ellipsis-dots 1.6s steps(4, end) infinite;
+}
+
+@keyframes ellipsis-dots {
+  0% { width: 0; }
+  25% { width: 1ch; }
+  50% { width: 2ch; }
+  75% { width: 3ch; }
+  100% { width: 4ch; }
+}
+
+/* 당겨서 새로고침: 폰트 크기 톡톡 애니메이션 */
+@keyframes text-pop {
+  0%, 100% { transform: scale(1); font-size: 0.9375rem; }
+  50% { transform: scale(1.06); font-size: 1.0625rem; }
+}
+
+/* 물방울 톡톡 튀는 애니메이션 */
+@keyframes droplet-bounce {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+  50% { transform: translateY(-6px) scale(1.1); opacity: 1; }
+}
+
+@keyframes droplet-bounce-delay-1 {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.7; }
+  50% { transform: translateY(-5px) scale(1.15); opacity: 0.95; }
+}
+
+@keyframes droplet-bounce-delay-2 {
+  0%, 100% { transform: translateY(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-7px) scale(1.08); opacity: 0.9; }
+}
+
+.font-pull-refresh {
+  font-family: 'Jua', sans-serif;
+}
+
+.animate-text-pop {
+  animation: text-pop 1.5s ease-in-out infinite;
+}
+
+.animate-droplet {
+  animation: droplet-bounce 2.2s ease-in-out infinite;
+}
+
+.animate-droplet-1 {
+  animation: droplet-bounce-delay-1 2.4s ease-in-out infinite 0.2s;
+}
+
+.animate-droplet-2 {
+  animation: droplet-bounce-delay-2 2.6s ease-in-out infinite 0.3s;
+}
+
+.animate-droplet-delay {
+  animation: droplet-bounce 2.2s ease-in-out infinite 0.5s;
+}
+
+/* 찻잎 모양 (끝이 뾰족한 잎사귀) */
+.shape-tea-leaf {
+  clip-path: polygon(50% 0%, 92% 35%, 92% 70%, 50% 100%, 8% 70%, 8% 35%);
+}
+
+/* 찻잔 빙글빙글 회전 */
+@keyframes teacup-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-teacup-spin {
+  animation: teacup-spin 1.2s linear infinite;
 }
 

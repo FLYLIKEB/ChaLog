@@ -5,10 +5,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "./avatar";
 interface UserAvatarProps extends React.ComponentProps<"div"> {
   name: string;
   profileImageUrl?: string | null;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
 }
 
 const sizeClasses = {
+  xs: "w-6 h-6 text-[10px]",
   sm: "w-12 h-12 text-base",
   md: "w-16 h-16 text-lg",
   lg: "w-20 h-20 text-xl",

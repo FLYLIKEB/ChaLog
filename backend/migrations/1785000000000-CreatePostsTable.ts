@@ -5,7 +5,7 @@ export class CreatePostsTable1785000000000 implements MigrationInterface {
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      CREATE TABLE \`posts\` (
+      CREATE TABLE IF NOT EXISTS \`posts\` (
         \`id\` int NOT NULL AUTO_INCREMENT,
         \`userId\` int NOT NULL,
         \`title\` varchar(200) NOT NULL,
@@ -29,7 +29,7 @@ export class CreatePostsTable1785000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE \`post_likes\` (
+      CREATE TABLE IF NOT EXISTS \`post_likes\` (
         \`id\` int NOT NULL AUTO_INCREMENT,
         \`postId\` int NOT NULL,
         \`userId\` int NOT NULL,
@@ -48,7 +48,7 @@ export class CreatePostsTable1785000000000 implements MigrationInterface {
     `);
 
     await queryRunner.query(`
-      CREATE TABLE \`post_bookmarks\` (
+      CREATE TABLE IF NOT EXISTS \`post_bookmarks\` (
         \`id\` int NOT NULL AUTO_INCREMENT,
         \`postId\` int NOT NULL,
         \`userId\` int NOT NULL,

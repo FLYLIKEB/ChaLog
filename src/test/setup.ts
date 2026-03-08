@@ -40,6 +40,16 @@ if (typeof window !== 'undefined' && !('ResizeObserver' in window)) {
     ResizeObserverMock;
 }
 
+// Radix Select / jsdom polyfills
+if (typeof Element !== 'undefined' && !Element.prototype.hasPointerCapture) {
+  Element.prototype.setPointerCapture = () => {};
+  Element.prototype.releasePointerCapture = () => {};
+  Element.prototype.hasPointerCapture = () => false;
+}
+if (typeof Element !== 'undefined') {
+  Element.prototype.scrollIntoView = Element.prototype.scrollIntoView || (() => {});
+}
+
 if (typeof window !== 'undefined' && !window.matchMedia) {
   window.matchMedia = (query: string) =>
     ({

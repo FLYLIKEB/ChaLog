@@ -20,7 +20,8 @@ import { memoryStorage } from 'multer';
 import { NotesService } from './notes.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
-import { AuthGuard } from '@nestjs/passport';
+import { CreateRatingSchemaDto } from './dto/create-rating-schema.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
 import { S3Service } from '../common/storage/s3.service';
 import { ImageProcessorService } from '../common/storage/image-processor.service';
@@ -33,7 +34,7 @@ export class NotesController {
     private readonly imageProcessorService: ImageProcessorService,
   ) {}
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post('images')
   @UseInterceptors(
     FileInterceptor('image', {
@@ -103,7 +104,7 @@ export class NotesController {
     }
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Request() req, @Body() createNoteDto: CreateNoteDto) {
     if (!req.user || !req.user.userId) {
@@ -165,7 +166,7 @@ export class NotesController {
     return this.notesService.findOne(parsedId, userId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Request() req, @Body() updateNoteDto: UpdateNoteDto) {
     if (!req.user || !req.user.userId) {
@@ -185,7 +186,7 @@ export class NotesController {
     return this.notesService.update(parsedId, parsedUserId, updateNoteDto);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
     if (!req.user || !req.user.userId) {
@@ -205,7 +206,7 @@ export class NotesController {
     return this.notesService.remove(parsedId, parsedUserId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @HttpCode(201)
   @Post(':id/like')
   toggleLike(@Param('id') id: string, @Request() req) {
@@ -226,7 +227,7 @@ export class NotesController {
     return this.notesService.toggleLike(parsedId, parsedUserId);
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAuthGuard)
   @HttpCode(201)
   @Post(':id/bookmark')
   toggleBookmark(@Param('id') id: string, @Request() req) {
@@ -247,9 +248,38 @@ export class NotesController {
     return this.notesService.toggleBookmark(parsedId, parsedUserId);
   }
 
+  @UseGuards(OptionalJwtAuthGuard)
   @Get('schemas/active')
-  async getActiveSchemas() {
-    return this.notesService.getActiveSchemas();
+  async getActiveSchemas(@Request() req?: { user?: { userId: string } }) {
+    const userId = req?.user?.userId ? parseInt(req.user.userId, 10) : undefined;
+    return this.notesService.getActiveSchemas(Number.isNaN(userId) ? undefined : userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('schemas/:schemaId/pin')
+  async toggleSchemaPin(@Param('schemaId') schemaId: string, @Request() req) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    const parsedSchemaId = parseInt(schemaId, 10);
+    if (Number.isNaN(userId) || Number.isNaN(parsedSchemaId)) {
+      throw new BadRequestException('잘못된 요청입니다.');
+    }
+    return this.notesService.toggleSchemaPin(userId, parsedSchemaId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('schemas')
+  async createSchema(@Request() req, @Body() dto: CreateRatingSchemaDto) {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    return this.notesService.createSchema(userId, dto);
   }
 
   @Get('schemas/:schemaId/axes')

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { PostCategory, POST_CATEGORY_LABELS } from '../types';
@@ -6,6 +6,7 @@ import { postsApi, CreatePostRequest } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
@@ -46,7 +47,7 @@ export function NewPost() {
     try {
       const post = await postsApi.create(dto);
       toast.success('게시글이 작성되었습니다.');
-      navigate(`/community/${post.id}`, { replace: true });
+      navigate(`/chadam/${post.id}`, { replace: true });
     } catch {
       toast.error('게시글 작성에 실패했습니다.');
     } finally {
@@ -54,9 +55,15 @@ export function NewPost() {
     }
   };
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header showBack title="새 게시글" />
+    <div className="min-h-screen">
+      <Header showBack title="새 게시글" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">
         {/* 카테고리 선택 */}
@@ -138,7 +145,7 @@ export function NewPost() {
               type="text"
               value={sponsorNote}
               onChange={(e) => setSponsorNote(e.target.value)}
-              placeholder="협찬 브랜드 또는 내용을 입력하세요 (선택)"
+              placeholder="협찬 다실 또는 내용을 입력하세요 (선택)"
               maxLength={300}
               className={cn(
                 'w-full text-sm border border-border rounded-lg px-3 py-2.5',

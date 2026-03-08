@@ -1,0 +1,111 @@
+import React, { type FC } from 'react';
+import { Star } from 'lucide-react';
+import { Slider } from './ui/slider';
+import { cn } from './ui/utils';
+
+const MIN = 1;
+const MAX = 5;
+const STEP = 0.25;
+const STAR_COLOR = 'var(--rating)';
+
+interface AxisStarRowProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+}
+
+function clamp(v: number) {
+  return Math.max(MIN, Math.min(MAX, Math.round(v / STEP) * STEP));
+}
+
+export const AxisStarRow: FC<AxisStarRowProps> = ({ label, value, onChange }) => {
+  const validatedValue = clamp(value);
+
+  const handleStarClick = (starValue: number, isHalf: boolean) => {
+    const v = isHalf ? starValue - 0.5 : starValue;
+    onChange(clamp(v));
+  };
+
+  return (
+    <>
+      <style>{`
+        .axis-star-row [data-slot="slider-thumb"] {
+          width: 14px !important;
+          height: 14px !important;
+          border-width: 2px !important;
+          border-color: white !important;
+          background-color: ${STAR_COLOR} !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
+        }
+        .axis-star-row [data-slot="slider-track"] {
+          height: 5px !important;
+          background-color: #e5e7eb !important;
+          border-radius: 3px !important;
+        }
+        .axis-star-row [data-slot="slider-range"] {
+          background-color: ${STAR_COLOR} !important;
+          border-radius: 3px !important;
+        }
+      `}</style>
+      <div className="axis-star-row flex flex-col gap-2 py-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="min-w-16 shrink-0 text-sm font-medium text-foreground">
+            {label}
+          </span>
+          <div className="flex items-center gap-0.5 shrink-0" role="group" aria-label={`${label} 평점`}>
+            {[1, 2, 3, 4, 5].map((starValue) => {
+              const fill = Math.max(0, Math.min(1, validatedValue - starValue + 1));
+              return (
+                <button
+                  key={starValue}
+                  type="button"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const isLeft = e.clientX - rect.left < rect.width / 2;
+                    handleStarClick(starValue, isLeft);
+                  }}
+                  className={cn(
+                    'relative p-0.5 rounded transition-all duration-150',
+                    'focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:ring-offset-1',
+                    'hover:scale-110 active:scale-95 cursor-pointer'
+                  )}
+                  aria-label={`${starValue - 0.5}~${starValue}점`}
+                >
+                  <span className="relative block w-5 h-5">
+                    <Star
+                      className="w-5 h-5 absolute inset-0 fill-none text-gray-300 stroke-gray-300"
+                      strokeWidth={1.5}
+                    />
+                    <span
+                      className="absolute inset-0 overflow-hidden"
+                      style={{ width: `${fill * 100}%` }}
+                    >
+                      <Star
+                        className="w-5 h-5"
+                        style={{ fill: STAR_COLOR, stroke: STAR_COLOR }}
+                        strokeWidth={1.5}
+                      />
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="w-9 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+            {validatedValue.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 pl-16">
+          <Slider
+            value={[validatedValue]}
+            onValueChange={(v) => onChange(clamp(v[0]))}
+            min={MIN}
+            max={MAX}
+            step={STEP}
+            className="flex-1 min-w-0"
+          />
+        </div>
+      </div>
+    </>
+  );
+}

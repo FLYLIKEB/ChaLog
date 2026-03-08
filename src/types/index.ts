@@ -10,8 +10,33 @@ export interface Tea {
   type: string;
   seller?: string;
   origin?: string;
+  price?: number;
   averageRating: number;
   reviewCount: number;
+}
+
+export interface Seller {
+  name: string;
+  teaCount: number;
+}
+
+export interface SellerDetail {
+  id: number;
+  name: string;
+  address?: string | null;
+  mapUrl?: string | null;
+  websiteUrl?: string | null;
+  phone?: string | null;
+  description?: string | null;
+  businessHours?: string | null;
+  createdAt: string;
+}
+
+export interface TeaFilterParams {
+  q?: string;
+  type?: string;
+  minRating?: number;
+  sort?: 'popular' | 'new' | 'rating';
 }
 
 export interface RatingSchema {
@@ -111,7 +136,7 @@ export type PostCategory = 'brewing_question' | 'recommendation' | 'tool' | 'tea
 
 export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   brewing_question: '우림 질문',
-  recommendation: '추천',
+  recommendation: '차선',
   tool: '도구',
   tea_room_review: '찻집 후기',
 };

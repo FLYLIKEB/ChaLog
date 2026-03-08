@@ -49,7 +49,7 @@ export function ReportModal({ open, onOpenChange, noteId }: ReportModalProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Flag className="h-4 w-4" />
-            노트 신고
+            차록 신고
           </DialogTitle>
           <DialogDescription>신고 사유를 선택해주세요.</DialogDescription>
         </DialogHeader>

@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 
@@ -175,9 +176,15 @@ export function Login() {
     }
   }, [loginWithGoogle, navigate]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(undefined);
+    return () => registerRefresh(undefined);
+  }, [registerRefresh]);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header showBack title="로그인" />
+    <div className="min-h-screen">
+      <Header showBack title="로그인" showProfile />
       
       <div className="p-4 sm:max-w-md sm:mx-auto">
         <div className="bg-white rounded-lg p-6 space-y-6">

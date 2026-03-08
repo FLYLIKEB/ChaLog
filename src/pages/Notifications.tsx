@@ -9,6 +9,7 @@ import { Bell, Heart, UserPlus, CheckCheck, Loader2 } from 'lucide-react';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
+import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -42,9 +43,9 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
 function getNotificationText(notification: Notification): string {
   const actorName = notification.actor?.name ?? '누군가';
   if (notification.type === 'note_like') {
-    return `${actorName}님이 내 노트에 좋아요를 눌렀습니다.`;
+    return `${actorName}님이 내 차록에 좋아요를 눌렀습니다.`;
   }
-  return `${actorName}님이 나를 팔로우하기 시작했습니다.`;
+    return `${actorName}님이 나를 구독하기 시작했습니다.`;
 }
 
 function getNotificationPath(notification: Notification): string | null {
@@ -103,6 +104,12 @@ export function Notifications() {
     fetchNotifications(1);
   }, [user, navigate, fetchNotifications]);
 
+  const registerRefresh = useRegisterRefresh();
+  useEffect(() => {
+    registerRefresh(() => fetchNotifications(1));
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, fetchNotifications]);
+
   const handleMarkAllAsRead = async () => {
     try {
       await notificationsApi.markAllAsRead();
@@ -142,15 +149,15 @@ export function Notifications() {
   const hasMore = notifications.length < total;
 
   return (
-    <div className="min-h-screen bg-white">
-      <Header title="알림" showBack />
+    <div className="min-h-screen">
+      <Header title="알림" showBack showProfile />
       <main className="pb-20">
         {loading ? (
           <div className="flex justify-center items-center h-48">
-            <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 gap-3 text-gray-400">
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
             <Bell className="w-12 h-12" />
             <p className="text-sm">새로운 알림이 없습니다.</p>
           </div>
@@ -162,7 +169,7 @@ export function Notifications() {
                   variant="ghost"
                   size="sm"
                   onClick={handleMarkAllAsRead}
-                  className="text-xs text-gray-500 flex items-center gap-1"
+                  className="text-xs text-muted-foreground flex items-center gap-1"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   전체 읽음
@@ -174,7 +181,7 @@ export function Notifications() {
                 <li key={notification.id}>
                   <button
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full flex items-start gap-3 px-4 py-4 text-left hover:bg-gray-50 transition-colors border-b border-gray-100 ${
+                    className={`w-full flex items-start gap-3 px-4 py-4 text-left hover:bg-muted/30 transition-colors border-b border-border ${
                       !notification.isRead ? 'bg-blue-50/40' : ''
                     }`}
                   >
@@ -186,10 +193,10 @@ export function Notifications() {
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-800 leading-snug">
+                      <p className="text-sm text-foreground leading-snug">
                         {getNotificationText(notification)}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formatRelativeTime(notification.createdAt)}
                       </p>
                     </div>
@@ -212,7 +219,7 @@ export function Notifications() {
                   size="sm"
                   onClick={handleLoadMore}
                   disabled={loadingMore}
-                  className="text-sm text-gray-500"
+                  className="text-sm text-muted-foreground"
                 >
                   {loadingMore ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
