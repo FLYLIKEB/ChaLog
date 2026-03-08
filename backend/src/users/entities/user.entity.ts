@@ -10,6 +10,11 @@ import {
 import { UserAuthentication } from './user-authentication.entity';
 import { UserOnboardingPreference } from './user-onboarding-preference.entity';
 
+export enum UserRole {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
@@ -29,6 +34,12 @@ export class User {
 
   @Column({ type: 'varchar', length: 500, nullable: true })
   blogUrl: string | null;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
+
+  @Column({ type: 'datetime', nullable: true })
+  bannedAt: Date | null;
 
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];

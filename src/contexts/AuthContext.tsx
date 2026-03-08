@@ -23,6 +23,7 @@ interface User {
   id: number;
   email: string | null;
   name: string;
+  role?: 'user' | 'admin';
 }
 
 interface AuthContextType {
@@ -37,6 +38,7 @@ interface AuthContextType {
   loginWithGoogle: (accessToken: string) => Promise<boolean | null>;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   refreshOnboardingStatus: (userId: number) => Promise<boolean | null>;
 }
 
@@ -741,6 +743,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // isAuthenticated 계산값 메모이제이션
   const isAuthenticated = useMemo(() => !!token && !!user, [token, user]);
 
+  const isAdmin = useMemo(() => user?.role === 'admin', [user]);
+
   // 컨텍스트 값 메모이제이션 - user, token, isLoading이 변경될 때만 재생성
   const contextValue: AuthContextType = useMemo(
     () => ({
@@ -755,9 +759,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithGoogle,
       logout,
       isAuthenticated,
+      isAdmin,
       refreshOnboardingStatus,
     }),
-    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, loginWithGoogle, logout, isAuthenticated, refreshOnboardingStatus]
+    [user, token, isLoading, hasCompletedOnboarding, isOnboardingLoading, login, register, loginWithKakao, loginWithGoogle, logout, isAuthenticated, isAdmin, refreshOnboardingStatus]
   );
 
   return (

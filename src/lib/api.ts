@@ -1317,3 +1317,76 @@ export const notificationsApi = {
     apiClient.patch<{ success: boolean }>('/notifications/read-all', {}),
 };
 
+export const adminApi = {
+  getDashboard: () => apiClient.get('/admin/dashboard'),
+  getNoteReports: (params?: { page?: number; limit?: number; status?: string; reason?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.status) search.set('status', params.status);
+    if (params?.reason) search.set('reason', params.reason);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/reports/notes?${search.toString()}`);
+  },
+  getPostReports: (params?: { page?: number; limit?: number; status?: string; reason?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.status) search.set('status', params.status);
+    if (params?.reason) search.set('reason', params.reason);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/reports/posts?${search.toString()}`);
+  },
+  getNoteReportDetail: (id: number) => apiClient.get(`/admin/reports/notes/${id}`),
+  getPostReportDetail: (id: number) => apiClient.get(`/admin/reports/posts/${id}`),
+  dismissNoteReport: (id: number) => apiClient.post(`/admin/reports/notes/${id}/dismiss`),
+  dismissPostReport: (id: number) => apiClient.post(`/admin/reports/posts/${id}/dismiss`),
+  actionNoteReport: (id: number, reason?: string) => apiClient.post(`/admin/reports/notes/${id}/action`, { reason }),
+  actionPostReport: (id: number, reason?: string) => apiClient.post(`/admin/reports/posts/${id}/action`, { reason }),
+  getUsers: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.search) search.set('search', params.search);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/users?${search.toString()}`);
+  },
+  getUserDetail: (id: number) => apiClient.get(`/admin/users/${id}`),
+  suspendUser: (id: number) => apiClient.post(`/admin/users/${id}/suspend`),
+  promoteUser: (id: number) => apiClient.post(`/admin/users/${id}/promote`),
+  getNotes: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.search) search.set('search', params.search);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/notes?${search.toString()}`);
+  },
+  getNoteDetail: (id: number) => apiClient.get(`/admin/notes/${id}`),
+  deleteNote: (id: number) => apiClient.delete(`/admin/notes/${id}`),
+  getPosts: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.search) search.set('search', params.search);
+    if (params?.sortBy) search.set('sortBy', params.sortBy);
+    if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
+    return apiClient.get(`/admin/posts?${search.toString()}`);
+  },
+  getPostDetail: (id: number) => apiClient.get(`/admin/posts/${id}`),
+  deletePost: (id: number) => apiClient.delete(`/admin/posts/${id}`),
+  getPostComments: (postId: number) => apiClient.get(`/admin/posts/${postId}/comments`),
+  deleteComment: (id: number) => apiClient.delete(`/admin/comments/${id}`),
+  getAuditLogs: (params?: { page?: number; limit?: number; adminId?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.page) search.set('page', String(params.page));
+    if (params?.limit) search.set('limit', String(params.limit));
+    if (params?.adminId) search.set('adminId', String(params.adminId));
+    return apiClient.get(`/admin/audit-log?${search.toString()}`);
+  },
+};
+

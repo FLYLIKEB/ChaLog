@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException, Logger, Inject } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, BadRequestException, UnauthorizedException, Logger, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -110,6 +110,10 @@ export class UsersService {
       return null;
     }
 
+    if (auth.user.bannedAt) {
+      return null;
+    }
+
     return auth.user;
   }
 
@@ -150,6 +154,9 @@ export class UsersService {
 
     if (existingAuth) {
       const user = existingAuth.user;
+      if (user.bannedAt) {
+        throw new UnauthorizedException('정지된 계정입니다.');
+      }
       if (name && user.name !== name) {
         user.name = name;
         await this.usersRepository.save(user);

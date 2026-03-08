@@ -77,4 +77,13 @@ export class CommentsService {
     }
     await this.commentsRepository.remove(comment);
   }
+
+  /** 운영자 강제 삭제 (소유권 검사 없음) */
+  async removeByAdmin(commentId: number): Promise<void> {
+    const comment = await this.commentsRepository.findOne({ where: { id: commentId } });
+    if (!comment) {
+      throw new NotFoundException('댓글을 찾을 수 없습니다.');
+    }
+    await this.commentsRepository.remove(comment);
+  }
 }

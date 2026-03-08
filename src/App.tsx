@@ -35,6 +35,14 @@ import { ShopDetail } from './pages/ShopDetail';
 import { NewShop } from './pages/NewShop';
 import { Notifications } from './pages/Notifications';
 import { FloatingActionButton } from './components/FloatingActionButton';
+import { AdminRouteGuard } from './components/AdminRouteGuard';
+import { AdminLayout } from './components/AdminLayout';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
+import { AdminReports } from './pages/admin/AdminReports';
+import { AdminUsers } from './pages/admin/AdminUsers';
+import { AdminNotes } from './pages/admin/AdminNotes';
+import { AdminPosts } from './pages/admin/AdminPosts';
+import { AdminAudit } from './pages/admin/AdminAudit';
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
 type FloatingActionRouteConfig = {
@@ -74,7 +82,8 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/cellar/new' ||
     location.pathname === '/chadam' ||
     location.pathname.startsWith('/chadam/') ||
-    location.pathname === '/onboarding';
+    location.pathname === '/onboarding' ||
+    location.pathname.startsWith('/admin');
   
   const override = floatingActionRouteOverrides[location.pathname];
   const config = {
@@ -119,14 +128,33 @@ function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-export default function App() {
-  const content = (
-    <AuthProvider>
-      <BrowserRouter>
-        <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
-          <OnboardingRouteGuard>
-            <PullToRefreshProvider>
-            <Routes>
+function AppContent() {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
+    return (
+      <AdminRouteGuard>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="reports" element={<AdminReports />} />
+            <Route path="users/:id" element={<AdminUsers />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="notes" element={<AdminNotes />} />
+            <Route path="posts" element={<AdminPosts />} />
+            <Route path="audit" element={<AdminAudit />} />
+          </Route>
+        </Routes>
+      </AdminRouteGuard>
+    );
+  }
+
+  return (
+    <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
+      <OnboardingRouteGuard>
+        <PullToRefreshProvider>
+        <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
               <Route path="/sasaek" element={<Search />} />
@@ -152,15 +180,24 @@ export default function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
               <Route path="/search" element={<Navigate to="/sasaek" replace />} />
               <Route path="/community/*" element={<CommunityRedirect />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-            </PullToRefreshProvider>
-          </OnboardingRouteGuard>
-          <FloatingActionButtonSwitcher />
-          <Toaster />
-        </div>
+        </PullToRefreshProvider>
+      </OnboardingRouteGuard>
+      <FloatingActionButtonSwitcher />
+    </div>
+  );
+}
+
+export default function App() {
+  const content = (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+        <Toaster />
       </BrowserRouter>
     </AuthProvider>
   );
