@@ -1,10 +1,27 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 
 afterEach(() => {
   cleanup();
+  localStorage.removeItem('chalog-theme-test');
 });
+
+// 테스트 환경에서 실제 네트워크 호출 방지
+// 모든 unmocked 요청에 404 반환 (외부 API 포함). 테스트는 vi.spyOn 등으로 개별 mock.
+const canned404 = (): Promise<Response> =>
+  Promise.resolve(
+    new Response(JSON.stringify({ message: 'Not found' }), {
+      status: 404,
+      statusText: 'Not Found',
+      headers: { 'Content-Type': 'application/json' },
+    })
+  );
+
+const defaultFetch = (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
+  return canned404();
+};
+globalThis.fetch = defaultFetch;
 
 class ResizeObserverMock implements ResizeObserver {
   constructor(private readonly callback: ResizeObserverCallback) {}

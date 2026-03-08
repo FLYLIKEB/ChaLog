@@ -30,6 +30,9 @@ vi.mock('../../lib/api', async () => {
       getReminders: vi.fn(),
       remove: vi.fn(),
     },
+    notificationsApi: {
+      getUnreadCount: vi.fn(() => Promise.resolve({ count: 0 })),
+    },
   };
 });
 

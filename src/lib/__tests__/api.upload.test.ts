@@ -1,13 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { apiClient } from '../api';
 
-// fetch mock
-global.fetch = vi.fn();
-
 describe('ApiClient - uploadFile', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    vi.spyOn(globalThis, 'fetch');
   });
 
   afterEach(() => {

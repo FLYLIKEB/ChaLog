@@ -64,11 +64,30 @@ const mockNotes = [
 vi.mock('../../lib/api', () => ({
   teasApi: {
     getAll: vi.fn(() => Promise.resolve(mockTeas)),
+    getTrending: vi.fn(() => Promise.resolve(mockTeas)),
   },
   notesApi: {
     getAll: vi.fn(() => Promise.resolve(mockNotes.filter(note => note.isPublic))),
   },
+  usersApi: {
+    getTrending: vi.fn(() => Promise.resolve([])),
+  },
+  tagsApi: {
+    getFollowedTags: vi.fn(() => Promise.resolve([])),
+  },
 }));
+
+vi.mock('../../contexts/AuthContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../contexts/AuthContext')>();
+  return {
+    ...actual,
+    useAuth: () => ({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+    }),
+  };
+});
 
 vi.mock('sonner', () => ({
   toast: {
@@ -88,16 +107,16 @@ describe('Home 페이지', () => {
     mathRandomSpy.mockRestore();
   });
 
-  it('오늘의 차 카드와 공개 차록을 렌더링한다', async () => {
+  it('요즘 인기 차 카드와 공개 차록을 렌더링한다', async () => {
     renderWithRouter(<Home />, { route: '/' });
 
     // API 호출이 완료될 때까지 대기 - 로딩 스피너가 사라지고 콘텐츠가 나타날 때까지 기다림
-    await screen.findByText('오늘의 차', {}, { timeout: 5000 });
+    await screen.findByText(/요즘 인기 차/, {}, { timeout: 5000 });
     
     // 로딩 스피너가 사라졌는지 확인
     expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
     
-    expect(screen.getByText('오늘의 차')).toBeInTheDocument();
+    expect(screen.getByText(/요즘 인기 차/)).toBeInTheDocument();
     expect(screen.getAllByRole('heading', { name: '화과향' })).toHaveLength(2);
 
     expect(screen.getByText('공개 차록입니다.')).toBeInTheDocument();

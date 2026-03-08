@@ -39,6 +39,7 @@ vi.mock('../../lib/api', () => ({
       }
       return Promise.resolve([]);
     }),
+    getSellerByName: vi.fn(() => Promise.resolve(null)),
   },
 }));
 

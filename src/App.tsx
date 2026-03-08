@@ -5,6 +5,7 @@ function CommunityRedirect() {
   const { pathname } = useLocation();
   return <Navigate to={pathname.replace('/community', '/chadam')} replace />;
 }
+import { ThemeProvider } from 'next-themes';
 import { PAGE_BG_GRADIENT } from './constants';
 import { Plus } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
@@ -157,37 +158,37 @@ function AppContent() {
     <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
       <OnboardingRouteGuard>
         <PullToRefreshProvider>
-        <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-              <Route path="/sasaek" element={<Search />} />
-              <Route path="/tea/new" element={<NewTea />} />
-              <Route path="/tea/:id" element={<TeaDetail />} />
-              <Route path="/note/new" element={<NewNote />} />
-              <Route path="/note/:id/edit" element={<EditNote />} />
-              <Route path="/note/:id" element={<NoteDetail />} />
-              <Route path="/user/:id" element={<UserProfile />} />
-              <Route path="/my-notes" element={<MyNotes />} />
-              <Route path="/saved" element={<Saved />} />
-              <Route path="/cellar" element={<Cellar />} />
-              <Route path="/cellar/new" element={<NewCellarItem />} />
-              <Route path="/chadam" element={<Community />} />
-              <Route path="/chadam/new" element={<NewPost />} />
-              <Route path="/chadam/:id" element={<PostDetail />} />
-              <Route path="/chadam/:id/edit" element={<EditPost />} />
-              <Route path="/tag/:name" element={<TagDetail />} />
-              <Route path="/teahouse/new" element={<NewShop />} />
-              <Route path="/teahouse/:name" element={<ShopDetail />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
-              <Route path="/search" element={<Navigate to="/sasaek" replace />} />
-              <Route path="/community/*" element={<CommunityRedirect />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
+            <Route path="/sasaek" element={<Search />} />
+            <Route path="/tea/new" element={<NewTea />} />
+            <Route path="/tea/:id" element={<TeaDetail />} />
+            <Route path="/note/new" element={<NewNote />} />
+            <Route path="/note/:id/edit" element={<EditNote />} />
+            <Route path="/note/:id" element={<NoteDetail />} />
+            <Route path="/user/:id" element={<UserProfile />} />
+            <Route path="/my-notes" element={<MyNotes />} />
+            <Route path="/saved" element={<Saved />} />
+            <Route path="/cellar" element={<Cellar />} />
+            <Route path="/cellar/new" element={<NewCellarItem />} />
+            <Route path="/chadam" element={<Community />} />
+            <Route path="/chadam/new" element={<NewPost />} />
+            <Route path="/chadam/:id" element={<PostDetail />} />
+            <Route path="/chadam/:id/edit" element={<EditPost />} />
+            <Route path="/tag/:name" element={<TagDetail />} />
+            <Route path="/teahouse/new" element={<NewShop />} />
+            <Route path="/teahouse/:name" element={<ShopDetail />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+            <Route path="/search" element={<Navigate to="/sasaek" replace />} />
+            <Route path="/community/*" element={<CommunityRedirect />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </PullToRefreshProvider>
       </OnboardingRouteGuard>
       <FloatingActionButtonSwitcher />
@@ -197,12 +198,14 @@ function AppContent() {
 
 export default function App() {
   const content = (
-    <AuthProvider>
-      <BrowserRouter>
-        <AppContent />
-        <Toaster />
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="chalog-theme">
+      <AuthProvider>
+        <BrowserRouter>
+          <AppContent />
+          <Toaster />
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 
   if (googleClientId) {

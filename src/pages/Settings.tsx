@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2 } from 'lucide-react';
+import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
+import { useTheme } from 'next-themes';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
@@ -17,6 +19,35 @@ const PROVIDER_LABELS: Record<string, string> = {
   kakao: '카카오',
   google: '구글',
 };
+
+function ThemeSection() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <Card className="p-4">
+      <h3 className="text-lg font-semibold text-foreground mb-4">테마</h3>
+      <ToggleGroup
+        type="single"
+        value={theme ?? 'system'}
+        onValueChange={(v) => v && setTheme(v)}
+        variant="outline"
+        className="w-full grid grid-cols-3"
+      >
+        <ToggleGroupItem value="light" aria-label="라이트 모드" className="flex flex-col gap-1 py-3">
+          <Sun className="w-4 h-4" />
+          <span className="text-xs">라이트</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="dark" aria-label="다크 모드" className="flex flex-col gap-1 py-3">
+          <Moon className="w-4 h-4" />
+          <span className="text-xs">다크</span>
+        </ToggleGroupItem>
+        <ToggleGroupItem value="system" aria-label="시스템 설정 따르기" className="flex flex-col gap-1 py-3">
+          <Monitor className="w-4 h-4" />
+          <span className="text-xs">시스템</span>
+        </ToggleGroupItem>
+      </ToggleGroup>
+    </Card>
+  );
+}
 
 export function Settings() {
   const { user, logout, isAuthenticated } = useAuth();
@@ -204,7 +235,9 @@ export function Settings() {
     return (
       <div className="min-h-screen pb-20">
         <Header showBack title="설정" showProfile />
-        <div className="p-4 sm:p-6">
+        <div className="p-4 sm:p-6 space-y-4">
+          {/* 테마 - 비로그인 사용자도 전환 가능 */}
+          <ThemeSection />
           <Card className="p-6">
             <p className="text-muted-foreground mb-4">로그인이 필요합니다.</p>
             <Button onClick={() => navigate('/login')} className="w-full">
@@ -235,6 +268,9 @@ export function Settings() {
             </div>
           </div>
         </Card>
+
+        {/* 테마 */}
+        <ThemeSection />
 
         {/* 계정 연동 */}
         <Card className="p-4">

@@ -23,6 +23,9 @@ vi.mock('../../lib/api', async () => {
     notesApi: {
       getAll: vi.fn(),
     },
+    notificationsApi: {
+      getUnreadCount: vi.fn(() => Promise.resolve({ count: 0 })),
+    },
   };
 });
 
@@ -176,8 +179,8 @@ describe('UserProfile', () => {
     );
 
     await waitFor(() => {
-      // toast는 화면에 직접 표시되지 않으므로, 에러 상태를 확인
-      expect(screen.getByText('사용자를 찾을 수 없습니다.')).toBeInTheDocument();
+      // API 실패 시 EmptyState에 "사용자를 찾을 수 없어요." 표시
+      expect(screen.getByText('사용자를 찾을 수 없어요.')).toBeInTheDocument();
     });
   });
 

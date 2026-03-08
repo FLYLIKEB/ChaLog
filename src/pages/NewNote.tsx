@@ -240,7 +240,7 @@ export function NewNote() {
       
       <div className="p-4 pb-24 space-y-6">
         {/* 차 선택 영역 */}
-        <section className="bg-white rounded-lg p-3">
+        <section className="bg-card rounded-lg p-3">
           <Label className="mb-1.5 block text-sm">차 선택</Label>
           <Input
             ref={teaInputRef}
@@ -255,7 +255,7 @@ export function NewNote() {
           
           {searchQuery && !selectedTea && filteredTeas.length > 0 && (
             <div
-              className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-white border rounded-lg shadow-lg divide-y max-h-48 overflow-y-auto"
+              className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-card border border-border rounded-lg shadow-lg divide-y divide-border max-h-48 overflow-y-auto"
               style={{
                 top: `${teaInputRef.current ? teaInputRef.current.getBoundingClientRect().bottom + 8 : 0}px`,
                 left: '50%',
@@ -269,10 +269,10 @@ export function NewNote() {
                     setSelectedTea(tea.id);
                     setSearchQuery(tea.name);
                   }}
-                  className="w-full text-left p-3 hover:bg-gray-50 transition-colors min-h-[44px]"
+                  className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {tea.type}
                     {tea.seller && ` · ${tea.seller}`}
                     {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
@@ -285,8 +285,8 @@ export function NewNote() {
 
           {/* 검색 결과가 없을 때 새 차 추가 옵션 */}
           {searchQuery && !selectedTea && filteredTeas.length === 0 && (
-            <div className="mt-2 py-3 px-4 border border-dashed border-gray-300 rounded-lg text-center">
-              <p className="text-sm text-gray-600 mb-2">
+            <div className="mt-2 py-3 px-4 border border-dashed border-border rounded-lg text-center">
+              <p className="text-sm text-muted-foreground mb-2">
                 "{searchQuery}"에 대한 검색 결과가 없습니다.
               </p>
               <Button
@@ -304,12 +304,12 @@ export function NewNote() {
           )}
 
           {selectedTeaData && (
-            <div className="mt-2 py-2.5 px-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <div className="mt-2 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-sm text-emerald-900">{selectedTeaData.name}</span>
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm text-emerald-900 dark:text-emerald-100">{selectedTeaData.name}</span>
               </div>
-              <div className="text-xs text-emerald-700 space-y-0.5">
+              <div className="text-xs text-emerald-700 dark:text-emerald-300 space-y-0.5">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
                 {selectedTeaData.seller && <p>구매처: {selectedTeaData.seller}</p>}
@@ -319,8 +319,8 @@ export function NewNote() {
         </section>
 
         {/* 1-5 평점 */}
-        <section className="bg-white rounded-lg p-4">
-          <Label className="mb-3 block text-base font-semibold text-gray-900">
+        <section className="bg-card rounded-lg p-4">
+          <Label className="mb-3 block text-base font-semibold text-foreground">
             평점 <span className="text-destructive">*</span>
           </Label>
           <p className="text-sm text-muted-foreground mb-3">
@@ -338,8 +338,8 @@ export function NewNote() {
         {overallRating !== null && (
           <>
         {/* 테이스팅 템플릿 선택 */}
-        <section className="bg-white rounded-lg p-4">
-          <Label className="mb-2 block text-base font-semibold text-gray-900">
+        <section className="bg-card rounded-lg p-4">
+          <Label className="mb-2 block text-base font-semibold text-foreground">
             테이스팅 템플릿
           </Label>
           <p className="text-sm text-muted-foreground mb-2">
@@ -370,9 +370,9 @@ export function NewNote() {
 
         {/* 구체적 평가 (템플릿 선택 시에만 표시) */}
         {selectedSchemaId && axes.length > 0 && (
-          <section className="bg-white rounded-lg p-4">
+          <section className="bg-card rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-base font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-foreground">
                 구체적 평가
               </h3>
               <span className="text-xs text-muted-foreground tabular-nums">
@@ -397,7 +397,7 @@ export function NewNote() {
         )}
 
         {/* 사진 업로드 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <ImageUploader
             images={images}
             imageThumbnails={imageThumbnails}
@@ -411,7 +411,7 @@ export function NewNote() {
 
         {/* 태그 입력 */}
         <section 
-          className="bg-white rounded-lg p-4"
+          className="bg-card rounded-lg p-4"
           onKeyDown={(e) => {
             // 태그 입력 섹션에서 Enter 키가 폼 제출을 트리거하지 않도록 방지
             if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
@@ -428,7 +428,7 @@ export function NewNote() {
         </section>
 
         {/* 메모 입력 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <Label className="mb-2 block">메모</Label>
           <Textarea
             placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
@@ -439,11 +439,11 @@ export function NewNote() {
         </section>
 
         {/* 공개 여부 스위치 */}
-        <section className="bg-white rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <Label>공개 설정</Label>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 다른 사용자에게 이 차록을 공개합니다
               </p>
             </div>
@@ -456,7 +456,7 @@ export function NewNote() {
       </div>
 
       {/* 저장 버튼 - 하단 고정 플로팅 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-gray-50/70 backdrop-blur-sm z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/80 dark:bg-background/90 backdrop-blur-sm z-40">
         <Button 
           onClick={handleSave} 
           className="w-full opacity-70 hover:opacity-100 transition-opacity"

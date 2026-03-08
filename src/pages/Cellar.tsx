@@ -67,7 +67,7 @@ function CellarCard({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-border p-4 space-y-2">
+    <div className="bg-card rounded-xl border border-border p-4 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <h3 className="font-medium text-base truncate">{item.tea.name}</h3>

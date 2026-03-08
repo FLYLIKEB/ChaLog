@@ -748,6 +748,10 @@ class ApiClient {
         });
       }
       
+      // ApiError(plain object)는 그대로 재throw
+      if (error && typeof error === 'object' && 'statusCode' in error && 'message' in error) {
+        throw error;
+      }
       if (error instanceof Error) {
         throw error;
       }
