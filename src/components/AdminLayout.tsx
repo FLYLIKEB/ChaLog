@@ -48,7 +48,7 @@ export function AdminLayout() {
           </Link>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto max-w-6xl p-6">
+      <main className="flex-1 overflow-auto max-w-6xl p-6 text-slate-900">
         <Outlet />
       </main>
     </div>

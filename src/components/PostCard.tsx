@@ -109,17 +109,21 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
         {/* 하단: 작성자 + 통계 */}
         <div className="flex items-center justify-between gap-2 mt-1">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground min-w-0">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (post.user?.id) navigate(`/user/${post.user.id}`);
-              }}
-              className="font-medium truncate hover:text-foreground hover:underline text-left"
-              aria-label="작성자 프로필 보기"
-            >
-              {post.user?.name}
-            </button>
+            {post.isAnonymous ? (
+              <span className="font-medium truncate">익명</span>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (post.user?.id) navigate(`/user/${post.user.id}`);
+                }}
+                className="font-medium truncate hover:text-foreground hover:underline text-left"
+                aria-label="작성자 프로필 보기"
+              >
+                {post.user?.name}
+              </button>
+            )}
             <span>·</span>
             <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
           </div>

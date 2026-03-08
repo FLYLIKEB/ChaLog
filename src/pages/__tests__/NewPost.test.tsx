@@ -59,7 +59,7 @@ describe('NewPost 페이지', () => {
     renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('차선')).toBeInTheDocument();
+    expect(screen.getByText('맞춤차')).toBeInTheDocument();
     expect(screen.getByText('도구')).toBeInTheDocument();
     expect(screen.getByText('찻집 후기')).toBeInTheDocument();
   });

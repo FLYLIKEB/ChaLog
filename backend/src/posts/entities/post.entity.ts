@@ -43,6 +43,9 @@ export class Post {
   @Column({ default: false })
   isSponsored: boolean;
 
+  @Column({ default: false })
+  isAnonymous: boolean;
+
   @Column({ type: 'varchar', length: 300, nullable: true })
   sponsorNote: string | null;
 

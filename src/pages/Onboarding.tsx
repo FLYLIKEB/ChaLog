@@ -116,7 +116,7 @@ export function Onboarding() {
             <span className="text-xs text-gray-500">{stepLabel}</span>
             <h1 className="text-2xl font-bold text-foreground">차 취향을 알려주세요</h1>
             <p className="text-sm text-muted-foreground">
-              맞춤 차선을 위해 관심 차종과 향미를 선택해주세요.
+              맞춤차를 위해 관심 차종과 향미를 선택해주세요.
             </p>
           </div>
 

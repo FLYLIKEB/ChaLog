@@ -252,7 +252,7 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 유사 차선 */}
+        {/* 유사 맞춤차 */}
         {similarTeas.length > 0 && (
           <section>
             <h2 className="mb-3">비슷한 차</h2>

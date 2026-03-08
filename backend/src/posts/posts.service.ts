@@ -31,6 +31,7 @@ export class PostsService {
     const post = this.postsRepository.create({
       ...dto,
       userId,
+      isAnonymous: dto.isAnonymous ?? false,
       isSponsored: dto.isSponsored ?? false,
       sponsorNote: dto.sponsorNote ?? null,
     });

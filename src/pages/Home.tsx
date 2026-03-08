@@ -228,7 +228,7 @@ export function Home() {
           onValueChange={(v) => setActiveTab(v as FeedTab)}
         >
           <TabsList className="w-full">
-            <TabsTrigger value="forYou" className="flex-1">맞춤 차선</TabsTrigger>
+            <TabsTrigger value="forYou" className="flex-1">맞춤차</TabsTrigger>
             <TabsTrigger value="following" className="flex-1">구독</TabsTrigger>
             <TabsTrigger value="tags" className="flex-1">향미</TabsTrigger>
           </TabsList>

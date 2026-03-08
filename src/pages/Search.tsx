@@ -219,7 +219,7 @@ export function Search() {
   const SECTION_TITLES: Record<string, string> = {
     popular: '🏆 사랑받는 차',
     new: '🆕 신규 차',
-    curation: '✨ 차선',
+    curation: '✨ 맞춤차',
   };
   const resultsTitle =
     urlSection && SECTION_TITLES[urlSection]
@@ -396,7 +396,7 @@ export function Search() {
                     ))}
                   </div>
                 </Section>
-                <Section title="✨ 차선" spacing="lg">
+                <Section title="✨ 맞춤차" spacing="lg">
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
                       <TeaCardSkeleton key={i} />
@@ -463,7 +463,7 @@ export function Search() {
                 </Section>
 
                 <Section
-                  title="✨ 차선"
+                  title="✨ 맞춤차"
                   description="다양한 기준으로 엄선한 차 목록이에요."
                   spacing="lg"
                   headerAction={

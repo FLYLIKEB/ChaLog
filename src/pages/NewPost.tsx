@@ -19,6 +19,7 @@ export function NewPost() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<PostCategory>('brewing_question');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [isSponsored, setIsSponsored] = useState(false);
   const [sponsorNote, setSponsorNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,6 +40,7 @@ export function NewPost() {
       title: title.trim(),
       content: content.trim(),
       category,
+      isAnonymous,
       isSponsored,
       sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
     };
@@ -126,6 +128,19 @@ export function NewPost() {
               'placeholder:text-muted-foreground',
             )}
           />
+        </div>
+
+        {/* 익명 */}
+        <div className="flex flex-col gap-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-primary"
+            />
+            <span className="text-sm font-medium text-foreground">익명으로 작성</span>
+          </label>
         </div>
 
         {/* 광고/협찬 */}

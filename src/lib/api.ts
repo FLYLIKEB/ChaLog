@@ -1258,6 +1258,7 @@ export interface CreatePostRequest {
   title: string;
   content: string;
   category: import('../types').PostCategory;
+  isAnonymous?: boolean;
   isSponsored?: boolean;
   sponsorNote?: string;
 }

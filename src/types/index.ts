@@ -136,7 +136,7 @@ export type PostCategory = 'brewing_question' | 'recommendation' | 'tool' | 'tea
 
 export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   brewing_question: '우림 질문',
-  recommendation: '차선',
+  recommendation: '맞춤차',
   tool: '도구',
   tea_room_review: '찻집 후기',
 };
@@ -148,6 +148,7 @@ export interface Post {
   title: string;
   content: string;
   category: PostCategory;
+  isAnonymous?: boolean;
   isSponsored: boolean;
   sponsorNote: string | null;
   viewCount: number;

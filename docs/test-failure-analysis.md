@@ -68,7 +68,7 @@ vi.mock('../../lib/api', () => ({
 
 ## 3. Search.test.tsx
 
-**실패**: `사색 섹션(인기, 신규, 차선, 찻집)을 렌더링한다`
+**실패**: `사색 섹션(인기, 신규, 맞춤차, 찻집)을 렌더링한다`
 
 **원인**: 
 - Search는 `teasApi.getPopularRankings`, `getNewRankings`, `getCuration`, `getSellers` 호출
