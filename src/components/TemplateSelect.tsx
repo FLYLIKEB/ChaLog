@@ -241,6 +241,11 @@ export function TemplateSelect({
                             <button
                               type="button"
                               onClick={e => e.stopPropagation()}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                }
+                              }}
                               className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                               aria-label={`${schema.nameKo} 설명 보기`}
                             >

@@ -31,8 +31,8 @@ interface AxisStarRowProps {
   maxValue?: number;
 }
 
-function clamp(v: number) {
-  return Math.max(MIN, Math.min(MAX, Math.round(v / STEP) * STEP));
+function clamp(v: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, Math.round(v / STEP) * STEP));
 }
 
 export const AxisStarRow: FC<AxisStarRowProps> = ({
@@ -43,12 +43,12 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
   minValue = MIN,
   maxValue = MAX,
 }) => {
-  const validatedValue = clamp(value);
+  const validatedValue = clamp(value, minValue, maxValue);
   const [helpOpen, setHelpOpen] = useState(false);
 
   const handleStarClick = (starValue: number, isHalf: boolean) => {
     const v = isHalf ? starValue - 0.5 : starValue;
-    onChange(clamp(v));
+    onChange(clamp(v, minValue, maxValue));
   };
 
   return (
@@ -98,7 +98,7 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
             )}
           </div>
           <div className="flex items-center gap-0.5 shrink-0" role="group" aria-label={`${label} 평점`}>
-            {[1, 2, 3, 4, 5].map((starValue) => {
+            {Array.from({ length: maxValue - minValue + 1 }, (_, i) => minValue + i).map((starValue) => {
               const fill = Math.max(0, Math.min(1, validatedValue - starValue + 1));
               return (
                 <button
@@ -148,9 +148,9 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
         <div className="flex items-center gap-2 pl-16">
           <Slider
             value={[validatedValue]}
-            onValueChange={(v) => onChange(clamp(v[0]))}
-            min={MIN}
-            max={MAX}
+            onValueChange={(v) => onChange(clamp(v[0], minValue, maxValue))}
+            min={minValue}
+            max={maxValue}
             step={STEP}
             className="flex-1 min-w-0"
           />

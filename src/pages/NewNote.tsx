@@ -184,7 +184,13 @@ export function NewNote() {
 
   const selectedTeaData =
     selectedTea === SAMPLE_TEA_ID
-      ? ({ id: SAMPLE_TEA_ID, name: '샘플 녹차 (체험용)', type: '녹차' } as Tea)
+      ? {
+          id: SAMPLE_TEA_ID,
+          name: '샘플 녹차 (체험용)',
+          type: '녹차',
+          averageRating: 0,
+          reviewCount: 0,
+        }
       : selectedTea
         ? teas.find((t) => t.id === selectedTea) ?? null
         : null;
@@ -226,7 +232,10 @@ export function NewNote() {
               .filter((axis) => axisValues[axis.id] !== undefined)
               .map((axis) => ({
                 axisId: axis.id,
-                value: Math.max(RATING_MIN, Math.min(RATING_MAX, axisValues[axis.id])),
+                value: Math.max(
+                  axis.minValue ?? RATING_MIN,
+                  Math.min(axis.maxValue ?? RATING_MAX, axisValues[axis.id]),
+                ),
               }))
           : [];
 
@@ -442,6 +451,7 @@ export function NewNote() {
                       축 설명 보기
                     </button>
                   }
+                  schemaAxes={[...new Set(axes.map((a) => a.nameKo))]}
                 />
               </div>
             </div>
