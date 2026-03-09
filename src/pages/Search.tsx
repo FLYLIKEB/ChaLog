@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
-import { Search as SearchIcon, Plus, Loader2, Store, ChevronRight, Filter } from 'lucide-react';
+import { Search as SearchIcon, Plus, Loader2, Store, Filter } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
@@ -318,19 +318,6 @@ export function Search() {
     [urlTags, setSearchParams],
   );
 
-  const handleMorePopular = () => {
-    setSearchParams({ sort: 'popular', section: 'popular' });
-    setHasSearched(true);
-  };
-  const handleMoreNew = () => {
-    setSearchParams({ sort: 'new', section: 'new' });
-    setHasSearched(true);
-  };
-  const handleMoreCuration = () => {
-    setSearchParams({ sort: 'popular', section: 'curation' });
-    setHasSearched(true);
-  };
-
   return (
     <div className="min-h-screen pb-20 flex flex-col overflow-hidden">
       <Header
@@ -517,17 +504,6 @@ export function Search() {
                   title="🏆 사랑받는 차"
                   description="차록이 많은 순으로 사랑받는 차를 모았어요."
                   spacing="lg"
-                  headerAction={
-                    popularTeas.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={handleMorePopular}
-                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
-                      >
-                        더보기 <ChevronRight className="w-4 h-4 ml-0.5" />
-                      </button>
-                    ) : undefined
-                  }
                 >
                   {popularTeas.length > 0 ? (
                     <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
@@ -546,17 +522,6 @@ export function Search() {
                   title="🆕 신규 차"
                   description="최근에 차멍에 새로 등록된 차예요."
                   spacing="lg"
-                  headerAction={
-                    newTeas.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={handleMoreNew}
-                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
-                      >
-                        더보기 <ChevronRight className="w-4 h-4 ml-0.5" />
-                      </button>
-                    ) : undefined
-                  }
                 >
                   {newTeas.length > 0 ? (
                     <div className="space-y-2">
@@ -602,17 +567,6 @@ export function Search() {
                   title="✨ 맞춤차"
                   description="다양한 기준으로 엄선한 차 목록이에요."
                   spacing="lg"
-                  headerAction={
-                    curationTeas.length > 0 ? (
-                      <button
-                        type="button"
-                        onClick={handleMoreCuration}
-                        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors shrink-0"
-                      >
-                        더보기 <ChevronRight className="w-4 h-4 ml-0.5" />
-                      </button>
-                    ) : undefined
-                  }
                 >
                   {curationTeas.length > 0 ? (
                     <div className="space-y-3">

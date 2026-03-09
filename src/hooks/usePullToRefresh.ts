@@ -59,7 +59,7 @@ function hapticSuccess() {
   }
 }
 
-export function usePullToRefresh(onRefresh: () => Promise<void>) {
+export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = false) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshMessage, setRefreshMessage] = useState(pickRandomRefreshMessage);
@@ -98,6 +98,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
   const wheelAccumRef = useRef(0);
 
   const applyPull = useCallback((deltaY: number) => {
+    if (disabled) return;
     if (deltaY > 0) {
       const raw = deltaY * RESISTANCE;
       const distance = raw < PULL_THRESHOLD
@@ -127,9 +128,14 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
       }
       setPullDistance(0);
     }
-  }, []);
+  }, [disabled]);
 
   const finishPull = useCallback(() => {
+    if (disabled) {
+      setPullDistance(0);
+      pullDistanceRef.current = 0;
+      return;
+    }
     if (isRefreshing) return;
     if (pullDistanceRef.current >= PULL_THRESHOLD) {
       handleRefresh();
@@ -137,18 +143,26 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
       setPullDistance(0);
       pullDistanceRef.current = 0;
     }
-  }, [isRefreshing, handleRefresh]);
+  }, [disabled, isRefreshing, handleRefresh]);
+
+  useEffect(() => {
+    if (disabled) {
+      setPullDistance(0);
+      pullDistanceRef.current = 0;
+    }
+  }, [disabled]);
 
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
 
     const handleTouchStart = (e: TouchEvent) => {
+      if (disabled) return;
       touchStartY.current = e.touches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (isRefreshing) return;
+      if (disabled || isRefreshing) return;
       if (el.scrollTop > 0) {
         if (pullDistanceRef.current > 0) {
           touchStartY.current = e.touches[0].clientY;
@@ -167,6 +181,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     // 데스크톱: 마우스 드래그로 당겨서 새로고침 (테스트/접근성)
     // pointer capture는 실제 당김 동작이 감지된 후에만 적용 (헤더/하단바 클릭 방해 방지)
     const handlePointerDown = (e: PointerEvent) => {
+      if (disabled) return;
       if (e.pointerType === 'mouse') {
         isPointerDownRef.current = true;
         touchStartY.current = e.clientY;
@@ -175,7 +190,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (!isPointerDownRef.current || isRefreshing) return;
+      if (disabled || !isPointerDownRef.current || isRefreshing) return;
       if (e.pointerType !== 'mouse') return;
       if (el.scrollTop > 0) {
         if (pullDistanceRef.current > 0) {
@@ -221,7 +236,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
 
     // 휠: 데스크톱에서 스크롤 상단에서 위로 스크롤 시 새로고침 (쿨다운 적용)
     const handleWheel = (e: WheelEvent) => {
-      if (isRefreshing) return;
+      if (disabled || isRefreshing) return;
       if (el.scrollTop === 0 && e.deltaY < 0) {
         wheelAccumRef.current += Math.abs(e.deltaY);
         if (wheelAccumRef.current > 40) {
@@ -286,7 +301,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>) {
         rafIdRef.current = null;
       }
     };
-  }, [isRefreshing, handleRefresh, applyPull, finishPull]);
+  }, [disabled, isRefreshing, handleRefresh, applyPull, finishPull]);
 
   return {
     scrollContainerRef,
