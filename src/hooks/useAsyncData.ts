@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { logger } from '../lib/logger';
 import { toast } from 'sonner';
 
@@ -24,7 +24,12 @@ export function useAsyncData<T>(
   options: UseAsyncDataOptions<T> = {}
 ): UseAsyncDataResult<T> {
   const { onError, errorMessage = '데이터를 불러오는데 실패했습니다.', enabled = true } = options;
-  
+
+  const fetchFnRef = useRef(fetchFn);
+  const onErrorRef = useRef(onError);
+  fetchFnRef.current = fetchFn;
+  onErrorRef.current = onError;
+
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -38,22 +43,23 @@ export function useAsyncData<T>(
     try {
       setIsLoading(true);
       setError(null);
-      const result = await fetchFn();
+      const result = await fetchFnRef.current();
       setData(result);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('알 수 없는 오류가 발생했습니다.');
       logger.error('Failed to fetch data:', error);
       setError(error);
-      
-      if (onError) {
-        onError(error);
+
+      const onErrorFn = onErrorRef.current;
+      if (onErrorFn) {
+        onErrorFn(error);
       } else {
         toast.error(errorMessage);
       }
     } finally {
       setIsLoading(false);
     }
-  }, [fetchFn, enabled, onError, errorMessage]);
+  }, [enabled, errorMessage]);
 
   useEffect(() => {
     fetchData();

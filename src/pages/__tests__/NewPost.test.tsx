@@ -108,7 +108,7 @@ describe('NewPost 페이지', () => {
   it('협찬 체크 시 협찬 입력 필드가 나타난다', () => {
     renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
-    const checkbox = screen.getByRole('checkbox');
+    const checkbox = screen.getByRole('checkbox', { name: /광고\/협찬/ });
     fireEvent.click(checkbox);
 
     expect(screen.getByPlaceholderText('협찬 다실 또는 내용을 입력하세요 (선택)')).toBeInTheDocument();
