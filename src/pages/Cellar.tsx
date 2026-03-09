@@ -366,7 +366,7 @@ export function Cellar() {
       <div className="space-y-0">
         {/* 다회 모드 */}
         <Link
-          to="/sessions"
+          to="/session/new"
           className="mx-4 mt-4 sm:mx-6 sm:mt-6 flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
         >
           <div className="flex items-center gap-3">
