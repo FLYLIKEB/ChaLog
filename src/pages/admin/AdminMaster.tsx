@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -15,13 +16,14 @@ import { toast } from 'sonner';
 
 const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'];
 
-type Tab = 'teas' | 'sellers' | 'tags';
+type Tab = 'teas' | 'sellers' | 'tags' | 'users';
 
 export function AdminMaster() {
   const [tab, setTab] = useState<Tab>('teas');
   const [teas, setTeas] = useState<any>(null);
   const [sellers, setSellers] = useState<any>(null);
   const [tags, setTags] = useState<any>(null);
+  const [users, setUsers] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<{ type: string; id: number; name?: string } | null>(null);
@@ -39,8 +41,10 @@ export function AdminMaster() {
       adminApi.getTeas({ search: search || undefined, limit: 50 }).then(setTeas).finally(() => setLoading(false));
     } else if (tab === 'sellers') {
       adminApi.getSellers({ search: search || undefined, limit: 50 }).then(setSellers).finally(() => setLoading(false));
-    } else {
+    } else if (tab === 'tags') {
       adminApi.getTags({ search: search || undefined, limit: 50, sortBy: 'usageCount' }).then(setTags).finally(() => setLoading(false));
+    } else {
+      adminApi.getUsers({ search: search || undefined, limit: 50 }).then(setUsers).finally(() => setLoading(false));
     }
   }, [tab, search]);
 
@@ -198,6 +202,7 @@ export function AdminMaster() {
     { key: 'teas', label: '차(Tea)' },
     { key: 'sellers', label: '찻집(Seller)' },
     { key: 'tags', label: '태그(Tag)' },
+    { key: 'users', label: '사용자(User)' },
   ];
 
   return (
@@ -237,6 +242,39 @@ export function AdminMaster() {
           </Button>
         )}
       </div>
+
+      {tab === 'users' && (
+        loading ? <Loader2 className="w-8 h-8 animate-spin" /> : (
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/50">
+                  <th className="p-3 text-left text-sm font-medium">ID</th>
+                  <th className="p-3 text-left text-sm font-medium">이름</th>
+                  <th className="p-3 text-left text-sm font-medium">차록</th>
+                  <th className="p-3 text-left text-sm font-medium">게시글</th>
+                  <th className="p-3 text-left text-sm font-medium">가입일</th>
+                  <th className="p-3 text-left text-sm font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {users?.items?.map((u: any) => (
+                  <tr key={u.id} className="border-b">
+                    <td className="p-3 text-sm">{u.id}</td>
+                    <td className="p-3 text-sm">{u.name}</td>
+                    <td className="p-3 text-sm">{u.noteCount ?? 0}</td>
+                    <td className="p-3 text-sm">{u.postCount ?? 0}</td>
+                    <td className="p-3 text-sm">{u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+                    <td className="p-3">
+                      <Link to={`/admin/users/${u.id}`} className="text-primary text-sm hover:underline">상세</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
+      )}
 
       {tab === 'teas' && (
         loading ? <Loader2 className="w-8 h-8 animate-spin" /> : (

@@ -6,7 +6,7 @@ set -u
 # 사용법: ./scripts/plan-from-issue.sh <이슈번호>
 # 예시: ./scripts/plan-from-issue.sh 42
 #
-# GitHub 이슈를 기반으로 Cursor Agent Plan 모드에서 개발 계획을 생성합니다.
+# GitHub 이슈를 기반으로 Cursor Agent 탭에 Plan 프롬프트를 열어줍니다 (Deep Link 방식).
 
 ISSUE_NUMBER=${1:-}
 if [ -z "$ISSUE_NUMBER" ]; then
@@ -29,13 +29,6 @@ if ! gh auth status &> /dev/null; then
   exit 1
 fi
 
-# Cursor Agent CLI 확인
-if ! command -v agent &> /dev/null; then
-  echo "❌ Cursor Agent CLI가 설치되어 있지 않습니다."
-  echo "   설치: curl https://cursor.com/install -fsSL | bash"
-  exit 1
-fi
-
 # jq 확인
 if ! command -v jq &> /dev/null; then
   echo "❌ jq가 설치되어 있지 않습니다."
@@ -51,29 +44,77 @@ if [ -z "$ISSUE_JSON" ]; then
   exit 1
 fi
 
-ISSUE_TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
-ISSUE_BODY=$(echo "$ISSUE_JSON" | jq -r '.body // ""')
-ISSUE_URL=$(echo "$ISSUE_JSON" | jq -r '.url')
+# Python으로 프롬프트 구성 및 URL 인코딩 (특수문자 안전 처리)
+DEEPLINK_URL=$(echo "$ISSUE_JSON" | python3 -c "
+import json
+import sys
+import urllib.parse
 
-# 에이전트에 전달할 프롬프트 구성
-PROMPT="다음 GitHub 이슈를 기반으로 개발 계획(plan)을 작성해주세요.
+data = json.load(sys.stdin)
+num = data.get('number', '')
+title = data.get('title', '')
+body = data.get('body') or ''
+url = data.get('url', '')
+
+# Deep Link URL 최대 8000자
+max_body = 3500
+if len(body) > max_body:
+    body = body[:max_body] + f'\n\n[... 이슈 본문이 {len(body)}자로 잘렸습니다. 전체: {url}]'
+
+prompt = f'''다음 GitHub 이슈를 기반으로 개발 계획(plan)을 작성해주세요.
 
 ## 이슈 정보
-- 번호: #$ISSUE_NUMBER
-- 제목: $ISSUE_TITLE
-- URL: $ISSUE_URL
+- 번호: #{num}
+- 제목: {title}
+- URL: {url}
 
 ## 이슈 본문
-$ISSUE_BODY
+{body}
 
 ## 조건
 - .cursor/rules/github-issue-workflow.mdc 규칙을 따르세요.
-- 브랜치 명명: feature/issue-$ISSUE_NUMBER-{기능명-kebab-case}
+- 브랜치 명명: feature/issue-{num}-{{기능명-kebab-case}}
 - 테스트 계획을 포함하세요 (프론트엔드: npm run test:run, 백엔드: cd backend && npm run test, E2E: cd backend && npm run test:e2e)
 - 구현 전 단계별 계획만 제시하고, 코드 작성은 하지 마세요.
-"
+'''
 
-# Plan 모드로 에이전트 실행
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-echo "🤖 Cursor Agent (Plan 모드) 실행 중..."
-agent --mode plan --print --trust --workspace "$REPO_ROOT" "$PROMPT"
+encoded = urllib.parse.quote(prompt, safe='')
+deeplink = f'cursor://anysphere.cursor-deeplink/prompt?text={encoded}'
+if len(deeplink) > 8000:
+    body = body[:2000] + f'\n\n[... 이슈 본문이 잘렸습니다. 전체: {url}]'
+    prompt = f'''다음 GitHub 이슈를 기반으로 개발 계획(plan)을 작성해주세요.
+
+## 이슈 정보
+- 번호: #{num}
+- 제목: {title}
+- URL: {url}
+
+## 이슈 본문
+{body}
+
+## 조건
+- .cursor/rules/github-issue-workflow.mdc 규칙을 따르세요.
+- 브랜치 명명: feature/issue-{num}-{{기능명-kebab-case}}
+- 테스트 계획을 포함하세요.
+- 구현 전 단계별 계획만 제시하고, 코드 작성은 하지 마세요.
+'''
+    encoded = urllib.parse.quote(prompt, safe='')
+    deeplink = f'cursor://anysphere.cursor-deeplink/prompt?text={encoded}'
+
+print(deeplink)
+")
+
+# Cursor Deep Link 열기
+echo "🔗 Cursor Agent 탭에 이슈 #$ISSUE_NUMBER Plan 프롬프트 열기..."
+if [[ "$(uname)" == "Darwin" ]]; then
+  open "$DEEPLINK_URL"
+elif [[ "$(uname)" == "Linux" ]]; then
+  xdg-open "$DEEPLINK_URL" 2>/dev/null || true
+else
+  echo "❌ 이 OS에서는 open/xdg-open을 지원하지 않습니다."
+  echo "   아래 URL을 브라우저에 복사해 열어보세요:"
+  echo "   https://cursor.com/link/prompt${DEEPLINK_URL#*prompt}"
+  exit 1
+fi
+
+echo "✅ Cursor가 열리면 Agent 탭에서 Plan 모드(Shift+Tab)로 실행하세요."

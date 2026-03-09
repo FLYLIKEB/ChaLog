@@ -108,6 +108,21 @@
             "request": "launch",
             "command": "bash scripts/sync-remote-env.sh",
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
+            "name": "📋 Plan from Issue (plan-from-issue.sh)",
+            "request": "launch",
+            "command": "bash scripts/plan-from-issue.sh ${input:issueNumber}",
+            "cwd": "${workspaceFolder}"
+        }
+    ],
+    "inputs": [
+        {
+            "id": "issueNumber",
+            "type": "promptString",
+            "description": "GitHub 이슈 번호",
+            "default": "42"
         }
     ]
 }
