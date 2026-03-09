@@ -163,6 +163,8 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
 
     const handleTouchMove = (e: TouchEvent) => {
       if (disabled || isRefreshing) return;
+      // 두 손가락 이상(핀치 줌 등)이면 브라우저 기본 동작 허용
+      if (e.touches.length > 1) return;
       if (el.scrollTop > 0) {
         if (pullDistanceRef.current > 0) {
           touchStartY.current = e.touches[0].clientY;
