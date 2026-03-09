@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
-import { NAVIGATION_DELAY, YEAR_OPTIONS, COMMON_ORIGINS, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../constants';
+import { NAVIGATION_DELAY, YEAR_OPTIONS, getOriginsForTeaType, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../constants';
 
 export function NewTea() {
   const navigate = useNavigate();
@@ -200,18 +200,11 @@ export function NewTea() {
   return (
     <div className="min-h-screen">
       <Header showBack title="새 차 등록" showProfile />
-      
-      <div className="p-4 sm:max-w-md sm:mx-auto">
-        <div className="bg-card rounded-lg p-6 space-y-6 border border-border">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">새 차 등록</h1>
-            <p className="text-muted-foreground text-sm">
-              마신 차를 등록하고 차록을 작성해보세요
-            </p>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            {/* 차 이름 */}
+      <div className="p-4 pb-24 sm:max-w-md sm:mx-auto">
+        <div className="bg-card rounded-lg p-6 space-y-5 border border-border">
+          <form id="tea-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* 차 이름 · 차 종류 우선 */}
             <div className="space-y-2">
               <Label htmlFor="name">
                 차 이름 <span className="text-red-500">*</span>
@@ -258,8 +251,10 @@ export function NewTea() {
               </div>
               <TeaTypeSelector
                 value={type}
-                onChange={setType}
-                onTouch={() => setTypeTouched(true)}
+                onChange={(v) => {
+                  setType(v);
+                  setTypeTouched(true);
+                }}
                 disabled={isLoading}
                 error={typeTouched && !type}
               />
@@ -271,7 +266,9 @@ export function NewTea() {
               )}
             </div>
 
-            {/* 연도 */}
+            {/* 차종류 선택 시에만 표시: 연도, 구매처, 가격, 무게, 산지 */}
+            {type && (
+            <>
             <div className="space-y-2" role="group" aria-labelledby="year-label">
               <Label id="year-label" htmlFor="year-select">제조 연도 <span className="text-muted-foreground font-normal">(선택)</span></Label>
               <Select
@@ -409,7 +406,7 @@ export function NewTea() {
             <div className="space-y-2">
               <Label className="text-xs">산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
               <div className="flex flex-wrap gap-2">
-                {COMMON_ORIGINS.map((o) => (
+                {getOriginsForTeaType(type).map((o) => (
                   <Button
                     key={o}
                     type="button"
@@ -432,20 +429,29 @@ export function NewTea() {
                 className="mt-1"
               />
             </div>
-
-            {/* 제출 버튼 */}
-            <Button type="submit" className="w-full" disabled={isLoading || isCheckingDuplicate}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  등록 중...
-                </>
-              ) : (
-                '등록하기'
-              )}
-            </Button>
+            </>
+            )}
           </form>
         </div>
+      </div>
+
+      {/* 저장 버튼 - 하단 고정 플로팅 (차록 작성처럼) */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/80 dark:bg-background/90 backdrop-blur-sm z-40 sm:max-w-md sm:left-1/2 sm:-translate-x-1/2">
+        <Button
+          type="submit"
+          form="tea-form"
+          className="w-full opacity-70 hover:opacity-100 transition-opacity"
+          disabled={isLoading || isCheckingDuplicate}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              등록 중...
+            </>
+          ) : (
+            '등록하기'
+          )}
+        </Button>
       </div>
     </div>
   );

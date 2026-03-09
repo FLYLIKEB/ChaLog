@@ -123,13 +123,12 @@ describe('NewTea 페이지', () => {
 
   it('페이지가 정상적으로 렌더링된다', () => {
     renderNewTea();
-    // Header의 title과 페이지의 h1 모두 "새 차 등록"이므로 getAllByRole 사용
-    const headings = screen.getAllByRole('heading', { name: '새 차 등록' });
-    expect(headings.length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/차 이름/)).toBeInTheDocument();
     expect(screen.getByRole('group', { name: '차 종류 선택' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '녹차' })).toBeInTheDocument();
-    expect(screen.getByLabelText(/가격/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '등록하기' })).toBeInTheDocument();
+    // 차종류 미선택 시 연도·구매처·가격 등은 숨김
+    expect(screen.queryByLabelText(/가격/)).not.toBeInTheDocument();
   });
 
   it('searchQuery 파라미터가 있으면 차 이름 필드가 자동 채워진다', () => {
@@ -141,15 +140,11 @@ describe('NewTea 페이지', () => {
     const user = userEvent.setup();
     renderNewTea();
 
-    const submitButton = screen.getByRole('button', { name: '등록하기' });
-    // HTML5 validation을 우회하기 위해 form의 submit 이벤트를 직접 트리거
-    const form = submitButton.closest('form');
-    if (form) {
-      // preventDefault를 호출하지 않도록 설정
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-      Object.defineProperty(submitEvent, 'preventDefault', { value: vi.fn() });
-      form.dispatchEvent(submitEvent);
-    }
+    const form = document.getElementById('tea-form');
+    expect(form).toBeTruthy();
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    Object.defineProperty(submitEvent, 'preventDefault', { value: vi.fn() });
+    form!.dispatchEvent(submitEvent);
 
     await waitFor(() => {
       expect(toastMock.error).toHaveBeenCalledWith('차 이름을 입력해주세요.');
@@ -163,16 +158,11 @@ describe('NewTea 페이지', () => {
     const nameInput = screen.getByLabelText(/차 이름/);
     await user.type(nameInput, '테스트 차');
 
-    // HTML5 required 속성을 우회하기 위해 form의 submit 이벤트를 직접 트리거
-    const submitButton = screen.getByRole('button', { name: '등록하기' });
-    const form = submitButton.closest('form');
-    
-    if (form) {
-      // HTML5 validation을 우회하기 위해 preventDefault를 호출하지 않음
-      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-      Object.defineProperty(submitEvent, 'preventDefault', { value: vi.fn() });
-      form.dispatchEvent(submitEvent);
-    }
+    const form = document.getElementById('tea-form');
+    expect(form).toBeTruthy();
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+    Object.defineProperty(submitEvent, 'preventDefault', { value: vi.fn() });
+    form!.dispatchEvent(submitEvent);
 
     await waitFor(() => {
       expect(toastMock.error).toHaveBeenCalledWith('차 종류를 입력해주세요.');
@@ -189,7 +179,6 @@ describe('NewTea 페이지', () => {
     await user.type(nameInput, '테스트 차');
     await user.click(녹차Button);
 
-    // 연도 Select에서 "그 외 (직접 입력)" 선택
     const yearTrigger = screen.getByRole('combobox', { name: /연도/ });
     await user.click(yearTrigger);
     const customOption = await screen.findByRole('option', { name: '그 외 (직접 입력)' });
@@ -213,10 +202,11 @@ describe('NewTea 페이지', () => {
 
     const nameInput = screen.getByLabelText(/차 이름/);
     const 녹차Button = screen.getByRole('button', { name: '녹차' });
-    const sellerInput = screen.getByTestId('seller-input');
 
     await user.type(nameInput, '새로운 차');
     await user.click(녹차Button);
+
+    const sellerInput = screen.getByTestId('seller-input');
 
     // 구매처 입력 (fireEvent로 직접 설정 - Combobox 내부 이벤트 처리 이슈 회피)
     fireEvent.change(sellerInput, { target: { value: '새 찻집' } });
@@ -227,7 +217,7 @@ describe('NewTea 페이지', () => {
     const year2024Option = await screen.findByRole('option', { name: '2024년' });
     await user.click(year2024Option);
 
-    await user.click(screen.getByRole('button', { name: '한국' }));
+    await user.click(screen.getByRole('button', { name: '한국 제주도' }));
 
     await user.click(screen.getByRole('button', { name: '등록하기' }));
 
@@ -236,7 +226,7 @@ describe('NewTea 페이지', () => {
       type: '녹차',
       year: 2024,
       seller: '새 찻집',
-      origin: '한국',
+      origin: '한국 제주도',
       price: undefined,
     });
 
@@ -359,10 +349,11 @@ describe('NewTea 페이지', () => {
 
     const nameInput = screen.getByLabelText(/차 이름/);
     const 녹차Button = screen.getByRole('button', { name: '녹차' });
-    const priceInput = screen.getByLabelText(/가격/);
 
     await user.type(nameInput, '가격 테스트 차');
     await user.click(녹차Button);
+
+    const priceInput = screen.getByLabelText(/가격/);
     await user.type(priceInput, '15000');
 
     await user.click(screen.getByRole('button', { name: '등록하기' }));

@@ -56,8 +56,28 @@ export const TEA_TYPE_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
 const currentYear = new Date().getFullYear();
 export const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i);
 
-// 새 차 등록 - 자주 쓰는 산지
+// 새 차 등록 - 기본 산지 (차종 미선택 시)
 export const COMMON_ORIGINS = ['중국', '한국', '일본', '대만', '인도', '스리랑카', '베트남', '케냐'] as const;
+
+/** 차 종류별 추천 산지 - 구체적 지역명 (차종에 따라 다른 버튼 표시) */
+export const TEA_TYPE_ORIGINS: Record<(typeof TEA_TYPES)[number], readonly string[]> = {
+  녹차: ['한국 제주도', '한국 보성', '한국 하동', '일본 시즈오카', '일본 교토 우지', '일본 가고시마', '중국 용정', '중국 푸젠', '대만 핑린', '베트남 탄응옌'],
+  백차: ['중국 푸젠 복정', '중국 푸젠 정화', '중국 푸젠 무이산', '대만 핑린', '중국 건강', '인도 다즐링'],
+  황차: ['중국 쓰촨 몽정산', '중국 푸젠', '중국 쓰촨', '중국 후난', '대만'],
+  우롱차: ['중국 운남성', '중국 푸젠 무이산', '중국 푸젠 안시', '대만 동정', '대만 문산', '대만 아리산', '중국 광동 펑황단총'],
+  홍차: ['인도 다즐링', '인도 아삼', '인도 닐기리', '스리랑카 누완엘리야', '스리랑카 실론', '케냐', '중국 운남', '중국 푸젠', '대만 동정'],
+  흑차: ['중국 운남 시솽반나', '중국 운남 란창강', '중국 안후이 안화', '중국 후난 안화', '중국 운남', '중국 후난'],
+  보이차: ['중국 운남성 시솽반나', '중국 운남성 란창강', '중국 운남성', '미얀마', '라오스', '베트남'],
+  대용차: ['한국 제주도', '한국 보성', '중국 구이저우', '일본 홋카이도', '대만 핑린', '인도 다즐링', '베트남 탄응옌'],
+};
+
+/** 차종에 따른 산지 버튼 목록 반환 (미선택 시 COMMON_ORIGINS) */
+export function getOriginsForTeaType(type: string): readonly string[] {
+  if (type && type in TEA_TYPE_ORIGINS) {
+    return TEA_TYPE_ORIGINS[type as (typeof TEA_TYPES)[number]];
+  }
+  return COMMON_ORIGINS;
+}
 
 // 새 차 등록 - 자주 쓰는 가격 (원)
 export const COMMON_PRICES = [5000, 10000, 20000, 50000] as const;
