@@ -13,8 +13,7 @@ import {
 } from '../../components/ui/dialog';
 import { Loader2, Trash2, Pencil, Merge, Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-
-const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'];
+import { TEA_TYPES, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../../constants';
 
 type Tab = 'teas' | 'sellers' | 'tags' | 'users';
 
@@ -685,11 +684,51 @@ export function AdminMaster() {
             </div>
             <div>
               <Label>가격</Label>
-              <Input name="teaPrice" type="number" placeholder="0" />
+              <div className="flex flex-wrap gap-2 mb-1">
+                {COMMON_PRICES.map((p) => (
+                  <Button
+                    key={p}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => {
+                      const input = (e.currentTarget.closest('form')?.elements.namedItem('teaPrice') as HTMLInputElement);
+                      if (input) {
+                        const current = parseInt(input.value, 10) || 0;
+                        input.value = String(current + p);
+                      }
+                    }}
+                  >
+                    +{formatPriceToKorean(p)}원
+                  </Button>
+                ))}
+              </div>
+              <Input name="teaPrice" type="number" placeholder="직접 입력" />
             </div>
             <div>
               <Label>무게 (g)</Label>
-              <Input name="teaWeight" type="number" placeholder="50" min={0} />
+              <div className="flex flex-wrap gap-2 mb-1">
+                {COMMON_WEIGHTS.map((w) => (
+                  <Button
+                    key={w}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => {
+                      const input = (e.currentTarget.closest('form')?.elements.namedItem('teaWeight') as HTMLInputElement);
+                      if (input) {
+                        const current = parseInt(input.value, 10) || 0;
+                        input.value = String(current + w);
+                      }
+                    }}
+                  >
+                    +{w}g
+                  </Button>
+                ))}
+              </div>
+              <Input name="teaWeight" type="number" placeholder="직접 입력" min={0} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen((o) => ({ ...o, tea: false }))}>취소</Button>

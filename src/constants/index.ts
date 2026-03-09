@@ -37,8 +37,20 @@ export const RECOMMENDED_NOTE_TAGS = [
   '온화함', '상쾌함', '따뜻함', '시원함', '은은함', '강렬함'
 ] as const;
 
-// 차 종류
-export const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'] as const;
+// 차 종류 (6대다류 순서: 녹·백·황·청·홍·흑 + 보이차·대용차)
+export const TEA_TYPES = ['녹차', '백차', '황차', '우롱차', '홍차', '흑차', '보이차', '대용차'] as const;
+
+/** 차 종류별 색상 (칩/배지용) - 차 색감 연상 */
+export const TEA_TYPE_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
+  녹차: 'bg-emerald-500',
+  홍차: 'bg-rose-500',
+  우롱차: 'bg-teal-500',
+  백차: 'bg-stone-300 dark:bg-stone-500',
+  흑차: 'bg-slate-700 dark:bg-slate-500',
+  대용차: 'bg-slate-400 dark:bg-slate-600',
+  황차: 'bg-amber-400 dark:bg-amber-500',
+  보이차: 'bg-amber-800 dark:bg-amber-600',
+};
 
 // 새 차 등록 - 연도 선택 (현재년 ~ 1990)
 const currentYear = new Date().getFullYear();
@@ -46,6 +58,19 @@ export const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) =>
 
 // 새 차 등록 - 자주 쓰는 산지
 export const COMMON_ORIGINS = ['중국', '한국', '일본', '대만', '인도', '스리랑카', '베트남', '케냐'] as const;
+
+// 새 차 등록 - 자주 쓰는 가격 (원)
+export const COMMON_PRICES = [5000, 10000, 20000, 50000] as const;
+
+/** 가격을 한글 단위로 표시 (예: 5000 → 5천, 20000 → 2만) */
+export function formatPriceToKorean(price: number): string {
+  if (price >= 10000) return `${price / 10000}만`;
+  if (price >= 1000) return `${price / 1000}천`;
+  return String(price);
+}
+
+// 새 차 등록 - 자주 쓰는 무게 (g) - 찻집 일반 판매단위
+export const COMMON_WEIGHTS = [50, 100, 200, 250, 357] as const;
 
 export type TeaType = typeof TEA_TYPES[number];
 

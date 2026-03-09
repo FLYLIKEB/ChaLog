@@ -13,13 +13,14 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { SellerCombobox } from '../components/SellerCombobox';
+import { TeaTypeSelector } from '../components/TeaTypeSelector';
 import { teasApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
-import { NAVIGATION_DELAY, TEA_TYPES, YEAR_OPTIONS, COMMON_ORIGINS } from '../constants';
+import { NAVIGATION_DELAY, YEAR_OPTIONS, COMMON_ORIGINS, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../constants';
 
 export function NewTea() {
   const navigate = useNavigate();
@@ -255,24 +256,13 @@ export function NewTea() {
               <div className="text-sm font-medium">
                 차 종류 <span className="text-red-500">*</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2" role="group" aria-label="차 종류 선택">
-                {TEA_TYPES.map((teaType) => (
-                  <Button
-                    key={teaType}
-                    type="button"
-                    variant={type === teaType ? 'default' : 'outline'}
-                    onClick={() => {
-                      setType(teaType);
-                      setTypeTouched(true);
-                    }}
-                    disabled={isLoading}
-                    className="w-full"
-                    aria-pressed={type === teaType}
-                  >
-                    {teaType}
-                  </Button>
-                ))}
-              </div>
+              <TeaTypeSelector
+                value={type}
+                onChange={setType}
+                onTouch={() => setTypeTouched(true)}
+                disabled={isLoading}
+                error={typeTouched && !type}
+              />
               {!type && typeTouched && (
                 <p className="text-xs text-destructive">차 종류를 선택해주세요.</p>
               )}
@@ -350,36 +340,74 @@ export function NewTea() {
             {/* 가격 */}
             <div className="space-y-2">
               <Label htmlFor="price">가격 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {COMMON_PRICES.map((p) => (
+                  <Button
+                    key={p}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const current = parseInt(price.replace(/,/g, ''), 10) || 0;
+                      setPrice(String(current + p));
+                    }}
+                    disabled={isLoading}
+                    className="h-6 px-2 text-xs"
+                  >
+                    +{formatPriceToKorean(p)}원
+                  </Button>
+                ))}
+              </div>
               <Input
                 id="price"
                 type="text"
                 inputMode="numeric"
-                placeholder="예: 15000"
+                placeholder="직접 입력 (예: 15000)"
                 value={price}
                 onChange={(e) => setPrice(e.target.value.replace(/[^0-9,]/g, ''))}
                 disabled={isLoading}
                 aria-label="가격 (원)"
+                className="mt-1"
               />
             </div>
 
             {/* 무게 */}
             <div className="space-y-2">
               <Label htmlFor="weight">무게 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <div className="flex flex-wrap gap-2">
+                {COMMON_WEIGHTS.map((w) => (
+                  <Button
+                    key={w}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const current = parseInt(weight.replace(/,/g, ''), 10) || 0;
+                      setWeight(String(current + w));
+                    }}
+                    disabled={isLoading}
+                    className="h-6 px-2 text-xs"
+                  >
+                    +{w}g
+                  </Button>
+                ))}
+              </div>
               <Input
                 id="weight"
                 type="text"
                 inputMode="numeric"
-                placeholder="예: 50"
+                placeholder="직접 입력 (예: 50)"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value.replace(/[^0-9,]/g, ''))}
                 disabled={isLoading}
                 aria-label="무게 (g)"
+                className="mt-1"
               />
             </div>
 
             {/* 산지 */}
             <div className="space-y-2">
-              <Label>산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <Label className="text-xs">산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
               <div className="flex flex-wrap gap-2">
                 {COMMON_ORIGINS.map((o) => (
                   <Button
@@ -389,7 +417,7 @@ export function NewTea() {
                     size="sm"
                     onClick={() => setOrigin(origin === o ? '' : o)}
                     disabled={isLoading}
-                    className="h-8"
+                    className="h-6 px-2 text-xs"
                   >
                     {o}
                   </Button>

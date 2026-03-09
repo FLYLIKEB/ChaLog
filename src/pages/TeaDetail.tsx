@@ -181,8 +181,8 @@ export function TeaDetail() {
             )}
             {tea.origin && (
               <div>
-                <p className="text-xs text-muted-foreground mb-1">산지</p>
-                <p className="text-sm">{tea.origin}</p>
+                <p className="text-[10px] text-muted-foreground mb-0.5">산지</p>
+                <p className="text-xs">{tea.origin}</p>
               </div>
             )}
             {tea.price != null && tea.price > 0 && (
