@@ -364,7 +364,7 @@ export function Cellar() {
             </div>
             <div>
               <p className="text-sm font-medium text-foreground">다회 모드</p>
-              <p className="text-xs text-muted-foreground mt-0.5">탕별 타이머·기록, 세션 요약·노트 발행</p>
+              <p className="text-xs text-muted-foreground mt-0.5">탕별 타이머·기록, 세션 요약·차록 발행</p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />

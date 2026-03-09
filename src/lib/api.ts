@@ -10,6 +10,7 @@ import {
   PopularTag,
   Note,
   RatingSchema,
+  SteepDataV1,
 } from '../types';
 import { logger } from './logger';
 
@@ -1296,10 +1297,7 @@ export interface CreateTeaSessionRequest {
 export interface CreateSessionSteepRequest {
   steepNumber: number;
   steepDurationSeconds: number;
-  aroma?: string | null;
-  taste?: string | null;
-  color?: string | null;
-  memo?: string | null;
+  data?: SteepDataV1 | null;
 }
 
 export interface PublishSessionToNoteRequest {

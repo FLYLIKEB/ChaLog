@@ -113,4 +113,5 @@ describe('SessionHistory', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('/session/new');
   });
+
 });

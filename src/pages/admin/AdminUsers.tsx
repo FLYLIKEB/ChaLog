@@ -100,7 +100,7 @@ export function AdminUsers() {
     return (
       <div className="space-y-6">
         <Link to="/admin/users" className="text-primary text-sm">← 목록으로</Link>
-        <h1 className="text-2xl font-bold text-foreground">사용자 상세</h1>
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">사용자 상세</h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin" />
         </div>
@@ -112,8 +112,8 @@ export function AdminUsers() {
     return (
       <div className="space-y-6">
         <Link to="/admin/users" className="text-primary text-sm">← 목록으로</Link>
-        <h1 className="text-2xl font-bold text-foreground">사용자 상세</h1>
-        <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">사용자 상세</h1>
+        <div className="bg-card rounded-lg border border-border p-4 md:p-6 space-y-4">
           <p><strong>ID:</strong> {detail.id}</p>
           <p><strong>이름:</strong> {detail.name}</p>
           <p><strong>이메일:</strong> {detail.email || '-'}</p>
@@ -225,12 +225,12 @@ export function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">사용자 관리</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">사용자 관리</h1>
       <Input
         placeholder="이름 검색"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-xs"
+        className="w-full max-w-xs"
       />
       {loading ? (
         <Loader2 className="w-8 h-8 animate-spin" />

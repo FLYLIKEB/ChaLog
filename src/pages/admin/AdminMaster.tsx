@@ -297,9 +297,10 @@ export function AdminMaster() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">마스터 데이터</h1>
-      <div className="flex gap-2 border-b">
-        {tabs.map(({ key, label }) => (
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">마스터 데이터</h1>
+      <div className="overflow-x-auto -mx-1 px-1">
+        <div className="flex gap-2 border-b min-w-0">
+          {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -308,13 +309,14 @@ export function AdminMaster() {
             {label}
           </button>
         ))}
+        </div>
       </div>
-      <div className="flex gap-2 items-center">
+      <div className="flex flex-wrap gap-2 items-center">
         <Input
           placeholder="검색"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-xs"
+          className="w-full sm:max-w-xs"
         />
         {tab === 'teas' && (
           <Button size="sm" onClick={() => setCreateOpen((o) => ({ ...o, tea: true }))}>

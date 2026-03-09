@@ -15,6 +15,7 @@ import { PublishSessionToNoteDto } from './dto/publish-session-to-note.dto';
 import { TeasService } from '../teas/teas.service';
 import { NotesService } from '../notes/notes.service';
 import { CreateNoteDto } from '../notes/dto/create-note.dto';
+import { SteepDataV1 } from './types/steep-data';
 
 @Injectable()
 export class TeaSessionsService {
@@ -98,14 +99,15 @@ export class TeaSessionsService {
       throw new BadRequestException('이미 노트로 발행된 세션에는 탕을 추가할 수 없습니다.');
     }
 
+    const data: SteepDataV1 | null = dto.data
+      ? { v: 1, ...(dto.data as Omit<SteepDataV1, 'v'>) }
+      : null;
+
     const steep = this.teaSessionSteepsRepository.create({
       sessionId,
       steepNumber: dto.steepNumber,
       steepDurationSeconds: dto.steepDurationSeconds,
-      aroma: dto.aroma ?? null,
-      taste: dto.taste ?? null,
-      color: dto.color ?? null,
-      memo: dto.memo ?? null,
+      data,
     });
 
     return this.teaSessionSteepsRepository.save(steep);
@@ -134,10 +136,11 @@ export class TeaSessionsService {
     if (dto.steepNumber !== undefined) steep.steepNumber = dto.steepNumber;
     if (dto.steepDurationSeconds !== undefined)
       steep.steepDurationSeconds = dto.steepDurationSeconds;
-    if (dto.aroma !== undefined) steep.aroma = dto.aroma;
-    if (dto.taste !== undefined) steep.taste = dto.taste;
-    if (dto.color !== undefined) steep.color = dto.color;
-    if (dto.memo !== undefined) steep.memo = dto.memo;
+    if (dto.data !== undefined) {
+      steep.data = dto.data
+        ? { v: 1, ...(dto.data as Omit<SteepDataV1, 'v'>) }
+        : null;
+    }
 
     return this.teaSessionSteepsRepository.save(steep);
   }
@@ -207,10 +210,15 @@ export class TeaSessionsService {
     const sorted = [...steeps].sort((a, b) => a.steepNumber - b.steepNumber);
     const lines = sorted.map((s) => {
       const parts = [`${s.steepNumber}탕 ${s.steepDurationSeconds}초`];
-      if (s.aroma) parts.push(`향: ${s.aroma}`);
-      if (s.taste) parts.push(`맛: ${s.taste}`);
-      if (s.color) parts.push(`색: ${s.color}`);
-      if (s.memo) parts.push(s.memo);
+      const d = s.data as SteepDataV1 | null;
+      if (d?.v === 1) {
+        if (d.color_note) parts.push(`수색: ${d.color_note}`);
+        if (d.aroma_profile) parts.push(`향: ${d.aroma_profile}`);
+        if (d.water_temp) parts.push(`물온도: ${d.water_temp}`);
+        if (d.body_feeling) parts.push(`몸반응: ${d.body_feeling}`);
+        if (d.rating != null) parts.push(`만족도: ${d.rating}/5`);
+        if (d.memo) parts.push(d.memo);
+      }
       return parts.join(' | ');
     });
 

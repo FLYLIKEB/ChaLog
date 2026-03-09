@@ -7,6 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { TeaSession } from './tea-session.entity';
+import { SteepDataV1 } from '../types/steep-data';
 
 @Entity('tea_session_steeps')
 export class TeaSessionSteep {
@@ -26,17 +27,8 @@ export class TeaSessionSteep {
   @Column()
   steepDurationSeconds: number;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  aroma: string | null;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  taste: string | null;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  color: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  memo: string | null;
+  @Column({ type: 'json', nullable: true })
+  data: SteepDataV1 | null;
 
   @CreateDateColumn()
   createdAt: Date;

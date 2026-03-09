@@ -30,12 +30,12 @@ export function AdminNotes() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">차록 관리</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">차록 관리</h1>
       <Input
         placeholder="메모/차/작성자 검색"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-xs"
+        className="w-full max-w-xs"
       />
       {loading ? (
         <Loader2 className="w-8 h-8 animate-spin" />

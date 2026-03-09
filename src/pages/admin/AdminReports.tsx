@@ -121,9 +121,9 @@ export function AdminReports() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">신고 관리</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">신고 관리</h1>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="상태 필터" />
@@ -138,7 +138,7 @@ export function AdminReports() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList>
+        <TabsList className="overflow-x-auto max-w-full">
           <TabsTrigger value="notes">차록 신고 ({noteData?.total ?? 0})</TabsTrigger>
           <TabsTrigger value="posts">게시글 신고 ({postData?.total ?? 0})</TabsTrigger>
         </TabsList>

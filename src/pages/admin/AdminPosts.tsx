@@ -71,8 +71,8 @@ export function AdminPosts() {
     return (
       <div className="space-y-6">
         <Link to="/admin/posts" className="text-primary text-sm">← 목록으로</Link>
-        <h1 className="text-2xl font-bold text-foreground">게시글 상세</h1>
-        <div className="bg-card rounded-lg border border-border p-6 space-y-4">
+        <h1 className="text-xl md:text-2xl font-bold text-foreground">게시글 상세</h1>
+        <div className="bg-card rounded-lg border border-border p-4 md:p-6 space-y-4">
           <p><strong>제목:</strong> {detail.title}</p>
           <p><strong>작성자:</strong> {detail.user?.name} (ID: {detail.user?.id})</p>
           <p><strong>조회:</strong> {detail.viewCount ?? 0} · <strong>댓글:</strong> {detail.commentCount ?? comments.length} · <strong>공지:</strong> {detail.isPinned ? '예' : '아니오'}</p>
@@ -89,7 +89,7 @@ export function AdminPosts() {
             </Button>
           </div>
         </div>
-        <div className="bg-card rounded-lg border border-border p-6">
+        <div className="bg-card rounded-lg border border-border p-4 md:p-6">
           <h2 className="font-semibold mb-3">댓글 ({comments.length})</h2>
           {comments.length ? (
             <ul className="space-y-3">
@@ -118,12 +118,12 @@ export function AdminPosts() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">게시글 관리</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">게시글 관리</h1>
       <Input
         placeholder="제목/본문/작성자 검색"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        className="max-w-xs"
+        className="w-full max-w-xs"
       />
       {loading ? (
         <Loader2 className="w-8 h-8 animate-spin" />
