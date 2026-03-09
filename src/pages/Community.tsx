@@ -6,6 +6,7 @@ import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
 import { postsApi } from '../lib/api';
 import { PostCard } from '../components/PostCard';
 import { Header } from '../components/Header';
+import { ChadamBanner } from '../components/ChadamBanner';
 import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/EmptyState';
 import { FloatingActionButton } from '../components/FloatingActionButton';
@@ -56,6 +57,11 @@ export function Community() {
   return (
     <div className="min-h-screen pb-20">
       <Header title="차담" showLogo showProfile />
+
+      {/* 배너 */}
+      <div className="px-4 pt-4">
+        <ChadamBanner />
+      </div>
 
       {/* 카테고리 탭 - 헤더 높이만큼 아래에서 고정 */}
       <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-10 bg-background border-b border-border/50">
