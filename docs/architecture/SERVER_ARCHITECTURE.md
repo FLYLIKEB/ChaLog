@@ -41,6 +41,7 @@ flowchart TB
             UsersModule["UsersModule<br/>사용자"]
             TeasModule["TeasModule<br/>차"]
             NotesModule["NotesModule<br/>노트"]
+            AdminModule["AdminModule<br/>운영자 콘솔"]
             HealthController["HealthController<br/>헬스 체크"]
         end
     end
@@ -60,6 +61,7 @@ flowchart TB
     AppModule --> UsersModule
     AppModule --> TeasModule
     AppModule --> NotesModule
+    AppModule --> AdminModule
     AppModule --> HealthController
     TypeOrmModule -->|chalog-mysql:3306| Tables
 ```
@@ -211,6 +213,24 @@ graph TB
 
     subgraph Health["헬스 체크 Health"]
         H1["GET /health<br/>서버 및 DB 상태 확인"]
+    end
+
+    subgraph Admin["운영자 Admin (JWT + role=admin)"]
+        AD1["GET /admin/dashboard<br/>대시보드"]
+        AD2["GET /admin/teas<br/>차 목록"]
+        AD3["POST /admin/teas<br/>차 생성"]
+        AD4["PATCH /admin/teas/:id<br/>차 수정"]
+        AD5["DELETE /admin/teas/:id<br/>차 삭제"]
+        AD6["GET /admin/sellers<br/>찻집 목록"]
+        AD7["POST /admin/sellers<br/>찻집 생성"]
+        AD8["PATCH /admin/sellers/:id<br/>찻집 수정"]
+        AD9["DELETE /admin/sellers/:id<br/>찻집 삭제"]
+        AD10["GET /admin/tags<br/>태그 목록"]
+        AD11["POST /admin/tags<br/>태그 생성"]
+        AD12["PATCH /admin/tags/:id<br/>태그 수정"]
+        AD13["DELETE /admin/tags/:id<br/>태그 삭제"]
+        AD14["POST /admin/tags/:id/merge<br/>태그 병합"]
+        AD15["PATCH /admin/users/:id<br/>사용자 프로필 수정"]
     end
 
 ```

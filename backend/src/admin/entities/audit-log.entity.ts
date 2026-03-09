@@ -15,13 +15,17 @@ export enum AuditAction {
   USER_SUSPEND = 'user_suspend',
   USER_PROMOTE = 'user_promote',
   USER_DELETE = 'user_delete',
+  TEA_CREATE = 'tea_create',
   TEA_UPDATE = 'tea_update',
   TEA_DELETE = 'tea_delete',
+  SELLER_CREATE = 'seller_create',
   SELLER_UPDATE = 'seller_update',
   SELLER_DELETE = 'seller_delete',
+  TAG_CREATE = 'tag_create',
   TAG_UPDATE = 'tag_update',
   TAG_DELETE = 'tag_delete',
   TAG_MERGE = 'tag_merge',
+  USER_UPDATE = 'user_update',
 }
 
 @Entity('audit_logs')

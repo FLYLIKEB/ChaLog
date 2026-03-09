@@ -259,6 +259,25 @@ function FloatingActionButtonSwitcher() {
 - **사용자 프로필(`src/pages/UserProfile.tsx`)**: 특정 사용자의 공개 프로필과 공개 노트 목록을 표시합니다. (`/user/:id`)
 - **저장됨(`src/pages/Saved.tsx`)**: 북마크한 노트 목록을 보여주는 페이지입니다.
 
+## 운영자 콘솔 (Admin)
+
+- **접근**: `/admin` 경로. `AdminRouteGuard`가 `User.role === 'admin'`인 사용자만 접근을 허용합니다.
+- **라우트 구조** (`src/App.tsx`): `location.pathname.startsWith('/admin')`일 때 별도 레이아웃 적용.
+
+| 경로 | 컴포넌트 | 설명 |
+|------|----------|------|
+| `/admin` | AdminDashboard | 대시보드 (핵심 지표, 미처리 신고) |
+| `/admin/reports` | AdminReports | 신고 관리 (차록/게시글) |
+| `/admin/users`, `/admin/users/:id` | AdminUsers | 사용자 목록/상세 |
+| `/admin/notes` | AdminNotes | 차록 관리 |
+| `/admin/posts`, `/admin/posts/:id` | AdminPosts | 게시글 관리 |
+| `/admin/master` | AdminMaster | 마스터 데이터 (차/찻집/태그) |
+| `/admin/monitoring` | AdminMonitoring | 모니터링 및 로그 |
+| `/admin/audit` | AdminAudit | 감사 로그 |
+
+- **AdminRouteGuard**: JWT 인증 후 `role`이 `admin`이 아니면 접근 거부.
+- **AdminLayout**: 사이드바 네비게이션 + `Outlet`으로 하위 라우트 렌더링.
+
 ## 재사용 컴포넌트 · 상태
 - FAB는 위치 프리셋(`default`/`aboveNav`)과 접근성 속성을 추상화한 독립 컴포넌트입니다.  
 ```17:36:src/components/FloatingActionButton.tsx

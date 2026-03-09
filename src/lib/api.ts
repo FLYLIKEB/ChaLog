@@ -1380,6 +1380,8 @@ export const adminApi = {
     return apiClient.get(`/admin/users?${search.toString()}`);
   },
   getUserDetail: (id: number) => apiClient.get(`/admin/users/${id}`),
+  updateUser: (id: number, dto: { name?: string; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) =>
+    apiClient.patch(`/admin/users/${id}`, dto),
   suspendUser: (id: number) => apiClient.post(`/admin/users/${id}/suspend`),
   promoteUser: (id: number) => apiClient.post(`/admin/users/${id}/promote`),
   deleteUser: (id: number) => apiClient.delete(`/admin/users/${id}`),
@@ -1427,6 +1429,8 @@ export const adminApi = {
     return apiClient.get(`/admin/teas?${search.toString()}`);
   },
   getTeaDetail: (id: number) => apiClient.get(`/admin/teas/${id}`),
+  createTea: (dto: { name: string; year?: number; type: string; seller?: string; origin?: string; price?: number }) =>
+    apiClient.post('/admin/teas', dto),
   updateTea: (id: number, dto: Record<string, unknown>) => apiClient.patch(`/admin/teas/${id}`, dto),
   deleteTea: (id: number) => apiClient.delete(`/admin/teas/${id}`),
   getSellers: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
@@ -1439,6 +1443,8 @@ export const adminApi = {
     return apiClient.get(`/admin/sellers?${search.toString()}`);
   },
   getSellerDetail: (id: number) => apiClient.get(`/admin/sellers/${id}`),
+  createSeller: (dto: { name: string; address?: string; mapUrl?: string; websiteUrl?: string; phone?: string; description?: string; businessHours?: string }) =>
+    apiClient.post('/admin/sellers', dto),
   updateSeller: (id: number, dto: Record<string, unknown>) => apiClient.patch(`/admin/sellers/${id}`, dto),
   deleteSeller: (id: number) => apiClient.delete(`/admin/sellers/${id}`),
   getTags: (params?: { page?: number; limit?: number; search?: string; sortBy?: string; sortOrder?: string }) => {
@@ -1450,6 +1456,7 @@ export const adminApi = {
     if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
     return apiClient.get(`/admin/tags?${search.toString()}`);
   },
+  createTag: (dto: { name: string }) => apiClient.post('/admin/tags', dto),
   updateTag: (id: number, dto: { name: string }) => apiClient.patch(`/admin/tags/${id}`, dto),
   deleteTag: (id: number) => apiClient.delete(`/admin/tags/${id}`),
   mergeTag: (id: number, targetTagId: number) => apiClient.post(`/admin/tags/${id}/merge`, { targetTagId }),

@@ -18,6 +18,10 @@ import { ReportActionDto } from './dto/report-action.dto';
 import { UpdateTeaDto } from './dto/update-tea.dto';
 import { UpdateSellerDto } from '../teas/dto/update-seller.dto';
 import { MergeTagDto } from './dto/merge-tag.dto';
+import { CreateTeaDto } from '../teas/dto/create-tea.dto';
+import { CreateSellerDto } from '../teas/dto/create-seller.dto';
+import { CreateTagDto } from './dto/create-tag.dto';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { ReportStatus, ReportReason } from '../reports/entities/note-report.entity';
 
 @Controller('admin')
@@ -145,6 +149,15 @@ export class AdminController {
   @Get('users/:id')
   getUserDetail(@Param('id', ParseIntPipe) id: number) {
     return this.adminService.getUserDetail(id);
+  }
+
+  @Patch('users/:id')
+  updateUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+    @UserId() adminId: number,
+  ) {
+    return this.adminService.updateUser(id, dto, adminId);
   }
 
   @Post('users/:id/suspend')
@@ -287,6 +300,11 @@ export class AdminController {
     return this.adminService.getTeaDetail(id);
   }
 
+  @Post('teas')
+  createTea(@Body() dto: CreateTeaDto, @UserId() adminId: number) {
+    return this.adminService.createTea(dto, adminId);
+  }
+
   @Patch('teas/:id')
   updateTea(
     @Param('id', ParseIntPipe) id: number,
@@ -323,6 +341,11 @@ export class AdminController {
     return this.adminService.getSellerDetail(id);
   }
 
+  @Post('sellers')
+  createSeller(@Body() dto: CreateSellerDto, @UserId() adminId: number) {
+    return this.adminService.createSeller(dto, adminId);
+  }
+
   @Patch('sellers/:id')
   updateSeller(
     @Param('id', ParseIntPipe) id: number,
@@ -352,6 +375,11 @@ export class AdminController {
       sortBy,
       sortOrder,
     });
+  }
+
+  @Post('tags')
+  createTag(@Body() dto: CreateTagDto, @UserId() adminId: number) {
+    return this.adminService.createTag(dto, adminId);
   }
 
   @Patch('tags/:id')
