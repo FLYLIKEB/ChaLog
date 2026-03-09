@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
@@ -71,6 +71,26 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: { enableImplicitConversion: true },
+      exceptionFactory: (errors) => {
+        const details = errors.map((e) => ({
+          property: e.property,
+          constraints: e.constraints,
+          children: e.children?.map((c) => ({
+            property: c.property,
+            constraints: c.constraints,
+            children: c.children?.map((cc) => ({ property: cc.property, constraints: cc.constraints })),
+          })),
+        }));
+        console.error('[ValidationPipe] Validation failed:', JSON.stringify(details, null, 2));
+        const flatten = (arr: typeof details): string[] =>
+          arr.flatMap((e) => [
+            ...(e.constraints ? Object.values(e.constraints) : []),
+            ...(e.children ? flatten(e.children as any) : []),
+          ]);
+        const message = flatten(details);
+        return new BadRequestException(message.length ? message : 'Validation failed');
+      },
     }),
   );
 

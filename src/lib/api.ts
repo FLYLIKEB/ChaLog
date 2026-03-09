@@ -1342,6 +1342,12 @@ export const cellarApi = {
   remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 
+export interface PostImageItemRequest {
+  url: string;
+  thumbnailUrl?: string | null;
+  caption?: string | null;
+}
+
 export interface CreatePostRequest {
   title: string;
   content: string;
@@ -1350,11 +1356,14 @@ export interface CreatePostRequest {
   isPinned?: boolean;
   isSponsored?: boolean;
   sponsorNote?: string;
+  images?: PostImageItemRequest[];
 }
 
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
 
 export const postsApi = {
+  uploadImage: (file: File) =>
+    apiClient.uploadFile<{ url: string; thumbnailUrl: string }>('/posts/images', file),
   getAll: (category?: import('../types').PostCategory, page = 1, limit = 20) => {
     const params = new URLSearchParams();
     if (category) params.append('category', category);

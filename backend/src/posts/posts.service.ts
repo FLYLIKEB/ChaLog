@@ -9,6 +9,7 @@ import { Repository, DataSource, QueryFailedError, In } from 'typeorm';
 import { Post, PostCategory } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
+import { PostImage } from './entities/post-image.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { UsersService } from '../users/users.service';
@@ -25,6 +26,8 @@ export class PostsService {
     private postLikesRepository: Repository<PostLike>,
     @InjectRepository(PostBookmark)
     private postBookmarksRepository: Repository<PostBookmark>,
+    @InjectRepository(PostImage)
+    private postImagesRepository: Repository<PostImage>,
     @InjectDataSource()
     private dataSource: DataSource,
     private usersService: UsersService,
@@ -41,16 +44,42 @@ export class PostsService {
     const isAdmin = user.role === UserRole.ADMIN;
     const isPinned = isAdmin && (dto.isPinned === true);
 
-    const post = this.postsRepository.create({
-      ...dto,
-      userId,
-      isAnonymous: dto.isAnonymous ?? false,
-      isPinned,
-      isSponsored: dto.isSponsored ?? false,
-      sponsorNote: dto.sponsorNote ?? null,
+    const { images: imagesDto, ...postData } = dto;
+
+    return this.dataSource.transaction(async (manager) => {
+      const post = manager.create(Post, {
+        ...postData,
+        userId,
+        isAnonymous: dto.isAnonymous ?? false,
+        isPinned,
+        isSponsored: dto.isSponsored ?? false,
+        sponsorNote: dto.sponsorNote ?? null,
+      });
+      const saved = await manager.save(Post, post);
+
+      if (imagesDto?.length) {
+        const postImages = imagesDto.map((img, idx) =>
+          manager.create(PostImage, {
+            postId: saved.id,
+            url: img.url,
+            thumbnailUrl: img.thumbnailUrl ?? null,
+            caption: img.caption?.trim() || null,
+            sortOrder: idx,
+          }),
+        );
+        await manager.save(PostImage, postImages);
+      }
+
+      const createdPost = await manager.findOne(Post, {
+        where: { id: saved.id },
+        relations: ['user', 'images'],
+      });
+      if (!createdPost) {
+        throw new NotFoundException('게시글을 찾을 수 없습니다.');
+      }
+      const enriched = await this.enrichPostsWithStats([createdPost], userId);
+      return enriched[0];
     });
-    const saved = await this.postsRepository.save(post);
-    return this.findOne(saved.id, userId);
   }
 
   async findAll(
@@ -63,6 +92,7 @@ export class PostsService {
     const qb = this.postsRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
+      .leftJoinAndSelect('post.images', 'postImages')
       .orderBy('post.isPinned', 'DESC')
       .addOrderBy('post.createdAt', 'DESC')
       .skip(skip)
@@ -79,7 +109,7 @@ export class PostsService {
   async findOne(id: number, currentUserId?: number): Promise<any> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'images'],
     });
     if (!post) {
       throw new NotFoundException('게시글을 찾을 수 없습니다.');
@@ -93,22 +123,51 @@ export class PostsService {
   }
 
   async update(id: number, userId: number, dto: UpdatePostDto): Promise<any> {
-    const post = await this.postsRepository.findOne({ where: { id } });
-    if (!post) {
-      throw new NotFoundException('게시글을 찾을 수 없습니다.');
-    }
-    if (post.userId !== userId) {
-      throw new ForbiddenException('이 게시글을 수정할 권한이 없습니다.');
-    }
     const user = await this.usersService.findOne(userId);
     const isAdmin = user?.role === UserRole.ADMIN;
     const updateDto = { ...dto };
     if (!isAdmin && 'isPinned' in dto) {
       delete (updateDto as any).isPinned;
     }
-    Object.assign(post, updateDto);
-    await this.postsRepository.save(post);
-    return this.findOne(id, userId);
+    const { images: imagesDto, ...restDto } = updateDto;
+
+    return this.dataSource.transaction(async (manager) => {
+      const post = await manager.findOne(Post, { where: { id } });
+      if (!post) {
+        throw new NotFoundException('게시글을 찾을 수 없습니다.');
+      }
+      if (post.userId !== userId) {
+        throw new ForbiddenException('이 게시글을 수정할 권한이 없습니다.');
+      }
+      Object.assign(post, restDto);
+      await manager.save(Post, post);
+
+      if (imagesDto !== undefined) {
+        await manager.delete(PostImage, { postId: id });
+        if (imagesDto?.length) {
+          const postImages = imagesDto.map((img, idx) =>
+            manager.create(PostImage, {
+              postId: id,
+              url: img.url,
+              thumbnailUrl: img.thumbnailUrl ?? null,
+              caption: img.caption?.trim() || null,
+              sortOrder: idx,
+            }),
+          );
+          await manager.save(PostImage, postImages);
+        }
+      }
+
+      const updatedPost = await manager.findOne(Post, {
+        where: { id },
+        relations: ['user', 'images'],
+      });
+      if (!updatedPost) {
+        throw new NotFoundException('게시글을 찾을 수 없습니다.');
+      }
+      const enriched = await this.enrichPostsWithStats([updatedPost], userId);
+      return enriched[0];
+    });
   }
 
   async remove(id: number, userId: number): Promise<void> {
@@ -221,11 +280,17 @@ export class PostsService {
       userBookmarkedIds = new Set(bookmarks.map((b) => b.postId));
     }
 
-    return posts.map((post) => ({
-      ...post,
-      likeCount: likeCountMap.get(post.id) ?? 0,
-      isLiked: userLikedIds.has(post.id),
-      isBookmarked: userBookmarkedIds.has(post.id),
-    }));
+    return posts.map((post) => {
+      const result: any = {
+        ...post,
+        likeCount: likeCountMap.get(post.id) ?? 0,
+        isLiked: userLikedIds.has(post.id),
+        isBookmarked: userBookmarkedIds.has(post.id),
+      };
+      if (result.images?.length) {
+        result.images = [...result.images].sort((a: PostImage, b: PostImage) => a.sortOrder - b.sortOrder);
+      }
+      return result;
+    });
   }
 }
