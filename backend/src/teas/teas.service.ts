@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
@@ -27,12 +27,36 @@ export class TeasService {
   ) {}
 
   async create(createTeaDto: CreateTeaDto): Promise<Tea> {
+    let sellerId: number | null = null;
+    if (createTeaDto.sellerId != null) {
+      sellerId = createTeaDto.sellerId;
+    } else if (createTeaDto.seller?.trim()) {
+      const resolved = await this.createSeller({
+        name: createTeaDto.seller.trim(),
+      });
+      sellerId = resolved.id;
+    }
+    const { seller, sellerId: _sid, ...dtoRest } = createTeaDto;
     const tea = this.teasRepository.create({
-      ...createTeaDto,
+      ...dtoRest,
+      seller: sellerId != null ? ({ id: sellerId } as Seller) : null,
       averageRating: 0,
       reviewCount: 0,
     });
-    return await this.teasRepository.save(tea);
+    try {
+      const saved = await this.teasRepository.save(tea);
+      return this.teasRepository.findOneOrFail({
+        where: { id: saved.id },
+        relations: ['seller'],
+      });
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
   }
 
   async update(id: number, dto: UpdateTeaDto): Promise<Tea> {
@@ -40,18 +64,45 @@ export class TeasService {
     if (!tea) {
       throw new NotFoundException('차를 찾을 수 없습니다.');
     }
-    Object.assign(tea, dto);
-    return await this.teasRepository.save(tea);
+    const { sellerId, seller, ...rest } = dto;
+    Object.assign(tea, rest);
+    if ('sellerId' in dto) {
+      tea.seller =
+        dto.sellerId != null ? ({ id: dto.sellerId } as Seller) : null;
+    } else if ('seller' in dto) {
+      if (dto.seller?.trim()) {
+        const resolved = await this.createSeller({ name: dto.seller.trim() });
+        tea.seller = resolved;
+      } else {
+        tea.seller = null;
+      }
+    }
+    try {
+      await this.teasRepository.save(tea);
+      return this.teasRepository.findOneOrFail({
+        where: { id },
+        relations: ['seller'],
+      });
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
   }
 
   async findAll(): Promise<Tea[]> {
     return await this.teasRepository.find({
+      relations: ['seller'],
       order: { createdAt: 'DESC' },
     });
   }
 
   async findPopularTeas(limit = 10): Promise<Tea[]> {
     return this.teasRepository.find({
+      relations: ['seller'],
       order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
       take: Math.min(Math.max(1, limit), 50),
     });
@@ -59,6 +110,7 @@ export class TeasService {
 
   async findNewTeas(limit = 10): Promise<Tea[]> {
     return this.teasRepository.find({
+      relations: ['seller'],
       order: { createdAt: 'DESC', id: 'ASC' },
       take: Math.min(Math.max(1, limit), 50),
     });
@@ -98,30 +150,6 @@ export class TeasService {
         return await this.sellerRepository.save(existing);
       }
       return existing;
-    }
-    const fromTeas = await this.dataSource.query(
-      `SELECT 1 FROM teas WHERE seller = ? LIMIT 1`,
-      [trimmed],
-    );
-    if (fromTeas.length > 0) {
-      const seller = this.sellerRepository.create({
-        name: trimmed,
-        address: dto.address?.trim() || null,
-        mapUrl: dto.mapUrl?.trim() || null,
-        websiteUrl: dto.websiteUrl?.trim() || null,
-        phone: dto.phone?.trim() || null,
-        description: dto.description?.trim() || null,
-        businessHours: dto.businessHours?.trim() || null,
-      });
-      try {
-        return await this.sellerRepository.save(seller);
-      } catch (err: unknown) {
-        if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
-          const found = await this.sellerRepository.findOne({ where: { name: trimmed } });
-          if (found) return found;
-        }
-        throw err;
-      }
     }
     try {
       const seller = this.sellerRepository.create({
@@ -177,14 +205,15 @@ export class TeasService {
   }
 
   async findSellers(): Promise<{ name: string; teaCount: number }[]> {
-    const rows: { seller: string; teaCount: string }[] = await this.dataSource.query(
-      `SELECT seller AS seller, COUNT(*) AS teaCount
-       FROM teas
-       WHERE seller IS NOT NULL AND seller != ''
-       GROUP BY seller
+    const rows: { name: string; teaCount: string }[] = await this.dataSource.query(
+      `SELECT s.name AS name, COUNT(*) AS teaCount
+       FROM teas t
+       JOIN sellers s ON t.sellerId = s.id
+       WHERE t.sellerId IS NOT NULL
+       GROUP BY s.id, s.name
        ORDER BY teaCount DESC`,
     );
-    const fromTeas = rows.map((r) => ({ name: r.seller, teaCount: Number(r.teaCount) }));
+    const fromTeas = rows.map((r) => ({ name: r.name, teaCount: Number(r.teaCount) }));
     try {
       const sellerRows: { name: string }[] = await this.dataSource.query(
         `SELECT name FROM sellers`,
@@ -200,16 +229,17 @@ export class TeasService {
   }
 
   async findSellersByQuery(query: string): Promise<{ name: string; teaCount: number }[]> {
-    const rows: { seller: string; teaCount: string }[] = await this.dataSource.query(
-      `SELECT seller AS seller, COUNT(*) AS teaCount
-       FROM teas
-       WHERE seller IS NOT NULL AND seller != '' AND seller LIKE ?
-       GROUP BY seller
+    const rows: { name: string; teaCount: string }[] = await this.dataSource.query(
+      `SELECT s.name AS name, COUNT(*) AS teaCount
+       FROM teas t
+       JOIN sellers s ON t.sellerId = s.id
+       WHERE t.sellerId IS NOT NULL AND s.name LIKE ?
+       GROUP BY s.id, s.name
        ORDER BY teaCount DESC
        LIMIT 20`,
       [`%${query}%`],
     );
-    const fromTeas = rows.map((r) => ({ name: r.seller, teaCount: Number(r.teaCount) }));
+    const fromTeas = rows.map((r) => ({ name: r.name, teaCount: Number(r.teaCount) }));
     try {
       const sellerRows: { name: string }[] = await this.dataSource.query(
         `SELECT name FROM sellers WHERE name LIKE ?`,
@@ -226,8 +256,13 @@ export class TeasService {
   }
 
   async findBySeller(sellerName: string): Promise<Tea[]> {
+    const seller = await this.sellerRepository.findOne({
+      where: { name: sellerName },
+    });
+    if (!seller) return [];
     return this.teasRepository.find({
-      where: { seller: sellerName },
+      where: { seller: { id: seller.id } },
+      relations: ['seller'],
       order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
     });
   }
@@ -246,6 +281,7 @@ export class TeasService {
           const types = preference.preferredTeaTypes;
           const popularByType = await this.teasRepository
             .createQueryBuilder('tea')
+            .leftJoinAndSelect('tea.seller', 'seller')
             .where('tea.type IN (:...types)', { types })
             .orderBy('tea.reviewCount', 'DESC')
             .addOrderBy('tea.averageRating', 'DESC')
@@ -258,6 +294,7 @@ export class TeasService {
           const ids = popularByType.map((t) => t.id);
           const additional = await this.teasRepository
             .createQueryBuilder('tea')
+            .leftJoinAndSelect('tea.seller', 'seller')
             .where('tea.id NOT IN (:...ids)', { ids: ids.length ? ids : [0] })
             .orderBy('tea.reviewCount', 'DESC')
             .take(remaining)
@@ -298,7 +335,7 @@ export class TeasService {
   async findOne(id: number): Promise<Tea> {
     const tea = await this.teasRepository.findOne({
       where: { id },
-      relations: ['notes'],
+      relations: ['notes', 'seller'],
     });
     if (!tea) {
       throw new NotFoundException('차를 찾을 수 없습니다.');
@@ -309,9 +346,10 @@ export class TeasService {
   async search(query: string): Promise<Tea[]> {
     return await this.teasRepository
       .createQueryBuilder('tea')
+      .leftJoinAndSelect('tea.seller', 'seller')
       .where('tea.name LIKE :query', { query: `%${query}%` })
       .orWhere('tea.type LIKE :query', { query: `%${query}%` })
-      .orWhere('tea.seller LIKE :query', { query: `%${query}%` })
+      .orWhere('seller.name LIKE :query', { query: `%${query}%` })
       .orderBy('tea.createdAt', 'DESC')
       .getMany();
   }
@@ -323,12 +361,14 @@ export class TeasService {
     sort?: 'popular' | 'new' | 'rating';
     limit?: number;
   }): Promise<Tea[]> {
-    const qb = this.teasRepository.createQueryBuilder('tea');
+    const qb = this.teasRepository
+      .createQueryBuilder('tea')
+      .leftJoinAndSelect('tea.seller', 'seller');
 
     if (params.q?.trim()) {
       const query = `%${params.q.trim()}%`;
       qb.andWhere(
-        '(tea.name LIKE :query OR tea.type LIKE :query OR tea.seller LIKE :query)',
+        '(tea.name LIKE :query OR tea.type LIKE :query OR seller.name LIKE :query)',
         { query },
       );
     }
@@ -439,7 +479,8 @@ export class TeasService {
       name: string;
       year: number | null;
       type: string;
-      seller: string | null;
+      sellerId: number | null;
+      sellerName: string | null;
       origin: string | null;
       price: number | null;
       weight: number | null;
@@ -448,9 +489,11 @@ export class TeasService {
       createdAt: Date;
       updatedAt: Date;
     }> = await this.dataSource.query(
-      `SELECT tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.price, tea.weight,
+      `SELECT tea.id, tea.name, tea.year, tea.type, tea.sellerId, s.name AS sellerName,
+              tea.origin, tea.price, tea.weight,
               tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
        FROM teas tea
+       LEFT JOIN sellers s ON tea.sellerId = s.id
        JOIN notes n ON n.teaId = tea.id AND n.isPublic = 1
        LEFT JOIN (
          SELECT noteId, COUNT(*) AS like_count
@@ -458,7 +501,7 @@ export class TeasService {
          GROUP BY noteId
        ) lc ON lc.noteId = n.id
        WHERE n.createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
-       GROUP BY tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.price, tea.weight,
+       GROUP BY tea.id, tea.name, tea.year, tea.type, tea.sellerId, s.name, tea.origin, tea.price, tea.weight,
                 tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
        ORDER BY SUM((1 + COALESCE(lc.like_count, 0)) * EXP(-? * DATEDIFF(NOW(), n.createdAt))) DESC
        LIMIT 10`,
@@ -466,9 +509,18 @@ export class TeasService {
     );
 
     const result = rows.map((r) => ({
-      ...r,
+      id: r.id,
+      name: r.name,
+      year: r.year,
+      type: r.type,
+      origin: r.origin,
+      price: r.price,
+      weight: r.weight,
       averageRating: Number(r.averageRating),
       reviewCount: Number(r.reviewCount),
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      seller: r.sellerName ?? null,
     })) as Tea[];
     await this.cacheManager.set(cacheKey, result, 600000); // 10분 TTL
     return result;
@@ -483,6 +535,7 @@ export class TeasService {
 
     return this.teasRepository
       .createQueryBuilder('tea')
+      .leftJoinAndSelect('tea.seller', 'seller')
       .where('tea.type = :type', { type: tea.type })
       .andWhere('tea.id != :id', { id: teaId })
       .andWhere('tea.averageRating BETWEEN :lower AND :upper', { lower, upper })
@@ -492,6 +545,83 @@ export class TeasService {
       .setParameter('rating', rating)
       .limit(4)
       .getMany();
+  }
+
+  async findTeasByTags(params: {
+    tags: string[];
+    sort?: 'match' | 'popular' | 'recent';
+    limit?: number;
+    excludeTeaId?: number;
+  }): Promise<Tea[]> {
+    const tags = params.tags?.filter((t) => t?.trim()).map((t) => t.trim()) ?? [];
+    if (tags.length === 0) return [];
+
+    const sortType = params.sort ?? 'match';
+    const take = Math.min(Math.max(1, params.limit ?? 50), 100);
+
+    const placeholders = tags.map(() => '?').join(',');
+    const args: (string | number)[] = [...tags];
+    if (params.excludeTeaId != null) {
+      args.push(params.excludeTeaId);
+    }
+    args.push(take);
+
+    const orderClause =
+      sortType === 'match'
+        ? 'ORDER BY COUNT(DISTINCT t.id) DESC, tea.reviewCount DESC, tea.averageRating DESC, tea.id ASC'
+        : sortType === 'popular'
+          ? 'ORDER BY tea.reviewCount DESC, tea.averageRating DESC, tea.id ASC'
+          : 'ORDER BY MAX(n.createdAt) DESC, tea.id ASC';
+
+    const excludeClause = params.excludeTeaId != null ? 'AND tea.id != ?' : '';
+
+    const rows = await this.dataSource.query(
+      `SELECT tea.id, tea.name, tea.year, tea.type, tea.sellerId, s.name AS sellerName,
+              tea.origin, tea.price, tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
+       FROM teas tea
+       LEFT JOIN sellers s ON tea.sellerId = s.id
+       JOIN notes n ON n.teaId = tea.id AND n.isPublic = 1
+       JOIN note_tags nt ON nt.noteId = n.id
+       JOIN tags t ON t.id = nt.tagId AND t.name IN (${placeholders})
+       WHERE 1=1 ${excludeClause}
+       GROUP BY tea.id, tea.name, tea.year, tea.type, tea.sellerId, s.name, tea.origin, tea.price,
+                tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
+       ${orderClause}
+       LIMIT ?`,
+      args,
+    );
+
+    return rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      year: r.year,
+      type: r.type,
+      origin: r.origin,
+      price: r.price,
+      averageRating: Number(r.averageRating),
+      reviewCount: Number(r.reviewCount),
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      seller: r.sellerName ?? null,
+    })) as Tea[];
+  }
+
+  async getSimilarTeasByTags(teaId: number, limit = 6): Promise<Tea[]> {
+    await this.assertTeaExists(teaId);
+
+    const { tags } = await this.getPopularTags(teaId);
+    if (tags.length === 0) {
+      return this.getSimilarTeas(teaId).then((arr) => arr.slice(0, limit));
+    }
+
+    const tagNames = tags.map((t) => t.name);
+    const result = await this.findTeasByTags({
+      tags: tagNames,
+      sort: 'match',
+      limit: Math.min(Math.max(1, limit), 20),
+      excludeTeaId: teaId,
+    });
+    return result;
   }
 
   private async assertTeaExists(teaId: number): Promise<Tea> {

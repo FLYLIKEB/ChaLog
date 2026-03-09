@@ -108,6 +108,7 @@ export class TestHelper {
 
   /**
    * 테스트 차 생성
+   * seller(문자열)가 주어지면 먼저 seller를 생성/조회하여 sellerId로 차 생성
    */
   async createTea(
     userToken: string,
@@ -116,14 +117,31 @@ export class TestHelper {
       year?: number;
       type: string;
       seller?: string;
+      sellerId?: number;
       origin?: string;
       weight?: number;
     },
   ): Promise<TestTea> {
+    let payload: Record<string, unknown> = {
+      name: teaData.name,
+      year: teaData.year,
+      type: teaData.type,
+      origin: teaData.origin,
+    };
+    if (teaData.sellerId != null) {
+      payload.sellerId = teaData.sellerId;
+    } else if (teaData.seller) {
+      const sellerRes = await request(this.app.getHttpServer())
+        .post('/teas/sellers')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ name: teaData.seller })
+        .expect(201);
+      payload.sellerId = sellerRes.body.id;
+    }
     const response = await request(this.app.getHttpServer())
       .post('/teas')
       .set('Authorization', `Bearer ${userToken}`)
-      .send(teaData)
+      .send(payload)
       .expect(201);
 
     return {

@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../../components/ui/dialog';
-import { Loader2, Trash2, Pencil, Merge, Plus } from 'lucide-react';
+import { Loader2, Trash2, Pencil, Merge, Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'];
@@ -35,7 +35,24 @@ export function AdminMaster() {
   });
   const [creating, setCreating] = useState({ tea: false, seller: false, tag: false });
   const [newTagName, setNewTagName] = useState('');
+  const [detailOpen, setDetailOpen] = useState<{ type: 'tea' | 'seller' | 'tag'; id: number } | null>(null);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailSaving, setDetailSaving] = useState(false);
   const requestIdRef = useRef(0);
+
+  useEffect(() => {
+    if (!detailOpen) return;
+    setDetailLoading(true);
+    setDetailData(null);
+    if (detailOpen.type === 'tea') {
+      adminApi.getTeaDetail(detailOpen.id).then(setDetailData).finally(() => setDetailLoading(false));
+    } else if (detailOpen.type === 'seller') {
+      adminApi.getSellerDetail(detailOpen.id).then(setDetailData).finally(() => setDetailLoading(false));
+    } else {
+      adminApi.getTagDetail(detailOpen.id).then(setDetailData).finally(() => setDetailLoading(false));
+    }
+  }, [detailOpen]);
 
   useEffect(() => {
     setLoading(true);
@@ -126,6 +143,57 @@ export function AdminMaster() {
       adminApi.getTags({ search: search || undefined }).then(setTags);
     } catch (e: any) {
       toast.error(e?.message || '실패');
+    }
+  };
+
+  const handleSaveDetail = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!detailOpen || !detailData || detailSaving) return;
+    const form = e.currentTarget;
+    try {
+      setDetailSaving(true);
+      if (detailOpen.type === 'tea') {
+        const dto: Record<string, unknown> = {
+          name: (form.elements.namedItem('dtName') as HTMLInputElement)?.value?.trim(),
+          year: (() => {
+            const v = (form.elements.namedItem('dtYear') as HTMLInputElement)?.value?.trim();
+            return v === '' ? null : parseInt(v, 10);
+          })(),
+          type: (form.elements.namedItem('dtType') as HTMLSelectElement)?.value,
+          seller: (form.elements.namedItem('dtSeller') as HTMLInputElement)?.value?.trim() || null,
+          origin: (form.elements.namedItem('dtOrigin') as HTMLInputElement)?.value?.trim() || null,
+          price: (() => {
+            const v = (form.elements.namedItem('dtPrice') as HTMLInputElement)?.value?.trim();
+            return v === '' ? null : parseInt(v, 10);
+          })(),
+        };
+        await adminApi.updateTea(detailOpen.id, dto);
+        adminApi.getTeas({ search: search || undefined }).then(setTeas);
+      } else if (detailOpen.type === 'seller') {
+        const dto: Record<string, unknown> = {
+          name: (form.elements.namedItem('dtName') as HTMLInputElement)?.value?.trim(),
+          address: (form.elements.namedItem('dtAddress') as HTMLInputElement)?.value?.trim() || null,
+          mapUrl: (form.elements.namedItem('dtMapUrl') as HTMLInputElement)?.value?.trim() || null,
+          websiteUrl: (form.elements.namedItem('dtWebsiteUrl') as HTMLInputElement)?.value?.trim() || null,
+          phone: (form.elements.namedItem('dtPhone') as HTMLInputElement)?.value?.trim() || null,
+          description: (form.elements.namedItem('dtDescription') as HTMLTextAreaElement)?.value?.trim() || null,
+          businessHours: (form.elements.namedItem('dtBusinessHours') as HTMLInputElement)?.value?.trim() || null,
+        };
+        await adminApi.updateSeller(detailOpen.id, dto);
+        adminApi.getSellers({ search: search || undefined }).then(setSellers);
+      } else {
+        const name = (form.elements.namedItem('dtName') as HTMLInputElement)?.value?.trim();
+        if (name) {
+          await adminApi.updateTag(detailOpen.id, { name });
+          adminApi.getTags({ search: search || undefined }).then(setTags);
+        }
+      }
+      toast.success('수정했습니다.');
+      setDetailOpen(null);
+    } catch (err: any) {
+      toast.error(err?.message || '실패');
+    } finally {
+      setDetailSaving(false);
     }
   };
 
@@ -303,7 +371,11 @@ export function AdminMaster() {
                   <th className="p-3 text-left text-sm font-medium">ID</th>
                   <th className="p-3 text-left text-sm font-medium">이름</th>
                   <th className="p-3 text-left text-sm font-medium">종류</th>
+                  <th className="p-3 text-left text-sm font-medium">연도</th>
                   <th className="p-3 text-left text-sm font-medium">판매처</th>
+                  <th className="p-3 text-left text-sm font-medium">원산지</th>
+                  <th className="p-3 text-left text-sm font-medium">가격</th>
+                  <th className="p-3 text-left text-sm font-medium">평점/리뷰</th>
                   <th className="p-3 text-left text-sm font-medium"></th>
                 </tr>
               </thead>
@@ -340,10 +412,17 @@ export function AdminMaster() {
                       )}
                     </td>
                     <td className="p-3 text-sm">{t.type}</td>
+                    <td className="p-3 text-sm">{t.year ?? '-'}</td>
                     <td className="p-3 text-sm">{t.seller || '-'}</td>
+                    <td className="p-3 text-sm">{t.origin || '-'}</td>
+                    <td className="p-3 text-sm">{t.price != null ? t.price.toLocaleString() : '-'}</td>
+                    <td className="p-3 text-sm">{t.averageRating ?? 0} / {t.reviewCount ?? 0}</td>
                     <td className="p-3 flex gap-1">
                       {!(editing?.type === 'tea' && editing?.id === t.id) && (
                         <>
+                          <Button size="sm" variant="ghost" onClick={() => setDetailOpen({ type: 'tea', id: t.id })} aria-label="상세" title="전체 정보 보기/수정">
+                            <FileText className="w-4 h-4" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'tea', id: t.id })} aria-label="차 수정" title="차 수정">
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -369,6 +448,8 @@ export function AdminMaster() {
                 <tr className="bg-muted/50">
                   <th className="p-3 text-left text-sm font-medium">ID</th>
                   <th className="p-3 text-left text-sm font-medium">이름</th>
+                  <th className="p-3 text-left text-sm font-medium">주소</th>
+                  <th className="p-3 text-left text-sm font-medium">전화</th>
                   <th className="p-3 text-left text-sm font-medium">차 수</th>
                   <th className="p-3 text-left text-sm font-medium"></th>
                 </tr>
@@ -410,10 +491,15 @@ export function AdminMaster() {
                         s.name
                       )}
                     </td>
+                    <td className="p-3 text-sm max-w-[120px] truncate" title={s.address ?? ''}>{s.address || '-'}</td>
+                    <td className="p-3 text-sm">{s.phone || '-'}</td>
                     <td className="p-3 text-sm">{s.teaCount ?? 0}</td>
                     <td className="p-3 flex gap-1">
                       {!(editing?.type === 'seller' && editing?.id === s.id) && (
                         <>
+                          <Button size="sm" variant="ghost" onClick={() => setDetailOpen({ type: 'seller', id: s.id })} aria-label="상세" title="전체 정보 보기/수정">
+                            <FileText className="w-4 h-4" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'seller', id: s.id })} aria-label="찻집 수정" title="찻집 수정">
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -440,6 +526,7 @@ export function AdminMaster() {
                   <th className="p-3 text-left text-sm font-medium">ID</th>
                   <th className="p-3 text-left text-sm font-medium">이름</th>
                   <th className="p-3 text-left text-sm font-medium">사용 수</th>
+                  <th className="p-3 text-left text-sm font-medium">생성일</th>
                   <th className="p-3 text-left text-sm font-medium"></th>
                 </tr>
               </thead>
@@ -466,9 +553,13 @@ export function AdminMaster() {
                       )}
                     </td>
                     <td className="p-3 text-sm">{t.usageCount ?? 0}</td>
+                    <td className="p-3 text-sm">{t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 flex gap-1">
                       {!(editing?.type === 'tag' && editing?.id === t.id) && (
                         <>
+                          <Button size="sm" variant="ghost" onClick={() => setDetailOpen({ type: 'tag', id: t.id })} aria-label="상세" title="전체 정보 보기/수정">
+                            <FileText className="w-4 h-4" />
+                          </Button>
                           <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'tag', id: t.id, name: t.name })} aria-label="태그 수정" title="태그 수정">
                             <Pencil className="w-4 h-4" />
                           </Button>
@@ -496,6 +587,69 @@ export function AdminMaster() {
           </div>
         )
       )}
+
+      {/* Detail Modal - 전체 정보 보기/수정 */}
+      <Dialog open={!!detailOpen} onOpenChange={(open) => !open && setDetailOpen(null)}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {detailOpen?.type === 'tea' && '차 상세'}
+              {detailOpen?.type === 'seller' && '찻집 상세'}
+              {detailOpen?.type === 'tag' && '태그 상세'}
+            </DialogTitle>
+          </DialogHeader>
+          {detailLoading ? (
+            <div className="py-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>
+          ) : detailData ? (
+            <form onSubmit={handleSaveDetail} className="space-y-4">
+              {detailOpen?.type === 'tea' && (
+                <>
+                  <div><Label>ID</Label><p className="text-sm text-muted-foreground">{detailData.id}</p></div>
+                  <div><Label>이름 *</Label><Input name="dtName" defaultValue={detailData.name} required /></div>
+                  <div><Label>연도</Label><Input name="dtYear" type="number" defaultValue={detailData.year ?? ''} placeholder="2024" /></div>
+                  <div><Label>종류 *</Label>
+                    <select name="dtType" defaultValue={detailData.type} required className="w-full border rounded px-3 py-2 bg-background">
+                      {TEA_TYPES.map((ty) => <option key={ty} value={ty}>{ty}</option>)}
+                    </select>
+                  </div>
+                  <div><Label>판매처</Label><Input name="dtSeller" defaultValue={detailData.seller ?? ''} placeholder="찻집 이름" /></div>
+                  <div><Label>원산지</Label><Input name="dtOrigin" defaultValue={detailData.origin ?? ''} /></div>
+                  <div><Label>가격</Label><Input name="dtPrice" type="number" defaultValue={detailData.price ?? ''} /></div>
+                  <div><Label>평균 평점 / 리뷰 수</Label><p className="text-sm">{detailData.averageRating ?? 0} / {detailData.reviewCount ?? 0}</p></div>
+                  <div><Label>차록 수</Label><p className="text-sm">{detailData.noteCount ?? 0}</p></div>
+                  <div><Label>생성/수정일</Label><p className="text-sm">{detailData.createdAt ? new Date(detailData.createdAt).toLocaleString() : '-'} / {detailData.updatedAt ? new Date(detailData.updatedAt).toLocaleString() : '-'}</p></div>
+                </>
+              )}
+              {detailOpen?.type === 'seller' && (
+                <>
+                  <div><Label>ID</Label><p className="text-sm text-muted-foreground">{detailData.id}</p></div>
+                  <div><Label>이름 *</Label><Input name="dtName" defaultValue={detailData.name} required /></div>
+                  <div><Label>주소</Label><Input name="dtAddress" defaultValue={detailData.address ?? ''} /></div>
+                  <div><Label>지도 URL</Label><Input name="dtMapUrl" defaultValue={detailData.mapUrl ?? ''} /></div>
+                  <div><Label>웹사이트</Label><Input name="dtWebsiteUrl" defaultValue={detailData.websiteUrl ?? ''} /></div>
+                  <div><Label>전화</Label><Input name="dtPhone" defaultValue={detailData.phone ?? ''} /></div>
+                  <div><Label>설명</Label><textarea name="dtDescription" defaultValue={detailData.description ?? ''} rows={3} className="w-full border rounded px-3 py-2 bg-background" /></div>
+                  <div><Label>영업시간</Label><Input name="dtBusinessHours" defaultValue={detailData.businessHours ?? ''} /></div>
+                  <div><Label>차 수</Label><p className="text-sm">{detailData.teaCount ?? 0}</p></div>
+                  <div><Label>생성일</Label><p className="text-sm">{detailData.createdAt ? new Date(detailData.createdAt).toLocaleString() : '-'}</p></div>
+                </>
+              )}
+              {detailOpen?.type === 'tag' && (
+                <>
+                  <div><Label>ID</Label><p className="text-sm text-muted-foreground">{detailData.id}</p></div>
+                  <div><Label>이름 *</Label><Input name="dtName" defaultValue={detailData.name} required /></div>
+                  <div><Label>사용 수</Label><p className="text-sm">{detailData.usageCount ?? 0}</p></div>
+                  <div><Label>생성/수정일</Label><p className="text-sm">{detailData.createdAt ? new Date(detailData.createdAt).toLocaleString() : '-'} / {detailData.updatedAt ? new Date(detailData.updatedAt).toLocaleString() : '-'}</p></div>
+                </>
+              )}
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setDetailOpen(null)}>닫기</Button>
+                <Button type="submit" disabled={detailSaving}>{detailSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}저장</Button>
+              </DialogFooter>
+            </form>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       {/* Create Tea Modal */}
       <Dialog open={createOpen.tea} onOpenChange={(open) => setCreateOpen((o) => ({ ...o, tea: open }))}>
@@ -571,6 +725,10 @@ export function AdminMaster() {
             <div>
               <Label>전화</Label>
               <Input name="sellerPhone" placeholder="전화번호" />
+            </div>
+            <div>
+              <Label>설명</Label>
+              <textarea name="sellerDescription" rows={3} className="w-full border rounded px-3 py-2 bg-background" placeholder="찻집 소개" />
             </div>
             <div>
               <Label>영업시간</Label>

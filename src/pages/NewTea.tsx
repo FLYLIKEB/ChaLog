@@ -173,7 +173,9 @@ export function NewTea() {
       }
     } catch (error) {
       logger.error('Failed to create tea:', error);
-      const errorMessage = error instanceof Error ? error.message : '차 등록에 실패했습니다.';
+      const errorMessage =
+        (error && typeof error === 'object' && 'message' in error && (error as { message?: string }).message) ||
+        (error instanceof Error ? error.message : '차 등록에 실패했습니다.');
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

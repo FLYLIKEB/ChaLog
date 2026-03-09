@@ -8,13 +8,16 @@ import { Tea } from './entities/tea.entity';
 import { Seller } from './entities/seller.entity';
 import { UsersService } from '../users/users.service';
 
+const mockSeller = (overrides: Partial<Seller> = {}): Seller =>
+  ({ id: 1, name: '차향', ...overrides } as Seller);
+
 const mockTea = (overrides: Partial<Tea> = {}): Tea =>
   ({
     id: 1,
     name: '정산소종',
     type: '홍차',
     year: 2023,
-    seller: '차향',
+    seller: mockSeller(),
     origin: '중국 푸젠',
     price: 15000,
     weight: 50,
@@ -35,12 +38,16 @@ describe('TeasService', () => {
     where: jest.fn().mockReturnThis(),
     andWhere: jest.fn().mockReturnThis(),
     orWhere: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     addOrderBy: jest.fn().mockReturnThis(),
     setParameter: jest.fn().mockReturnThis(),
     limit: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
     getMany: jest.fn(),
+    getManyAndCount: jest.fn(),
   };
 
   const mockTeasRepository = {
@@ -56,10 +63,6 @@ describe('TeasService', () => {
     query: jest.fn(),
   };
 
-  const mockUsersService = {
-    getOnboardingPreference: jest.fn(),
-  };
-
   const mockSellerRepository = {
     findOne: jest.fn(),
     find: jest.fn(),
@@ -71,6 +74,10 @@ describe('TeasService', () => {
     get: jest.fn(),
     set: jest.fn(),
     del: jest.fn(),
+  };
+
+  const mockUsersService = {
+    getOnboardingPreference: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -306,10 +313,10 @@ describe('TeasService', () => {
     it('seller별 teaCount를 집계하여 반환해야 한다', async () => {
       mockDataSource.query
         .mockResolvedValueOnce([
-          { seller: '차향', teaCount: '5' },
-          { seller: '티하우스', teaCount: '3' },
+          { name: '차향', teaCount: '5' },
+          { name: '티하우스', teaCount: '3' },
         ])
-        .mockResolvedValueOnce([]);
+        .mockRejectedValueOnce(new Error('skip additional'));
 
       const result = await service.findSellers();
 
@@ -317,26 +324,16 @@ describe('TeasService', () => {
       expect(result[0]).toEqual({ name: '차향', teaCount: 5 });
       expect(result[1]).toEqual({ name: '티하우스', teaCount: 3 });
     });
-
-    it('seller가 null이거나 빈 문자열인 행은 제외해야 한다', async () => {
-      mockDataSource.query.mockResolvedValue([]);
-
-      const result = await service.findSellers();
-
-      expect(mockDataSource.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE seller IS NOT NULL AND seller != \'\''),
-      );
-    });
   });
 
   describe('findSellersByQuery', () => {
     it('검색어로 seller를 필터링하여 반환해야 한다', async () => {
       mockDataSource.query
         .mockResolvedValueOnce([
-          { seller: '차향', teaCount: '5' },
-          { seller: '차향몰', teaCount: '2' },
+          { name: '차향', teaCount: '5' },
+          { name: '차향몰', teaCount: '2' },
         ])
-        .mockResolvedValueOnce([]);
+        .mockRejectedValueOnce(new Error('skip additional'));
 
       const result = await service.findSellersByQuery('차');
 
@@ -352,16 +349,18 @@ describe('TeasService', () => {
 
   describe('findBySeller', () => {
     it('해당 seller의 차 목록을 반환해야 한다', async () => {
+      mockSellerRepository.findOne.mockResolvedValue(mockSeller());
       mockTeasRepository.find.mockResolvedValue([
-        mockTea({ id: 1, seller: '차향' }),
-        mockTea({ id: 2, seller: '차향' }),
+        mockTea({ id: 1, seller: mockSeller() }),
+        mockTea({ id: 2, seller: mockSeller() }),
       ]);
 
       const result = await service.findBySeller('차향');
 
       expect(result).toHaveLength(2);
       expect(mockTeasRepository.find).toHaveBeenCalledWith({
-        where: { seller: '차향' },
+        where: { seller: { id: 1 } },
+        relations: ['seller'],
         order: { reviewCount: 'DESC', averageRating: 'DESC', id: 'ASC' },
       });
     });

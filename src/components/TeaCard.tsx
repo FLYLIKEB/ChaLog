@@ -1,7 +1,7 @@
 import React, { type FC } from 'react';
 import { Star } from 'lucide-react';
 import { Tea } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card } from './ui/card';
 
 interface TeaCardProps {
@@ -33,7 +33,15 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
             <p className="text-xs text-muted-foreground mt-0.5">정확한 정보가 아닐 수 있습니다</p>
           )}
           {tea.seller && (
-            <p className="text-sm text-muted-foreground mt-1">{tea.seller}</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              <Link
+                to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-primary hover:underline"
+              >
+                {tea.seller}
+              </Link>
+            </p>
           )}
         </div>
         <div className="flex flex-col items-end gap-1">

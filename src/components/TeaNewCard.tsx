@@ -1,7 +1,7 @@
 import React, { type FC } from 'react';
 import { Star, Sparkles } from 'lucide-react';
 import { Tea } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card } from './ui/card';
 
 interface TeaNewCardProps {
@@ -35,7 +35,15 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
                   {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
                 </span>
               )}
-              {tea.seller && <span className="truncate">{tea.seller}</span>}
+              {tea.seller && (
+                <Link
+                  to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="truncate text-primary hover:underline"
+                >
+                  {tea.seller}
+                </Link>
+              )}
             </div>
             {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (
               <span className="text-xs text-muted-foreground">정확한 정보가 아닐 수 있습니다</span>

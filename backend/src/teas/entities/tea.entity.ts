@@ -1,5 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Note } from '../../notes/entities/note.entity';
+import { Seller } from './seller.entity';
 
 @Entity('teas')
 export class Tea {
@@ -15,8 +25,9 @@ export class Tea {
   @Column()
   type: string;
 
-  @Column({ nullable: true })
-  seller: string;
+  @ManyToOne(() => Seller, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'sellerId' })
+  seller: Seller | null;
 
   @Column({ nullable: true })
   origin: string;

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
@@ -28,6 +29,7 @@ import { PostsService } from '../posts/posts.service';
 import { CommentsService } from '../comments/comments.service';
 import { FollowsService } from '../follows/follows.service';
 import { UsersService } from '../users/users.service';
+import { TeasService } from '../teas/teas.service';
 
 @Injectable()
 export class AdminService {
@@ -70,6 +72,7 @@ export class AdminService {
     private commentsService: CommentsService,
     private followsService: FollowsService,
     private usersService: UsersService,
+    private teasService: TeasService,
   ) {}
 
   async getMetrics() {
@@ -912,11 +915,13 @@ export class AdminService {
     const limit = params.limit ?? 20;
     const skip = (page - 1) * limit;
 
-    const qb = this.teasRepository.createQueryBuilder('tea');
+    const qb = this.teasRepository
+      .createQueryBuilder('tea')
+      .leftJoinAndSelect('tea.seller', 'seller');
     if (params.search?.trim()) {
       const term = `%${params.search.trim()}%`;
       qb.andWhere(
-        '(tea.name LIKE :term OR tea.type LIKE :term OR tea.seller LIKE :term)',
+        '(tea.name LIKE :term OR tea.type LIKE :term OR seller.name LIKE :term)',
         { term },
       );
     }
@@ -924,21 +929,32 @@ export class AdminService {
       qb.andWhere('tea.type = :type', { type: params.type.trim() });
     }
     if (params.seller?.trim()) {
-      qb.andWhere('tea.seller = :seller', { seller: params.seller.trim() });
+      qb.andWhere('seller.name = :seller', { seller: params.seller.trim() });
     }
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
     qb.orderBy(`tea.${sortBy}`, sortOrder);
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
-    return { items, total, page, limit };
+    const mappedItems = items.map((t) => ({
+      ...t,
+      seller: t.seller?.name ?? null,
+    }));
+    return { items: mappedItems, total, page, limit };
   }
 
   async getTeaDetail(teaId: number) {
-    const tea = await this.teasRepository.findOne({ where: { id: teaId } });
+    const tea = await this.teasRepository.findOne({
+      where: { id: teaId },
+      relations: ['seller'],
+    });
     if (!tea) throw new NotFoundException('차를 찾을 수 없습니다.');
     const noteCount = await this.notesRepository.count({ where: { teaId } });
-    return { ...tea, noteCount };
+    return {
+      ...tea,
+      seller: tea.seller?.name ?? null,
+      noteCount,
+    };
   }
 
   async createTea(dto: CreateTeaDto, adminId: number) {
@@ -946,29 +962,89 @@ export class AdminService {
     if (!trimmedName) {
       throw new BadRequestException('차 이름을 입력해주세요.');
     }
+    let sellerId: number | null = null;
+    if (dto.sellerId != null) {
+      sellerId = dto.sellerId;
+    } else if (dto.seller?.trim()) {
+      const resolved = await this.teasService.createSeller({
+        name: dto.seller.trim(),
+      });
+      sellerId = resolved.id;
+    }
     const tea = this.teasRepository.create({
-      ...dto,
       name: trimmedName,
+      year: dto.year,
+      type: dto.type,
+      seller: sellerId != null ? ({ id: sellerId } as Seller) : null,
+      origin: dto.origin,
+      price: dto.price,
       averageRating: 0,
       reviewCount: 0,
     });
-    const saved = await this.teasRepository.save(tea);
+    let saved: Tea;
+    try {
+      saved = await this.teasRepository.save(tea);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
     await this.logAudit(adminId, AuditAction.TEA_CREATE, 'tea', saved.id, undefined, {
       name: saved.name,
       type: saved.type,
     });
-    return saved;
+    const withSeller = await this.teasRepository.findOne({
+      where: { id: saved.id },
+      relations: ['seller'],
+    });
+    return withSeller
+      ? { ...withSeller, seller: withSeller.seller?.name ?? null }
+      : saved;
   }
 
   async updateTea(teaId: number, dto: Record<string, unknown>, adminId: number) {
     const tea = await this.teasRepository.findOne({ where: { id: teaId } });
     if (!tea) throw new NotFoundException('차를 찾을 수 없습니다.');
-    Object.assign(tea, dto);
-    await this.teasRepository.save(tea);
+    const { sellerId, seller, ...rest } = dto;
+    Object.assign(tea, rest);
+    if ('sellerId' in dto) {
+      tea.seller =
+        dto.sellerId != null
+          ? ({ id: dto.sellerId as number } as Seller)
+          : null;
+    } else if ('seller' in dto) {
+      if (typeof dto.seller === 'string' && dto.seller.trim()) {
+        const resolved = await this.teasService.createSeller({
+          name: dto.seller.trim(),
+        });
+        tea.seller = resolved;
+      } else {
+        tea.seller = null;
+      }
+    }
+    try {
+      await this.teasRepository.save(tea);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
     await this.logAudit(adminId, AuditAction.TEA_UPDATE, 'tea', teaId, undefined, {
       updates: Object.keys(dto),
     });
-    return tea;
+    const withSeller = await this.teasRepository.findOne({
+      where: { id: teaId },
+      relations: ['seller'],
+    });
+    return withSeller
+      ? { ...withSeller, seller: withSeller.seller?.name ?? null }
+      : tea;
   }
 
   async deleteTea(teaId: number, adminId: number) {
@@ -1011,14 +1087,13 @@ export class AdminService {
       items.length > 0
         ? await this.teasRepository
             .createQueryBuilder('t')
-            .select('t.seller', 'seller')
+            .innerJoin('t.seller', 's')
+            .select('s.name', 'seller')
             .addSelect('COUNT(*)', 'count')
-            .where('t.seller IN (:...names)', {
+            .where('s.name IN (:...names)', {
               names: items.map((s) => s.name).filter(Boolean),
             })
-            .andWhere('t.seller IS NOT NULL')
-            .andWhere('t.seller != :empty', { empty: '' })
-            .groupBy('t.seller')
+            .groupBy('s.id')
             .getRawMany()
         : [];
     const teaMap = Object.fromEntries(
@@ -1039,9 +1114,11 @@ export class AdminService {
   async getSellerDetail(sellerId: number) {
     const seller = await this.sellersRepository.findOne({ where: { id: sellerId } });
     if (!seller) throw new NotFoundException('찻집을 찾을 수 없습니다.');
-    const teaCount = await this.teasRepository.count({
-      where: { seller: seller.name },
-    });
+    const teaCount = await this.teasRepository
+      .createQueryBuilder('t')
+      .innerJoin('t.seller', 's')
+      .where('s.id = :sellerId', { sellerId: seller.id })
+      .getCount();
     return { ...seller, teaCount };
   }
 
@@ -1093,9 +1170,11 @@ export class AdminService {
   async deleteSeller(sellerId: number, adminId: number) {
     const seller = await this.sellersRepository.findOne({ where: { id: sellerId } });
     if (!seller) throw new NotFoundException('찻집을 찾을 수 없습니다.');
-    const teaCount = await this.teasRepository.count({
-      where: { seller: seller.name },
-    });
+    const teaCount = await this.teasRepository
+      .createQueryBuilder('t')
+      .innerJoin('t.seller', 's')
+      .where('s.id = :sellerId', { sellerId: seller.id })
+      .getCount();
     if (teaCount > 0) {
       throw new BadRequestException(
         `이 찻집을 판매처로 사용하는 차가 ${teaCount}건 있어 삭제할 수 없습니다.`,
@@ -1156,6 +1235,15 @@ export class AdminService {
       page,
       limit,
     };
+  }
+
+  async getTagDetail(tagId: number) {
+    const tag = await this.tagsRepository.findOne({ where: { id: tagId } });
+    if (!tag) throw new NotFoundException('태그를 찾을 수 없습니다.');
+    const usageCount = await this.dataSource
+      .getRepository(NoteTag)
+      .count({ where: { tagId } });
+    return { ...tag, usageCount };
   }
 
   async createTag(dto: CreateTagDto, adminId: number) {

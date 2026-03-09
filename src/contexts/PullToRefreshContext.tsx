@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useRef, useContext } from 'react';
+import React, { createContext, useCallback, useRef, useContext, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { BottomNavSpacer } from '../components/BottomNavSpacer';
@@ -19,6 +19,7 @@ export function useRegisterRefresh() {
 
 export function PullToRefreshProvider({ children }: { children: React.ReactNode }) {
   const refreshCallbackRef = useRef<(() => Promise<void>) | undefined>(undefined);
+  const [isPullDisabled, setIsPullDisabled] = useState(false);
 
   const onRefresh = useCallback(async () => {
     await refreshCallbackRef.current?.();
@@ -30,13 +31,14 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
     isRefreshing,
     isReadyToRefresh,
     refreshMessage,
-  } = usePullToRefresh(onRefresh);
+  } = usePullToRefresh(onRefresh, isPullDisabled);
 
   const registerRefresh = useCallback((callback: (() => Promise<void>) | undefined) => {
     refreshCallbackRef.current = callback;
+    setIsPullDisabled(callback === undefined);
   }, []);
 
-  const showIndicator = pullDistance > 0 || isRefreshing;
+  const showIndicator = !isPullDisabled && (pullDistance > 0 || isRefreshing);
 
   return (
     <PullToRefreshContext.Provider value={registerRefresh}>

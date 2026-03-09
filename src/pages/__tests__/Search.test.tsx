@@ -28,6 +28,11 @@ const mockSellers = [
   { name: '다실A', teaCount: 3 },
 ];
 
+const mockPopularTags = [
+  { name: '꽃향', noteCount: 10 },
+  { name: '단맛', noteCount: 8 },
+];
+
 vi.mock('../../lib/api', () => ({
   teasApi: {
     getAll: vi.fn((query?: string) => {
@@ -43,10 +48,14 @@ vi.mock('../../lib/api', () => ({
       return Promise.resolve(filtered);
     }),
     getWithFilters: vi.fn(() => Promise.resolve(mockTeas)),
+    getByTags: vi.fn(() => Promise.resolve(mockTeas)),
     getPopularRankings: vi.fn(() => Promise.resolve(mockTeas)),
     getNewRankings: vi.fn(() => Promise.resolve(mockTeas)),
     getCuration: vi.fn(() => Promise.resolve(mockTeas)),
     getSellers: vi.fn(() => Promise.resolve({ sellers: mockSellers })),
+  },
+  tagsApi: {
+    getPopularTags: vi.fn(() => Promise.resolve(mockPopularTags)),
   },
 }));
 

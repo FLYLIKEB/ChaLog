@@ -1149,6 +1149,22 @@ export const teasApi = {
     apiClient.get<Note[]>(`/teas/${id}/top-reviews`),
   getSimilarTeas: (id: number) =>
     apiClient.get<Tea[]>(`/teas/${id}/similar`),
+  getByTags: (
+    tags: string[],
+    sort?: 'match' | 'popular' | 'recent',
+    limit?: number,
+  ) => {
+    const params = new URLSearchParams();
+    if (tags.length > 0) params.set('tags', tags.join(','));
+    if (sort) params.set('sort', sort);
+    if (limit != null) params.set('limit', String(limit));
+    const query = params.toString();
+    return apiClient.get<Tea[]>(`/teas/by-tags${query ? `?${query}` : ''}`);
+  },
+  getSimilarTeasByTags: (id: number, limit?: number) => {
+    const params = limit != null ? `?limit=${limit}` : '';
+    return apiClient.get<Tea[]>(`/teas/${id}/similar-by-tags${params}`);
+  },
 };
 
 export interface CreateRatingSchemaRequest {
@@ -1510,6 +1526,7 @@ export const adminApi = {
     if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
     return apiClient.get(`/admin/tags?${search.toString()}`);
   },
+  getTagDetail: (id: number) => apiClient.get(`/admin/tags/${id}`),
   createTag: (dto: { name: string }) => apiClient.post('/admin/tags', dto),
   updateTag: (id: number, dto: { name: string }) => apiClient.patch(`/admin/tags/${id}`, dto),
   deleteTag: (id: number) => apiClient.delete(`/admin/tags/${id}`),
