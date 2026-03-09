@@ -15,6 +15,17 @@ import path from 'path';
     build: {
       target: 'esnext',
       outDir: 'dist',
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return;
+            if (id.includes('remark-gfm') || id.includes('react-markdown')) return 'vendor-markdown';
+            if (id.includes('recharts')) return 'vendor-charts';
+            if (id.includes('react-router') || id.includes('react-dom') || id.includes('/react/')) return 'vendor-react';
+            if (id.includes('@radix-ui')) return 'vendor-ui';
+          },
+        },
+      },
     },
     server: {
       port: 5173,

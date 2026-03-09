@@ -214,6 +214,7 @@ export class TeaSessionsService {
       return String(s).replace(/\|/g, '·').replace(/\n/g, ' ');
     };
 
+    const title = '### 다회모드로 작성됨 🔄\n\n';
     const header = '| 탕 | 시간 | 수색 | 향 | 물온도 | 몸반응 | 만족도 | 메모 |';
     const separator = '|:---|:---|:---|:---|:---|:---|:---|:---|';
     const rows = sorted.map((s) => {
@@ -231,6 +232,6 @@ export class TeaSessionsService {
       return '| ' + parts.join(' | ') + ' |';
     });
 
-    return [header, separator, ...rows].join('\n');
+    return title + [header, separator, ...rows].join('\n');
   }
 }

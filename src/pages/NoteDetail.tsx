@@ -308,7 +308,40 @@ export function NoteDetail() {
           </p>
 
           {note.axisValues && note.axisValues.length > 0 && (
-            <RatingVisualization axisValues={note.axisValues} />
+            <div className="space-y-4">
+              {note.schema && (
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-0.5">사용 템플릿</p>
+                  <p className="text-sm font-medium text-foreground">{note.schema.nameKo}</p>
+                  {note.schema.descriptionKo?.trim() && (
+                    <p className="text-xs text-muted-foreground mt-1.5">{note.schema.descriptionKo}</p>
+                  )}
+                </div>
+              )}
+              <RatingVisualization axisValues={note.axisValues} />
+              <details className="group rounded-lg border border-border/60">
+                <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center gap-2">
+                    각 축의 의미
+                    <span className="text-muted-foreground text-xs font-normal">(클릭하여 펼치기)</span>
+                  </span>
+                </summary>
+                <div className="px-3 pb-3 pt-3 space-y-2 border-t border-border/40">
+                  {[...note.axisValues]
+                    .sort((a, b) => (a.axis?.displayOrder ?? 0) - (b.axis?.displayOrder ?? 0))
+                    .map((av) => (
+                      <div key={av.axisId} className="text-sm">
+                        <p className="font-medium text-foreground">{av.axis?.nameKo ?? `축 ${av.axisId}`}</p>
+                        {av.axis?.descriptionKo?.trim() ? (
+                          <p className="text-xs text-muted-foreground mt-0.5">{av.axis.descriptionKo}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground/70 mt-0.5 italic">설명 없음</p>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </details>
+            </div>
           )}
         </section>
 

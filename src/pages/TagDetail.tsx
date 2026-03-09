@@ -279,7 +279,7 @@ export function TagDetail() {
                       )}
                     >
                       {note.teaImageUrl ? (
-                        <img src={note.teaImageUrl} alt={note.teaName} className="w-full h-full object-cover" />
+                        <img src={note.teaImageUrl} alt={note.teaName} className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <Star className="w-6 h-6 text-muted-foreground/40" />
                       )}

@@ -65,7 +65,7 @@ export function SessionSummary() {
         if (list.length > 0) {
           setSchemas(list);
           setPinnedSchemaIds(pinned);
-          setSelectedSchemaId(pinned[0] ?? list[0]?.id ?? null);
+          // 선택사항이므로 기본 선택하지 않음 (사용자가 원하면 선택)
         }
       } catch (error) {
         logger.error('Failed to fetch schemas:', error);
@@ -113,9 +113,10 @@ export function SessionSummary() {
       return;
     }
 
-    const schemaId = selectedSchemaId;
+    // 선택 없으면 첫 번째 기본 스키마 사용 (축 값 없이 탕 기록만으로 발행)
+    const schemaId = selectedSchemaId ?? (pinnedSchemaIds[0] ?? schemas[0]?.id) ?? null;
     if (!schemaId) {
-      toast.error('평가 스키마를 선택해주세요.');
+      toast.error('사용 가능한 템플릿이 없습니다. 관리자에게 문의해주세요.');
       return;
     }
 
@@ -219,7 +220,13 @@ export function SessionSummary() {
 
         {/* 스키마 선택 */}
         <section className="bg-card rounded-lg p-4">
-          <Label className="mb-2 block text-base font-semibold">테이스팅 템플릿</Label>
+          <div className="flex items-center gap-2 mb-2">
+            <Label className="text-base font-semibold">테이스팅 템플릿</Label>
+            <span className="text-xs text-muted-foreground font-normal">(선택사항)</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">
+            템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 선택하지 않아도 탕 기록만으로 발행할 수 있습니다.
+          </p>
           {schemas.length > 0 ? (
             <TemplateSelect
               schemas={schemas}

@@ -1,59 +1,69 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { ThemeProvider } from 'next-themes';
+import { PAGE_BG_GRADIENT } from './constants';
+import { Plus, Loader2 } from 'lucide-react';
+import { Toaster } from './components/ui/sonner';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { FloatingActionButton } from './components/FloatingActionButton';
+import { AdminRouteGuard } from './components/AdminRouteGuard';
+import { AdminLayout } from './components/AdminLayout';
+import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
 function CommunityRedirect() {
   const { pathname } = useLocation();
   return <Navigate to={pathname.replace('/community', '/chadam')} replace />;
 }
-import { ThemeProvider } from 'next-themes';
-import { PAGE_BG_GRADIENT } from './constants';
-import { Plus } from 'lucide-react';
-import { Toaster } from './components/ui/sonner';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+const PageFallback = () => (
+  <div className="flex items-center justify-center min-h-[50vh]">
+    <Loader2 className="w-8 h-8 animate-spin text-primary" aria-hidden />
+  </div>
+);
+
+// 자주 방문하는 페이지: 즉시 로드
 import { Home } from './pages/Home';
 import { Search } from './pages/Search';
-import { TeaDetail } from './pages/TeaDetail';
-import { NewTea } from './pages/NewTea';
-import { EditTea } from './pages/EditTea';
-import { NewNote } from './pages/NewNote';
-import { EditNote } from './pages/EditNote';
-import { NoteDetail } from './pages/NoteDetail';
-import { MyNotes } from './pages/MyNotes';
-import { Saved } from './pages/Saved';
-import { UserProfile } from './pages/UserProfile';
-import { Settings } from './pages/Settings';
-import { Cellar } from './pages/Cellar';
-import { NewCellarItem } from './pages/NewCellarItem';
-import { EditCellarItem } from './pages/EditCellarItem';
-import { Community } from './pages/Community';
-import { PostDetail } from './pages/PostDetail';
-import { NewPost } from './pages/NewPost';
-import { EditPost } from './pages/EditPost';
 import { Login } from './pages/Login';
-import { Register } from './pages/Register';
-import { Onboarding } from './pages/Onboarding';
-import { TagDetail } from './pages/TagDetail';
-import { ShopDetail } from './pages/ShopDetail';
-import { NewShop } from './pages/NewShop';
-import { EditShop } from './pages/EditShop';
-import { Notifications } from './pages/Notifications';
-import { FloatingActionButton } from './components/FloatingActionButton';
-import { AdminRouteGuard } from './components/AdminRouteGuard';
-import { AdminLayout } from './components/AdminLayout';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { AdminReports } from './pages/admin/AdminReports';
-import { AdminUsers } from './pages/admin/AdminUsers';
-import { AdminNotes } from './pages/admin/AdminNotes';
-import { AdminPosts } from './pages/admin/AdminPosts';
-import { AdminAudit } from './pages/admin/AdminAudit';
-import { AdminMonitoring } from './pages/admin/AdminMonitoring';
-import { AdminMaster } from './pages/admin/AdminMaster';
-import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
-import { SessionNew } from './pages/SessionNew';
-import { SessionInProgress } from './pages/SessionInProgress';
-import { SessionSummary } from './pages/SessionSummary';
-import { SessionHistory } from './pages/SessionHistory';
+
+// 나머지 페이지: lazy 로드
+const TeaDetail = lazy(() => import('./pages/TeaDetail').then((m) => ({ default: m.TeaDetail })));
+const NewTea = lazy(() => import('./pages/NewTea').then((m) => ({ default: m.NewTea })));
+const EditTea = lazy(() => import('./pages/EditTea').then((m) => ({ default: m.EditTea })));
+const NewNote = lazy(() => import('./pages/NewNote').then((m) => ({ default: m.NewNote })));
+const EditNote = lazy(() => import('./pages/EditNote').then((m) => ({ default: m.EditNote })));
+const NoteDetail = lazy(() => import('./pages/NoteDetail').then((m) => ({ default: m.NoteDetail })));
+const MyNotes = lazy(() => import('./pages/MyNotes').then((m) => ({ default: m.MyNotes })));
+const Saved = lazy(() => import('./pages/Saved').then((m) => ({ default: m.Saved })));
+const UserProfile = lazy(() => import('./pages/UserProfile').then((m) => ({ default: m.UserProfile })));
+const Settings = lazy(() => import('./pages/Settings').then((m) => ({ default: m.Settings })));
+const Cellar = lazy(() => import('./pages/Cellar').then((m) => ({ default: m.Cellar })));
+const NewCellarItem = lazy(() => import('./pages/NewCellarItem').then((m) => ({ default: m.NewCellarItem })));
+const EditCellarItem = lazy(() => import('./pages/EditCellarItem').then((m) => ({ default: m.EditCellarItem })));
+const Community = lazy(() => import('./pages/Community').then((m) => ({ default: m.Community })));
+const PostDetail = lazy(() => import('./pages/PostDetail').then((m) => ({ default: m.PostDetail })));
+const NewPost = lazy(() => import('./pages/NewPost').then((m) => ({ default: m.NewPost })));
+const EditPost = lazy(() => import('./pages/EditPost').then((m) => ({ default: m.EditPost })));
+const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
+const TagDetail = lazy(() => import('./pages/TagDetail').then((m) => ({ default: m.TagDetail })));
+const ShopDetail = lazy(() => import('./pages/ShopDetail').then((m) => ({ default: m.ShopDetail })));
+const NewShop = lazy(() => import('./pages/NewShop').then((m) => ({ default: m.NewShop })));
+const EditShop = lazy(() => import('./pages/EditShop').then((m) => ({ default: m.EditShop })));
+const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ default: m.Notifications })));
+const SessionNew = lazy(() => import('./pages/SessionNew').then((m) => ({ default: m.SessionNew })));
+const SessionInProgress = lazy(() => import('./pages/SessionInProgress').then((m) => ({ default: m.SessionInProgress })));
+const SessionSummary = lazy(() => import('./pages/SessionSummary').then((m) => ({ default: m.SessionSummary })));
+const SessionHistory = lazy(() => import('./pages/SessionHistory').then((m) => ({ default: m.SessionHistory })));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports').then((m) => ({ default: m.AdminReports })));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then((m) => ({ default: m.AdminUsers })));
+const AdminNotes = lazy(() => import('./pages/admin/AdminNotes').then((m) => ({ default: m.AdminNotes })));
+const AdminPosts = lazy(() => import('./pages/admin/AdminPosts').then((m) => ({ default: m.AdminPosts })));
+const AdminAudit = lazy(() => import('./pages/admin/AdminAudit').then((m) => ({ default: m.AdminAudit })));
+const AdminMonitoring = lazy(() => import('./pages/admin/AdminMonitoring').then((m) => ({ default: m.AdminMonitoring })));
+const AdminMaster = lazy(() => import('./pages/admin/AdminMaster').then((m) => ({ default: m.AdminMaster })));
 
 type FloatingActionRouteConfig = {
   position?: 'default' | 'aboveNav';
@@ -151,7 +161,8 @@ function AppContent() {
   if (isAdminRoute) {
     return (
       <AdminRouteGuard>
-        <Routes>
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="reports" element={<AdminReports />} />
@@ -165,6 +176,7 @@ function AppContent() {
             <Route path="audit" element={<AdminAudit />} />
           </Route>
         </Routes>
+        </Suspense>
       </AdminRouteGuard>
     );
   }
@@ -173,6 +185,7 @@ function AppContent() {
     <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
       <OnboardingRouteGuard>
         <PullToRefreshProvider>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
@@ -211,6 +224,7 @@ function AppContent() {
             <Route path="/community/*" element={<CommunityRedirect />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </PullToRefreshProvider>
       </OnboardingRouteGuard>
       <FloatingActionButtonSwitcher />
