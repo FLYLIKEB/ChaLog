@@ -13,7 +13,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
 import { Tea, Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
-import { Loader2, Hash, MessageCircle } from 'lucide-react';
+import { Loader2, Hash, MessageCircle, ChevronRight } from 'lucide-react';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { TeaCardSkeleton } from '../components/TeaCardSkeleton';
@@ -365,17 +365,29 @@ export function Home() {
           </div>
         )}
 
-        {/* 하단 푸터 - 오픈톡 + 개발정보 (미니멀) */}
+        {/* 하단 푸터 - 오픈톡 + 개발정보 */}
         <footer className="mt-12 pt-8 pb-6 border-t border-black/5">
           {import.meta.env.VITE_KAKAO_OPEN_CHAT_URL && (
             <a
               href={import.meta.env.VITE_KAKAO_OPEN_CHAT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-2.5 px-4 rounded-xl bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-sm font-medium transition-colors mb-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+              className="group flex items-center justify-between gap-3 w-full max-w-sm mx-auto py-4 px-5 rounded-2xl bg-[#FEE500] hover:bg-[#FEE500]/95 text-[#191919] transition-all duration-200 mb-5 card-shadow hover:shadow-[0_4px_16px_rgba(254,229,0,0.35)] hover:-translate-y-0.5 active:translate-y-0 border border-[#FEE500]/80"
             >
-              <MessageCircle className="w-4 h-4" />
-              카톡 오픈톡방 참여하기
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#191919]/8 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-5 h-5 text-[#191919]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-[#191919]">
+                    차에 대해 이야기해요
+                  </p>
+                  <p className="text-xs text-[#191919]/70 mt-0.5">
+                    오픈채팅에서 만나요
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-[#191919]/60 group-hover:text-[#191919] group-hover:translate-x-0.5 transition-all shrink-0" />
             </a>
           )}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/80">

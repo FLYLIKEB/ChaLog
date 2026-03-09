@@ -3,6 +3,12 @@
 :root {
   --header-spacer: calc(4.25rem + env(safe-area-inset-top, 0px));
   --font-size: 16px;
+  /* 카드 공통 */
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --card-shadow-top: 0 -1px 4px rgba(0, 0, 0, 0.03);
+  --card-radius: 1rem;
+  --card-border: rgba(0, 0, 0, 0.05);
   --background: #f5f6f8;
   --foreground: oklch(0.18 0 0);
   --card: #ffffff;
@@ -45,6 +51,10 @@
 }
 
 .dark {
+  --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --card-shadow-hover: 0 1px 4px rgba(0, 0, 0, 0.12);
+  --card-shadow-top: 0 -1px 4px rgba(0, 0, 0, 0.08);
+  --card-border: rgba(255, 255, 255, 0.08);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);
@@ -132,10 +142,16 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    background: linear-gradient(to bottom, #ffffff 0%, #fafbfc 100%);
+    min-height: 100vh;
+    @apply text-foreground;
     font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  .dark body {
+    background: linear-gradient(to bottom, oklch(0.17 0 0) 0%, oklch(0.145 0 0) 100%);
   }
 }
 
@@ -207,6 +223,22 @@ html {
   .no-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
+  }
+
+  /* 카드 공통 스타일 */
+  .card-appearance {
+    border-radius: var(--card-radius);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+  }
+  .card-appearance-hover:hover {
+    box-shadow: var(--card-shadow-hover);
+  }
+  .card-shadow-top {
+    box-shadow: var(--card-shadow-top);
+  }
+  .card-shadow {
+    box-shadow: var(--card-shadow);
   }
 }
 
