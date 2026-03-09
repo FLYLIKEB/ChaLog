@@ -155,16 +155,29 @@ export function EditNote() {
         setSelectedTea(normalizedNote.teaId);
         setOverallRating(normalizedNote.overallRating ?? null);
 
-        // 스키마와 축 정보 설정
-        if (normalizedNote.schema) {
-          setSelectedSchemaIds([normalizedNote.schema.id]);
+        // 스키마와 축 정보 설정 (schemaIds 우선, 없으면 schema.id)
+        const noteSchemaIds = (normalizedNote as Note & { schemaIds?: number[] }).schemaIds;
+        const schemaIdsToLoad =
+          noteSchemaIds && noteSchemaIds.length > 0
+            ? noteSchemaIds
+            : normalizedNote.schema
+              ? [normalizedNote.schema.id]
+              : [];
 
-          // 축 정보 가져오기
+        if (schemaIdsToLoad.length > 0) {
+          setSelectedSchemaIds(schemaIdsToLoad);
+
+          // 모든 스키마의 축 정보 가져오기
           try {
-            const axesData = (await notesApi.getSchemaAxes(normalizedNote.schema.id)) as RatingAxis[];
-            setAxes(Array.isArray(axesData) ? axesData : []);
+            const axesBySchema = await Promise.all(
+              schemaIdsToLoad.map(async (schemaId) => {
+                const axesData = (await notesApi.getSchemaAxes(schemaId)) as RatingAxis[];
+                return Array.isArray(axesData) ? axesData : [];
+              })
+            );
+            const allAxes = axesBySchema.flat();
+            setAxes(allAxes);
 
-            // axisValues 설정
             if (normalizedNote.axisValues && normalizedNote.axisValues.length > 0) {
               const initialValues: Record<number, number> = {};
               normalizedNote.axisValues.forEach((av) => {
@@ -173,7 +186,7 @@ export function EditNote() {
               setAxisValues(initialValues);
             } else {
               const initialValues: Record<number, number> = {};
-              (Array.isArray(axesData) ? axesData : []).forEach((axis: RatingAxis) => {
+              allAxes.forEach((axis: RatingAxis) => {
                 initialValues[axis.id] = RATING_DEFAULT;
               });
               setAxisValues(initialValues);
@@ -228,7 +241,6 @@ export function EditNote() {
       setAxisValues({});
       return;
     }
-    const schemaId = selectedSchemaIds[0];
     // 초기 로드 시에는 fetchNote에서 이미 axes/axisValues 설정함
     if (!initialSchemaSet.current && note) {
       initialSchemaSet.current = true;
@@ -236,14 +248,21 @@ export function EditNote() {
     }
     const fetchAxes = async () => {
       try {
-        const axesData = (await notesApi.getSchemaAxes(schemaId)) as RatingAxis[];
-        const allAxes = Array.isArray(axesData) ? axesData : [];
+        const axesBySchema = await Promise.all(
+          selectedSchemaIds.map(async (schemaId) => {
+            const axesData = (await notesApi.getSchemaAxes(schemaId)) as RatingAxis[];
+            return Array.isArray(axesData) ? axesData : [];
+          })
+        );
+        const allAxes = axesBySchema.flat();
         setAxes(allAxes);
-        const initialValues: Record<number, number> = {};
-        allAxes.forEach((axis: RatingAxis) => {
-          initialValues[axis.id] = axisValues[axis.id] ?? RATING_DEFAULT;
+        setAxisValues((prev) => {
+          const next: Record<number, number> = {};
+          allAxes.forEach((axis: RatingAxis) => {
+            next[axis.id] = prev[axis.id] ?? RATING_DEFAULT;
+          });
+          return next;
         });
-        setAxisValues(initialValues);
       } catch (error) {
         logger.error('Failed to fetch schema axes:', error);
         toast.error('평가 축 정보를 불러오는데 실패했습니다.');
@@ -281,8 +300,8 @@ export function EditNote() {
       return;
     }
 
-    const schemaId = selectedSchemaIds[0];
-    if (!schemaId) {
+    const schemaIdsToSend = selectedSchemaIds.length > 0 ? selectedSchemaIds : [];
+    if (schemaIdsToSend.length === 0) {
       toast.error('평가 스키마를 선택해주세요.');
       return;
     }
@@ -315,7 +334,7 @@ export function EditNote() {
 
       await notesApi.update(noteId, {
         teaId: selectedTea,
-        schemaId,
+        schemaIds: schemaIdsToSend,
         overallRating: calculatedOverallRating,
         isRatingIncluded: true,
         axisValues: axisValuesArray,
@@ -495,7 +514,7 @@ export function EditNote() {
               onChange={(v) => setSelectedSchemaIds(Array.isArray(v) ? v : v != null ? [v] : [])}
               onAddTemplate={() => setAddTemplateOpen(true)}
               isAuthenticated={isAuthenticated}
-              multiple={false}
+              multiple
             />
           ) : (
             <p className="text-sm text-muted-foreground py-2">

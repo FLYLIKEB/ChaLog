@@ -8,21 +8,32 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+
+const CHART_COLOR = 'rgb(34 197 94)'; // green-500 (차록 rating)
+const GRID_COLOR = 'rgb(229 231 235)'; // gray-200
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from './ui/popover';
 
-const FULL_MARK = 5;
+const FULL_MARK_5 = 5;
+const FULL_MARK_10 = 10;
 
 /** max점 척도 → 5점 환산 */
 function toScore5(value: number, max: number): number {
   if (max <= 0) return 0;
-  return Math.min(FULL_MARK, value * (FULL_MARK / max));
+  return Math.min(FULL_MARK_5, value * (FULL_MARK_5 / max));
+}
+
+/** max점 척도 → 10점 환산 */
+function toScore10(value: number, max: number): number {
+  if (max <= 0) return 0;
+  return Math.min(FULL_MARK_10, value * (FULL_MARK_10 / max));
 }
 
 interface RatingVisualizationProps {
+  use10Scale?: boolean;
   axisValues: Array<{
     axisId: number;
     valueNumeric: number;
@@ -38,21 +49,29 @@ interface RatingVisualizationProps {
   }>;
 }
 
-export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
+export function RatingVisualization({ axisValues, use10Scale = false }: RatingVisualizationProps) {
   const sortedAxisValues = [...axisValues].sort((a, b) => {
     const orderA = a.axis?.displayOrder || 0;
     const orderB = b.axis?.displayOrder || 0;
     return orderA - orderB;
   });
 
+  const fullMark = use10Scale ? FULL_MARK_10 : FULL_MARK_5;
+  const toScore = use10Scale ? toScore10 : toScore5;
+
   const radarData = sortedAxisValues.map((av) => {
-    const maxValue = av.axis?.maxValue || 5;
+    const rawNum = Number(av.valueNumeric) || 0;
+    const maxValue = Number(av.axis?.maxValue) || 5;
+    const displayValue = use10Scale ? rawNum * (FULL_MARK_10 / maxValue) : rawNum;
+    const displayMax = use10Scale ? FULL_MARK_10 : maxValue;
     return {
       subject: av.axis?.nameKo || `축 ${av.axisId}`,
-      value: toScore5(av.valueNumeric, maxValue),
-      fullMark: FULL_MARK,
-      rawValue: av.valueNumeric,
+      value: toScore(rawNum, maxValue),
+      fullMark,
+      rawValue: rawNum,
       maxValue,
+      displayValue,
+      displayMax,
       description: av.axis?.descriptionKo,
     };
   });
@@ -67,7 +86,7 @@ export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
           <div key={item.subject}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex min-w-0 items-center gap-1.5">
-                <span className="text-sm truncate">{item.subject}</span>
+                <span className="text-base truncate">{item.subject}</span>
                 {item.description?.trim() && (
                   <Popover>
                     <PopoverTrigger asChild>
@@ -85,14 +104,17 @@ export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
                   </Popover>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                {item.rawValue}/{item.maxValue}
+              <span className="text-sm text-muted-foreground tabular-nums">
+                {Number(item.displayValue).toFixed(1)}/{item.displayMax}
               </span>
             </div>
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all"
-                style={{ width: `${(item.rawValue / item.maxValue) * 100}%` }}
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${(item.rawValue / item.maxValue) * 100}%`,
+                  backgroundColor: CHART_COLOR,
+                }}
               />
             </div>
           </div>
@@ -102,40 +124,46 @@ export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="aspect-square max-w-[280px] mx-auto">
+    <div className="space-y-4">
+      <div className="aspect-square max-w-[300px] mx-auto p-2">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={radarData} margin={{ top: 16, right: 16, bottom: 16, left: 16 }}>
-            <PolarGrid stroke="rgb(167 243 208)" strokeOpacity={0.6} />
+          <RadarChart
+            data={radarData}
+            margin={{ top: 36, right: 28, bottom: 28, left: 28 }}
+            outerRadius="82%"
+          >
+            <PolarGrid stroke={GRID_COLOR} strokeOpacity={0.8} />
             <PolarAngleAxis
               dataKey="subject"
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+              tick={{ fill: 'rgb(107 114 128)', fontSize: 12 }}
               tickLine={false}
             />
             <PolarRadiusAxis
-              angle={90}
-              domain={[0, FULL_MARK]}
-              tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+              angle={180}
+              domain={[0, fullMark]}
+              tick={{ fill: 'rgb(156 163 175)', fontSize: 11 }}
               tickCount={6}
+              axisLine={false}
+              tickLine={false}
             />
             <Radar
               name="평가"
               dataKey="value"
-              stroke="rgb(16 185 129)"
-              fill="rgb(16 185 129)"
-              fillOpacity={0.22}
-              strokeWidth={2}
-              strokeOpacity={0.9}
+              stroke={CHART_COLOR}
+              fill={CHART_COLOR}
+              fillOpacity={0.15}
+              strokeWidth={1.5}
+              dot={{ r: 3.5, fill: 'rgb(5 46 22)', stroke: 'none' }}
             />
             <Tooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.[0]) return null;
                 const p = payload[0].payload;
                 return (
-                  <div className="bg-background/95 backdrop-blur border border-emerald-200/60 dark:border-emerald-800/50 rounded-lg px-3 py-2 shadow-lg text-sm">
-                    <p className="font-medium text-foreground">{p.subject}</p>
-                    <p className="text-muted-foreground text-xs mt-0.5">
-                      {p.rawValue}/{p.maxValue}점
+                  <div className="bg-white dark:bg-gray-900 border rounded-lg px-3 py-2 shadow-md text-sm" style={{ borderColor: 'rgb(34 197 94 / 0.5)' }}>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{p.subject}</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+                      {Number(p.displayValue).toFixed(1)}/{p.displayMax}점
                     </p>
                   </div>
                 );
@@ -144,22 +172,26 @@ export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
           </RadarChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 justify-center text-sm text-gray-600 dark:text-gray-400">
         {radarData.map((item) => (
-          <span key={item.subject} className="flex items-center gap-1">
-            {item.subject} {item.rawValue}/{item.maxValue}
+          <span key={item.subject} className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: CHART_COLOR }} />
+            {item.subject}
+            <span className="font-medium tabular-nums text-gray-800 dark:text-gray-200">
+              {Number(item.displayValue).toFixed(1)}/{item.displayMax}
+            </span>
             {item.description?.trim() && (
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="rounded p-0.5 hover:bg-muted hover:text-foreground"
+                    className="rounded p-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100"
                     aria-label={`${item.subject} 설명`}
                   >
                     <Info className="h-3 w-3" />
                   </button>
                 </PopoverTrigger>
-                <PopoverContent align="center" side="top" className="max-w-[240px] text-xs">
+                <PopoverContent align="center" side="top" className="max-w-[240px] text-sm">
                   <p className="text-muted-foreground">{item.description}</p>
                 </PopoverContent>
               </Popover>

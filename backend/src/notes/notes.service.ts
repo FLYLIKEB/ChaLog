@@ -306,10 +306,21 @@ export class NotesService {
 
     const enrichedNotes = await this.enrichNotesWithLikesAndBookmarks([note], userId);
     const result = enrichedNotes[0];
-    // schemaIds: note_schemas에서 추출 (없으면 [schemaId]로 하위 호환)
-    result.schemaIds = (note as any).noteSchemas?.length > 0
-      ? (note as any).noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b)
-      : note.schemaId != null ? [note.schemaId] : [];
+    // schemaIds, schemas: note_schemas에서 추출 (없으면 [schemaId]/schema로 하위 호환)
+    const noteSchemas = (note as any).noteSchemas;
+    if (noteSchemas?.length > 0) {
+      result.schemaIds = noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b);
+      result.schemas = noteSchemas
+        .map((ns: NoteSchema) => (ns as any).schema)
+        .filter(Boolean)
+        .sort((a: { id: number }, b: { id: number }) => a.id - b.id);
+    } else if (note.schemaId != null) {
+      result.schemaIds = [note.schemaId];
+      result.schemas = note.schema ? [note.schema] : [];
+    } else {
+      result.schemaIds = [];
+      result.schemas = [];
+    }
     return result;
   }
 

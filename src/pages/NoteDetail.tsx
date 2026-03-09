@@ -46,6 +46,7 @@ export function NoteDetail() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [use10Scale, setUse10Scale] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (isNaN(noteId)) {
@@ -240,7 +241,14 @@ export function NoteDetail() {
               {note.overallRating !== null && (
                 <div className="flex items-center gap-2">
                   <Star className="w-6 h-6 fill-rating text-rating" />
-                  <span className="text-2xl text-primary">{Number(note.overallRating).toFixed(1)}</span>
+                  <span className="text-2xl text-primary">
+                    {use10Scale
+                      ? (Number(note.overallRating) * 2).toFixed(1)
+                      : Number(note.overallRating).toFixed(1)}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    /{use10Scale ? '10' : '5'}
+                  </span>
                 </div>
               )}
               <Badge variant={note.isPublic ? 'default' : 'secondary'}>
@@ -309,16 +317,65 @@ export function NoteDetail() {
 
           {note.axisValues && note.axisValues.length > 0 && (
             <div className="space-y-4">
-              {note.schema && (
+              {((note.schemas?.length ?? 0) > 0 || note.schema) && (
                 <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-0.5">사용 템플릿</p>
-                  <p className="text-sm font-medium text-foreground">{note.schema.nameKo}</p>
-                  {note.schema.descriptionKo?.trim() && (
-                    <p className="text-xs text-muted-foreground mt-1.5">{note.schema.descriptionKo}</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                    사용 템플릿{(note.schemas?.length ?? 0) > 1 ? ` (${note.schemas!.length}개)` : ''}
+                  </p>
+                  {(note.schemas?.length ?? 0) > 0 ? (
+                    <div className="space-y-2">
+                      {note.schemas!.map((s) => (
+                        <div key={s.id}>
+                          <p className="text-sm font-medium text-foreground">{s.nameKo}</p>
+                          {s.descriptionKo?.trim() && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{s.descriptionKo}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    note.schema && (
+                      <>
+                        <p className="text-sm font-medium text-foreground">{note.schema.nameKo}</p>
+                        {note.schema.descriptionKo?.trim() && (
+                          <p className="text-xs text-muted-foreground mt-1.5">{note.schema.descriptionKo}</p>
+                        )}
+                      </>
+                    )
                   )}
                 </div>
               )}
-              <RatingVisualization axisValues={note.axisValues} />
+              <div className="flex justify-end">
+                <div
+                  role="group"
+                  aria-label="점수 표시 단위"
+                  className="flex rounded-lg border border-border bg-muted/30 p-0.5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setUse10Scale(false)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                      !use10Scale
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    5점
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUse10Scale(true)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                      use10Scale
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    10점
+                  </button>
+                </div>
+              </div>
+              <RatingVisualization axisValues={note.axisValues} use10Scale={use10Scale} />
               <details className="group rounded-lg border border-border/60">
                 <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors [&::-webkit-details-marker]:hidden">
                   <span className="flex items-center gap-2">

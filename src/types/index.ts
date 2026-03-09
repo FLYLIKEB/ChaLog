@@ -115,6 +115,8 @@ export interface Note {
   schemaId: number;
   /** 다중 스키마 ID 목록 (note_schemas 기반) */
   schemaIds?: number[];
+  /** 다중 스키마 상세 (note_schemas 기반, API 응답) */
+  schemas?: RatingSchema[];
   schema?: RatingSchema;
   overallRating: number | null;
   isRatingIncluded: boolean;
