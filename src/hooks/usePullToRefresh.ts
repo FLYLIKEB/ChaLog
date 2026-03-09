@@ -47,15 +47,25 @@ function pickRandomRefreshMessage() {
   return { tea, phrase };
 }
 
-function hapticLight() {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(10);
+function hapticLight(allow = true) {
+  if (!allow) return;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  } catch {
+    /* ignore */
   }
 }
 
-function hapticSuccess() {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate([8, 40, 8]);
+function hapticSuccess(allow = true) {
+  if (!allow) return;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([8, 40, 8]);
+    }
+  } catch {
+    /* ignore */
   }
 }
 
@@ -69,13 +79,15 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
   const lastRefreshAtRef = useRef(0);
   const isPointerDownRef = useRef(false);
   const capturedPointerIdRef = useRef<number | null>(null);
+  const hasTappedRef = useRef(false);
 
   const handleRefresh = useCallback(async () => {
     const now = Date.now();
     if (now - lastRefreshAtRef.current < REFRESH_COOLDOWN_MS) return;
     lastRefreshAtRef.current = now;
 
-    hapticLight();
+    const allowHaptic = hasTappedRef.current;
+    hapticLight(allowHaptic);
     const startedAt = Date.now();
     setIsRefreshing(true);
     setRefreshMessage(pickRandomRefreshMessage());
@@ -84,8 +96,9 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
     } finally {
       const elapsed = Date.now() - startedAt;
       const remaining = Math.max(0, MIN_LOADING_DURATION_MS - elapsed);
+      const allowHaptic = hasTappedRef.current;
       setTimeout(() => {
-        hapticSuccess();
+        hapticSuccess(allowHaptic);
         setIsRefreshing(false);
         setPullDistance(0);
         pullDistanceRef.current = 0;
@@ -158,6 +171,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
 
     const handleTouchStart = (e: TouchEvent) => {
       if (disabled) return;
+      hasTappedRef.current = true;
       touchStartY.current = e.touches[0].clientY;
     };
 
@@ -184,6 +198,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
     // pointer capture는 실제 당김 동작이 감지된 후에만 적용 (헤더/하단바 클릭 방해 방지)
     const handlePointerDown = (e: PointerEvent) => {
       if (disabled) return;
+      hasTappedRef.current = true;
       if (e.pointerType === 'mouse') {
         isPointerDownRef.current = true;
         touchStartY.current = e.clientY;
