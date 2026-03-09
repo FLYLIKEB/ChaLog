@@ -53,6 +53,11 @@ import { SessionNew } from './pages/SessionNew';
 import { SessionInProgress } from './pages/SessionInProgress';
 import { SessionSummary } from './pages/SessionSummary';
 import { SessionHistory } from './pages/SessionHistory';
+import { BlindSessionNew } from './pages/BlindSessionNew';
+import { BlindSessionJoin } from './pages/BlindSessionJoin';
+import { BlindSessionDetail } from './pages/BlindSessionDetail';
+import { BlindNoteWrite } from './pages/BlindNoteWrite';
+import { BlindSessionReport } from './pages/BlindSessionReport';
 
 type FloatingActionRouteConfig = {
   position?: 'default' | 'aboveNav';
@@ -76,6 +81,11 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/cellar/new': { hidden: true },
   '/session/new': { hidden: true },
   '/sessions': { hidden: true },
+  '/blind/new': { hidden: true },
+  '/blind/join/:code': { hidden: true },
+  '/blind/:id': { hidden: true },
+  '/blind/:id/write': { hidden: true },
+  '/blind/:id/report': { hidden: true },
   '/onboarding': { hidden: true },
 };
 
@@ -89,6 +99,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname.startsWith('/session/') ||
     location.pathname === '/sessions' ||
+    location.pathname.startsWith('/blind/') ||
     location.pathname === '/tea/new' ||
     location.pathname === '/teahouse/new' ||
     location.pathname.match(/^\/teahouse\/[^/]+\/edit$/) ||
@@ -184,6 +195,11 @@ function AppContent() {
             <Route path="/session/:id" element={<SessionInProgress />} />
             <Route path="/session/:id/summary" element={<SessionSummary />} />
             <Route path="/sessions" element={<SessionHistory />} />
+            <Route path="/blind/new" element={<BlindSessionNew />} />
+            <Route path="/blind/join/:code" element={<BlindSessionJoin />} />
+            <Route path="/blind/:id" element={<BlindSessionDetail />} />
+            <Route path="/blind/:id/write" element={<BlindNoteWrite />} />
+            <Route path="/blind/:id/report" element={<BlindSessionReport />} />
             <Route path="/note/:id" element={<NoteDetail />} />
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/my-notes" element={<MyNotes />} />
