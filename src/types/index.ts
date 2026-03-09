@@ -32,6 +32,29 @@ export interface SellerDetail {
   createdAt: string;
 }
 
+export interface TeaSessionSteep {
+  id: number;
+  sessionId: number;
+  steepNumber: number;
+  steepDurationSeconds: number;
+  aroma: string | null;
+  taste: string | null;
+  color: string | null;
+  memo: string | null;
+  createdAt: Date | string;
+}
+
+export interface TeaSession {
+  id: number;
+  userId: number;
+  teaId: number;
+  tea?: Tea;
+  noteId: number | null;
+  steeps?: TeaSessionSteep[];
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}
+
 export interface TeaFilterParams {
   q?: string;
   type?: string;

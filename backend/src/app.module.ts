@@ -15,6 +15,7 @@ import { ReportsModule } from './reports/reports.module';
 import { TagsModule } from './tags/tags.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
+import { TeaSessionsModule } from './tea-sessions/tea-sessions.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
 import { User } from './users/entities/user.entity';
@@ -61,6 +62,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     TagsModule,
     NotificationsModule,
     AdminModule,
+    TeaSessionsModule,
   ],
   controllers: [HealthController],
   providers: [

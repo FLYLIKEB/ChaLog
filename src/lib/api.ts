@@ -1256,6 +1256,52 @@ export interface CreateCellarItemRequest {
 
 export interface UpdateCellarItemRequest extends Partial<CreateCellarItemRequest> {}
 
+export interface CreateTeaSessionRequest {
+  teaId: number;
+}
+
+export interface CreateSessionSteepRequest {
+  steepNumber: number;
+  steepDurationSeconds: number;
+  aroma?: string | null;
+  taste?: string | null;
+  color?: string | null;
+  memo?: string | null;
+}
+
+export interface PublishSessionToNoteRequest {
+  schemaId: number;
+  overallRating?: number | null;
+  isRatingIncluded?: boolean;
+  axisValues: Array<{ axisId: number; value: number }>;
+  memo?: string | null;
+  tags?: string[];
+  isPublic: boolean;
+}
+
+export const teaSessionsApi = {
+  create: (data: CreateTeaSessionRequest) =>
+    apiClient.post<import('../types').TeaSession>('/tea-sessions', data),
+  getAll: (params?: { teaId?: number; from?: string; to?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.teaId !== undefined) search.set('teaId', String(params.teaId));
+    if (params?.from) search.set('from', params.from);
+    if (params?.to) search.set('to', params.to);
+    const query = search.toString();
+    return apiClient.get<import('../types').TeaSession[]>(`/tea-sessions${query ? `?${query}` : ''}`);
+  },
+  getById: (id: number) =>
+    apiClient.get<import('../types').TeaSession>(`/tea-sessions/${id}`),
+  addSteep: (sessionId: number, data: CreateSessionSteepRequest) =>
+    apiClient.post<import('../types').TeaSessionSteep>(`/tea-sessions/${sessionId}/steeps`, data),
+  updateSteep: (sessionId: number, steepId: number, data: Partial<CreateSessionSteepRequest>) =>
+    apiClient.patch<import('../types').TeaSessionSteep>(`/tea-sessions/${sessionId}/steeps/${steepId}`, data),
+  deleteSteep: (sessionId: number, steepId: number) =>
+    apiClient.delete(`/tea-sessions/${sessionId}/steeps/${steepId}`),
+  publish: (sessionId: number, data: PublishSessionToNoteRequest) =>
+    apiClient.post<{ noteId: number }>(`/tea-sessions/${sessionId}/publish`, data),
+};
+
 export const cellarApi = {
   getAll: () => apiClient.get<CellarItem[]>('/cellar'),
   getById: (id: number) => apiClient.get<CellarItem>(`/cellar/${id}`),

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard } from 'lucide-react';
+import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard, Coffee } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from 'next-themes';
@@ -379,6 +379,26 @@ export function Settings() {
               </>
             )}
           </div>
+        </Card>
+
+        {/* 다회 모드 */}
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">기능</h3>
+          <Link
+            to="/sessions"
+            className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Coffee className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">다회 모드</p>
+                <p className="text-xs text-muted-foreground mt-0.5">탕별 타이머·기록, 세션 요약·노트 발행</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+          </Link>
         </Card>
 
         {/* 알림 */}
