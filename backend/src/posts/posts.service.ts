@@ -45,30 +45,33 @@ export class PostsService {
     const isPinned = isAdmin && (dto.isPinned === true);
 
     const { images: imagesDto, ...postData } = dto;
-    const post = this.postsRepository.create({
-      ...postData,
-      userId,
-      isAnonymous: dto.isAnonymous ?? false,
-      isPinned,
-      isSponsored: dto.isSponsored ?? false,
-      sponsorNote: dto.sponsorNote ?? null,
+
+    return this.dataSource.transaction(async (manager) => {
+      const post = manager.create(Post, {
+        ...postData,
+        userId,
+        isAnonymous: dto.isAnonymous ?? false,
+        isPinned,
+        isSponsored: dto.isSponsored ?? false,
+        sponsorNote: dto.sponsorNote ?? null,
+      });
+      const saved = await manager.save(Post, post);
+
+      if (imagesDto?.length) {
+        const postImages = imagesDto.map((img, idx) =>
+          manager.create(PostImage, {
+            postId: saved.id,
+            url: img.url,
+            thumbnailUrl: img.thumbnailUrl ?? null,
+            caption: img.caption?.trim() || null,
+            sortOrder: idx,
+          }),
+        );
+        await manager.save(PostImage, postImages);
+      }
+
+      return this.findOne(saved.id, userId);
     });
-    const saved = await this.postsRepository.save(post);
-
-    if (imagesDto?.length) {
-      const postImages = imagesDto.map((img, idx) =>
-        this.postImagesRepository.create({
-          postId: saved.id,
-          url: img.url,
-          thumbnailUrl: img.thumbnailUrl ?? null,
-          caption: img.caption?.trim() || null,
-          sortOrder: idx,
-        }),
-      );
-      await this.postImagesRepository.save(postImages);
-    }
-
-    return this.findOne(saved.id, userId);
   }
 
   async findAll(
@@ -84,7 +87,6 @@ export class PostsService {
       .leftJoinAndSelect('post.images', 'postImages')
       .orderBy('post.isPinned', 'DESC')
       .addOrderBy('post.createdAt', 'DESC')
-      .addOrderBy('postImages.sortOrder', 'ASC')
       .skip(skip)
       .take(limit);
 
@@ -113,13 +115,6 @@ export class PostsService {
   }
 
   async update(id: number, userId: number, dto: UpdatePostDto): Promise<any> {
-    const post = await this.postsRepository.findOne({ where: { id } });
-    if (!post) {
-      throw new NotFoundException('게시글을 찾을 수 없습니다.');
-    }
-    if (post.userId !== userId) {
-      throw new ForbiddenException('이 게시글을 수정할 권한이 없습니다.');
-    }
     const user = await this.usersService.findOne(userId);
     const isAdmin = user?.role === UserRole.ADMIN;
     const updateDto = { ...dto };
@@ -127,26 +122,36 @@ export class PostsService {
       delete (updateDto as any).isPinned;
     }
     const { images: imagesDto, ...restDto } = updateDto;
-    Object.assign(post, restDto);
-    await this.postsRepository.save(post);
 
-    if (imagesDto !== undefined) {
-      await this.postImagesRepository.delete({ postId: id });
-      if (imagesDto?.length) {
-        const postImages = imagesDto.map((img, idx) =>
-          this.postImagesRepository.create({
-            postId: id,
-            url: img.url,
-            thumbnailUrl: img.thumbnailUrl ?? null,
-            caption: img.caption?.trim() || null,
-            sortOrder: idx,
-          }),
-        );
-        await this.postImagesRepository.save(postImages);
+    return this.dataSource.transaction(async (manager) => {
+      const post = await manager.findOne(Post, { where: { id } });
+      if (!post) {
+        throw new NotFoundException('게시글을 찾을 수 없습니다.');
       }
-    }
+      if (post.userId !== userId) {
+        throw new ForbiddenException('이 게시글을 수정할 권한이 없습니다.');
+      }
+      Object.assign(post, restDto);
+      await manager.save(Post, post);
 
-    return this.findOne(id, userId);
+      if (imagesDto !== undefined) {
+        await manager.delete(PostImage, { postId: id });
+        if (imagesDto?.length) {
+          const postImages = imagesDto.map((img, idx) =>
+            manager.create(PostImage, {
+              postId: id,
+              url: img.url,
+              thumbnailUrl: img.thumbnailUrl ?? null,
+              caption: img.caption?.trim() || null,
+              sortOrder: idx,
+            }),
+          );
+          await manager.save(PostImage, postImages);
+        }
+      }
+
+      return this.findOne(id, userId);
+    });
   }
 
   async remove(id: number, userId: number): Promise<void> {

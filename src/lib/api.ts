@@ -1342,8 +1342,8 @@ export const cellarApi = {
 
 export interface PostImageItemRequest {
   url: string;
-  thumbnailUrl?: string;
-  caption?: string;
+  thumbnailUrl?: string | null;
+  caption?: string | null;
 }
 
 export interface CreatePostRequest {

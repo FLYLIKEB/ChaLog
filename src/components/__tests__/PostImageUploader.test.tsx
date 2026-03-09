@@ -1,4 +1,5 @@
-import { screen, waitFor } from '@testing-library/react';
+import React from 'react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, vi, describe, it, expect } from 'vitest';
 import { PostImageUploader } from '../PostImageUploader';
@@ -29,6 +30,7 @@ describe('PostImageUploader', () => {
       isAuthenticated: true,
       isLoading: false,
       token: 'token',
+      isAdmin: false,
       login: vi.fn(),
       register: vi.fn(),
       loginWithKakao: vi.fn(),
@@ -75,5 +77,57 @@ describe('PostImageUploader', () => {
     const deleteButtons = screen.getAllByRole('button', { name: /삭제/ });
     await user.click(deleteButtons[0]);
     expect(onChange).toHaveBeenCalledWith([]);
+  });
+
+  it('파일 업로드 시 postsApi.uploadImage를 호출한다', async () => {
+    vi.mocked(postsApi.uploadImage).mockResolvedValue({
+      url: 'https://example.com/uploaded.jpg',
+      thumbnailUrl: 'https://example.com/thumb.jpg',
+    });
+    renderWithRouter(
+      <PostImageUploader images={[]} onChange={onChange} maxImages={5} />,
+    );
+    const input = document.querySelector('input[type="file"]');
+    expect(input).toBeInTheDocument();
+    const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
+    fireEvent.change(input!, { target: { files: [file] } });
+
+    await waitFor(() => {
+      expect(postsApi.uploadImage).toHaveBeenCalledWith(file);
+    });
+  });
+
+  it('caption 입력 시 onChange를 호출한다', async () => {
+    const user = userEvent.setup();
+    const initialImages = [{ url: 'https://example.com/1.jpg', caption: '' }];
+    const Wrapper = () => {
+      const [imgs, setImgs] = React.useState(initialImages);
+      return (
+        <PostImageUploader
+          images={imgs}
+          onChange={(next) => {
+            setImgs(next);
+            onChange(next);
+          }}
+          maxImages={5}
+        />
+      );
+    };
+    renderWithRouter(<Wrapper />);
+    const captionInput = screen.getByPlaceholderText('이미지 설명 (선택)');
+    await user.type(captionInput, 'test');
+    expect(onChange).toHaveBeenCalled();
+    const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(lastCall[0]).toMatchObject({ url: 'https://example.com/1.jpg', caption: 'test' });
+  });
+
+  it('최대 이미지 개수(5장)에 도달하면 업로드 버튼을 숨긴다', () => {
+    const images = Array.from({ length: 5 }, (_, i) => ({
+      url: `https://example.com/${i}.jpg`,
+    }));
+    renderWithRouter(
+      <PostImageUploader images={images} onChange={onChange} maxImages={5} />,
+    );
+    expect(screen.queryByText(/사진 추가/)).not.toBeInTheDocument();
   });
 });

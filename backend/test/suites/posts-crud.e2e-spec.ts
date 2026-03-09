@@ -24,6 +24,7 @@ describe('/posts - 게시글 CRUD API', () => {
 
   beforeEach(async () => {
     await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
+    await context.dataSource.query('DELETE FROM post_images');
     await context.dataSource.query('DELETE FROM post_bookmarks');
     await context.dataSource.query('DELETE FROM post_likes');
     await context.dataSource.query('DELETE FROM comments');
@@ -35,6 +36,7 @@ describe('/posts - 게시글 CRUD API', () => {
   afterAll(async () => {
     try {
       await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
+      await context.dataSource.query('DELETE FROM post_images');
       await context.dataSource.query('DELETE FROM posts');
       await context.dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
       if (testUser?.id) await context.dataSource.query('DELETE FROM users WHERE id = ?', [testUser.id]);

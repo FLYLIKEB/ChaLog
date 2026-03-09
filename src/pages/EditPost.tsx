@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
+import { Post, PostCategory, POST_CATEGORY_LABELS, PostImageItem } from '../types';
 import { postsApi } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
@@ -35,7 +35,7 @@ export function EditPost() {
   const [isPinned, setIsPinned] = useState(false);
   const [isSponsored, setIsSponsored] = useState(false);
   const [sponsorNote, setSponsorNote] = useState('');
-  const [images, setImages] = useState<{ url: string; thumbnailUrl?: string; caption?: string }[]>([]);
+  const [images, setImages] = useState<PostImageItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {

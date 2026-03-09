@@ -92,9 +92,8 @@ export class PostsController {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        error instanceof Error ? error.message : '이미지 업로드 중 오류가 발생했습니다.',
-      );
+      console.error('Image upload failed:', error);
+      throw new InternalServerErrorException('이미지 업로드 중 오류가 발생했습니다.');
     }
   }
 

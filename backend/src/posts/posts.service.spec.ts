@@ -82,6 +82,20 @@ describe('PostsService', () => {
     mockPostBookmarksRepository.find.mockResolvedValue([]);
     mockLikeQb.getRawMany.mockResolvedValue([]);
     mockPostQb.getMany.mockResolvedValue([]);
+
+    // create/update use transaction; provide a manager that delegates to repository mocks
+    mockDataSource.transaction.mockImplementation(async (fn) => {
+      const manager = {
+        create: jest.fn((Entity: any, data: any) => ({ ...data })),
+        save: jest.fn().mockImplementation(async (Entity: any, entity: any) => {
+          if (Entity === Post) return { ...entity, id: entity.id ?? 1 };
+          return Array.isArray(entity) ? entity : { ...entity };
+        }),
+        findOne: jest.fn().mockResolvedValue(null),
+        delete: jest.fn().mockResolvedValue(undefined),
+      };
+      return fn(manager);
+    });
   });
 
   describe('create', () => {
@@ -93,8 +107,6 @@ describe('PostsService', () => {
       };
       const savedPost = { id: 1, ...dto, userId: 1, isSponsored: false, sponsorNote: null };
 
-      mockPostsRepository.create.mockReturnValue(savedPost);
-      mockPostsRepository.save.mockResolvedValue(savedPost);
       mockPostsRepository.findOne.mockResolvedValue({ ...savedPost, user: { id: 1, name: '테스터' } });
       mockLikeQb.getRawMany.mockResolvedValue([]);
       mockPostLikesRepository.find.mockResolvedValue([]);
@@ -102,9 +114,66 @@ describe('PostsService', () => {
 
       const result = await service.create(1, dto as any);
       expect(result).toBeDefined();
-      expect(mockPostsRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ title: '우림 질문', userId: 1 }),
-      );
+      expect(mockDataSource.transaction).toHaveBeenCalled();
+    });
+
+    it('이미지와 함께 게시글을 생성한다', async () => {
+      const dto = {
+        title: '이미지 포함',
+        content: '내용',
+        category: PostCategory.BREWING_QUESTION,
+        images: [
+          { url: 'https://example.com/1.jpg', caption: '첫 이미지' },
+          { url: 'https://example.com/2.jpg', thumbnailUrl: 'https://example.com/thumb.jpg', caption: '두 번째' },
+        ],
+      };
+      const savedPost = { id: 1, ...dto, userId: 1, isSponsored: false, sponsorNote: null, images: undefined };
+
+      let savedPostImages: any[] = [];
+      mockDataSource.transaction.mockImplementation(async (fn) => {
+        const manager = {
+          create: jest.fn((Entity: any, data: any) => ({ ...data })),
+          save: jest.fn().mockImplementation(async (Entity: any, entity: any) => {
+            if (Entity === Post) return { ...entity, id: 1 };
+            if (Entity === PostImage) {
+              savedPostImages = Array.isArray(entity) ? entity : [entity];
+              return entity;
+            }
+            return entity;
+          }),
+          findOne: jest.fn().mockResolvedValue(null),
+          delete: jest.fn().mockResolvedValue(undefined),
+        };
+        return fn(manager);
+      });
+      mockPostsRepository.findOne.mockResolvedValue({
+        ...savedPost,
+        user: { id: 1, name: '테스터' },
+        images: [
+          { url: 'https://example.com/1.jpg', caption: '첫 이미지', sortOrder: 0 },
+          { url: 'https://example.com/2.jpg', thumbnailUrl: 'https://example.com/thumb.jpg', caption: '두 번째', sortOrder: 1 },
+        ],
+      });
+      mockLikeQb.getRawMany.mockResolvedValue([]);
+      mockPostLikesRepository.find.mockResolvedValue([]);
+      mockPostBookmarksRepository.find.mockResolvedValue([]);
+
+      const result = await service.create(1, dto as any);
+      expect(result).toBeDefined();
+      expect(result.images).toHaveLength(2);
+      expect(savedPostImages).toHaveLength(2);
+      expect(savedPostImages[0]).toMatchObject({
+        postId: 1,
+        url: 'https://example.com/1.jpg',
+        caption: '첫 이미지',
+        sortOrder: 0,
+      });
+      expect(savedPostImages[1]).toMatchObject({
+        postId: 1,
+        url: 'https://example.com/2.jpg',
+        caption: '두 번째',
+        sortOrder: 1,
+      });
     });
   });
 
@@ -145,27 +214,96 @@ describe('PostsService', () => {
 
   describe('update', () => {
     it('게시글이 없으면 NotFoundException을 던진다', async () => {
-      mockPostsRepository.findOne.mockResolvedValue(null);
+      mockDataSource.transaction.mockImplementation(async (fn) => {
+        const manager = {
+          create: jest.fn((Entity: any, data: any) => ({ ...data })),
+          save: jest.fn().mockResolvedValue({}),
+          findOne: jest.fn().mockResolvedValue(null),
+          delete: jest.fn().mockResolvedValue(undefined),
+        };
+        return fn(manager);
+      });
       await expect(service.update(999, 1, {} as any)).rejects.toThrow(NotFoundException);
     });
 
     it('작성자가 아니면 ForbiddenException을 던진다', async () => {
-      mockPostsRepository.findOne.mockResolvedValue({ id: 1, userId: 2 });
+      mockDataSource.transaction.mockImplementation(async (fn) => {
+        const manager = {
+          create: jest.fn((Entity: any, data: any) => ({ ...data })),
+          save: jest.fn().mockResolvedValue({}),
+          findOne: jest.fn().mockResolvedValue({ id: 1, userId: 2 }),
+          delete: jest.fn().mockResolvedValue(undefined),
+        };
+        return fn(manager);
+      });
       await expect(service.update(1, 1, {} as any)).rejects.toThrow(ForbiddenException);
     });
 
     it('게시글을 수정한다', async () => {
       const post = { id: 1, userId: 1, title: '원래제목', user: { id: 1, name: '테스터' } };
-      mockPostsRepository.findOne
-        .mockResolvedValueOnce(post)
-        .mockResolvedValueOnce({ ...post, title: '수정제목', user: { id: 1, name: '테스터' } });
-      mockPostsRepository.save.mockResolvedValue({ ...post, title: '수정제목' });
+      mockDataSource.transaction.mockImplementation(async (fn) => {
+        const manager = {
+          create: jest.fn((Entity: any, data: any) => ({ ...data })),
+          save: jest.fn().mockResolvedValue({ ...post, title: '수정제목' }),
+          findOne: jest.fn().mockResolvedValue(post),
+          delete: jest.fn().mockResolvedValue(undefined),
+        };
+        return fn(manager);
+      });
+      mockPostsRepository.findOne.mockResolvedValue({ ...post, title: '수정제목', user: { id: 1, name: '테스터' } });
       mockLikeQb.getRawMany.mockResolvedValue([]);
       mockPostLikesRepository.find.mockResolvedValue([]);
       mockPostBookmarksRepository.find.mockResolvedValue([]);
 
       const result = await service.update(1, 1, { title: '수정제목' } as any);
       expect(result).toBeDefined();
+    });
+
+    it('이미지를 수정한다', async () => {
+      const post = { id: 1, userId: 1, title: '제목', user: { id: 1, name: '테스터' } };
+      let deletedPostId: number | null = null;
+      let savedImages: any[] = [];
+      mockDataSource.transaction.mockImplementation(async (fn) => {
+        const manager = {
+          create: jest.fn((Entity: any, data: any) => ({ ...data })),
+          save: jest.fn().mockImplementation(async (Entity: any, entity: any) => {
+            if (Entity === Post) return { ...entity };
+            if (Entity === PostImage) {
+              savedImages = Array.isArray(entity) ? entity : [entity];
+              return entity;
+            }
+            return entity;
+          }),
+          findOne: jest.fn().mockResolvedValue(post),
+          delete: jest.fn().mockImplementation(async (Entity: any, criteria: any) => {
+            if (Entity === PostImage && criteria) deletedPostId = criteria.postId;
+            return undefined;
+          }),
+        };
+        return fn(manager);
+      });
+      mockPostsRepository.findOne.mockResolvedValue({
+        ...post,
+        title: '수정제목',
+        images: [{ url: 'https://example.com/new.jpg', caption: '새 이미지', sortOrder: 0 }],
+      });
+      mockLikeQb.getRawMany.mockResolvedValue([]);
+      mockPostLikesRepository.find.mockResolvedValue([]);
+      mockPostBookmarksRepository.find.mockResolvedValue([]);
+
+      const result = await service.update(1, 1, {
+        title: '수정제목',
+        images: [{ url: 'https://example.com/new.jpg', caption: '새 이미지' }],
+      } as any);
+      expect(result).toBeDefined();
+      expect(deletedPostId).toBe(1);
+      expect(savedImages).toHaveLength(1);
+      expect(savedImages[0]).toMatchObject({
+        postId: 1,
+        url: 'https://example.com/new.jpg',
+        caption: '새 이미지',
+        sortOrder: 0,
+      });
     });
   });
 

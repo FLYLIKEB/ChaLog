@@ -108,20 +108,27 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
 
         {/* 첫 이미지 썸네일 */}
         {post.images && post.images.length > 0 && (
-          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5">
-            <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted">
-              <img
-                src={post.images[0].thumbnailUrl || post.images[0].url}
-                alt=""
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
+          <div className="flex flex-col gap-1">
+            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5">
+              <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted">
+                <img
+                  src={post.images[0].thumbnailUrl || post.images[0].url}
+                  alt={post.images[0].caption || post.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              {post.images.length > 1 && (
+                <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  +{post.images.length - 1}
+                </span>
+              )}
             </div>
-            {post.images.length > 1 && (
-              <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
-                <ImageIcon className="w-3.5 h-3.5" />
-                +{post.images.length - 1}
-              </span>
+            {post.images[0].caption && (
+              <p className="text-xs text-muted-foreground line-clamp-1">
+                {post.images[0].caption}
+              </p>
             )}
           </div>
         )}

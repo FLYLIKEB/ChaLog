@@ -42,11 +42,12 @@ export function PostImageUploader({
 
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
 
+    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     const invalidFiles = filesToUpload.filter(
-      (file) => !file.type.startsWith('image/'),
+      (file) => !ALLOWED_IMAGE_TYPES.includes(file.type),
     );
     if (invalidFiles.length > 0) {
-      toast.error('이미지 파일만 업로드할 수 있습니다.');
+      toast.error('지원하지 않는 이미지 형식입니다. JPEG, PNG, WebP만 지원합니다.');
       return;
     }
 
@@ -107,24 +108,6 @@ export function PostImageUploader({
           toast.error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
           navigate('/login');
         }
-      }
-    } catch (error: unknown) {
-      const err = error as { statusCode?: number; message?: string };
-      logger.error('Failed to upload images:', error);
-      if (err?.statusCode === 401) {
-        logout();
-        toast.error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/login');
-      } else if (
-        err?.statusCode === 500 &&
-        typeof err?.message === 'string' &&
-        /session|expired|reauthenticate/i.test(err.message)
-      ) {
-        logout();
-        toast.error('로그인 세션이 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/login');
-      } else {
-        toast.error(err?.message || '이미지 업로드에 실패했습니다.');
       }
     } finally {
       setUploading(false);
