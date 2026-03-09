@@ -106,10 +106,24 @@ else
     fi
 fi
 
-# 3. 백엔드 서버 시작
+# 3. 마이그레이션 실행 (로컬 DB 사용 시)
+if echo "${LOCAL_DATABASE_URL:-}" | grep -qE "localhost:3306|127\.0\.0\.1:3306"; then
+    echo -e "${BLUE}📦 DB 마이그레이션 실행 중...${NC}"
+    cd "$BACKEND_DIR"
+    export NODE_ENV=development
+    if npm run migration:run 2>/dev/null; then
+        echo -e "${GREEN}✅ 마이그레이션 완료${NC}"
+    else
+        echo -e "${YELLOW}⚠️  마이그레이션 건너뜀 (이미 적용됐거나 DB 미준비)${NC}"
+    fi
+    cd "$PROJECT_ROOT"
+    echo ""
+fi
+
+# 4. 백엔드 서버 시작
 echo -e "${BLUE}🔧 백엔드 서버 시작 중...${NC}"
 cd "$BACKEND_DIR"
-# 로컬 개발 환경 (DB_SYNCHRONIZE는 .env 값 사용 → 테이블 자동 생성)
+# 로컬 개발 환경 (DB_SYNCHRONIZE=false → migrations 사용)
 export NODE_ENV=development
 npm run start:dev > /tmp/chalog-backend.log 2>&1 &
 BACKEND_PID=$!
@@ -117,7 +131,7 @@ echo -e "${GREEN}✅ 백엔드 서버 시작됨 (PID: $BACKEND_PID)${NC}"
 echo "   로그: tail -f /tmp/chalog-backend.log"
 echo ""
 
-# 4. 백엔드 서버가 시작될 때까지 대기 (DB 연결 최대 60초 + 여유)
+# 5. 백엔드 서버가 시작될 때까지 대기 (DB 연결 최대 60초 + 여유)
 echo -e "${YELLOW}⏳ 백엔드 서버 시작 대기 중...${NC}"
 for i in {1..90}; do
     if curl -s http://localhost:3000/health > /dev/null 2>&1; then
@@ -133,7 +147,7 @@ for i in {1..90}; do
     sleep 1
 done
 
-# 5. 프론트엔드 서버 시작
+# 6. 프론트엔드 서버 시작
 echo -e "${BLUE}🎨 프론트엔드 서버 시작 중...${NC}"
 cd "$PROJECT_ROOT"
 # 로컬 개발 환경으로 설정
@@ -144,7 +158,7 @@ echo -e "${GREEN}✅ 프론트엔드 서버 시작됨 (PID: $FRONTEND_PID)${NC}"
 echo "   로그: tail -f /tmp/chalog-frontend.log"
 echo ""
 
-# 6. 프론트엔드 서버가 시작될 때까지 대기
+# 7. 프론트엔드 서버가 시작될 때까지 대기
 echo -e "${YELLOW}⏳ 프론트엔드 서버 시작 대기 중...${NC}"
 sleep 3
 for i in {1..20}; do
@@ -160,7 +174,7 @@ for i in {1..20}; do
     sleep 1
 done
 
-# 7. 최종 상태 출력
+# 8. 최종 상태 출력
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}✅ 모든 서버가 실행되었습니다!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
