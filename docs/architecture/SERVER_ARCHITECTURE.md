@@ -41,6 +41,7 @@ flowchart TB
             UsersModule["UsersModule<br/>사용자"]
             TeasModule["TeasModule<br/>차"]
             NotesModule["NotesModule<br/>노트"]
+            AdminModule["AdminModule<br/>운영자 콘솔"]
             HealthController["HealthController<br/>헬스 체크"]
         end
     end
@@ -60,6 +61,7 @@ flowchart TB
     AppModule --> UsersModule
     AppModule --> TeasModule
     AppModule --> NotesModule
+    AppModule --> AdminModule
     AppModule --> HealthController
     TypeOrmModule -->|chalog-mysql:3306| Tables
 ```
@@ -148,7 +150,11 @@ graph TD
     AppModule --> UsersModule["UsersModule<br/>사용자 모듈"]
     AppModule --> TeasModule["TeasModule<br/>차 모듈"]
     AppModule --> NotesModule["NotesModule<br/>노트 모듈"]
+    AppModule --> AdminModule["AdminModule<br/>운영자 콘솔"]
     AppModule --> HealthController["HealthController<br/>헬스 체크"]
+    
+    AdminModule --> AdminController["AdminController<br/>admin.controller.ts"]
+    AdminModule --> AdminService["AdminService<br/>admin.service.ts"]
     
     AuthModule --> AuthController["auth.controller.ts<br/>POST /auth/register<br/>POST /auth/login<br/>POST /auth/kakao<br/>POST /auth/profile"]
     AuthModule --> AuthService["auth.service.ts<br/>인증 로직"]
@@ -213,7 +219,26 @@ graph TB
         H1["GET /health<br/>서버 및 DB 상태 확인"]
     end
 
+    subgraph Admin["운영자 Admin (JWT + role=admin)"]
+        AD1["GET /admin/dashboard<br/>대시보드"]
+        AD2["GET /admin/teas<br/>차 목록"]
+        AD3["POST /admin/teas<br/>차 생성"]
+        AD4["PATCH /admin/teas/:id<br/>차 수정"]
+        AD5["DELETE /admin/teas/:id<br/>차 삭제"]
+        AD6["GET /admin/sellers<br/>찻집 목록"]
+        AD7["POST /admin/sellers<br/>찻집 생성"]
+        AD8["PATCH /admin/sellers/:id<br/>찻집 수정"]
+        AD9["DELETE /admin/sellers/:id<br/>찻집 삭제"]
+        AD10["GET /admin/tags<br/>태그 목록"]
+        AD11["POST /admin/tags<br/>태그 생성"]
+        AD12["PATCH /admin/tags/:id<br/>태그 수정"]
+        AD13["DELETE /admin/tags/:id<br/>태그 삭제"]
+        AD14["POST /admin/tags/:id/merge<br/>태그 병합"]
+        AD15["PATCH /admin/users/:id<br/>사용자 프로필 수정"]
+    end
+
 ```
+> **참고:** Admin API에는 위 대표 엔드포인트 외에도 `/admin/metrics`, `/admin/logs`, 신고 처리, 감사 로그, 포스트/댓글 관리 등이 있습니다. 전체 목록은 `backend/src/admin/admin.controller.ts`를 참조하세요.
 
 ## 데이터 흐름
 

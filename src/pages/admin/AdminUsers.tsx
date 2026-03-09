@@ -4,7 +4,15 @@ import { adminApi } from '../../lib/api';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Loader2, Ban, Shield, Trash2 } from 'lucide-react';
+import { Label } from '../../components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import { Loader2, Ban, Shield, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function AdminUsers() {
@@ -15,6 +23,7 @@ export function AdminUsers() {
   const debouncedSearch = useDebounce(search, 300);
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     adminApi.getUsers({ search: debouncedSearch || undefined, limit: 50 }).then(setList).finally(() => setLoading(false));
@@ -63,6 +72,30 @@ export function AdminUsers() {
     }
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!detail) return;
+    const form = e.currentTarget;
+    const name = (form.elements.namedItem('editName') as HTMLInputElement)?.value?.trim();
+    const bio = (form.elements.namedItem('editBio') as HTMLInputElement)?.value?.trim();
+    const instagramUrl = (form.elements.namedItem('editInstagramUrl') as HTMLInputElement)?.value?.trim();
+    const blogUrl = (form.elements.namedItem('editBlogUrl') as HTMLInputElement)?.value?.trim();
+    try {
+      await adminApi.updateUser(detail.id, {
+        name: name || undefined,
+        bio: bio || null,
+        instagramUrl: instagramUrl || null,
+        blogUrl: blogUrl || null,
+      });
+      toast.success('프로필을 수정했습니다.');
+      setEditOpen(false);
+      adminApi.getUserDetail(detail.id).then(setDetail);
+      adminApi.getUsers({ search: debouncedSearch || undefined, limit: 50 }).then(setList);
+    } catch (err: any) {
+      toast.error(err?.message || '실패');
+    }
+  };
+
   if (detailLoading) {
     return (
       <div className="space-y-6">
@@ -89,6 +122,9 @@ export function AdminUsers() {
           <p><strong>가입일:</strong> {detail.createdAt ? new Date(detail.createdAt).toLocaleDateString() : '-'}</p>
           {detail.bannedAt && <p className="text-destructive">정지됨: {new Date(detail.bannedAt).toLocaleString()}</p>}
           <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => setEditOpen(true)}>
+              <Pencil className="w-4 h-4 mr-1" /> 프로필 수정
+            </Button>
             {!detail.bannedAt && detail.role !== 'admin' && (
               <Button variant="destructive" onClick={() => handleSuspend(detail.id)}>
                 <Ban className="w-4 h-4 mr-1" /> 계정 정지
@@ -152,6 +188,37 @@ export function AdminUsers() {
             </ul>
           </div>
         )}
+
+        {/* 프로필 수정 모달 */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>프로필 수정</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUpdateProfile} className="space-y-4">
+              <div>
+                <Label>이름</Label>
+                <Input name="editName" defaultValue={detail.name} placeholder="이름" />
+              </div>
+              <div>
+                <Label>소개 (bio)</Label>
+                <Input name="editBio" defaultValue={detail.bio ?? ''} placeholder="소개" />
+              </div>
+              <div>
+                <Label>인스타그램 URL</Label>
+                <Input name="editInstagramUrl" defaultValue={detail.instagramUrl ?? ''} placeholder="https://..." />
+              </div>
+              <div>
+                <Label>블로그 URL</Label>
+                <Input name="editBlogUrl" defaultValue={detail.blogUrl ?? ''} placeholder="https://..." />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>취소</Button>
+                <Button type="submit">저장</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     );
   }

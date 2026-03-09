@@ -27,6 +27,28 @@ Windows에서 스크립트를 실행하려면 다음 중 하나의 방법을 사
 
 ## Git 워크플로우
 
+### plan-from-issue.sh
+
+GitHub 이슈 기반으로 Cursor Agent 탭에 Plan 프롬프트를 열어줌 (Deep Link 방식)
+
+```bash
+./scripts/plan-from-issue.sh <이슈번호>
+
+# 예시
+./scripts/plan-from-issue.sh 42
+```
+
+**동작:** `gh issue view`로 이슈 조회 → `cursor://` Deep Link로 Agent 탭에 프롬프트 열기 → Agent 탭에서 Plan 모드로 실행
+
+**의존성:**
+- GitHub CLI (`gh`): `brew install gh` 후 `gh auth login`
+- jq: `brew install jq`
+- python3: URL 인코딩용 (macOS 기본 포함)
+
+**참고:** [`.cursor/rules/github-issue-workflow.mdc`](../../.cursor/rules/github-issue-workflow.mdc) 규칙 준수. Agent 탭에서 Shift+Tab으로 Plan 모드 전환 후 실행
+
+---
+
 ### quick-commit.sh
 
 빠른 커밋 및 푸시 자동화
@@ -152,6 +174,13 @@ npm run start:dev                # 백엔드 실행
 ```bash
 cd backend
 ./scripts/stop-ssh-tunnel.sh     # SSH 터널 종료
+```
+
+### 이슈 기반 개발 시작
+```bash
+./scripts/plan-from-issue.sh 42    # Plan 생성
+git checkout -b feature/issue-42-add-filter
+# ... 구현 후 ...
 ```
 
 ### 커밋 및 릴리스

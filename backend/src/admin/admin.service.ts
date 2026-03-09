@@ -19,6 +19,10 @@ import { Tag } from '../notes/entities/tag.entity';
 import { Comment } from '../comments/entities/comment.entity';
 import { NoteTag } from '../notes/entities/note-tag.entity';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
+import { CreateTeaDto } from '../teas/dto/create-tea.dto';
+import { CreateSellerDto } from '../teas/dto/create-seller.dto';
+import { CreateTagDto } from './dto/create-tag.dto';
+import { UpdateUserDto } from '../users/dto/update-user.dto';
 import { NotesService } from '../notes/notes.service';
 import { PostsService } from '../posts/posts.service';
 import { CommentsService } from '../comments/comments.service';
@@ -795,6 +799,42 @@ export class AdminService {
     return { isPinned: post.isPinned };
   }
 
+  async updateUser(targetUserId: number, dto: UpdateUserDto, adminId: number) {
+    const user = await this.usersRepository.findOne({ where: { id: targetUserId } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    const keys = Object.keys(dto).filter((k) => dto[k as keyof UpdateUserDto] !== undefined);
+    if (keys.length === 0) {
+      throw new BadRequestException('수정할 항목을 하나 이상 입력해주세요.');
+    }
+    const orig: Record<string, unknown> = {
+      name: user.name,
+      profileImageUrl: user.profileImageUrl,
+      bio: user.bio,
+      instagramUrl: user.instagramUrl,
+      blogUrl: user.blogUrl,
+    };
+    if (dto.name !== undefined) {
+      const trimmedName = dto.name.trim();
+      if (!trimmedName) {
+        throw new BadRequestException('이름을 입력해주세요.');
+      }
+      user.name = trimmedName;
+    }
+    if (dto.profileImageUrl !== undefined) user.profileImageUrl = dto.profileImageUrl;
+    if (dto.bio !== undefined) user.bio = dto.bio;
+    if (dto.instagramUrl !== undefined) user.instagramUrl = dto.instagramUrl;
+    if (dto.blogUrl !== undefined) user.blogUrl = dto.blogUrl;
+    const hasChange = keys.some(
+      (k) => String((user as unknown as Record<string, unknown>)[k] ?? '') !== String(orig[k] ?? ''),
+    );
+    if (!hasChange) return user;
+    await this.usersRepository.save(user);
+    await this.logAudit(adminId, AuditAction.USER_UPDATE, 'user', targetUserId, undefined, {
+      updates: keys,
+    });
+    return user;
+  }
+
   async suspendUser(userId: number, adminId: number) {
     const user = await this.usersRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
@@ -901,6 +941,25 @@ export class AdminService {
     return { ...tea, noteCount };
   }
 
+  async createTea(dto: CreateTeaDto, adminId: number) {
+    const trimmedName = dto.name.trim();
+    if (!trimmedName) {
+      throw new BadRequestException('차 이름을 입력해주세요.');
+    }
+    const tea = this.teasRepository.create({
+      ...dto,
+      name: trimmedName,
+      averageRating: 0,
+      reviewCount: 0,
+    });
+    const saved = await this.teasRepository.save(tea);
+    await this.logAudit(adminId, AuditAction.TEA_CREATE, 'tea', saved.id, undefined, {
+      name: saved.name,
+      type: saved.type,
+    });
+    return saved;
+  }
+
   async updateTea(teaId: number, dto: Record<string, unknown>, adminId: number) {
     const tea = await this.teasRepository.findOne({ where: { id: teaId } });
     if (!tea) throw new NotFoundException('차를 찾을 수 없습니다.');
@@ -986,6 +1045,40 @@ export class AdminService {
     return { ...seller, teaCount };
   }
 
+  async createSeller(dto: CreateSellerDto, adminId: number) {
+    const trimmed = dto.name.trim();
+    if (!trimmed) {
+      throw new BadRequestException('찻집 이름을 입력해주세요.');
+    }
+    const existing = await this.sellersRepository.findOne({ where: { name: trimmed } });
+    if (existing) {
+      throw new BadRequestException('이미 같은 이름의 찻집이 있습니다.');
+    }
+    const seller = this.sellersRepository.create({
+      name: trimmed,
+      address: dto.address?.trim() || null,
+      mapUrl: dto.mapUrl?.trim() || null,
+      websiteUrl: dto.websiteUrl?.trim() || null,
+      phone: dto.phone?.trim() || null,
+      description: dto.description?.trim() || null,
+      businessHours: dto.businessHours?.trim() || null,
+    });
+    let saved;
+    try {
+      saved = await this.sellersRepository.save(seller);
+    } catch (err: unknown) {
+      const msg = String((err as { message?: string })?.message ?? '');
+      if (msg.includes('Duplicate') || msg.includes('unique') || msg.includes('UNIQUE')) {
+        throw new BadRequestException('이미 같은 이름의 찻집이 있습니다.');
+      }
+      throw err;
+    }
+    await this.logAudit(adminId, AuditAction.SELLER_CREATE, 'seller', saved.id, undefined, {
+      name: saved.name,
+    });
+    return saved;
+  }
+
   async updateSeller(sellerId: number, dto: Record<string, unknown>, adminId: number) {
     const seller = await this.sellersRepository.findOne({ where: { id: sellerId } });
     if (!seller) throw new NotFoundException('찻집을 찾을 수 없습니다.');
@@ -1063,6 +1156,32 @@ export class AdminService {
       page,
       limit,
     };
+  }
+
+  async createTag(dto: CreateTagDto, adminId: number) {
+    const trimmed = dto.name.trim();
+    if (!trimmed) {
+      throw new BadRequestException('태그 이름을 입력해주세요.');
+    }
+    const existing = await this.tagsRepository.findOne({ where: { name: trimmed } });
+    if (existing) {
+      throw new BadRequestException('이미 같은 이름의 태그가 있습니다.');
+    }
+    const tag = this.tagsRepository.create({ name: trimmed });
+    let saved;
+    try {
+      saved = await this.tagsRepository.save(tag);
+    } catch (err: unknown) {
+      const msg = String((err as { message?: string })?.message ?? '');
+      if (msg.includes('Duplicate') || msg.includes('unique') || msg.includes('UNIQUE')) {
+        throw new BadRequestException('이미 같은 이름의 태그가 있습니다.');
+      }
+      throw err;
+    }
+    await this.logAudit(adminId, AuditAction.TAG_CREATE, 'tag', saved.id, undefined, {
+      name: saved.name,
+    });
+    return saved;
   }
 
   async updateTag(tagId: number, dto: { name: string }, adminId: number) {

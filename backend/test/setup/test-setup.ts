@@ -169,7 +169,9 @@ export async function cleanupDatabase(dataSource: DataSource): Promise<void> {
     await dataSource.query('DELETE FROM cellar_items');
     await dataSource.query('DELETE FROM rating_axis');
     await dataSource.query('DELETE FROM rating_schema');
+    await dataSource.query('DELETE FROM audit_logs');
     await dataSource.query('DELETE FROM teas');
+    await dataSource.query('DELETE FROM sellers');
     await dataSource.query('DELETE FROM user_authentications');
     await dataSource.query('DELETE FROM users');
     await dataSource.query('SET FOREIGN_KEY_CHECKS = 1');
