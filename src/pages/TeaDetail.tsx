@@ -268,10 +268,10 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 더 살펴보기 - 태그 기반 추천 */}
+        {/* 향미가 비슷한 차 - 태그 기반 추천 */}
         {similarTeas.length > 0 && (
           <section>
-            <h2 className="mb-3">더 살펴보기</h2>
+            <h2 className="mb-3">향미가 비슷한 차</h2>
             <div
               className="flex gap-3 overflow-x-auto pb-2"
               data-testid="similar-teas"
