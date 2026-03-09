@@ -353,6 +353,11 @@ export class NotesService {
     }
 
     Object.assign(note, noteData);
+    // note_schemas는 위에서 별도로 delete/save 했으므로, notesRepository.save 시
+    // cascade로 기존 noteSchemas가 중복 저장되어 UQ_note_schemas 위반을 방지하기 위해 제거
+    if ((note as any).noteSchemas !== undefined) {
+      delete (note as any).noteSchemas;
+    }
     const updatedNote = await this.notesRepository.save(note);
 
     const finalSchemaIds = updateSchemaIds ?? (note as any).schemaIds ?? (note.schemaId != null ? [note.schemaId] : []);

@@ -64,9 +64,10 @@ export function EditNote() {
   useEffect(() => {
     const fetchSchema = async () => {
       try {
-        const schemas = await notesApi.getActiveSchemas() as RatingSchema[];
-        if (schemas && schemas.length > 0) {
-          const firstSchema = schemas[0];
+        const res = await notesApi.getActiveSchemas();
+        const list = res?.schemas ?? [];
+        if (list.length > 0) {
+          const firstSchema = list[0];
           setSchema(firstSchema);
           
           // 스키마의 축 정보 가져오기
