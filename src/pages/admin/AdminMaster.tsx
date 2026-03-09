@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { Button } from '../../components/ui/button';
@@ -33,18 +33,22 @@ export function AdminMaster() {
     seller: false,
     tag: false,
   });
+  const [creating, setCreating] = useState({ tea: false, seller: false, tag: false });
   const [newTagName, setNewTagName] = useState('');
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     setLoading(true);
+    const id = ++requestIdRef.current;
+    const opts = { search: search || undefined, limit: 50 };
     if (tab === 'teas') {
-      adminApi.getTeas({ search: search || undefined, limit: 50 }).then(setTeas).finally(() => setLoading(false));
+      adminApi.getTeas(opts).then((r) => { if (id === requestIdRef.current) setTeas(r); }).finally(() => { if (id === requestIdRef.current) setLoading(false); });
     } else if (tab === 'sellers') {
-      adminApi.getSellers({ search: search || undefined, limit: 50 }).then(setSellers).finally(() => setLoading(false));
+      adminApi.getSellers(opts).then((r) => { if (id === requestIdRef.current) setSellers(r); }).finally(() => { if (id === requestIdRef.current) setLoading(false); });
     } else if (tab === 'tags') {
-      adminApi.getTags({ search: search || undefined, limit: 50, sortBy: 'usageCount' }).then(setTags).finally(() => setLoading(false));
+      adminApi.getTags({ ...opts, sortBy: 'usageCount' }).then((r) => { if (id === requestIdRef.current) setTags(r); }).finally(() => { if (id === requestIdRef.current) setLoading(false); });
     } else {
-      adminApi.getUsers({ search: search || undefined, limit: 50 }).then(setUsers).finally(() => setLoading(false));
+      adminApi.getUsers(opts).then((r) => { if (id === requestIdRef.current) setUsers(r); }).finally(() => { if (id === requestIdRef.current) setLoading(false); });
     }
   }, [tab, search]);
 
@@ -127,6 +131,7 @@ export function AdminMaster() {
 
   const handleCreateTea = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (creating.tea) return;
     const form = e.currentTarget;
     const name = (form.elements.namedItem('teaName') as HTMLInputElement)?.value?.trim();
     const yearStr = (form.elements.namedItem('teaYear') as HTMLInputElement)?.value?.trim();
@@ -139,6 +144,7 @@ export function AdminMaster() {
       return;
     }
     try {
+      setCreating((s) => ({ ...s, tea: true }));
       await adminApi.createTea({
         name,
         year: yearStr ? parseInt(yearStr, 10) : undefined,
@@ -152,11 +158,14 @@ export function AdminMaster() {
       adminApi.getTeas({ search: search || undefined, limit: 50 }).then(setTeas);
     } catch (err: any) {
       toast.error(err?.message || '실패');
+    } finally {
+      setCreating((s) => ({ ...s, tea: false }));
     }
   };
 
   const handleCreateSeller = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (creating.seller) return;
     const form = e.currentTarget;
     const name = (form.elements.namedItem('sellerName') as HTMLInputElement)?.value?.trim();
     if (!name) {
@@ -164,6 +173,7 @@ export function AdminMaster() {
       return;
     }
     try {
+      setCreating((s) => ({ ...s, seller: true }));
       await adminApi.createSeller({
         name,
         address: (form.elements.namedItem('sellerAddress') as HTMLInputElement)?.value?.trim() || undefined,
@@ -178,16 +188,20 @@ export function AdminMaster() {
       adminApi.getSellers({ search: search || undefined, limit: 50 }).then(setSellers);
     } catch (err: any) {
       toast.error(err?.message || '실패');
+    } finally {
+      setCreating((s) => ({ ...s, seller: false }));
     }
   };
 
   const handleCreateTag = async () => {
+    if (creating.tag) return;
     const name = newTagName.trim();
     if (!name) {
       toast.error('태그 이름을 입력해주세요.');
       return;
     }
     try {
+      setCreating((s) => ({ ...s, tag: true }));
       await adminApi.createTag({ name });
       toast.success('추가했습니다.');
       setNewTagName('');
@@ -195,6 +209,8 @@ export function AdminMaster() {
       adminApi.getTags({ search: search || undefined, limit: 50, sortBy: 'usageCount' }).then(setTags);
     } catch (err: any) {
       toast.error(err?.message || '실패');
+    } finally {
+      setCreating((s) => ({ ...s, tag: false }));
     }
   };
 
@@ -302,7 +318,7 @@ export function AdminMaster() {
                             const yearStr = (e.currentTarget.elements.namedItem('teaEditYear') as HTMLInputElement)?.value?.trim();
                             const type = (e.currentTarget.elements.namedItem('teaEditType') as HTMLSelectElement)?.value;
                             const seller = (e.currentTarget.elements.namedItem('teaEditSeller') as HTMLInputElement)?.value?.trim();
-                            if (name && type) handleUpdateTea(t.id, { name, year: yearStr ? parseInt(yearStr, 10) : undefined, type, seller: seller || undefined });
+                            if (name && type) handleUpdateTea(t.id, { name, year: yearStr === '' ? null : parseInt(yearStr, 10), type, seller: seller === '' ? null : seller });
                           }}
                           className="flex flex-wrap gap-2 items-center"
                         >
@@ -326,10 +342,10 @@ export function AdminMaster() {
                     <td className="p-3 flex gap-1">
                       {!(editing?.type === 'tea' && editing?.id === t.id) && (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'tea', id: t.id })}>
+                          <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'tea', id: t.id })} aria-label="차 수정" title="차 수정">
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteTea(t.id)}>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteTea(t.id)} aria-label="차 삭제" title="차 삭제">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </>
@@ -371,11 +387,11 @@ export function AdminMaster() {
                             const phone = (form.elements.namedItem('sellerEditPhone') as HTMLInputElement)?.value?.trim();
                             const businessHours = (form.elements.namedItem('sellerEditBusinessHours') as HTMLInputElement)?.value?.trim();
                             handleUpdateSeller(s.id, {
-                              address: address || undefined,
-                              mapUrl: mapUrl || undefined,
-                              websiteUrl: websiteUrl || undefined,
-                              phone: phone || undefined,
-                              businessHours: businessHours || undefined,
+                              address: address === '' ? null : address,
+                              mapUrl: mapUrl === '' ? null : mapUrl,
+                              websiteUrl: websiteUrl === '' ? null : websiteUrl,
+                              phone: phone === '' ? null : phone,
+                              businessHours: businessHours === '' ? null : businessHours,
                             });
                           }}
                           className="flex flex-wrap gap-2 items-center"
@@ -396,10 +412,10 @@ export function AdminMaster() {
                     <td className="p-3 flex gap-1">
                       {!(editing?.type === 'seller' && editing?.id === s.id) && (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'seller', id: s.id })}>
+                          <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'seller', id: s.id })} aria-label="찻집 수정" title="찻집 수정">
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteSeller(s.id)}>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteSeller(s.id)} aria-label="찻집 삭제" title="찻집 삭제">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </>
@@ -451,7 +467,7 @@ export function AdminMaster() {
                     <td className="p-3 flex gap-1">
                       {!(editing?.type === 'tag' && editing?.id === t.id) && (
                         <>
-                          <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'tag', id: t.id, name: t.name })}>
+                          <Button size="sm" variant="ghost" onClick={() => setEditing({ type: 'tag', id: t.id, name: t.name })} aria-label="태그 수정" title="태그 수정">
                             <Pencil className="w-4 h-4" />
                           </Button>
                           {mergeTarget === null ? (
@@ -465,7 +481,7 @@ export function AdminMaster() {
                               여기로 병합
                             </Button>
                           )}
-                          <Button size="sm" variant="ghost" onClick={() => handleDeleteTag(t.id)}>
+                          <Button size="sm" variant="ghost" onClick={() => handleDeleteTag(t.id)} aria-label="태그 삭제" title="태그 삭제">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </>
@@ -517,7 +533,7 @@ export function AdminMaster() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen((o) => ({ ...o, tea: false }))}>취소</Button>
-              <Button type="submit">추가</Button>
+              <Button type="submit" disabled={creating.tea}>{creating.tea && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}추가</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -556,7 +572,7 @@ export function AdminMaster() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen((o) => ({ ...o, seller: false }))}>취소</Button>
-              <Button type="submit">추가</Button>
+              <Button type="submit" disabled={creating.seller}>{creating.seller && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}추가</Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -579,7 +595,7 @@ export function AdminMaster() {
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen((o) => ({ ...o, tag: false }))}>취소</Button>
-              <Button onClick={handleCreateTag}>추가</Button>
+              <Button onClick={handleCreateTag} disabled={creating.tag}>{creating.tag && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}추가</Button>
             </DialogFooter>
           </div>
         </DialogContent>

@@ -59,6 +59,15 @@ gh pr create --title "feat: {기능 요약}" --body "$(cat <<'EOF'
 - [ ] <기능 요구사항 1>
 - [ ] <기능 요구사항 2>
 
+## DB 스키마 변경 여부
+- [ ] DB 스키마 변경 없음
+- [ ] DB 스키마 변경 있음 (아래 Migration 체크리스트 확인)
+
+### Migration 체크리스트 (스키마 변경 시 필수)
+- [ ] 엔티티 파일 변경 시 Migration 파일 포함
+- [ ] Migration up/down 메서드 구현 확인
+- [ ] 테스트 DB 적용 및 E2E 통과 확인
+
 ## Test plan
 ### 자동 테스트
 - [ ] `npm run build` 통과 (프론트엔드 빌드)

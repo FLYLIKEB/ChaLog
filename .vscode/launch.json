@@ -113,7 +113,7 @@
             "type": "node-terminal",
             "name": "📋 Plan from Issue (plan-from-issue.sh)",
             "request": "launch",
-            "command": "bash scripts/plan-from-issue.sh ${input:issueNumber}",
+            "command": "bash scripts/plan-from-issue.sh '${input:issueNumber}'",
             "cwd": "${workspaceFolder}"
         }
     ],

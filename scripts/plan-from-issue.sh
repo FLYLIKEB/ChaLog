@@ -14,6 +14,10 @@ if [ -z "$ISSUE_NUMBER" ]; then
   echo "   예시: $0 42"
   exit 1
 fi
+if ! [[ "$ISSUE_NUMBER" =~ ^[0-9]+$ ]]; then
+  echo "❌ 이슈 번호는 숫자만 입력해주세요."
+  exit 1
+fi
 
 # GitHub CLI 확인
 if ! command -v gh &> /dev/null; then
@@ -44,10 +48,12 @@ fi
 
 # 이슈 내용 가져오기
 echo "📋 Fetching GitHub issue #$ISSUE_NUMBER..."
-ISSUE_JSON=$(gh issue view "$ISSUE_NUMBER" --json title,body,number,labels,url 2>/dev/null) || true
+if ! ISSUE_JSON=$(gh issue view "$ISSUE_NUMBER" --json title,body,number,labels,url 2>/dev/null); then
+  echo "❌ GitHub 이슈 조회에 실패했습니다. gh 인증/저장소 컨텍스트/이슈 번호를 확인해주세요."
+  exit 1
+fi
 if [ -z "$ISSUE_JSON" ]; then
-  echo "❌ 이슈 #$ISSUE_NUMBER을 찾을 수 없습니다."
-  echo "   저장소/권한 확인: gh repo view 또는 gh auth status"
+  echo "❌ 이슈 #$ISSUE_NUMBER 응답이 비어 있습니다."
   exit 1
 fi
 
@@ -116,7 +122,12 @@ echo "🔗 Cursor Agent 탭에 이슈 #$ISSUE_NUMBER Plan 프롬프트 열기...
 if [[ "$(uname)" == "Darwin" ]]; then
   open "$DEEPLINK_URL"
 elif [[ "$(uname)" == "Linux" ]]; then
-  xdg-open "$DEEPLINK_URL" 2>/dev/null || true
+  if ! xdg-open "$DEEPLINK_URL" 2>/dev/null; then
+    echo "❌ Cursor Deep Link를 열지 못했습니다."
+    echo "   아래 URL을 브라우저에 복사해 열어보세요:"
+    echo "   https://cursor.com/link/prompt${DEEPLINK_URL#*prompt}"
+    exit 1
+  fi
 else
   echo "❌ 이 OS에서는 open/xdg-open을 지원하지 않습니다."
   echo "   아래 URL을 브라우저에 복사해 열어보세요:"
