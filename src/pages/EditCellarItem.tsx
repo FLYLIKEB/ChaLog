@@ -15,6 +15,7 @@ import { logger } from '../lib/logger';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 const DECREMENT_OPTIONS = [3, 5, 8] as const;
+const INCREMENT_OPTIONS = [50] as const;
 
 function toDateInputValue(iso: string | null): string {
   if (!iso) return '';
@@ -237,10 +238,10 @@ export function EditCellarItem() {
             />
             <span className="flex items-center px-3 text-sm text-muted-foreground">g</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {DECREMENT_OPTIONS.map((n) => (
               <Button
-                key={n}
+                key={`-${n}`}
                 type="button"
                 variant="outline"
                 size="sm"
@@ -250,6 +251,21 @@ export function EditCellarItem() {
                 }}
               >
                 -{n}g
+              </Button>
+            ))}
+            {INCREMENT_OPTIONS.map((n) => (
+              <Button
+                key={`+${n}`}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => {
+                  const current = parseFloat(quantity) || 0;
+                  setQuantity(String(current + n));
+                }}
+              >
+                +{n}g
               </Button>
             ))}
           </div>
