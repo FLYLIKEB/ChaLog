@@ -24,8 +24,8 @@ const API_BASE_URL = (() => {
   if (import.meta.env.PROD && typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     // Vercel rewrites를 통해 /api로 프록시됨
     const baseURL = '/api';
-    if (typeof console !== 'undefined' && console.log) {
-      console.log('[API Config] 프로덕션 환경 (Vercel)', {
+    if (logger.enabled) {
+      logger.debug('[API Config] 프로덕션 환경 (Vercel)', {
         baseURL,
         hostname: window.location.hostname,
         origin: window.location.origin,
@@ -39,8 +39,8 @@ const API_BASE_URL = (() => {
   // 개발 환경: Vite 프록시를 사용하여 같은 origin으로 요청 (CORS 문제 방지)
   // 환경 변수가 명시적으로 설정되어 있으면 사용, 없으면 /api 프록시 사용
   const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
-  if (typeof console !== 'undefined' && console.log) {
-    console.log('[API Config] 환경 설정', {
+  if (logger.enabled) {
+    logger.debug('[API Config] 환경 설정', {
       isProduction: import.meta.env.PROD,
       isDevelopment: import.meta.env.DEV,
       VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
@@ -130,7 +130,7 @@ function parseDates<T>(obj: T): T {
 interface BackendNote {
   id: number;
   teaId: number;
-  tea?: { name: string };
+  tea?: { name: string; type?: string };
   userId: number;
   user?: { name: string };
   schemaId: number;
@@ -181,6 +181,7 @@ interface NormalizedNote {
   id: number;
   teaId: number;
   teaName: string;
+  teaType?: string;
   userId: number;
   userName: string;
   schemaId: number;
@@ -248,6 +249,7 @@ function normalizeNote(note: BackendNote): NormalizedNote {
   return {
     ...note,
     teaName: note.tea?.name || '',
+    teaType: note.tea?.type || undefined,
     userName: note.user?.name || '',
     // memo는 null을 유지 (이제 nullable)
     memo: note.memo,
@@ -355,9 +357,9 @@ class ApiClient {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    if (typeof navigator !== 'undefined' && typeof console !== 'undefined' && console.log) {
+    if (typeof navigator !== 'undefined' && logger.enabled) {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      console.log('[ApiClient] 초기화', {
+      logger.debug('[ApiClient] 초기화', {
         baseURL: this.baseURL,
         isMobile,
         userAgent: navigator.userAgent.substring(0, 100),
@@ -1180,6 +1182,8 @@ export interface CreateRatingSchemaRequest {
   axes: Array<{
     nameKo: string;
     nameEn: string;
+    descriptionKo?: string;
+    descriptionEn?: string;
     minValue?: number;
     maxValue?: number;
     stepValue?: number;
@@ -1340,6 +1344,12 @@ export const cellarApi = {
   remove: (id: number) => apiClient.delete(`/cellar/${id}`),
 };
 
+export interface PostImageItemRequest {
+  url: string;
+  thumbnailUrl?: string | null;
+  caption?: string | null;
+}
+
 export interface CreatePostRequest {
   title: string;
   content: string;
@@ -1348,6 +1358,7 @@ export interface CreatePostRequest {
   isPinned?: boolean;
   isSponsored?: boolean;
   sponsorNote?: string;
+  images?: PostImageItemRequest[];
 }
 
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
@@ -1355,6 +1366,8 @@ export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
 export type PostSort = 'latest' | 'popular' | 'commented';
 
 export const postsApi = {
+  uploadImage: (file: File) =>
+    apiClient.uploadFile<{ url: string; thumbnailUrl: string }>('/posts/images', file),
   getAll: (
     category?: import('../types').PostCategory | import('../types').PostCategory[],
     page = 1,

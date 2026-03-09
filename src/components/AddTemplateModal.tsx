@@ -23,9 +23,9 @@ interface AddTemplateModalProps {
 }
 
 const DEFAULT_AXES = [
-  { nameKo: '향', nameEn: 'Aroma' },
-  { nameKo: '맛', nameEn: 'Taste' },
-  { nameKo: '여운', nameEn: 'Finish' },
+  { nameKo: '향', nameEn: 'Aroma', descriptionKo: '' },
+  { nameKo: '맛', nameEn: 'Taste', descriptionKo: '' },
+  { nameKo: '여운', nameEn: 'Finish', descriptionKo: '' },
 ];
 
 export function AddTemplateModal({
@@ -35,13 +35,13 @@ export function AddTemplateModal({
 }: AddTemplateModalProps) {
   const [nameKo, setNameKo] = useState('');
   const [descriptionKo, setDescriptionKo] = useState('');
-  const [axes, setAxes] = useState<Array<{ nameKo: string; nameEn: string }>>([
+  const [axes, setAxes] = useState<Array<{ nameKo: string; nameEn: string; descriptionKo: string }>>([
     ...DEFAULT_AXES,
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const addAxis = () => {
-    setAxes(prev => [...prev, { nameKo: '', nameEn: '' }]);
+    setAxes(prev => [...prev, { nameKo: '', nameEn: '', descriptionKo: '' }]);
   };
 
   const removeAxis = (index: number) => {
@@ -49,7 +49,7 @@ export function AddTemplateModal({
     setAxes(prev => prev.filter((_, i) => i !== index));
   };
 
-  const updateAxis = (index: number, field: 'nameKo' | 'nameEn', value: string) => {
+  const updateAxis = (index: number, field: 'nameKo' | 'nameEn' | 'descriptionKo', value: string) => {
     setAxes(prev =>
       prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
     );
@@ -74,6 +74,7 @@ export function AddTemplateModal({
         axes: validAxes.map((a, i) => ({
           nameKo: a.nameKo.trim(),
           nameEn: a.nameEn.trim() || a.nameKo.trim(),
+          descriptionKo: a.descriptionKo?.trim() || undefined,
           displayOrder: i,
         })),
       };
@@ -148,34 +149,42 @@ export function AddTemplateModal({
                 추가
               </Button>
             </div>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
+            <div className="space-y-2 max-h-64 overflow-y-auto">
               {axes.map((axis, index) => (
                 <div
                   key={index}
-                  className="flex gap-2 items-center p-2 rounded-lg bg-muted/50"
+                  className="flex flex-col gap-2 p-2 rounded-lg bg-muted/50"
                 >
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      placeholder="항목명 (한글)"
+                      value={axis.nameKo}
+                      onChange={e => updateAxis(index, 'nameKo', e.target.value)}
+                      className="flex-1"
+                    />
+                    <Input
+                      placeholder="영문"
+                      value={axis.nameEn}
+                      onChange={e => updateAxis(index, 'nameEn', e.target.value)}
+                      className="flex-1 max-w-[100px]"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeAxis(index)}
+                      disabled={axes.length <= 1}
+                      className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                   <Input
-                    placeholder="항목명 (한글)"
-                    value={axis.nameKo}
-                    onChange={e => updateAxis(index, 'nameKo', e.target.value)}
-                    className="flex-1"
+                    placeholder="설명 (선택) - 평가 시 도움말로 표시됨"
+                    value={axis.descriptionKo}
+                    onChange={e => updateAxis(index, 'descriptionKo', e.target.value)}
+                    className="text-sm"
                   />
-                  <Input
-                    placeholder="영문"
-                    value={axis.nameEn}
-                    onChange={e => updateAxis(index, 'nameEn', e.target.value)}
-                    className="flex-1 max-w-[100px]"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeAxis(index)}
-                    disabled={axes.length <= 1}
-                    className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
                 </div>
               ))}
             </div>

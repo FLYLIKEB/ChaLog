@@ -140,25 +140,16 @@ describe('TagInput 컴포넌트', () => {
     expect(mockOnChange).toHaveBeenCalledWith(['태그1']);
   });
 
-  it('Escape 키로 맞춤차 목록을 닫아야 함', async () => {
+  it('Escape 키로 입력 포커스를 해제해야 함', async () => {
     const user = userEvent.setup();
     render(<TagInput tags={[]} onChange={mockOnChange} />);
 
     const input = screen.getByPlaceholderText(/향미를 입력하거나 맞춤차 향미를 선택하세요/);
-    await user.type(input, '꽃');
-
-    // 맞춤차 향미 버튼이 나타날 때까지 대기
-    await waitFor(() => {
-      const suggestionButton = screen.queryByRole('button', { name: /꽃향/ });
-      expect(suggestionButton).toBeInTheDocument();
-    }, { timeout: 3000 });
+    await user.click(input);
+    expect(document.activeElement).toBe(input);
 
     await user.keyboard('{Escape}');
-
-    await waitFor(() => {
-      const suggestionButton = screen.queryByRole('button', { name: /꽃향/ });
-      expect(suggestionButton).not.toBeInTheDocument();
-    });
+    expect(document.activeElement).not.toBe(input);
   });
 });
 

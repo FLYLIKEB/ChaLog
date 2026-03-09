@@ -11,6 +11,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
+import { TEA_TYPE_PLACEHOLDER_BG } from '../constants';
+import { cn } from '../components/ui/utils';
 
 const LIMIT = 20;
 
@@ -273,7 +275,16 @@ export function TagDetail() {
                     className="flex items-start gap-3 px-4 py-3 hover:bg-muted/20 cursor-pointer transition-colors"
                   >
                     {/* 차 이미지 */}
-                    <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    <div
+                      className={cn(
+                        'shrink-0 w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center',
+                        note.teaImageUrl
+                          ? ''
+                          : note.teaType && note.teaType in TEA_TYPE_PLACEHOLDER_BG
+                            ? TEA_TYPE_PLACEHOLDER_BG[note.teaType as keyof typeof TEA_TYPE_PLACEHOLDER_BG]
+                            : 'bg-muted'
+                      )}
+                    >
                       {note.teaImageUrl ? (
                         <img src={note.teaImageUrl} alt={note.teaName} className="w-full h-full object-cover" />
                       ) : (

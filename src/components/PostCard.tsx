@@ -1,5 +1,5 @@
 import React, { type FC, useState, memo } from 'react';
-import { Heart, Bookmark, Loader2, MessageCircle, Eye, Megaphone } from 'lucide-react';
+import { Heart, Bookmark, Loader2, MessageCircle, Eye, Megaphone, Image as ImageIcon } from 'lucide-react';
 import { Post, POST_CATEGORY_LABELS } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -106,10 +106,30 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
           {post.title}
         </h3>
 
-        {/* 내용 미리보기 */}
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-          {post.content}
-        </p>
+        {/* 이미지 + 내용 미리보기 (나란히 배치) */}
+        <div className="flex gap-3 items-start min-w-0">
+          {post.images && post.images.length > 0 && (
+            <div className="flex gap-1.5 shrink-0">
+              <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted">
+                <img
+                  src={post.images[0].thumbnailUrl || post.images[0].url}
+                  alt={post.images[0].caption || post.title}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              {post.images.length > 1 && (
+                <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
+                  <ImageIcon className="w-3.5 h-3.5" />
+                  +{post.images.length - 1}
+                </span>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-w-0 flex-1">
+            {post.content.length > 100 ? `${post.content.slice(0, 100)}...` : post.content}
+          </p>
+        </div>
 
         {/* 하단: 작성자 + 통계 */}
         <div className="flex items-center justify-between gap-2 mt-1">

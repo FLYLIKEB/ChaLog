@@ -76,6 +76,10 @@ export class ImageProcessorService {
   }
 
   validateImageType(mimeType: string): boolean {
+    const rejectedTypes = ['image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+    if (rejectedTypes.includes(mimeType?.toLowerCase())) {
+      return false;
+    }
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     return allowedTypes.includes(mimeType);
   }

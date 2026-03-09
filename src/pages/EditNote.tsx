@@ -18,6 +18,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
+import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 export function EditNote() {
   const navigate = useNavigate();
@@ -386,8 +387,8 @@ export function EditNote() {
                   className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {tea.type}
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                    {tea.type && <TeaTypeBadge type={tea.type} />}
                     {tea.seller && ` · ${tea.seller}`}
                     {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
                     {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}
@@ -457,10 +458,13 @@ export function EditNote() {
                 <AxisStarRow
                   key={axis.id}
                   label={axis.nameKo}
+                  description={axis.descriptionKo ?? undefined}
                   value={axisValues[axis.id] ?? RATING_DEFAULT}
                   onChange={(value) =>
                     setAxisValues(prev => ({ ...prev, [axis.id]: value }))
                   }
+                  minValue={axis.minValue}
+                  maxValue={axis.maxValue}
                 />
               ))}
           </div>

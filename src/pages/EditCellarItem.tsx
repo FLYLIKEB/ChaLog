@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -16,11 +16,26 @@ import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 const DECREMENT_OPTIONS = [3, 5, 8] as const;
 
-export function NewCellarItem() {
+function toDateInputValue(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().slice(0, 10);
+}
+
+function toDateTimeLocalValue(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+export function EditCellarItem() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const returnedTeaId = searchParams.get('teaId');
+  const { id } = useParams<{ id: string }>();
+  const itemId = id ? parseInt(id, 10) : NaN;
 
   const [teas, setTeas] = useState<Tea[]>([]);
   const [teaSearch, setTeaSearch] = useState('');
@@ -30,7 +45,7 @@ export function NewCellarItem() {
   const [remindAt, setRemindAt] = useState('');
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoadingTeas, setIsLoadingTeas] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (authLoading) return;
@@ -38,34 +53,37 @@ export function NewCellarItem() {
       navigate('/login', { replace: true });
       return;
     }
+    if (isNaN(itemId)) {
+      toast.error('잘못된 경로입니다.');
+      navigate('/cellar', { replace: true });
+      return;
+    }
 
-    const fetchTeas = async () => {
+    const load = async () => {
       try {
-        setIsLoadingTeas(true);
-        const data = await teasApi.getAll();
-        const list = Array.isArray(data) ? data : [];
+        setIsLoading(true);
+        const [item, teasData] = await Promise.all([
+          cellarApi.getById(itemId),
+          teasApi.getAll(),
+        ]);
+        const list = Array.isArray(teasData) ? teasData : [];
         setTeas(list);
-
-        // 신규 차 등록 후 돌아온 경우 해당 차를 자동 선택
-        if (returnedTeaId) {
-          const id = parseInt(returnedTeaId, 10);
-          if (!isNaN(id)) {
-            const matched = list.find((t) => t.id === id);
-            if (matched) {
-              setSelectedTeaId(id);
-            }
-          }
-        }
+        setSelectedTeaId(item.teaId);
+        setQuantity(item.quantity != null ? String(item.quantity) : '');
+        setOpenedAt(toDateInputValue(item.openedAt));
+        setRemindAt(toDateTimeLocalValue(item.remindAt));
+        setMemo(item.memo ?? '');
       } catch (error) {
-        logger.error('Failed to fetch teas:', error);
-        toast.error('차 목록을 불러오는데 실패했습니다.');
+        logger.error('Failed to load cellar item:', error);
+        toast.error('찻장 아이템을 불러오는데 실패했습니다.');
+        navigate('/cellar', { replace: true });
       } finally {
-        setIsLoadingTeas(false);
+        setIsLoading(false);
       }
     };
 
-    fetchTeas();
-  }, [isAuthenticated, authLoading, navigate, returnedTeaId]);
+    load();
+  }, [isAuthenticated, authLoading, navigate, itemId]);
 
   const registerRefresh = useRegisterRefresh();
   useEffect(() => {
@@ -100,25 +118,25 @@ export function NewCellarItem() {
 
     try {
       setIsSaving(true);
-      await cellarApi.create({
+      await cellarApi.update(itemId, {
         teaId: selectedTeaId,
-        quantity: quantity ? qty : undefined,
+        quantity: quantity ? qty : 0,
         unit: 'g',
         openedAt: openedAt || null,
         remindAt: remindAt ? new Date(remindAt).toISOString() : null,
         memo: memo.trim() || null,
       });
-      toast.success('찻장에 추가되었습니다.');
+      toast.success('찻장 아이템이 수정되었습니다.');
       navigate('/cellar');
     } catch (error) {
-      logger.error('Failed to create cellar item:', error);
-      toast.error('찻장 추가에 실패했습니다.');
+      logger.error('Failed to update cellar item:', error);
+      toast.error('수정에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
@@ -128,7 +146,7 @@ export function NewCellarItem() {
 
   return (
     <div className="min-h-screen">
-      <Header showBack title="찻장에 차 추가" showProfile showLogo />
+      <Header showBack title="찻장 아이템 수정" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 pb-10">
         {/* 차 선택 */}
@@ -159,51 +177,46 @@ export function NewCellarItem() {
                 value={teaSearch}
                 onChange={(e) => setTeaSearch(e.target.value)}
               />
-              {isLoadingTeas ? (
-                <div className="flex items-center justify-center py-4">
-                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : (
-                <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border bg-card">
-                  {filteredTeas.length === 0 ? (
-                    <div className="p-3 text-center space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        {teaSearch ? '검색 결과가 없습니다.' : '차 목록이 없습니다.'}
+              <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border bg-card">
+                {filteredTeas.length === 0 ? (
+                  <div className="p-3 text-center space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      {teaSearch ? '검색 결과가 없습니다.' : '차 목록이 없습니다.'}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        navigate(
+                          `/tea/new?returnTo=/cellar/${itemId}/edit${teaSearch.trim() ? `&searchQuery=${encodeURIComponent(teaSearch.trim())}` : ''}`,
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+                    >
+                      <PlusCircle className="w-4 h-4" />
+                      새 차 등록하기
+                    </button>
+                  </div>
+                ) : (
+                  filteredTeas.map((tea) => (
+                    <button
+                      key={tea.id}
+                      type="button"
+                      className="w-full text-left px-3 py-2 hover:bg-secondary/50 transition-colors"
+                      onClick={() => {
+                        setSelectedTeaId(tea.id);
+                        setTeaSearch('');
+                      }}
+                    >
+                      <p className="text-sm font-medium">{tea.name}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
+                        {tea.type && <TeaTypeBadge type={tea.type} />}
+                        {tea.price != null && tea.price > 0 &&
+                          ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
                       </p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          navigate(
-                            `/tea/new?returnTo=/cellar/new${teaSearch.trim() ? `&searchQuery=${encodeURIComponent(teaSearch.trim())}` : ''}`,
-                          )
-                        }
-                        className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        새 차 등록하기
-                      </button>
-                    </div>
-                  ) : (
-                    filteredTeas.map((tea) => (
-                      <button
-                        key={tea.id}
-                        type="button"
-                        className="w-full text-left px-3 py-2 hover:bg-secondary/50 transition-colors"
-                        onClick={() => {
-                          setSelectedTeaId(tea.id);
-                          setTeaSearch('');
-                        }}
-                      >
-                        <p className="text-sm font-medium">{tea.name}</p>
-                        <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                          {tea.type && <TeaTypeBadge type={tea.type} />}
-                          {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
-                        </p>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
+                    </button>
+                  ))
+                )}
+              </div>
             </>
           )}
         </div>
@@ -280,10 +293,10 @@ export function NewCellarItem() {
           {isSaving ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              추가 중...
+              수정 중...
             </>
           ) : (
-            '찻장에 추가'
+            '수정 완료'
           )}
         </Button>
       </form>

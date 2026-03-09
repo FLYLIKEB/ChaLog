@@ -10,6 +10,7 @@ import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
+import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 export function SessionNew() {
   const navigate = useNavigate();
@@ -147,8 +148,8 @@ export function SessionNew() {
                   className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {tea.type}
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
+                    {tea.type && <TeaTypeBadge type={tea.type} />}
                     {tea.seller && ` · ${tea.seller}`}
                     {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
                     {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}

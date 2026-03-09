@@ -59,6 +59,13 @@ export class TeasService {
     }
   }
 
+  private async invalidateTrendingCache(): Promise<void> {
+    await Promise.all([
+      this.cacheManager.del('trending:teas:7d'),
+      this.cacheManager.del('trending:teas:30d'),
+    ]);
+  }
+
   async update(id: number, dto: UpdateTeaDto): Promise<Tea> {
     const tea = await this.teasRepository.findOne({ where: { id } });
     if (!tea) {
@@ -79,6 +86,7 @@ export class TeasService {
     }
     try {
       await this.teasRepository.save(tea);
+      await this.invalidateTrendingCache();
       return this.teasRepository.findOneOrFail({
         where: { id },
         relations: ['seller'],
@@ -408,6 +416,7 @@ export class TeasService {
       averageRating: Number(averageRating.toFixed(2)),
       reviewCount,
     });
+    await this.invalidateTrendingCache();
   }
 
   async getPopularTags(teaId: number): Promise<PopularTagsResponseDto> {

@@ -26,6 +26,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
+import { cn } from '../components/ui/utils';
 
 type SortType = 'latest' | 'rating';
 
@@ -358,9 +360,23 @@ export function UserProfile() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {onboardingPreference.preferredTeaTypes.map(tag => (
-                      <Badge key={tag} variant="secondary">{tag}</Badge>
-                    ))}
+                    {[...onboardingPreference.preferredTeaTypes]
+                      .sort((a, b) => {
+                        const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
+                        const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
+                        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                      })
+                      .map((tag) => {
+                        const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
+                        return (
+                          <span key={tag} className="inline-flex items-center gap-1.5">
+                            {colorClass && (
+                              <span className={cn('w-1.5 h-4 rounded-full shrink-0', colorClass)} aria-hidden />
+                            )}
+                            <Badge variant="secondary">{tag}</Badge>
+                          </span>
+                        );
+                      })}
                   </div>
                 </div>
               )}

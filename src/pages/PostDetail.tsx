@@ -238,6 +238,27 @@ export function PostDetail() {
           {post.content}
         </div>
 
+        {/* 이미지 */}
+        {post.images && post.images.length > 0 && (
+          <div className="space-y-4">
+            {post.images.map((img, idx) => (
+              <figure key={`img-${idx}-${img.url}`} className="space-y-2">
+                <img
+                  src={img.url}
+                  alt={img.caption || `게시글 이미지 ${idx + 1}`}
+                  className="w-full rounded-xl object-cover max-h-80"
+                  loading="lazy"
+                />
+                {img.caption && (
+                  <figcaption className="text-xs text-muted-foreground text-center">
+                    {img.caption}
+                  </figcaption>
+                )}
+              </figure>
+            ))}
+          </div>
+        )}
+
         {/* 좋아요 / 북마크 버튼 */}
         <div className="flex items-center gap-3">
           <button

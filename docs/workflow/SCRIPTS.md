@@ -29,7 +29,7 @@ Windows에서 스크립트를 실행하려면 다음 중 하나의 방법을 사
 
 ### plan-from-issue.sh
 
-GitHub 이슈 기반으로 Cursor Agent 탭에 Plan 프롬프트를 열어줌 (Deep Link 방식)
+GitHub 이슈 기반으로 .plan.md 파일을 생성함. Cursor Agent Plan 모드에서 사용.
 
 ```bash
 ./scripts/plan-from-issue.sh <이슈번호>
@@ -38,12 +38,15 @@ GitHub 이슈 기반으로 Cursor Agent 탭에 Plan 프롬프트를 열어줌 (D
 ./scripts/plan-from-issue.sh 42
 ```
 
-**동작:** `gh issue view`로 이슈 조회 → `cursor://` Deep Link로 Agent 탭에 프롬프트 열기 → Agent 탭에서 Plan 모드로 실행
+**동작:** `gh issue view`로 이슈 조회 → docs/plans/issue-{번호}.plan.md 생성 → Agent 탭에서 Plan 모드로 해당 파일 내용 붙여넣어 실행
+
+**옵션:**
+- `--print`: 프롬프트 본문만 출력
+- `--run`: Cursor CLI(agent)로 Plan 즉시 실행
 
 **의존성:**
 - GitHub CLI (`gh`): `brew install gh` 후 `gh auth login`
-- jq: `brew install jq`
-- python3: URL 인코딩용 (macOS 기본 포함)
+- python3: 프롬프트 구성용 (macOS 기본 포함)
 
 **참고:** [`.cursor/rules/github-issue-workflow.mdc`](../../.cursor/rules/github-issue-workflow.mdc) 규칙 준수. Agent 탭에서 Shift+Tab으로 Plan 모드 전환 후 실행
 

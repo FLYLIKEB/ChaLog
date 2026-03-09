@@ -102,6 +102,7 @@ export interface Note {
   id: number;
   teaId: number;
   teaName: string;
+  teaType?: string;
   userId: number;
   userName: string;
   schemaId: number;
@@ -175,6 +176,12 @@ export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   bug_report: '버그/운영제보',
 };
 
+export interface PostImageItem {
+  url: string;
+  thumbnailUrl?: string | null;
+  caption?: string | null;
+}
+
 export interface Post {
   id: number;
   userId: number;
@@ -190,6 +197,7 @@ export interface Post {
   likeCount: number;
   isLiked: boolean;
   isBookmarked: boolean;
+  images?: PostImageItem[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -211,6 +219,7 @@ export interface TagNoteItem {
   id: number;
   teaId: number;
   teaName: string;
+  teaType?: string | null;
   teaImageUrl: string | null;
   userId: number;
   userName: string;

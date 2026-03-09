@@ -13,7 +13,10 @@ vi.mock('../../contexts/AuthContext', async () => {
 });
 
 vi.mock('../../lib/api', () => ({
-  postsApi: { create: vi.fn() },
+  postsApi: {
+    create: vi.fn(),
+    uploadImage: vi.fn(),
+  },
 }));
 
 const mockNavigate = vi.fn();

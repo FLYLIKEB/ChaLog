@@ -11,6 +11,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { PostLike } from './post-like.entity';
 import { PostBookmark } from './post-bookmark.entity';
+import { PostImage } from './post-image.entity';
 
 export enum PostCategory {
   BREWING_QUESTION = 'brewing_question',
@@ -62,6 +63,9 @@ export class Post {
 
   @OneToMany(() => PostBookmark, (bookmark) => bookmark.post)
   bookmarks: PostBookmark[];
+
+  @OneToMany(() => PostImage, (image) => image.post, { cascade: true })
+  images: PostImage[];
 
   @CreateDateColumn()
   createdAt: Date;
