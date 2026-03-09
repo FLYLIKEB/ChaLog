@@ -7,6 +7,7 @@
 const enableLogging = import.meta.env.DEV;
 
 export const logger = {
+  enabled: enableLogging,
   error: (message: string, ...args: unknown[]) => {
     if (enableLogging) {
       console.error(`[Error] ${message}`, ...args);

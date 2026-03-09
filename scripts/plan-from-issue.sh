@@ -107,7 +107,7 @@ def build_prompt(body):
 ## 조건
 - .cursor/rules/github-issue-workflow.mdc 규칙을 따르세요.
 - 브랜치 명명: feature/issue-{num}-{{기능명-kebab-case}}
-- 테스트 계획을 포함하세요 (프론트엔드: npm run test:run, 백엔드: cd backend && npm run test, E2E: cd backend && npm run test:e2e)
+- 테스트 계획을 포함하세요 (프론트엔드 빌드: npm run build, 프론트엔드 테스트: npm run test:run, 백엔드 빌드: cd backend && npm run build, 백엔드 테스트: cd backend && npm run test, E2E: cd backend && npm run test:e2e)
 - 테스트 후 커밋 전, 변경사항에 대한 셀프 코드리뷰를 진행하세요. .cursor/rules/ 의 rule 파일들을 참조해 코드리뷰를 진행하세요.
 - 구현 전 단계별 계획만 제시하고, 코드 작성은 하지 마세요.
 
