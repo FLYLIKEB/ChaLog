@@ -171,7 +171,12 @@ export function TeaDetail() {
             {tea.seller && (
               <div>
                 <p className="text-xs text-muted-foreground mb-1">구매처</p>
-                <p className="text-sm">{tea.seller}</p>
+                <Link
+                  to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                  className="text-sm text-primary hover:underline"
+                >
+                  {tea.seller}
+                </Link>
               </div>
             )}
             {tea.origin && (

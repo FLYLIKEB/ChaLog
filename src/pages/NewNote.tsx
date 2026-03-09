@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { AxisStarRow } from '../components/AxisStarRow';
@@ -313,7 +313,17 @@ export function NewNote() {
               <div className="text-xs text-emerald-700 dark:text-emerald-300 space-y-0.5">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
-                {selectedTeaData.seller && <p>구매처: {selectedTeaData.seller}</p>}
+                {selectedTeaData.seller && (
+                  <p>
+                    구매처:{' '}
+                    <Link
+                      to={`/teahouse/${encodeURIComponent(selectedTeaData.seller)}`}
+                      className="text-primary hover:underline"
+                    >
+                      {selectedTeaData.seller}
+                    </Link>
+                  </p>
+                )}
               </div>
             </div>
           )}

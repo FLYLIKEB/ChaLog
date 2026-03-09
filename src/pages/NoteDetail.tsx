@@ -214,20 +214,34 @@ export function NoteDetail() {
         {/* 차 정보 요약 */}
         {tea && (
           <section className="bg-card rounded-lg p-4">
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(`/tea/${tea.id}`)}
-              className="text-left w-full"
+              onKeyDown={(e) => e.key === 'Enter' && navigate(`/tea/${tea.id}`)}
+              className="text-left w-full cursor-pointer"
             >
               <h2 className="mb-2 text-primary">{tea.name}</h2>
               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
                 <span>{tea.type}</span>
                 {tea.year && <span>· {tea.year}년</span>}
-                {tea.seller && <span>· {tea.seller}</span>}
+                {tea.seller && (
+                  <span>
+                    ·{' '}
+                    <Link
+                      to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-primary hover:underline"
+                    >
+                      {tea.seller}
+                    </Link>
+                  </span>
+                )}
                 {tea.price != null && tea.price > 0 && (
                   <span>· {tea.price.toLocaleString()}원</span>
                 )}
               </div>
-            </button>
+            </div>
           </section>
         )}
 

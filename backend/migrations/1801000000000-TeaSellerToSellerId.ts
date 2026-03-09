@@ -4,18 +4,32 @@ export class TeaSellerToSellerId1801000000000 implements MigrationInterface {
   name = 'TeaSellerToSellerId1801000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. 기존 유니크 인덱스 드롭
-    await queryRunner.query(`DROP INDEX \`IDX_teas_name_year_seller\` ON \`teas\``);
-
-    // 2. sellerId 컬럼 추가 (FK는 데이터 마이그레이션 후 추가)
-    await queryRunner.query(`
-      ALTER TABLE \`teas\` ADD COLUMN \`sellerId\` INT NULL
-    `);
-
-    // 3. 기존 tea.seller 문자열로 sellers에서 매칭 또는 생성 후 teas.sellerId 설정
-    const teas = await queryRunner.query(
-      `SELECT id, seller FROM teas WHERE seller IS NOT NULL AND seller != ''`,
+    // 1. 기존 유니크 인덱스 드롭 (존재할 때만)
+    const idxRows = await queryRunner.query(
+      `SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'teas' AND index_name = 'IDX_teas_name_year_seller' LIMIT 1`,
     );
+    if (idxRows.length > 0) {
+      await queryRunner.query(`DROP INDEX \`IDX_teas_name_year_seller\` ON \`teas\``);
+    }
+
+    // 2. sellerId 컬럼 추가 (이미 있으면 스킵)
+    const hasSellerId = await queryRunner.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'teas' AND column_name = 'sellerId' LIMIT 1`,
+    );
+    if (hasSellerId.length === 0) {
+      await queryRunner.query(`
+        ALTER TABLE \`teas\` ADD COLUMN \`sellerId\` INT NULL
+      `);
+    }
+
+    // 3. 기존 tea.seller 문자열로 sellers에서 매칭 또는 생성 후 teas.sellerId 설정 (seller 컬럼이 있을 때만)
+    const hasSeller = await queryRunner.query(
+      `SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'teas' AND column_name = 'seller' LIMIT 1`,
+    );
+    if (hasSeller.length > 0) {
+      const teas = await queryRunner.query(
+        `SELECT id, seller FROM teas WHERE seller IS NOT NULL AND seller != ''`,
+      );
     const sellerNameToId = new Map<string, number>();
 
     for (const tea of teas) {
@@ -49,24 +63,35 @@ export class TeaSellerToSellerId1801000000000 implements MigrationInterface {
       ]);
     }
 
-    // 4. seller 컬럼 삭제
-    await queryRunner.query(`ALTER TABLE \`teas\` DROP COLUMN \`seller\``);
+      // 4. seller 컬럼 삭제
+      await queryRunner.query(`ALTER TABLE \`teas\` DROP COLUMN \`seller\``);
+    }
 
-    // 5. FK 제약조건 추가
-    await queryRunner.query(`
-      ALTER TABLE \`teas\`
-      ADD CONSTRAINT \`FK_teas_sellerId\`
-      FOREIGN KEY (\`sellerId\`) REFERENCES \`sellers\`(\`id\`) ON DELETE SET NULL ON UPDATE NO ACTION
-    `);
+    // 5. FK 제약조건 추가 (이미 있으면 스킵)
+    const hasFk = await queryRunner.query(
+      `SELECT 1 FROM information_schema.table_constraints WHERE table_schema = DATABASE() AND table_name = 'teas' AND constraint_name = 'FK_teas_sellerId' LIMIT 1`,
+    );
+    if (hasFk.length === 0) {
+      await queryRunner.query(`
+        ALTER TABLE \`teas\`
+        ADD CONSTRAINT \`FK_teas_sellerId\`
+        FOREIGN KEY (\`sellerId\`) REFERENCES \`sellers\`(\`id\`) ON DELETE SET NULL ON UPDATE NO ACTION
+      `);
+    }
 
-    // 6. (name, year, sellerId) 복합 유니크 인덱스 생성 (COALESCE로 NULL 처리)
-    await queryRunner.query(`
+    // 6. (name, year, sellerId) 복합 유니크 인덱스 생성 (이미 있으면 스킵)
+    const hasNewIdx = await queryRunner.query(
+      `SELECT 1 FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = 'teas' AND index_name = 'IDX_teas_name_year_sellerId' LIMIT 1`,
+    );
+    if (hasNewIdx.length === 0) {
+      await queryRunner.query(`
       CREATE UNIQUE INDEX \`IDX_teas_name_year_sellerId\` ON \`teas\` (
         \`name\`,
         (COALESCE(\`year\`, 0)),
         (COALESCE(\`sellerId\`, 0))
       )
     `);
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
