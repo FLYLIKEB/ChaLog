@@ -64,7 +64,7 @@ describe('NewPost 페이지', () => {
     expect(screen.getByText('질문·토론')).toBeInTheDocument();
     expect(screen.getByText('리뷰')).toBeInTheDocument();
     expect(screen.getByText('제보')).toBeInTheDocument();
-    expect(screen.getByText('우려 질문')).toBeInTheDocument();
+    expect(screen.getByText('우림 질문')).toBeInTheDocument();
     expect(screen.getByText('맞춤 추천')).toBeInTheDocument();
     expect(screen.getByText('도구')).toBeInTheDocument();
   });

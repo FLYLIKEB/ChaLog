@@ -142,7 +142,12 @@ export function PostDetail() {
     <div className="min-h-screen pb-20">
       <Header showBack title="게시글" showProfile />
 
-      <div className="px-4 py-4 flex flex-col gap-5">
+      <div
+        className={cn(
+          'px-5 py-5 flex flex-col gap-5',
+          post.isPinned && 'border-l-2 border-l-muted-foreground/40 pl-6',
+        )}
+      >
         {/* 카테고리 + 공지 + 협찬 뱃지 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
@@ -150,7 +155,7 @@ export function PostDetail() {
               {POST_CATEGORY_LABELS[post.category]}
             </span>
             {post.isPinned && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+              <span className="text-[11px] text-muted-foreground font-medium">
                 공지
               </span>
             )}

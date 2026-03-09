@@ -69,9 +69,10 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
     <div
       onClick={handleClick}
       className={cn(
-        'w-full text-left py-4 px-0 cursor-pointer',
+        'w-full text-left py-4 px-4 cursor-pointer',
         'border-b border-border/50 last:border-b-0',
-        'hover:bg-muted/20 transition-colors',
+        'transition-colors hover:bg-muted/10',
+        post.isPinned && 'border-l-2 border-l-muted-foreground/40 pl-5',
       )}
       role="button"
       tabIndex={0}
@@ -89,7 +90,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
             {POST_CATEGORY_LABELS[post.category]}
           </span>
           {post.isPinned && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+            <span className="text-[11px] text-muted-foreground font-medium">
               공지
             </span>
           )}

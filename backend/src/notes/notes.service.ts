@@ -320,8 +320,9 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
 
-    // schemaIds 또는 schemaId 변경 시 스키마 존재 확인
-    const updateSchemaIds = (updateNoteDto as any).schemaIds ?? (updateNoteDto.schemaId !== undefined ? [updateNoteDto.schemaId] : null);
+    // schemaIds 또는 schemaId 변경 시 스키마 존재 확인 (중복 제거하여 UQ_note_schemas 위반 방지)
+    const rawSchemaIds = (updateNoteDto as any).schemaIds ?? (updateNoteDto.schemaId !== undefined ? [updateNoteDto.schemaId] : null);
+    const updateSchemaIds = rawSchemaIds != null ? [...new Set(rawSchemaIds)] : null;
     if (updateSchemaIds != null && updateSchemaIds.length > 0) {
       const schemas = await this.ratingSchemaRepository.find({ where: { id: In(updateSchemaIds) } });
       if (schemas.length !== updateSchemaIds.length) {

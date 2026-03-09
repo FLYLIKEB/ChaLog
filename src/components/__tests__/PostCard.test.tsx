@@ -13,7 +13,7 @@ const mockPost: Post = {
   id: 1,
   userId: 2,
   user: { id: 2, name: '김차인', profileImageUrl: null },
-  title: '우려 질문입니다',
+  title: '우림 질문입니다',
   content: '어떻게 우리면 좋을까요?',
   category: 'brewing_question',
   isSponsored: false,
@@ -74,13 +74,13 @@ describe('PostCard 컴포넌트', () => {
   it('제목과 내용을 표시한다', () => {
     renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
 
-    expect(screen.getByText('우려 질문입니다')).toBeInTheDocument();
+    expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
     expect(screen.getByText('어떻게 우리면 좋을까요?')).toBeInTheDocument();
   });
 
   it('카테고리 뱃지를 표시한다', () => {
     renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
-    expect(screen.getByText('우려 질문')).toBeInTheDocument();
+    expect(screen.getByText('우림 질문')).toBeInTheDocument();
   });
 
   it('협찬 뱃지를 표시한다', () => {
@@ -91,7 +91,7 @@ describe('PostCard 컴포넌트', () => {
 
   it('클릭 시 상세 페이지로 이동한다', () => {
     renderWithRouter(<PostCard post={mockPost} />, { route: '/chadam' });
-    fireEvent.click(screen.getByText('우려 질문입니다'));
+    fireEvent.click(screen.getByText('우림 질문입니다'));
     expect(mockNavigate).toHaveBeenCalledWith('/chadam/1');
   });
 

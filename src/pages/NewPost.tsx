@@ -22,7 +22,7 @@ const WRITE_GROUPS: Array<{
     key: 'qna',
     label: '질문·토론',
     categories: [
-      { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우려법, 온도, 시간 등' },
+      { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우림법, 온도, 시간 등' },
       { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation, hint: '차 추천 요청' },
       { value: 'tool', label: POST_CATEGORY_LABELS.tool, hint: '도구·기구 관련' },
     ],
