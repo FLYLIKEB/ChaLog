@@ -13,6 +13,7 @@ import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { TemplateSelect } from '../components/TemplateSelect';
+import { RatingGuideModal } from '../components/RatingGuideModal';
 import { teasApi, notesApi } from '../lib/api';
 import { Tea, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
@@ -21,24 +22,32 @@ import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 
+const SAMPLE_TEA_ID = -1;
+
 export function NewNote() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const preselectedTeaId = searchParams.get('teaId');
+  const isSampleMode = searchParams.get('sample') === '1';
 
   const [teas, setTeas] = useState<Tea[]>([]);
   const teasRef = useRef<Tea[]>([]);
-  const [selectedTea, setSelectedTea] = useState<number | null>(
-    preselectedTeaId ? parseInt(preselectedTeaId, 10) : null
+  const [selectedTea, setSelectedTea] = useState<number | null>(() => {
+    if (isSampleMode) return SAMPLE_TEA_ID;
+    return preselectedTeaId ? parseInt(preselectedTeaId, 10) : null;
+  });
+  const [searchQuery, setSearchQuery] = useState(() =>
+    isSampleMode ? '샘플 녹차 (체험용)' : ''
   );
-  const [searchQuery, setSearchQuery] = useState('');
   const [schemas, setSchemas] = useState<RatingSchema[]>([]);
   const [pinnedSchemaIds, setPinnedSchemaIds] = useState<number[]>([]);
   const [selectedSchemaIds, setSelectedSchemaIds] = useState<number[]>([]);
   const [axes, setAxes] = useState<RatingAxis[]>([]);
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
-  const [overallRating, setOverallRating] = useState<number | null>(null);
+  const [overallRating, setOverallRating] = useState<number | null>(() =>
+    isSampleMode ? RATING_DEFAULT : null
+  );
   const [memo, setMemo] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [imageThumbnails, setImageThumbnails] = useState<(string | null)[]>([]);
@@ -173,9 +182,19 @@ export function NewNote() {
     );
   });
 
-  const selectedTeaData = selectedTea ? teas.find(t => t.id === selectedTea) : null;
+  const selectedTeaData =
+    selectedTea === SAMPLE_TEA_ID
+      ? ({ id: SAMPLE_TEA_ID, name: '샘플 녹차 (체험용)', type: '녹차' } as Tea)
+      : selectedTea
+        ? teas.find((t) => t.id === selectedTea) ?? null
+        : null;
 
   const handleSave = async () => {
+    if (isSampleMode) {
+      toast.success('체험 완료! 차록 작성 화면을 둘러보셨나요?');
+      setTimeout(() => navigate('/'), NAVIGATION_DELAY);
+      return;
+    }
     if (!isAuthenticated) {
       toast.error('로그인이 필요합니다.');
       navigate('/login');
@@ -246,9 +265,20 @@ export function NewNote() {
       <Header showBack title="새 차록 작성" showProfile showLogo />
       
       <div className="p-4 pb-24 space-y-6">
+        {isSampleMode && (
+          <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-200">
+            샘플 평가 체험 중입니다. 저장되지 않아요.
+          </div>
+        )}
         {/* 차 선택 영역 */}
         <section className="bg-card rounded-lg p-3">
           <Label className="mb-1.5 block text-sm">차 선택</Label>
+          {isSampleMode ? (
+            <div className="py-2.5 px-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              샘플 녹차 (체험용)
+            </div>
+          ) : (
+          <>
           <Input
             ref={teaInputRef}
             type="text"
@@ -333,6 +363,8 @@ export function NewNote() {
               </div>
             </div>
           )}
+          </>
+          )}
         </section>
 
         {/* 1-5 평점 */}
@@ -340,8 +372,12 @@ export function NewNote() {
           <Label className="mb-3 block text-base font-semibold text-foreground">
             평점 <span className="text-destructive">*</span>
           </Label>
-          <p className="text-sm text-muted-foreground mb-3">
+          <p className="text-sm text-muted-foreground mb-2">
             이 차에 몇 점을 주시겠어요?
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            같은 온도·시간에서 비교하면 일관된 평가가 가능해요.{' '}
+            <RatingGuideModal />
           </p>
           <StarRating
             value={overallRating}
@@ -389,13 +425,25 @@ export function NewNote() {
         {/* 구체적 평가 (선택된 모든 템플릿의 축 표시) */}
         {selectedSchemaIds.length > 0 && axes.length > 0 && (
           <section className="bg-card rounded-lg p-4">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
               <h3 className="text-base font-semibold text-foreground">
                 구체적 평가
               </h3>
-              <span className="text-xs text-muted-foreground tabular-nums">
-                1 ~ 5점
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  1 ~ 5점
+                </span>
+                <RatingGuideModal
+                  trigger={
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-foreground underline"
+                    >
+                      축 설명 보기
+                    </button>
+                  }
+                />
+              </div>
             </div>
             <div className="space-y-4">
               {selectedSchemaIds.map((schemaId) => {
@@ -415,6 +463,7 @@ export function NewNote() {
                       <AxisStarRow
                         key={axis.id}
                         label={axis.nameKo}
+                        description={axis.descriptionKo ?? undefined}
                         value={axisValues[axis.id] ?? RATING_DEFAULT}
                         onChange={(value) =>
                           setAxisValues((prev) => ({ ...prev, [axis.id]: value }))

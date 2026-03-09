@@ -457,6 +457,7 @@ export function EditNote() {
                 <AxisStarRow
                   key={axis.id}
                   label={axis.nameKo}
+                  description={axis.descriptionKo ?? undefined}
                   value={axisValues[axis.id] ?? RATING_DEFAULT}
                   onChange={(value) =>
                     setAxisValues(prev => ({ ...prev, [axis.id]: value }))

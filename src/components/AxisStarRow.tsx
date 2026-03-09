@@ -1,6 +1,11 @@
-import React, { type FC } from 'react';
-import { Star } from 'lucide-react';
+import React, { type FC, useState } from 'react';
+import { Info, Star } from 'lucide-react';
 import { Slider } from './ui/slider';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
 import { cn } from './ui/utils';
 
 const MIN = 1;
@@ -12,14 +17,22 @@ interface AxisStarRowProps {
   label: string;
   value: number;
   onChange: (value: number) => void;
+  /** 축별 설명 (있으면 Info 아이콘으로 도움말 표시) */
+  description?: string | null;
 }
 
 function clamp(v: number) {
   return Math.max(MIN, Math.min(MAX, Math.round(v / STEP) * STEP));
 }
 
-export const AxisStarRow: FC<AxisStarRowProps> = ({ label, value, onChange }) => {
+export const AxisStarRow: FC<AxisStarRowProps> = ({
+  label,
+  value,
+  onChange,
+  description,
+}) => {
   const validatedValue = clamp(value);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const handleStarClick = (starValue: number, isHalf: boolean) => {
     const v = isHalf ? starValue - 0.5 : starValue;
@@ -49,9 +62,29 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({ label, value, onChange }) =>
       `}</style>
       <div className="axis-star-row flex flex-col gap-2 py-2.5">
         <div className="flex items-center justify-between gap-3">
-          <span className="min-w-16 shrink-0 text-sm font-medium text-foreground">
-            {label}
-          </span>
+          <div className="flex min-w-16 shrink-0 items-center gap-1.5">
+            <span className="text-sm font-medium text-foreground">{label}</span>
+            {description && description.trim() && (
+              <Popover open={helpOpen} onOpenChange={setHelpOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                    aria-label={`${label} 설명 보기`}
+                  >
+                    <Info className="h-3.5 w-3.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  side="top"
+                  className="max-w-[280px] text-sm"
+                >
+                  <p className="text-muted-foreground">{description}</p>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
           <div className="flex items-center gap-0.5 shrink-0" role="group" aria-label={`${label} 평점`}>
             {[1, 2, 3, 4, 5].map((starValue) => {
               const fill = Math.max(0, Math.min(1, validatedValue - starValue + 1));

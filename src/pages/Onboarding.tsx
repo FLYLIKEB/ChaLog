@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,9 +7,10 @@ import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { usersApi } from '../lib/api';
 import { ONBOARDING_FLAVOR_TAGS, ONBOARDING_TEA_TYPES } from '../constants';
 import { OnboardingTagSelector } from '../components/OnboardingTagSelector';
+import { RatingGuideModal } from '../components/RatingGuideModal';
 import { toast } from 'sonner';
 
-type OnboardingStep = 1 | 2;
+type OnboardingStep = 1 | 2 | 3;
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -20,7 +21,10 @@ export function Onboarding() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const stepLabel = useMemo(() => (step === 1 ? '1/2' : '2/2'), [step]);
+  const stepLabel = useMemo(
+    () => (step === 1 ? '1/3' : step === 2 ? '2/3' : '3/3'),
+    [step],
+  );
 
   useEffect(() => {
     if (authLoading) {
@@ -66,12 +70,20 @@ export function Onboarding() {
     );
   };
 
-  const handleNext = () => {
+  const handleNextToStep2 = () => {
     if (selectedTeaTypes.length === 0) {
       toast.error('관심 차종을 최소 1개 선택해주세요.');
       return;
     }
     setStep(2);
+  };
+
+  const handleNextToStep3 = () => {
+    if (selectedFlavorTags.length === 0) {
+      toast.error('향미를 최소 1개 선택해주세요.');
+      return;
+    }
+    setStep(3);
   };
 
   const handleSubmit = async () => {
@@ -129,7 +141,7 @@ export function Onboarding() {
                 selectedTags={selectedTeaTypes}
                 onToggle={toggleTeaType}
               />
-              <Button type="button" className="w-full" onClick={handleNext}>
+              <Button type="button" className="w-full" onClick={handleNextToStep2}>
                 다음
               </Button>
             </>
@@ -150,6 +162,57 @@ export function Onboarding() {
                   variant="outline"
                   className="flex-1"
                   onClick={() => setStep(1)}
+                >
+                  이전
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1"
+                  onClick={handleNextToStep3}
+                >
+                  다음
+                </Button>
+              </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <div className="space-y-3">
+                <h2 className="text-lg font-semibold text-foreground">
+                  평가 방법 안내
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  차록에서는 <strong>전체 평점(1~5점)</strong>과{' '}
+                  <strong>축별 평가</strong>(풍부함, 강도, 부드러움 등)로 차를
+                  기록해요. 같은 조건에서 비교하면 일관된 평가가 가능합니다.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  차록 작성 시 각 축 옆 (i) 아이콘을 누르면 설명을 볼 수 있어요.{' '}
+                  <RatingGuideModal
+                    trigger={
+                      <button
+                        type="button"
+                        className="text-primary hover:underline font-medium"
+                      >
+                        자세한 가이드 보기
+                      </button>
+                    }
+                  />
+                </p>
+                <Link
+                  to="/note/new?sample=1"
+                  className="inline-flex items-center justify-center rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4"
+                >
+                  샘플 평가 체험
+                </Link>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setStep(2)}
                 >
                   이전
                 </Button>
