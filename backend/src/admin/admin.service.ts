@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
@@ -952,7 +953,17 @@ export class AdminService {
       averageRating: 0,
       reviewCount: 0,
     });
-    const saved = await this.teasRepository.save(tea);
+    let saved: Tea;
+    try {
+      saved = await this.teasRepository.save(tea);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
     await this.logAudit(adminId, AuditAction.TEA_CREATE, 'tea', saved.id, undefined, {
       name: saved.name,
       type: saved.type,
@@ -964,7 +975,16 @@ export class AdminService {
     const tea = await this.teasRepository.findOne({ where: { id: teaId } });
     if (!tea) throw new NotFoundException('차를 찾을 수 없습니다.');
     Object.assign(tea, dto);
-    await this.teasRepository.save(tea);
+    try {
+      await this.teasRepository.save(tea);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
     await this.logAudit(adminId, AuditAction.TEA_UPDATE, 'tea', teaId, undefined, {
       updates: Object.keys(dto),
     });

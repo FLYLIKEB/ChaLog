@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ConflictException, Inject } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
@@ -32,7 +32,16 @@ export class TeasService {
       averageRating: 0,
       reviewCount: 0,
     });
-    return await this.teasRepository.save(tea);
+    try {
+      return await this.teasRepository.save(tea);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
   }
 
   async update(id: number, dto: UpdateTeaDto): Promise<Tea> {
@@ -41,7 +50,16 @@ export class TeasService {
       throw new NotFoundException('차를 찾을 수 없습니다.');
     }
     Object.assign(tea, dto);
-    return await this.teasRepository.save(tea);
+    try {
+      return await this.teasRepository.save(tea);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'ER_DUP_ENTRY') {
+        throw new ConflictException(
+          '이름·연도·셀러가 동일한 차가 이미 등록되어 있습니다.',
+        );
+      }
+      throw err;
+    }
   }
 
   async findAll(): Promise<Tea[]> {

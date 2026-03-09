@@ -140,6 +140,7 @@ export function NewNote() {
             const teaData = await teasApi.getById(teaId);
             if (teaData) {
               setTeas(prev => {
+                if (prev.some(t => t.id === teaId)) return prev;
                 const updated = [...prev, teaData as Tea];
                 teasRef.current = updated;
                 return updated;

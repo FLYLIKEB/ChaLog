@@ -183,7 +183,8 @@ export function EditTea() {
     } catch (error) {
       logger.error('Failed to update tea:', error);
       const errorMessage =
-        error instanceof Error ? error.message : '차 수정에 실패했습니다.';
+        (error && typeof error === 'object' && 'message' in error && (error as { message?: string }).message) ||
+        (error instanceof Error ? error.message : '차 수정에 실패했습니다.');
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
