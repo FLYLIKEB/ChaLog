@@ -9,7 +9,18 @@ alwaysApply: true
 
 ## 필수 절차
 
-### 1. 신규 브랜치 생성 (시작 시)
+### 1. Plan 생성 (시작 시)
+이슈를 기반으로 Cursor Agent Plan을 생성하고, 합의된 단계별 접근 방식을 확인한 후 진행한다.
+
+```bash
+# Cursor Agent Plan 모드로 개발 계획 생성
+./scripts/plan-from-issue.sh <이슈번호>
+```
+
+- Plan에서 합의된 단계별 접근 방식 확인 후 구현 시작
+- `.cursor/rules/github-issue-workflow.mdc` 규칙이 자동 적용됨
+
+### 2. 신규 브랜치 생성
 이슈 번호와 기능명을 기반으로 브랜치를 생성한다.
 
 ```bash
@@ -17,29 +28,55 @@ alwaysApply: true
 git checkout -b feature/issue-42-add-login
 ```
 
-### 2. 작업 진행
-브랜치에서 모든 커밋을 진행한다.
+### 3. 작업 진행
+브랜치에서 Plan에 따라 구현 작업을 진행한다.
 
-### 3. PR 자동 생성 (마무리 시)
+### 4. 테스트 실행
+구현 완료 후 반드시 테스트를 실행하여 통과를 확인한다.
+
+| 대상 | 명령어 | 용도 |
+|------|--------|------|
+| 프론트엔드 | `npm run test:run` | Vitest 단위/통합 테스트 |
+| 백엔드 | `cd backend && npm run test` | Jest 단위 테스트 |
+| 백엔드 E2E | `cd backend && npm run test:e2e` | E2E API 테스트 |
+
+- **전체 검증:** `npm run test:run` 후 `cd backend && npm run test`
+- **DB 스키마 변경 시:** Migration 적용 후 E2E 테스트 필수 (`cd backend && npm run test:e2e`)
+
+### 5. PR 자동 생성 (마무리 시)
 작업이 끝나면 반드시 `gh pr create`로 PR을 자동 생성한다.
 
 ```bash
 git push -u origin HEAD
 gh pr create --title "feat: {기능 요약}" --body "$(cat <<'EOF'
 ## Summary
-- 관련 이슈: #{이슈번호}
+- 관련 이슈: Closes #<이슈번호> (또는 Fixes #<이슈번호>)
 - <변경 내용 bullet points>
 
+## Acceptance criteria
+- [ ] <기능 요구사항 1>
+- [ ] <기능 요구사항 2>
+
 ## Test plan
-- [ ] <테스트 항목>
+### 자동 테스트
+- [ ] `npm run test:run` 통과 (프론트엔드)
+- [ ] `cd backend && npm run test` 통과 (백엔드 단위)
+- [ ] (DB 변경 시) `cd backend && npm run test:e2e` 통과
+
+### 수동 테스트
+- [ ] <주요 시나리오 1>
+- [ ] <주요 시나리오 2>
 
 EOF
 )"
 ```
 
+- PR 본문에 반드시 `Closes #<번호>` 또는 `Fixes #<번호>` 포함
+
 ## 규칙 요약
 
+- ✅ Plan 생성 → 브랜치 → 구현 → 테스트 → PR 순서 준수
 - ✅ 이슈 기반 작업 시작 → 무조건 신규 브랜치 생성
-- ✅ 작업 완료 시 → 무조건 PR 자동 생성
+- ✅ 작업 완료 시 → 테스트 통과 후 PR 자동 생성
 - ❌ main/master 브랜치에서 직접 작업 금지
 - ❌ PR 없이 작업 종료 금지
