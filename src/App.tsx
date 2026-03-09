@@ -49,6 +49,10 @@ import { AdminAudit } from './pages/admin/AdminAudit';
 import { AdminMonitoring } from './pages/admin/AdminMonitoring';
 import { AdminMaster } from './pages/admin/AdminMaster';
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
+import { SessionNew } from './pages/SessionNew';
+import { SessionInProgress } from './pages/SessionInProgress';
+import { SessionSummary } from './pages/SessionSummary';
+import { SessionHistory } from './pages/SessionHistory';
 
 type FloatingActionRouteConfig = {
   position?: 'default' | 'aboveNav';
@@ -70,6 +74,8 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/teahouse/new': { hidden: true },
   '/cellar': { hidden: true },
   '/cellar/new': { hidden: true },
+  '/session/new': { hidden: true },
+  '/sessions': { hidden: true },
   '/onboarding': { hidden: true },
 };
 
@@ -81,6 +87,8 @@ function FloatingActionButtonSwitcher() {
   const shouldHide = 
     location.pathname === '/note/new' ||
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
+    location.pathname.startsWith('/session/') ||
+    location.pathname === '/sessions' ||
     location.pathname === '/tea/new' ||
     location.pathname === '/teahouse/new' ||
     location.pathname.match(/^\/teahouse\/[^/]+\/edit$/) ||
@@ -172,6 +180,10 @@ function AppContent() {
             <Route path="/tea/:id" element={<TeaDetail />} />
             <Route path="/note/new" element={<NewNote />} />
             <Route path="/note/:id/edit" element={<EditNote />} />
+            <Route path="/session/new" element={<SessionNew />} />
+            <Route path="/session/:id" element={<SessionInProgress />} />
+            <Route path="/session/:id/summary" element={<SessionSummary />} />
+            <Route path="/sessions" element={<SessionHistory />} />
             <Route path="/note/:id" element={<NoteDetail />} />
             <Route path="/user/:id" element={<UserProfile />} />
             <Route path="/my-notes" element={<MyNotes />} />
