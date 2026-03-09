@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
-import { NAVIGATION_DELAY, YEAR_OPTIONS, getOriginsForTeaType, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../constants';
+import { NAVIGATION_DELAY, CURRENT_YEAR, YEAR_OPTIONS, getOriginsForTeaType, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../constants';
 
 export function NewTea() {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export function NewTea() {
 
   const [name, setName] = useState(searchQuery || '');
   const [type, setType] = useState('');
-  const [yearSelect, setYearSelect] = useState<string>('__none__');
+  const [yearSelect, setYearSelect] = useState<string>(String(CURRENT_YEAR));
   const [yearCustom, setYearCustom] = useState('');
   const [seller, setSeller] = useState(sellerParam || '');
   const [origin, setOrigin] = useState('');
@@ -271,6 +271,38 @@ export function NewTea() {
             <>
             <div className="space-y-2" role="group" aria-labelledby="year-label">
               <Label id="year-label" htmlFor="year-select">제조 연도 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <div className="flex flex-wrap gap-2 mb-1">
+                <Button
+                  type="button"
+                  variant={yearSelect === String(CURRENT_YEAR) ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setYearSelect(String(CURRENT_YEAR))}
+                  disabled={isLoading}
+                  className="h-6 px-2 text-xs"
+                >
+                  올해
+                </Button>
+                <Button
+                  type="button"
+                  variant={yearSelect === String(CURRENT_YEAR - 1) ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setYearSelect(String(CURRENT_YEAR - 1))}
+                  disabled={isLoading}
+                  className="h-6 px-2 text-xs"
+                >
+                  작년
+                </Button>
+                <Button
+                  type="button"
+                  variant={yearSelect === '__none__' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setYearSelect('__none__')}
+                  disabled={isLoading}
+                  className="h-6 px-2 text-xs"
+                >
+                  선택 안 함
+                </Button>
+              </div>
               <Select
                 value={yearSelect}
                 onValueChange={(v) => setYearSelect(v)}

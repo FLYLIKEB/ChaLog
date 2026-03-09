@@ -328,6 +328,7 @@ describe('NewTea 페이지', () => {
 
     await user.type(nameInput, '최소 정보 차');
     await user.click(홍차Button);
+    await user.click(screen.getByRole('button', { name: '선택 안 함' })); // 연도 기본값(올해) 해제
 
     await user.click(screen.getByRole('button', { name: '등록하기' }));
 

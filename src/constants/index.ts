@@ -54,6 +54,7 @@ export const TEA_TYPE_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
 
 // 새 차 등록 - 연도 선택 (현재년 ~ 1990)
 const currentYear = new Date().getFullYear();
+export const CURRENT_YEAR = currentYear;
 export const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i);
 
 // 새 차 등록 - 기본 산지 (차종 미선택 시)
