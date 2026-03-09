@@ -1,6 +1,12 @@
+import path from 'path';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
+
+// ESM/CommonJS 호환: process.cwd() 기준 경로 (__dirname은 ESM에서 미정의)
+const baseDir = process.cwd();
+const entitiesPath = path.join(baseDir, 'dist/src/**/*.entity{.ts,.js}');
+const migrationsPath = path.join(baseDir, 'migrations/**/*{.ts,.js}');
 
 // 환경 변수 로드
 config();
@@ -97,8 +103,8 @@ export const AppDataSource = new DataSource({
   username,
   password,
   database,
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/../../migrations/**/*{.ts,.js}'],
+  entities: [entitiesPath],
+  migrations: [migrationsPath],
   migrationsTableName: 'migrations',
   synchronize: false, // Migration 사용 시 synchronize는 항상 false
   logging: configService.get<string>('NODE_ENV') === 'development',

@@ -419,7 +419,9 @@ jobs:
             export $(cat .env | xargs)
             # migrations 폴더와 data-source.ts가 배포 패키지에 포함되어 있으므로 실행 가능
             # data-source.ts 경로 확인 (배포 패키지 구조에 따라)
-            if [ -f "dist/src/database/data-source.ts" ]; then
+            if [ -f "dist/src/database/data-source.js" ]; then
+              DATA_SOURCE_PATH="dist/src/database/data-source.js"
+            elif [ -f "dist/src/database/data-source.ts" ]; then
               DATA_SOURCE_PATH="dist/src/database/data-source.ts"
             elif [ -f "src/database/data-source.ts" ]; then
               DATA_SOURCE_PATH="src/database/data-source.ts"
@@ -467,7 +469,7 @@ jobs:
             HEALTH_OK=false
             for i in 1 2 3 4 5; do
               sleep 5
-              if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
+              if curl -f http://localhost:3000/health > /dev/null 2>&1; then
                 echo "✅ 배포 성공! Health check 통과"
                 HEALTH_OK=true
                 break
@@ -559,5 +561,5 @@ jobs:
         run: |
           echo "✅ 배포 완료!"
           echo "🌐 Backend URL: http://${{ secrets.EC2_HOST }}:3000"
-          echo "🏥 Health Check: http://${{ secrets.EC2_HOST }}:3000/api/health"
+          echo "🏥 Health Check: http://${{ secrets.EC2_HOST }}:3000/health"
 
