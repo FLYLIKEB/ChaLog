@@ -22,6 +22,7 @@ import { Card } from '../components/ui/card';
 import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
+import { OnboardingPreferenceEditModal } from '../components/OnboardingPreferenceEditModal';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -41,6 +42,7 @@ export function UserProfile() {
   const [sort, setSort] = useState<SortType>('latest');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
+  const [isOnboardingEditModalOpen, setIsOnboardingEditModalOpen] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
@@ -345,46 +347,76 @@ export function UserProfile() {
           />
         </div>
 
-        {/* 취향 정보 섹션 */}
-        {isOwnProfile && onboardingPreference?.hasCompletedOnboarding && (
-          (onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0) && (
-            <Card className="p-4 sm:p-6 space-y-4">
-              {onboardingPreference.preferredTeaTypes?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[...onboardingPreference.preferredTeaTypes]
-                      .sort((a, b) => {
-                        const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
-                        const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
-                        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-                      })
-                      .map((tag) => {
-                        const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
-                        return (
-                          <span key={tag} className="inline-flex items-center gap-1.5">
-                            {colorClass && (
-                              <span className={cn('w-1.5 h-4 rounded-full shrink-0', colorClass)} aria-hidden />
-                            )}
-                            <Badge variant="secondary">{tag}</Badge>
-                          </span>
-                        );
-                      })}
+        {/* 취향 정보 섹션 - 내 프로필에서만 표시 */}
+        {isOwnProfile && onboardingPreference && (
+          <Card className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">취향</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOnboardingEditModalOpen(true)}
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                aria-label="취향 수정"
+              >
+                <Pencil className="w-3 h-3" />
+                {onboardingPreference.preferredTeaTypes?.length || onboardingPreference.preferredFlavorTags?.length
+                  ? '수정'
+                  : '설정'}
+              </Button>
+            </div>
+            {onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0 ? (
+              <>
+                {onboardingPreference.preferredTeaTypes?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[...onboardingPreference.preferredTeaTypes]
+                        .sort((a, b) => {
+                          const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
+                          const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
+                          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                        })
+                        .map((tag) => {
+                          const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
+                          return (
+                            <span key={tag} className="inline-flex items-center gap-1.5">
+                              {colorClass && (
+                                <span className={cn('w-1.5 h-4 rounded-full shrink-0', colorClass)} aria-hidden />
+                              )}
+                              <Badge variant="secondary">{tag}</Badge>
+                            </span>
+                          );
+                        })}
+                    </div>
                   </div>
-                </div>
-              )}
-              {onboardingPreference.preferredFlavorTags?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {onboardingPreference.preferredFlavorTags.map(tag => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
-                    ))}
+                )}
+                {onboardingPreference.preferredFlavorTags?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {onboardingPreference.preferredFlavorTags.map(tag => (
+                        <Badge key={tag} variant="outline">{tag}</Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </Card>
-          )
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">관심 차종과 향미를 설정해주세요.</p>
+            )}
+          </Card>
+        )}
+
+        {/* 취향 수정 모달 */}
+        {isOwnProfile && user && (
+          <OnboardingPreferenceEditModal
+            open={isOnboardingEditModalOpen}
+            onOpenChange={setIsOnboardingEditModalOpen}
+            userId={user.id}
+            preference={onboardingPreference}
+            onSuccess={setOnboardingPreference}
+          />
         )}
 
         {/* 정렬 드롭다운 */}
