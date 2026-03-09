@@ -58,6 +58,29 @@ describe('/posts - 게시글 CRUD API', () => {
     postId = response.body.id;
   });
 
+  it('POST /posts - 이미지 포함 게시글 생성 성공', async () => {
+    const postWithImages = {
+      ...postData,
+      title: '이미지 포함 게시글',
+      images: [
+        { url: 'https://example.com/image1.jpg', caption: '첫 번째 이미지' },
+        { url: 'https://example.com/image2.jpg', thumbnailUrl: 'https://example.com/thumb2.jpg', caption: '두 번째 이미지' },
+      ],
+    };
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/posts')
+      .send(postWithImages)
+      .expect(201);
+
+    expect(response.body).toHaveProperty('id');
+    expect(response.body.title).toBe('이미지 포함 게시글');
+    expect(response.body.images).toBeDefined();
+    expect(Array.isArray(response.body.images)).toBe(true);
+    expect(response.body.images).toHaveLength(2);
+    expect(response.body.images[0]).toMatchObject({ url: 'https://example.com/image1.jpg', caption: '첫 번째 이미지' });
+    expect(response.body.images[1]).toMatchObject({ url: 'https://example.com/image2.jpg', caption: '두 번째 이미지' });
+  });
+
   it('POST /posts - 협찬 게시글 생성 성공', async () => {
     const sponsoredData = {
       ...postData,

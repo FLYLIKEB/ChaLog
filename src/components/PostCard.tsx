@@ -1,5 +1,5 @@
 import React, { type FC, useState, memo } from 'react';
-import { Heart, Bookmark, Loader2, MessageCircle, Eye, Megaphone } from 'lucide-react';
+import { Heart, Bookmark, Loader2, MessageCircle, Eye, Megaphone, Image as ImageIcon } from 'lucide-react';
 import { Post, POST_CATEGORY_LABELS } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -105,6 +105,26 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
         <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">
           {post.title}
         </h3>
+
+        {/* 첫 이미지 썸네일 */}
+        {post.images && post.images.length > 0 && (
+          <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5">
+            <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted">
+              <img
+                src={post.images[0].thumbnailUrl || post.images[0].url}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            </div>
+            {post.images.length > 1 && (
+              <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+                <ImageIcon className="w-3.5 h-3.5" />
+                +{post.images.length - 1}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* 내용 미리보기 */}
         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">

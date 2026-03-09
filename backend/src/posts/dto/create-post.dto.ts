@@ -1,5 +1,17 @@
-import { IsString, IsEnum, IsBoolean, IsOptional, MaxLength, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsOptional,
+  MaxLength,
+  MinLength,
+  IsArray,
+  ValidateNested,
+  ArrayMaxSize,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { PostCategory } from '../entities/post.entity';
+import { PostImageItemDto } from './post-image-item.dto';
 
 export class CreatePostDto {
   @IsString()
@@ -30,4 +42,11 @@ export class CreatePostDto {
   @IsOptional()
   @MaxLength(300)
   sponsorNote?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @ValidateNested({ each: true })
+  @Type(() => PostImageItemDto)
+  images?: PostImageItemDto[];
 }

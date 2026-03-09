@@ -3,9 +3,11 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PostsService } from './posts.service';
+import { UsersService } from '../users/users.service';
 import { Post, PostCategory } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
+import { PostImage } from './entities/post-image.entity';
 
 describe('PostsService', () => {
   let service: PostsService;
@@ -21,6 +23,7 @@ describe('PostsService', () => {
   const mockPostQb = {
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    addOrderBy: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
@@ -45,6 +48,16 @@ describe('PostsService', () => {
     find: jest.fn().mockResolvedValue([]),
   };
 
+  const mockPostImagesRepository = {
+    create: jest.fn(),
+    save: jest.fn().mockResolvedValue([]),
+    delete: jest.fn().mockResolvedValue(undefined),
+  };
+
+  const mockUsersService = {
+    findOne: jest.fn().mockResolvedValue({ id: 1, name: '테스터', role: 'user' }),
+  };
+
   const mockDataSource = {
     transaction: jest.fn(),
   };
@@ -56,7 +69,9 @@ describe('PostsService', () => {
         { provide: getRepositoryToken(Post), useValue: mockPostsRepository },
         { provide: getRepositoryToken(PostLike), useValue: mockPostLikesRepository },
         { provide: getRepositoryToken(PostBookmark), useValue: mockPostBookmarksRepository },
+        { provide: getRepositoryToken(PostImage), useValue: mockPostImagesRepository },
         { provide: DataSource, useValue: mockDataSource },
+        { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 

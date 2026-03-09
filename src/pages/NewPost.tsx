@@ -5,6 +5,7 @@ import { PostCategory, POST_CATEGORY_LABELS } from '../types';
 import { postsApi, CreatePostRequest } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
+import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ export function NewPost() {
   const [isPinned, setIsPinned] = useState(false);
   const [isSponsored, setIsSponsored] = useState(false);
   const [sponsorNote, setSponsorNote] = useState('');
+  const [images, setImages] = useState<{ url: string; thumbnailUrl?: string; caption?: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!user) {
@@ -52,6 +54,7 @@ export function NewPost() {
       isPinned: isAdmin ? isPinned : undefined,
       isSponsored,
       sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
+      images: images.length > 0 ? images : undefined,
     };
 
     setIsSubmitting(true);
@@ -145,6 +148,9 @@ export function NewPost() {
             )}
           />
         </div>
+
+        {/* 사진 */}
+        <PostImageUploader images={images} onChange={setImages} maxImages={5} />
 
         {/* 공지 고정 (관리자만) */}
         {isAdmin && (

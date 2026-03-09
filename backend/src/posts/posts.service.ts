@@ -9,6 +9,7 @@ import { Repository, DataSource, QueryFailedError, In } from 'typeorm';
 import { Post, PostCategory } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
+import { PostImage } from './entities/post-image.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { UsersService } from '../users/users.service';
@@ -25,6 +26,8 @@ export class PostsService {
     private postLikesRepository: Repository<PostLike>,
     @InjectRepository(PostBookmark)
     private postBookmarksRepository: Repository<PostBookmark>,
+    @InjectRepository(PostImage)
+    private postImagesRepository: Repository<PostImage>,
     @InjectDataSource()
     private dataSource: DataSource,
     private usersService: UsersService,
@@ -41,8 +44,9 @@ export class PostsService {
     const isAdmin = user.role === UserRole.ADMIN;
     const isPinned = isAdmin && (dto.isPinned === true);
 
+    const { images: imagesDto, ...postData } = dto;
     const post = this.postsRepository.create({
-      ...dto,
+      ...postData,
       userId,
       isAnonymous: dto.isAnonymous ?? false,
       isPinned,
@@ -50,6 +54,20 @@ export class PostsService {
       sponsorNote: dto.sponsorNote ?? null,
     });
     const saved = await this.postsRepository.save(post);
+
+    if (imagesDto?.length) {
+      const postImages = imagesDto.map((img, idx) =>
+        this.postImagesRepository.create({
+          postId: saved.id,
+          url: img.url,
+          thumbnailUrl: img.thumbnailUrl ?? null,
+          caption: img.caption?.trim() || null,
+          sortOrder: idx,
+        }),
+      );
+      await this.postImagesRepository.save(postImages);
+    }
+
     return this.findOne(saved.id, userId);
   }
 
@@ -63,8 +81,10 @@ export class PostsService {
     const qb = this.postsRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
+      .leftJoinAndSelect('post.images', 'postImages')
       .orderBy('post.isPinned', 'DESC')
       .addOrderBy('post.createdAt', 'DESC')
+      .addOrderBy('postImages.sortOrder', 'ASC')
       .skip(skip)
       .take(limit);
 
@@ -79,7 +99,7 @@ export class PostsService {
   async findOne(id: number, currentUserId?: number): Promise<any> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['user'],
+      relations: ['user', 'images'],
     });
     if (!post) {
       throw new NotFoundException('게시글을 찾을 수 없습니다.');
@@ -106,8 +126,26 @@ export class PostsService {
     if (!isAdmin && 'isPinned' in dto) {
       delete (updateDto as any).isPinned;
     }
-    Object.assign(post, updateDto);
+    const { images: imagesDto, ...restDto } = updateDto;
+    Object.assign(post, restDto);
     await this.postsRepository.save(post);
+
+    if (imagesDto !== undefined) {
+      await this.postImagesRepository.delete({ postId: id });
+      if (imagesDto?.length) {
+        const postImages = imagesDto.map((img, idx) =>
+          this.postImagesRepository.create({
+            postId: id,
+            url: img.url,
+            thumbnailUrl: img.thumbnailUrl ?? null,
+            caption: img.caption?.trim() || null,
+            sortOrder: idx,
+          }),
+        );
+        await this.postImagesRepository.save(postImages);
+      }
+    }
+
     return this.findOne(id, userId);
   }
 
@@ -221,11 +259,17 @@ export class PostsService {
       userBookmarkedIds = new Set(bookmarks.map((b) => b.postId));
     }
 
-    return posts.map((post) => ({
-      ...post,
-      likeCount: likeCountMap.get(post.id) ?? 0,
-      isLiked: userLikedIds.has(post.id),
-      isBookmarked: userBookmarkedIds.has(post.id),
-    }));
+    return posts.map((post) => {
+      const result: any = {
+        ...post,
+        likeCount: likeCountMap.get(post.id) ?? 0,
+        isLiked: userLikedIds.has(post.id),
+        isBookmarked: userBookmarkedIds.has(post.id),
+      };
+      if (result.images?.length) {
+        result.images = [...result.images].sort((a: PostImage, b: PostImage) => a.sortOrder - b.sortOrder);
+      }
+      return result;
+    });
   }
 }
