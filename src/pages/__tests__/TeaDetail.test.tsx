@@ -16,6 +16,7 @@ vi.mock('../../lib/api', async () => {
       getPopularTags: vi.fn(),
       getTopReviews: vi.fn(),
       getSimilarTeas: vi.fn(),
+      getSimilarTeasByTags: vi.fn(),
     },
     notesApi: {
       getAll: vi.fn(),
@@ -88,6 +89,7 @@ function setupMocks() {
   vi.mocked(teasApi.getPopularTags).mockResolvedValue({ tags: mockPopularTags });
   vi.mocked(teasApi.getTopReviews).mockResolvedValue(mockTopReviews);
   vi.mocked(teasApi.getSimilarTeas).mockResolvedValue(mockSimilarTeas);
+  vi.mocked(teasApi.getSimilarTeasByTags).mockResolvedValue(mockSimilarTeas);
 }
 
 describe('TeaDetail', () => {

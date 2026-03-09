@@ -1,7 +1,7 @@
 import React, { type FC } from 'react';
 import { Star, Sparkles } from 'lucide-react';
 import { Tea } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card } from './ui/card';
 
 interface TeaNewCardProps {
@@ -31,7 +31,15 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
             {tea.price != null && tea.price > 0 && (
               <span>{tea.price.toLocaleString()}원</span>
             )}
-            {tea.seller && <span className="truncate">{tea.seller}</span>}
+            {tea.seller && (
+              <Link
+                to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                onClick={(e) => e.stopPropagation()}
+                className="truncate text-primary hover:underline"
+              >
+                {tea.seller}
+              </Link>
+            )}
           </div>
         </div>
         <div className="shrink-0 flex flex-col items-end gap-0.5">

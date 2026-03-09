@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom';
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { AxisStarRow } from '../components/AxisStarRow';
@@ -107,6 +107,7 @@ export function EditNote() {
             const teaData = await teasApi.getById(teaId);
             if (teaData) {
               setTeas(prev => {
+                if (prev.some(t => t.id === teaId)) return prev;
                 const updated = [...prev, teaData as Tea];
                 teasRef.current = updated;
                 return updated;
@@ -425,7 +426,17 @@ export function EditNote() {
               <div className="text-xs text-muted-foreground space-y-0.5">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
-                {selectedTeaData.seller && <p>구매처: {selectedTeaData.seller}</p>}
+                {selectedTeaData.seller && (
+                  <p>
+                    구매처:{' '}
+                    <Link
+                      to={`/teahouse/${encodeURIComponent(selectedTeaData.seller)}`}
+                      className="text-primary hover:underline"
+                    >
+                      {selectedTeaData.seller}
+                    </Link>
+                  </p>
+                )}
               </div>
             </div>
           )}

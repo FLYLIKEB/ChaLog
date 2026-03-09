@@ -4,8 +4,9 @@ import { ArrowLeft, Hash, Bell, BellOff, Loader2, Star, Heart, Users } from 'luc
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { tagsApi } from '../lib/api';
-import { TagDetail as TagDetailType, TagNoteList, PopularTagItem } from '../types';
+import { TeaCard } from '../components/TeaCard';
+import { tagsApi, teasApi } from '../lib/api';
+import { TagDetail as TagDetailType, TagNoteList, PopularTagItem, Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
@@ -25,9 +26,12 @@ export function TagDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'notes' | 'related'>('notes');
+  const [activeTab, setActiveTab] = useState<'notes' | 'teas' | 'related'>('notes');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [teas, setTeas] = useState<Tea[]>([]);
+  const [teasLoading, setTeasLoading] = useState(false);
+  const [teasSort, setTeasSort] = useState<'match' | 'popular' | 'recent'>('match');
 
   const decodedName = name ? decodeURIComponent(name) : '';
 
@@ -69,6 +73,27 @@ export function TagDetail() {
     registerRefresh(loadInitialData);
     return () => registerRefresh(undefined);
   }, [registerRefresh, loadInitialData]);
+
+  const fetchTeasByTag = useCallback(async () => {
+    if (!decodedName) return;
+    setTeasLoading(true);
+    try {
+      const data = await teasApi.getByTags([decodedName], teasSort, 50);
+      setTeas(Array.isArray(data) ? data : []);
+    } catch (error: any) {
+      logger.error('Failed to fetch teas by tag:', error);
+      toast.error('차 목록을 불러오는데 실패했습니다.');
+      setTeas([]);
+    } finally {
+      setTeasLoading(false);
+    }
+  }, [decodedName, teasSort]);
+
+  useEffect(() => {
+    if (activeTab === 'teas') {
+      fetchTeasByTag();
+    }
+  }, [activeTab, fetchTeasByTag]);
 
   const handleLoadMore = async () => {
     if (isLoadingMore || !hasMore || !decodedName) return;
@@ -210,6 +235,16 @@ export function TagDetail() {
         </button>
         <button
           className={`flex-1 py-3 text-sm font-medium transition-colors ${
+            activeTab === 'teas'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setActiveTab('teas')}
+        >
+          차 목록
+        </button>
+        <button
+          className={`flex-1 py-3 text-sm font-medium transition-colors ${
             activeTab === 'related'
               ? 'text-primary border-b-2 border-primary'
               : 'text-muted-foreground hover:text-foreground'
@@ -323,6 +358,56 @@ export function TagDetail() {
               </div>
             )}
           </>
+        )}
+
+        {activeTab === 'teas' && (
+          <div className="px-4 py-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">정렬:</span>
+              {[
+                { key: 'match' as const, label: '일치율순' },
+                { key: 'popular' as const, label: '인기도순' },
+                { key: 'recent' as const, label: '최신순' },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setTeasSort(opt.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    teasSort === opt.key
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background border-border/60 hover:bg-muted/80'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            {teasLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+              </div>
+            ) : teas.length > 0 ? (
+              <div className="space-y-3">
+                {teas.map((tea) => (
+                  <TeaCard key={tea.id} tea={tea} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <Star className="w-10 h-10 mb-3 opacity-30" />
+                <p className="text-sm">이 향미가 달린 차가 없습니다.</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onClick={() => navigate(`/sasaek?tags=${encodeURIComponent(decodedName)}&sort=match`)}
+                >
+                  더 살펴보기
+                </Button>
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === 'related' && (
