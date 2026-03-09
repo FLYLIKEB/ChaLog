@@ -46,6 +46,7 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminNotes } from './pages/admin/AdminNotes';
 import { AdminPosts } from './pages/admin/AdminPosts';
 import { AdminAudit } from './pages/admin/AdminAudit';
+import { AdminMonitoring } from './pages/admin/AdminMonitoring';
 import { AdminMaster } from './pages/admin/AdminMaster';
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
@@ -150,6 +151,7 @@ function AppContent() {
             <Route path="posts" element={<AdminPosts />} />
             <Route path="posts/:id" element={<AdminPosts />} />
             <Route path="master" element={<AdminMaster />} />
+            <Route path="monitoring" element={<AdminMonitoring />} />
             <Route path="audit" element={<AdminAudit />} />
           </Route>
         </Routes>

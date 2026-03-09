@@ -1337,6 +1337,13 @@ export const notificationsApi = {
 
 export const adminApi = {
   getDashboard: () => apiClient.get('/admin/dashboard'),
+  getMetrics: () => apiClient.get('/admin/metrics'),
+  getLogs: (params?: { level?: 'error' | 'warn' | 'all'; limit?: number }) => {
+    const search = new URLSearchParams();
+    if (params?.level) search.set('level', params.level);
+    if (params?.limit) search.set('limit', String(params.limit));
+    return apiClient.get(`/admin/logs?${search.toString()}`);
+  },
   getNoteReports: (params?: { page?: number; limit?: number; status?: string; reason?: string; sortBy?: string; sortOrder?: string }) => {
     const search = new URLSearchParams();
     if (params?.page) search.set('page', String(params.page));

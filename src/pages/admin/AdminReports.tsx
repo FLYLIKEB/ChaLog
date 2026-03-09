@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Loader2, ExternalLink, Check, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -77,11 +78,13 @@ export function AdminReports() {
   const [actionReason, setActionReason] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('pending');
 
+  const statusParam = statusFilter === 'all' ? undefined : statusFilter;
+
   const fetchNoteReports = () =>
-    adminApi.getNoteReports({ status: statusFilter || undefined, limit: 50 }).then(setNoteData);
+    adminApi.getNoteReports({ status: statusParam, limit: 50 }).then(setNoteData);
 
   const fetchPostReports = () =>
-    adminApi.getPostReports({ status: statusFilter || undefined, limit: 50 }).then(setPostData);
+    adminApi.getPostReports({ status: statusParam, limit: 50 }).then(setPostData);
 
   useEffect(() => {
     setLoading(true);
@@ -117,19 +120,20 @@ export function AdminReports() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">신고 관리</h1>
+      <h1 className="text-2xl font-bold text-foreground">신고 관리</h1>
 
       <div className="flex gap-2">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="border rounded px-3 py-2 text-sm"
-        >
-          <option value="">전체</option>
-          <option value="pending">대기</option>
-          <option value="dismissed">무시됨</option>
-          <option value="acted">조치됨</option>
-        </select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="상태 필터" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">전체</SelectItem>
+            <SelectItem value="pending">대기</SelectItem>
+            <SelectItem value="dismissed">무시됨</SelectItem>
+            <SelectItem value="acted">조치됨</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
@@ -141,10 +145,10 @@ export function AdminReports() {
           {loading ? (
             <Loader2 className="w-8 h-8 animate-spin" />
           ) : (
-            <div className="bg-white rounded-lg border overflow-x-auto">
+            <div className="bg-card rounded-lg border border-border overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-50">
+                  <tr className="bg-muted/50">
                     <th className="p-3 text-left text-sm font-medium">ID</th>
                     <th className="p-3 text-left text-sm font-medium">사유</th>
                     <th className="p-3 text-left text-sm font-medium">상태</th>
@@ -166,10 +170,10 @@ export function AdminReports() {
           {loading ? (
             <Loader2 className="w-8 h-8 animate-spin" />
           ) : (
-            <div className="bg-white rounded-lg border overflow-x-auto">
+            <div className="bg-card rounded-lg border border-border overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-slate-50">
+                  <tr className="bg-muted/50">
                     <th className="p-3 text-left text-sm font-medium">ID</th>
                     <th className="p-3 text-left text-sm font-medium">사유</th>
                     <th className="p-3 text-left text-sm font-medium">상태</th>

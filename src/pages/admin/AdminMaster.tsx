@@ -113,13 +113,13 @@ export function AdminMaster() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">마스터 데이터</h1>
+      <h1 className="text-2xl font-bold text-foreground">마스터 데이터</h1>
       <div className="flex gap-2 border-b">
         {tabs.map(({ key, label }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`px-4 py-2 font-medium ${tab === key ? 'border-b-2 border-primary text-primary' : 'text-slate-600'}`}
+            className={`px-4 py-2 font-medium ${tab === key ? 'border-b-2 border-primary text-primary' : 'text-muted-foreground'}`}
           >
             {label}
           </button>
@@ -134,10 +134,10 @@ export function AdminMaster() {
 
       {tab === 'teas' && (
         loading ? <Loader2 className="w-8 h-8 animate-spin" /> : (
-          <div className="bg-white rounded-lg border overflow-x-auto">
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-50">
+                <tr className="bg-muted/50">
                   <th className="p-3 text-left text-sm font-medium">ID</th>
                   <th className="p-3 text-left text-sm font-medium">이름</th>
                   <th className="p-3 text-left text-sm font-medium">종류</th>
@@ -167,10 +167,10 @@ export function AdminMaster() {
 
       {tab === 'sellers' && (
         loading ? <Loader2 className="w-8 h-8 animate-spin" /> : (
-          <div className="bg-white rounded-lg border overflow-x-auto">
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-50">
+                <tr className="bg-muted/50">
                   <th className="p-3 text-left text-sm font-medium">ID</th>
                   <th className="p-3 text-left text-sm font-medium">이름</th>
                   <th className="p-3 text-left text-sm font-medium">차 수</th>
@@ -198,10 +198,10 @@ export function AdminMaster() {
 
       {tab === 'tags' && (
         loading ? <Loader2 className="w-8 h-8 animate-spin" /> : (
-          <div className="bg-white rounded-lg border overflow-x-auto">
+          <div className="bg-card rounded-lg border border-border overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-50">
+                <tr className="bg-muted/50">
                   <th className="p-3 text-left text-sm font-medium">ID</th>
                   <th className="p-3 text-left text-sm font-medium">이름</th>
                   <th className="p-3 text-left text-sm font-medium">사용 수</th>

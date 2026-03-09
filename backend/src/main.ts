@@ -6,7 +6,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  const logger =
+  const logger: ('error' | 'warn' | 'log' | 'debug' | 'verbose')[] =
     process.env.NODE_ENV === 'production'
       ? ['error', 'warn']
       : ['log', 'error', 'warn', 'debug', 'verbose'];

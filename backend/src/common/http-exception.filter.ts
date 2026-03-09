@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { pushLog } from './error-log-buffer';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -81,6 +82,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: Array.isArray(message) ? message : [message],
       ...(error && { error }),
     };
+
+    if (status >= 400) {
+      pushLog({
+        timestamp: errorResponse.timestamp,
+        statusCode: status,
+        message: Array.isArray(message) ? (message as string[]).join(', ') : String(message),
+        path: request.url,
+        method: request.method,
+      });
+    }
 
     response.status(status).json(errorResponse);
   }

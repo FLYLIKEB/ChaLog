@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import * as os from 'os';
+import { getRecentLogs } from '../common/error-log-buffer';
 import { User, UserRole } from '../users/entities/user.entity';
 import { Note } from '../notes/entities/note.entity';
 import { Post } from '../posts/entities/post.entity';
@@ -65,6 +67,56 @@ export class AdminService {
     private followsService: FollowsService,
     private usersService: UsersService,
   ) {}
+
+  async getMetrics() {
+    const formatMB = (bytes: number) =>
+      Math.round((bytes / 1024 / 1024) * 100) / 100;
+
+    const memoryUsage = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
+    const loadAvg = os.loadavg();
+
+    let dbConnections = 0;
+    try {
+      const rows = await this.dataSource.query(
+        "SHOW STATUS WHERE Variable_name = 'Threads_connected'",
+      );
+      const row = rows?.[0] as Record<string, unknown> | undefined;
+      const val = row?.['Value'] ?? row?.['value'];
+      dbConnections = val != null ? parseInt(String(val), 10) : 0;
+    } catch {
+      // DB 연결 실패 시 0 반환
+    }
+
+    return {
+      memory: {
+        rssMB: formatMB(memoryUsage.rss),
+        heapUsedMB: formatMB(memoryUsage.heapUsed),
+        heapTotalMB: formatMB(memoryUsage.heapTotal),
+      },
+      cpu: {
+        processUser: cpuUsage.user,
+        processSystem: cpuUsage.system,
+        loadAvg: [loadAvg[0], loadAvg[1], loadAvg[2]],
+      },
+      database: {
+        connections: dbConnections,
+      },
+      uptimeSeconds: Math.floor(process.uptime()),
+      recentErrors: getRecentLogs(20, 'error'),
+      recentLogs: getRecentLogs(50),
+    };
+  }
+
+  getLogs(level?: 'error' | 'warn' | 'all', limit = 50) {
+    const logs = getRecentLogs(
+      limit,
+      level === 'all' ? undefined : (level as 'error' | 'warn' | undefined),
+    );
+    const errorCount = logs.filter((l) => l.level === 'error').length;
+    const warnCount = logs.filter((l) => l.level === 'warn').length;
+    return { logs, errorCount, warnCount, totalCount: logs.length };
+  }
 
   async getDashboard() {
     const [userCount, noteCount, postCount, teaCount, pendingNoteReports, pendingPostReports] =

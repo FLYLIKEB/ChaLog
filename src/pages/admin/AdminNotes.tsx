@@ -30,7 +30,7 @@ export function AdminNotes() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">차록 관리</h1>
+      <h1 className="text-2xl font-bold text-foreground">차록 관리</h1>
       <Input
         placeholder="메모/차/작성자 검색"
         value={search}
@@ -40,10 +40,10 @@ export function AdminNotes() {
       {loading ? (
         <Loader2 className="w-8 h-8 animate-spin" />
       ) : (
-        <div className="bg-white rounded-lg border overflow-x-auto">
+        <div className="bg-card rounded-lg border border-border overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50">
+              <tr className="bg-muted/50">
                 <th className="p-3 text-left text-sm font-medium">ID</th>
                 <th className="p-3 text-left text-sm font-medium">차</th>
                 <th className="p-3 text-left text-sm font-medium">작성자</th>

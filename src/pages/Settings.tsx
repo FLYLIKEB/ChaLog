@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor } from 'lucide-react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from 'next-themes';
 import { Header } from '../components/Header';
@@ -50,7 +50,7 @@ function ThemeSection() {
 }
 
 export function Settings() {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean | null>(null);
@@ -271,6 +271,28 @@ export function Settings() {
 
         {/* 테마 */}
         <ThemeSection />
+
+        {/* 어드민 페이지 (관리자만) */}
+        {isAdmin && (
+          <Card className="p-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">운영</h3>
+            <Link
+              to="/admin"
+              className="flex items-center justify-between p-3 rounded-xl hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <LayoutDashboard className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">어드민 페이지</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">대시보드, 신고 관리, 모니터링</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+            </Link>
+          </Card>
+        )}
 
         {/* 계정 연동 */}
         <Card className="p-4">

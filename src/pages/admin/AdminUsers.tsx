@@ -67,7 +67,7 @@ export function AdminUsers() {
     return (
       <div className="space-y-6">
         <Link to="/admin/users" className="text-primary text-sm">← 목록으로</Link>
-        <h1 className="text-2xl font-bold">사용자 상세</h1>
+        <h1 className="text-2xl font-bold text-foreground">사용자 상세</h1>
         <div className="flex items-center justify-center py-12">
           <Loader2 className="w-8 h-8 animate-spin" />
         </div>
@@ -79,15 +79,15 @@ export function AdminUsers() {
     return (
       <div className="space-y-6">
         <Link to="/admin/users" className="text-primary text-sm">← 목록으로</Link>
-        <h1 className="text-2xl font-bold">사용자 상세</h1>
-        <div className="bg-white rounded-lg border p-6 space-y-4">
+        <h1 className="text-2xl font-bold text-foreground">사용자 상세</h1>
+        <div className="bg-card rounded-lg border border-border p-6 space-y-4">
           <p><strong>ID:</strong> {detail.id}</p>
           <p><strong>이름:</strong> {detail.name}</p>
           <p><strong>이메일:</strong> {detail.email || '-'}</p>
           <p><strong>차록:</strong> {detail.noteCount} · <strong>게시글:</strong> {detail.postCount}</p>
           <p><strong>팔로워:</strong> {detail.followerCount} · <strong>팔로잉:</strong> {detail.followingCount}</p>
           <p><strong>가입일:</strong> {detail.createdAt ? new Date(detail.createdAt).toLocaleDateString() : '-'}</p>
-          {detail.bannedAt && <p className="text-red-600">정지됨: {new Date(detail.bannedAt).toLocaleString()}</p>}
+          {detail.bannedAt && <p className="text-destructive">정지됨: {new Date(detail.bannedAt).toLocaleString()}</p>}
           <div className="flex gap-2 flex-wrap">
             {!detail.bannedAt && detail.role !== 'admin' && (
               <Button variant="destructive" onClick={() => handleSuspend(detail.id)}>
@@ -107,7 +107,7 @@ export function AdminUsers() {
           </div>
         </div>
         {detail.recentNotes?.length > 0 && (
-          <div className="bg-white rounded-lg border p-4">
+          <div className="bg-card rounded-lg border border-border p-4">
             <h2 className="font-semibold mb-2">최근 차록</h2>
             <ul className="space-y-1 text-sm">
               {detail.recentNotes.map((n: any) => (
@@ -117,7 +117,7 @@ export function AdminUsers() {
           </div>
         )}
         {detail.recentPosts?.length > 0 && (
-          <div className="bg-white rounded-lg border p-4">
+          <div className="bg-card rounded-lg border border-border p-4">
             <h2 className="font-semibold mb-2">최근 게시글</h2>
             <ul className="space-y-1 text-sm">
               {detail.recentPosts.map((p: any) => (
@@ -127,7 +127,7 @@ export function AdminUsers() {
           </div>
         )}
         {(detail.reportsAsReporter?.noteReports?.length > 0 || detail.reportsAsReporter?.postReports?.length > 0) && (
-          <div className="bg-white rounded-lg border p-4">
+          <div className="bg-card rounded-lg border border-border p-4">
             <h2 className="font-semibold mb-2">이 사용자가 신고한 건</h2>
             <ul className="space-y-1 text-sm">
               {detail.reportsAsReporter.noteReports?.map((r: any) => (
@@ -140,7 +140,7 @@ export function AdminUsers() {
           </div>
         )}
         {(detail.reportsAgainstUser?.noteReports?.length > 0 || detail.reportsAgainstUser?.postReports?.length > 0) && (
-          <div className="bg-white rounded-lg border p-4">
+          <div className="bg-card rounded-lg border border-border p-4">
             <h2 className="font-semibold mb-2">이 사용자 콘텐츠 신고 이력</h2>
             <ul className="space-y-1 text-sm">
               {detail.reportsAgainstUser.noteReports?.map((r: any) => (
@@ -158,7 +158,7 @@ export function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">사용자 관리</h1>
+      <h1 className="text-2xl font-bold text-foreground">사용자 관리</h1>
       <Input
         placeholder="이름 검색"
         value={search}
@@ -168,10 +168,10 @@ export function AdminUsers() {
       {loading ? (
         <Loader2 className="w-8 h-8 animate-spin" />
       ) : (
-        <div className="bg-white rounded-lg border overflow-x-auto">
+        <div className="bg-card rounded-lg border border-border overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-slate-50">
+              <tr className="bg-muted/50">
                 <th className="p-3 text-left text-sm font-medium">ID</th>
                 <th className="p-3 text-left text-sm font-medium">이름</th>
                 <th className="p-3 text-left text-sm font-medium">차록</th>

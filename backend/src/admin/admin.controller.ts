@@ -30,6 +30,19 @@ export class AdminController {
     return this.adminService.getDashboard();
   }
 
+  @Get('metrics')
+  getMetrics() {
+    return this.adminService.getMetrics();
+  }
+
+  @Get('logs')
+  getLogs(
+    @Query('level') level?: 'error' | 'warn' | 'all',
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.adminService.getLogs(level ?? 'all', limit ?? 50);
+  }
+
   @Get('reports/notes')
   getNoteReports(
     @Query('page', new ParseIntPipe({ optional: true })) page?: number,
