@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "node-terminal",
+            "name": "📋 실행 가능 스크립트 목록 보기 (list-scripts.sh)",
+            "request": "launch",
+            "command": "bash scripts/list-scripts.sh",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "node-terminal",
             "name": "스크립트 실행: start",
             "request": "launch",
             "command": "npm run start",
