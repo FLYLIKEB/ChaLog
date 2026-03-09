@@ -274,6 +274,9 @@ export function EditCellarItem() {
         {/* 개봉일 */}
         <div className="space-y-2">
           <Label htmlFor="openedAt">개봉일</Label>
+          <p className="text-xs text-muted-foreground">
+            차 포장을 처음 개봉한 날짜입니다. 신선도·소비 시점 추적에 활용됩니다.
+          </p>
           <Input
             id="openedAt"
             type="date"
@@ -285,6 +288,11 @@ export function EditCellarItem() {
         {/* 리마인더 */}
         <div className="space-y-2">
           <Label htmlFor="remindAt">리마인더 날짜</Label>
+          <p className="text-xs text-muted-foreground">
+            설정한 날짜·시간에 찻장에서 알림 배너로 표시됩니다.
+            <br />
+            (예: 재구매 시점, 유통기한 확인 등)
+          </p>
           <Input
             id="remindAt"
             type="datetime-local"
