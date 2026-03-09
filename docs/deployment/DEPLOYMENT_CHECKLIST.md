@@ -9,9 +9,9 @@ Lightsail Docker MySQL 배포를 위한 빠른 체크리스트입니다.
 GitHub 저장소 → Settings → Secrets and variables → Actions
 
 필수 Secrets:
-- [ ] `EC2_HOST`: `3.39.48.139`
-- [ ] `EC2_USER`: `ubuntu`
-- [ ] `EC2_SSH_KEY`: SSH 키 전체 내용
+- [ ] `EC2_HOST`: Lightsail Public IP (예: `3.39.48.139`)
+- [ ] `EC2_USER`: `ubuntu` (Lightsail SSH 사용자명)
+- [ ] `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
   - 확인: `cat LightsailDefaultKey-ap-northeast-2.pem`
 - [ ] `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@localhost:3306/chalog`
 - [ ] `EC2_JWT_SECRET`: JWT Secret 값
@@ -36,7 +36,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 ### 방법 1: GitHub Actions 수동 실행 (권장)
 
 1. GitHub 저장소 → **Actions** 탭
-2. "Deploy Backend to EC2" 워크플로우 선택
+2. "Deploy Backend to Lightsail" 워크플로우 선택
 3. **Run workflow** 버튼 클릭
 4. 브랜치 선택 (`main`)
 5. **Run workflow** 클릭
@@ -170,7 +170,7 @@ sudo systemctl enable nginx
 ### 배포 실패
 
 1. GitHub Actions 로그 확인
-2. SSH 연결 실패: `EC2_SSH_KEY` Secret 확인
+2. SSH 연결 실패: `EC2_SSH_KEY` Secret (Lightsail SSH 키) 확인
 3. 빌드 실패: 로컬에서 빌드 테스트
 4. 마이그레이션 실패: 브라우저 SSH에서 수동 실행
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # 백엔드 HTTPS 설정 스크립트
-# 사용법: EC2에 SSH 접속 후 실행
+# 사용법: Lightsail에 SSH 접속 후 실행
 # 
 # 사전 준비:
-# 1. 도메인 DNS A 레코드가 EC2 Public IP를 가리키고 있어야 함
-# 2. EC2 보안 그룹에서 포트 80, 443이 열려있어야 함
+# 1. 도메인 DNS A 레코드가 Lightsail Public IP를 가리키고 있어야 함
+# 2. Lightsail 방화벽에서 포트 80, 443이 열려있어야 함
 
 set -e
 
@@ -26,14 +26,14 @@ echo ""
 # DNS 확인
 echo "🔍 DNS 확인 중..."
 DNS_IP=$(dig +short $DOMAIN | tail -n1)
-EC2_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "확인 실패")
+LIGHTSAIL_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4 2>/dev/null || echo "확인 실패")
 
 echo "  도메인 IP: $DNS_IP"
-echo "  EC2 Public IP: $EC2_IP"
+echo "  Lightsail Public IP: $LIGHTSAIL_IP"
 
-if [ "$DNS_IP" != "$EC2_IP" ] && [ "$EC2_IP" != "확인 실패" ]; then
-  echo "⚠️  경고: 도메인이 EC2 IP를 가리키지 않습니다!"
-  echo "  DNS A 레코드를 확인하세요: $DOMAIN → $EC2_IP"
+if [ "$DNS_IP" != "$LIGHTSAIL_IP" ] && [ "$LIGHTSAIL_IP" != "확인 실패" ]; then
+  echo "⚠️  경고: 도메인이 Lightsail IP를 가리키지 않습니다!"
+  echo "  DNS A 레코드를 확인하세요: $DOMAIN → $LIGHTSAIL_IP"
   read -p "계속하시겠습니까? (y/N): " -n 1 -r
   echo
   if [[ ! $REPLY =~ ^[Yy]$ ]]; then

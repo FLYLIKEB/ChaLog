@@ -6,7 +6,7 @@
 
 Vercel의 `routes`(구 rewrite) 기능을 사용하여:
 - 프론트엔드: `https://cha-log-gilt.vercel.app`
-- API 요청: `https://cha-log-gilt.vercel.app/api/*` → Vercel이 자동으로 EC2로 프록시
+- API 요청: `https://cha-log-gilt.vercel.app/api/*` → Vercel이 자동으로 Lightsail로 프록시
 - **같은 도메인**이므로 Mixed Content 오류 없음!
 
 ## ✅ 장점
@@ -91,9 +91,9 @@ Vercel이 자동으로 재배포합니다.
    /api/teas → http://3.39.48.139:3000/teas
    ```
 
-3. **EC2 백엔드 응답**
+3. **Lightsail 백엔드 응답**
    ```
-   EC2 → Vercel → 프론트엔드
+   Lightsail → Vercel → 프론트엔드
    ```
 
 ### 환경별 동작

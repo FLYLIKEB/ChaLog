@@ -8,8 +8,8 @@ Lightsail Docker MySQL 배포를 빠르게 시작하는 가이드입니다.
 
 GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음 Secrets 확인:
 
-- ✅ `EC2_HOST`: `3.39.48.139`
-- ✅ `EC2_USER`: `ubuntu`
+- ✅ `EC2_HOST`: Lightsail Public IP (예: `3.39.48.139`)
+- ✅ `EC2_USER`: `ubuntu` (Lightsail SSH 사용자명)
 - ✅ `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
 - ✅ `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@localhost:3306/chalog`
 - ✅ `EC2_JWT_SECRET`: JWT Secret 값

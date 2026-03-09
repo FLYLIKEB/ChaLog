@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 스키마 비교 스크립트
-# 프로덕션 DB: EC2 Lightsail Docker MySQL (SSH 터널 경유)
+# 프로덕션 DB: Lightsail Docker MySQL (SSH 터널 경유)
 # 테스트 DB: 로컬 MySQL
 # 사용법: ./scripts/compare-schema.sh
 
@@ -54,23 +54,23 @@ fi
 echo "🔍 프로덕션 DB와 테스트 DB 스키마 비교 시작..."
 echo ""
 
-# EC2 SSH 연결 테스트
-echo "🔗 EC2 SSH 연결 확인 중 ($EC2_HOST_ADDR)..."
+# Lightsail SSH 연결 테스트
+echo "🔗 Lightsail SSH 연결 확인 중 ($EC2_HOST_ADDR)..."
 if ! ssh -i "$SSH_KEY" -o ConnectTimeout=10 -o StrictHostKeyChecking=no -o LogLevel=QUIET \
     "$EC2_USER_NAME@$EC2_HOST_ADDR" "echo ok" > /dev/null 2>&1; then
-  echo "❌ EC2 SSH 연결 실패: $EC2_HOST_ADDR"
+  echo "❌ Lightsail SSH 연결 실패: $EC2_HOST_ADDR"
   exit 1
 fi
 echo "✅ SSH 연결 성공"
 echo ""
 
-# EC2 .env에서 프로덕션 DB URL 가져오기
+# Lightsail .env에서 프로덕션 DB URL 가져오기
 REMOTE_DB_URL=$(ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o LogLevel=QUIET \
   "$EC2_USER_NAME@$EC2_HOST_ADDR" \
   "grep '^DATABASE_URL=' $EC2_APP_DIR/.env 2>/dev/null | head -1 | cut -d= -f2-" 2>/dev/null || echo "")
 
 if [ -z "$REMOTE_DB_URL" ]; then
-  echo "❌ EC2 서버($EC2_APP_DIR/.env)에서 DATABASE_URL을 가져올 수 없습니다."
+  echo "❌ Lightsail 서버($EC2_APP_DIR/.env)에서 DATABASE_URL을 가져올 수 없습니다."
   exit 1
 fi
 
@@ -86,7 +86,7 @@ read PROD_USER PROD_PASS PROD_ORIG_HOST PROD_ORIG_PORT PROD_DB <<< "$(parse_db_u
 # 테스트 DB 정보 추출
 read TEST_USER TEST_PASS TEST_HOST TEST_PORT TEST_DB <<< "$(parse_db_url "$TEST_DATABASE_URL")"
 
-echo "📊 프로덕션 DB: $PROD_DB @ EC2($EC2_HOST_ADDR) [SSH 터널 포트: $SSH_TUNNEL_PORT]"
+echo "📊 프로덕션 DB: $PROD_DB @ Lightsail($EC2_HOST_ADDR) [SSH 터널 포트: $SSH_TUNNEL_PORT]"
 echo "📊 테스트 DB: $TEST_DB @ $TEST_HOST:$TEST_PORT"
 echo ""
 
@@ -94,7 +94,7 @@ echo ""
 TUNNEL_STARTED=false
 EXISTING_TUNNEL=$(lsof -ti:$SSH_TUNNEL_PORT 2>/dev/null || true)
 if [ -z "$EXISTING_TUNNEL" ]; then
-  echo "🔗 SSH 터널 생성 중 (로컬:$SSH_TUNNEL_PORT → EC2:127.0.0.1:3306)..."
+  echo "🔗 SSH 터널 생성 중 (로컬:$SSH_TUNNEL_PORT → Lightsail:127.0.0.1:3306)..."
   ssh -i "$SSH_KEY" \
     -L "${SSH_TUNNEL_PORT}:127.0.0.1:3306" \
     -N -f \

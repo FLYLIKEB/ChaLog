@@ -73,8 +73,8 @@ cd backend
 **환경 변수 (`.env`):**
 ```env
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=YOUR_EC2_HOST
-EC2_USER=YOUR_EC2_USER
+EC2_HOST=YOUR_LIGHTSAIL_IP
+EC2_USER=ubuntu
 SSH_TUNNEL_LOCAL_PORT=3307
 ```
 

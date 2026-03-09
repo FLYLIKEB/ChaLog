@@ -1,4 +1,4 @@
-name: Deploy Backend to EC2
+name: Deploy Backend to Lightsail
 
 on:
   push:
@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy to EC2
+    name: Deploy to Lightsail
     runs-on: ubuntu-latest
     
     steps:
@@ -183,8 +183,8 @@ jobs:
           fi
           echo ""
           
-          # EC2 호스트 키 추가
-          echo "🔐 EC2 호스트 키 추가 중..."
+          # Lightsail 호스트 키 추가
+          echo "🔐 Lightsail 호스트 키 추가 중..."
           ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>&1 || true
           chmod 644 ~/.ssh/known_hosts
           
@@ -200,9 +200,9 @@ jobs:
             echo "❌ SSH 연결 실패!"
             echo ""
             echo "🔍 문제 진단:"
-            echo "1. EC2_SSH_KEY Secret 확인: GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY"
+            echo "1. EC2_SSH_KEY Secret 확인: GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY (Lightsail SSH 키)"
             echo "2. 인스턴스 authorized_keys에 해당 공개 키가 있는지 확인"
-            echo "3. EC2 사용자명 확인: Ubuntu=ubuntu, Amazon Linux=ec2-user"
+            echo "3. Lightsail 사용자명 확인: Ubuntu=ubuntu"
             echo ""
             echo "자세한 내용: docs/deployment/SSH_CONNECTION_TROUBLESHOOTING.md"
             exit 1

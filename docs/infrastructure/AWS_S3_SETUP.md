@@ -210,18 +210,18 @@ AWS_S3_ENDPOINT=http://localhost:9000
 
 이 경우 `AWS_ACCESS_KEY_ID`와 `AWS_SECRET_ACCESS_KEY`는 MinIO 설정에 맞게 설정합니다.
 
-### 프로덕션 환경 (EC2)
+### 프로덕션 환경 (Lightsail)
 
-EC2 서버의 `/home/ubuntu/chalog-backend/.env` 파일에 동일한 환경 변수를 추가합니다.
+Lightsail 서버의 `/home/ubuntu/chalog-backend/.env` 파일에 동일한 환경 변수를 추가합니다.
 
 **GitHub Secrets에 추가** (자동 배포 사용 시):
 
 GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음 Secrets 추가:
 
-- `EC2_AWS_REGION`: `ap-northeast-2`
-- `EC2_AWS_S3_BUCKET_NAME`: `chalog-images`
-- `EC2_AWS_ACCESS_KEY_ID`: IAM 사용자의 액세스 키 ID
-- `EC2_AWS_SECRET_ACCESS_KEY`: IAM 사용자의 비밀 액세스 키
+- `AWS_REGION`: `ap-northeast-2`
+- `AWS_S3_BUCKET_NAME`: `chalog-images`
+- `AWS_ACCESS_KEY_ID`: IAM 사용자의 액세스 키 ID
+- `AWS_SECRET_ACCESS_KEY`: IAM 사용자의 비밀 액세스 키
 
 그리고 GitHub Actions 워크플로우에서 `.env` 파일 생성 시 이 변수들을 포함하도록 수정해야 합니다.
 
@@ -270,7 +270,7 @@ AWS_S3_ENDPOINT=http://localhost:9000
 cd backend
 npm run start:dev
 
-# 프로덕션 환경 (EC2)
+# 프로덕션 환경 (Lightsail)
 pm2 restart chalog-backend
 ```
 
@@ -361,5 +361,5 @@ pm2 restart chalog-backend
 
 - [`docs/configuration/ENVIRONMENT_VARIABLES.md`](../configuration/ENVIRONMENT_VARIABLES.md) - 환경 변수 관리 가이드
 - [`docs/infrastructure/DATABASE.md`](./DATABASE.md) - 데이터베이스 설정 가이드
-- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 가이드
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - Lightsail 배포 가이드
 

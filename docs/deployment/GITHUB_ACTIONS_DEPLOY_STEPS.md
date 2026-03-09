@@ -29,7 +29,7 @@ GitHub Actions를 통한 배포 실행 방법입니다.
    - 저장소 상단 메뉴에서 "Actions" 탭 선택
 
 3. **워크플로우 선택**
-   - 왼쪽 사이드바에서 "Deploy Backend to EC2" 워크플로우 클릭
+   - 왼쪽 사이드바에서 "Deploy Backend to Lightsail" 워크플로우 클릭
    - 또는 최근 실행 목록에서 선택
 
 4. **수동 실행 시작**
@@ -80,8 +80,8 @@ git push origin main
    - 주요 확인 단계:
      - "Configure SSH" - SSH 연결 확인
      - "Build application" - 빌드 성공 여부
-     - "Deploy to EC2" - 배포 진행 상황
-     - "Deploy to EC2" (두 번째) - 마이그레이션 및 PM2 시작
+     - "Deploy to Lightsail" - 배포 진행 상황
+     - "Deploy to Lightsail" (두 번째) - 마이그레이션 및 PM2 시작
 
 ### 확인할 주요 메시지
 
@@ -151,12 +151,12 @@ GitHub Actions 워크플로우는 다음 단계를 수행합니다:
 **증상**: `❌ SSH 연결 실패`
 
 **해결 방법**:
-1. `EC2_SSH_KEY` Secret 확인
+1. `EC2_SSH_KEY` Secret 확인 (Lightsail SSH 키)
    - GitHub 저장소 → Settings → Secrets → EC2_SSH_KEY
    - SSH 키 전체 내용이 포함되어 있는지 확인
    - 첫 줄과 마지막 줄도 포함되어야 함
 
-2. `EC2_HOST` Secret 확인
+2. `EC2_HOST` Secret 확인 (Lightsail Public IP)
    - 값이 `3.39.48.139`인지 확인
 
 3. Lightsail 인스턴스 상태 확인

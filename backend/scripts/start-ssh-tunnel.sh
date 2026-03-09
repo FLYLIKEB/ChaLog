@@ -26,8 +26,8 @@ if [ -z "$SSH_KEY_PATH" ] || [ -z "$EC2_HOST" ] || [ -z "$EC2_USER" ] || [ -z "$
     echo ""
     echo ".env 파일에 다음 변수들을 설정하세요:"
     echo "  - SSH_KEY_PATH"
-    echo "  - EC2_HOST"
-    echo "  - EC2_USER"
+    echo "  - EC2_HOST (Lightsail Public IP)"
+    echo "  - EC2_USER (Lightsail SSH 사용자명)"
     echo "  - SSH_TUNNEL_REMOTE_HOST"
     exit 1
 fi
@@ -66,7 +66,7 @@ fi
 echo "🔗 SSH 터널 생성 중..."
 echo "   로컬 포트: $SSH_TUNNEL_LOCAL_PORT"
 echo "   원격 호스트: $SSH_TUNNEL_REMOTE_HOST:$SSH_TUNNEL_REMOTE_PORT"
-echo "   EC2 호스트: $EC2_USER@$EC2_HOST"
+echo "   Lightsail 호스트: $EC2_USER@$EC2_HOST"
 echo ""
 
 # SSH 터널 생성 (백그라운드)

@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# 로컬 .env를 원격(EC2)과 동일하게 동기화하는 스크립트
+# 로컬 .env를 원격(Lightsail)과 동일하게 동기화하는 스크립트
 # 사용법: ./scripts/sync-remote-env.sh
-# 필요: 프로젝트 루트에 .ec2-config (EC2_HOST, SSH_KEY_PATH, EC2_USER)
+# 필요: 프로젝트 루트에 .ec2-config (EC2_HOST=Lightsail IP, SSH_KEY_PATH, EC2_USER)
 
 set -e
 
@@ -25,7 +25,7 @@ else
     echo -e "${RED}❌ .ec2-config 파일을 찾을 수 없습니다.${NC}"
     echo ""
     echo "프로젝트 루트에 .ec2-config 파일을 생성하세요:"
-    echo "  EC2_HOST=your-ec2-ip"
+    echo "  EC2_HOST=your-lightsail-ip"
     echo "  SSH_KEY_PATH=~/.ssh/your-key.pem"
     echo "  EC2_USER=ubuntu"
     exit 1
@@ -36,7 +36,7 @@ SSH_KEY_PATH="${SSH_KEY_PATH/#\~/$HOME}"
 EC2_USER="${EC2_USER:-ubuntu}"
 
 if [ -z "$EC2_HOST" ] || [ -z "$SSH_KEY_PATH" ]; then
-    echo -e "${RED}❌ .ec2-config에 EC2_HOST, SSH_KEY_PATH가 필요합니다.${NC}"
+    echo -e "${RED}❌ .ec2-config에 EC2_HOST(Lightsail IP), SSH_KEY_PATH가 필요합니다.${NC}"
     exit 1
 fi
 
@@ -60,7 +60,7 @@ fi
 REMOTE_PATH="/home/$EC2_USER/chalog-backend/.env"
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}  원격 .env 동기화 (로컬 → EC2)${NC}"
+echo -e "${BLUE}  원격 .env 동기화 (로컬 → Lightsail)${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 echo "  로컬: $ENV_TO_UPLOAD"

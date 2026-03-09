@@ -92,8 +92,8 @@ This request has been blocked; the content must be served over HTTPS.
 📖 **상세 가이드**: [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) 참고
 
 **요약:**
-1. 도메인 DNS A 레코드를 EC2 Public IP(`3.39.48.139`)에 연결
-2. EC2에 Nginx 설치 및 설정
+1. 도메인 DNS A 레코드를 Lightsail Public IP(`3.39.48.139`)에 연결
+2. Lightsail에 Nginx 설치 및 설정
 3. Let's Encrypt로 SSL 인증서 발급
 4. Vercel 환경 변수를 `https://api.yourdomain.com`으로 변경
 5. 재배포
@@ -231,5 +231,5 @@ console.log(import.meta.env.VITE_API_BASE_URL);
 
 - [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) - 백엔드 HTTPS 설정 상세 가이드 ⭐
 - [`docs/configuration/ENVIRONMENT_VARIABLES.md`](../configuration/ENVIRONMENT_VARIABLES.md) - 환경 변수 관리 가이드
-- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - 백엔드 배포 가이드
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - Lightsail 백엔드 배포 가이드
 

@@ -6,7 +6,14 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const logger =
+    process.env.NODE_ENV === 'production'
+      ? ['error', 'warn']
+      : ['log', 'error', 'warn', 'debug', 'verbose'];
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger,
+  });
   const configService = app.get(ConfigService);
   
   // CORS 설정

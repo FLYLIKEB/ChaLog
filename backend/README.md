@@ -80,6 +80,7 @@ DB_SYNCHRONIZE=true
 - `./scripts/check-database.sh` - 데이터베이스 확인 및 생성
 - `./scripts/sync-schema.sh` - 스키마 동기화 (Migration 실행)
 - `./scripts/compare-schema.sh` - 테스트/프로덕션 DB 스키마 비교
+- `./scripts/setup-pm2-logrotate.sh` - PM2 로그 로테이션 설정 (Lightsail 1회 실행)
 
 자세한 사용법은 [`docs/SCRIPTS.md`](../docs/SCRIPTS.md)를 참고하세요.
 
@@ -133,6 +134,29 @@ npm run start:dev
 npm run build
 npm run start:prod
 ```
+
+## 로그 관리
+
+PM2로 실행 시 로그가 무제한 쌓이므로 로테이션 설정을 권장합니다.
+
+### pm2-logrotate (자동 적용)
+
+`deploy.sh` 실행 시 pm2-logrotate가 자동 설치·설정됩니다. 수동 설정이 필요한 경우:
+
+```bash
+# Lightsail에서 실행
+./scripts/setup-pm2-logrotate.sh
+```
+
+### Linux logrotate (선택, 이중 보호)
+
+시스템 logrotate로 추가 보호하려면 Lightsail에서 1회 실행:
+
+```bash
+sudo cp /home/ubuntu/chalog-backend/scripts/logrotate-pm2-chalog.conf /etc/logrotate.d/pm2-chalog-backend
+```
+
+설정 후 매일 자동으로 로그가 회전되며, 최근 7일분만 유지됩니다.
 
 ## API 엔드포인트
 

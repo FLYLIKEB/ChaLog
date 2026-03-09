@@ -1,13 +1,21 @@
 #!/bin/bash
 
-# ChaLog Backend EC2 배포 스크립트
-# 사용법: ./deploy.sh [EC2_HOST] [EC2_USER] [SSH_KEY_PATH]
+# ChaLog Backend Lightsail 배포 스크립트
+# 사용법: ./deploy.sh [LIGHTSAIL_HOST] [LIGHTSAIL_USER] [SSH_KEY_PATH]
 
 set -e
 
-EC2_HOST=${1:-"your-ec2-host"}
-EC2_USER=${2:-"ubuntu"}
+LIGHTSAIL_HOST=${1:-"your-lightsail-ip"}
+LIGHTSAIL_USER=${2:-"ubuntu"}
 SSH_KEY_PATH=${3:-"~/.ssh/your-key.pem"}
+
+# 인자 미지정 시 .env에서 읽기 (LIGHTSAIL_* 또는 EC2_* 호환)
+if [ "$LIGHTSAIL_HOST" = "your-lightsail-ip" ] && [ -f .env ]; then
+  LIGHTSAIL_HOST=$(grep -E "^LIGHTSAIL_HOST=|^EC2_HOST=" .env 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d '"' | tr -d "'" || true)
+  LIGHTSAIL_USER=$(grep -E "^LIGHTSAIL_USER=|^EC2_USER=" .env 2>/dev/null | head -1 | cut -d '=' -f2- | tr -d '"' | tr -d "'" || echo "ubuntu")
+  SSH_KEY_PATH=$(grep "^SSH_KEY_PATH=" .env 2>/dev/null | cut -d '=' -f2- | tr -d '"' | tr -d "'" || echo "$SSH_KEY_PATH")
+fi
+SSH_KEY_PATH="${SSH_KEY_PATH/#\~/$HOME}"
 
 echo "🚀 ChaLog Backend 배포 시작..."
 
@@ -22,15 +30,16 @@ tar -czf deploy.tar.gz \
   package.json \
   package-lock.json \
   ecosystem.config.js \
+  scripts/ \
   --exclude=node_modules
 
-# EC2에 파일 전송
-echo "📤 EC2에 파일 전송 중..."
-scp -i "$SSH_KEY_PATH" deploy.tar.gz "$EC2_USER@$EC2_HOST:/tmp/"
+# Lightsail에 파일 전송
+echo "📤 Lightsail에 파일 전송 중..."
+scp -i "$SSH_KEY_PATH" deploy.tar.gz "$LIGHTSAIL_USER@$LIGHTSAIL_HOST:/tmp/"
 
-# EC2에서 배포 실행
-echo "🔧 EC2에서 배포 실행 중..."
-ssh -i "$SSH_KEY_PATH" "$EC2_USER@$EC2_HOST" << 'ENDSSH'
+# Lightsail에서 배포 실행
+echo "🔧 Lightsail에서 배포 실행 중..."
+ssh -i "$SSH_KEY_PATH" "$LIGHTSAIL_USER@$LIGHTSAIL_HOST" << 'ENDSSH'
   cd /home/ubuntu/chalog-backend || mkdir -p /home/ubuntu/chalog-backend && cd /home/ubuntu/chalog-backend
   
   # 기존 파일 백업
@@ -46,6 +55,14 @@ ssh -i "$SSH_KEY_PATH" "$EC2_USER@$EC2_HOST" << 'ENDSSH'
   # 의존성 설치
   echo "📥 의존성 설치 중..."
   npm ci --production
+  
+  # pm2-logrotate 설치 및 설정 (이미 설치되어 있으면 설정만 업데이트)
+  echo "📦 pm2-logrotate 설정 중..."
+  pm2 install pm2-logrotate 2>/dev/null || true
+  pm2 set pm2-logrotate:max_size 10M
+  pm2 set pm2-logrotate:retain 7
+  pm2 set pm2-logrotate:compress true
+  pm2 set pm2-logrotate:rotateInterval '0 0 * * *'
   
   # PM2로 재시작
   echo "🔄 PM2로 앱 재시작 중..."
@@ -65,5 +82,5 @@ ENDSSH
 rm -f deploy.tar.gz
 
 echo "✅ 배포 완료!"
-echo "🌐 Health Check: http://$EC2_HOST:3000/health"
+echo "🌐 Health Check: http://$LIGHTSAIL_HOST:3000/health"
 

@@ -139,8 +139,8 @@ Vercel 대시보드에서 환경 변수 설정:
 | 변수명 | 설명 | 예시 |
 |--------|------|------|
 | `SSH_KEY_PATH` | SSH 키 파일 경로 | `~/.ssh/your-key.pem` |
-| `EC2_HOST` | EC2 호스트 (Public IP) | `your-ec2-ip` |
-| `EC2_USER` | EC2 사용자명 | `ubuntu` |
+| `LIGHTSAIL_HOST` 또는 `EC2_HOST` | Lightsail 호스트 (Public IP) | `your-lightsail-ip` |
+| `LIGHTSAIL_USER` 또는 `EC2_USER` | Lightsail SSH 사용자명 | `ubuntu` |
 | `SSH_TUNNEL_LOCAL_PORT` | SSH 터널 로컬 포트 | `3307` |
 | `SSH_TUNNEL_REMOTE_HOST` | 원격 DB 호스트 (Lightsail 내부: localhost) | `localhost` |
 | `SSH_TUNNEL_REMOTE_PORT` | 원격 DB 포트 | `3306` |
@@ -163,7 +163,7 @@ nano .env
 - `DB_SYNCHRONIZE`: `false` (프로덕션과 동일)
 - `NODE_ENV`: `development`
 
-#### 프로덕션 (EC2)
+#### 프로덕션 (Lightsail)
 
 **현재 구조**:
 - 파일 위치: `/home/ubuntu/chalog-backend/.env`
@@ -172,8 +172,8 @@ nano .env
 
 **수동 수정** (필요 시):
 ```bash
-# EC2에 SSH 접속
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-ec2-ip
+# Lightsail에 SSH 접속
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@your-lightsail-ip
 
 # .env 파일 편집
 nano /home/ubuntu/chalog-backend/.env
@@ -208,7 +208,7 @@ FRONTEND_URL=http://localhost:5173
 **프론트엔드 (Vercel):**
 - Vercel 대시보드에서 `VITE_API_BASE_URL` 환경 변수 설정
 
-**백엔드 (EC2/Lightsail):**
+**백엔드 (Lightsail):**
 ```env
 DATABASE_URL=mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog
 DB_SYNCHRONIZE=false
@@ -256,9 +256,9 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 
 | Secret 이름 | 용도 | 자동 배포 시 사용 |
 |------------|------|------------------|
-| `EC2_SSH_KEY` | EC2 SSH 접속 | ✅ |
-| `EC2_HOST` | EC2 호스트 주소 | ✅ |
-| `EC2_USER` | EC2 사용자명 | ✅ |
+| `EC2_SSH_KEY` | Lightsail SSH 접속 (Secret 이름은 호환용 유지) | ✅ |
+| `EC2_HOST` | Lightsail Public IP | ✅ |
+| `EC2_USER` | Lightsail SSH 사용자명 | ✅ |
 | `EC2_DATABASE_URL` | `.env` 파일 생성 | ✅ |
 | `EC2_JWT_SECRET` | `.env` 파일 생성 | ✅ |
 | `EC2_FRONTEND_URL` | `.env` 파일 생성 (선택) | ✅ |
@@ -300,6 +300,6 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 
 - [`docs/infrastructure/DATABASE.md`](../infrastructure/DATABASE.md) - 데이터베이스 구조 및 사용 가이드
 - [`docs/infrastructure/AWS_S3_SETUP.md`](../infrastructure/AWS_S3_SETUP.md) - AWS S3 이미지 저장소 설정 가이드
-- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조 및 사용 가이드
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](../deployment/AWS_EC2_DEPLOYMENT.md) - Lightsail 배포 구조 및 사용 가이드
 - [`docs/deployment/GITHUB_ACTIONS_SETUP.md`](../deployment/GITHUB_ACTIONS_SETUP.md) - GitHub Actions 사용 가이드
 - [`docs/security/SECURITY.md`](../security/SECURITY.md) - 보안 가이드

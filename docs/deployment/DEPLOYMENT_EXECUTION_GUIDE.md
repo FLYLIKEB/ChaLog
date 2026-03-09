@@ -8,8 +8,8 @@ Lightsail Docker MySQL 배포를 실행하는 단계별 가이드입니다.
 
 배포 전에 다음 Secrets가 설정되어 있는지 확인하세요:
 
-- `EC2_HOST`: `3.39.48.139`
-- `EC2_USER`: `ubuntu`
+- `EC2_HOST`: Lightsail Public IP (예: `3.39.48.139`)
+- `EC2_USER`: `ubuntu` (Lightsail SSH 사용자명)
 - `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
 - `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@localhost:3306/chalog`
 - `EC2_JWT_SECRET`: JWT Secret 값
@@ -49,7 +49,7 @@ git push origin main
 #### 수동 실행
 
 1. GitHub 저장소 → **Actions** 탭
-2. "Deploy Backend to EC2" 워크플로우 선택
+2. "Deploy Backend to Lightsail" 워크플로우 선택
 3. **Run workflow** 버튼 클릭
 4. 브랜치 선택 (보통 `main`)
 5. **Run workflow** 클릭
@@ -135,9 +135,9 @@ curl http://3.39.48.139:3000/health
 **증상**: `❌ SSH 연결 테스트 실패`
 
 **해결 방법**:
-1. `EC2_SSH_KEY` Secret 확인
+1. `EC2_SSH_KEY` Secret (Lightsail SSH 키) 확인
 2. Lightsail 인스턴스의 보안 그룹에서 SSH(22번 포트) 허용 확인
-3. `EC2_USER` 값 확인 (`ubuntu`)
+3. `EC2_USER` 값 확인 (Lightsail: `ubuntu`)
 
 #### 빌드 실패
 

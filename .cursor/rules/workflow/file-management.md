@@ -17,7 +17,7 @@
 - Documentation: Reference `docs/` files for detailed information
   - Use relative paths: `docs/CATEGORY/FILENAME.md` or `../docs/CATEGORY/FILENAME.md` depending on context
   - Available docs by category:
-    - `docs/deployment/` - AWS_EC2_DEPLOYMENT.md, GITHUB_ACTIONS_SETUP.md, HTTPS_SETUP_GUIDE.md, VERCEL_ENV_SETUP.md, VERCEL_PROXY_SOLUTION.md
+    - `docs/deployment/` - AWS_EC2_DEPLOYMENT.md(Lightsail), GITHUB_ACTIONS_SETUP.md, HTTPS_SETUP_GUIDE.md, VERCEL_ENV_SETUP.md, VERCEL_PROXY_SOLUTION.md
     - `docs/infrastructure/` - DATABASE.md, VSCODE_DB_SETUP.md
     - `docs/development/` - KAKAO_DEVELOPER_SETUP.md, NODE_VERSION_SETUP.md
     - `docs/workflow/` - PR_REVIEW_PROCESS.md, SCRIPTS.md

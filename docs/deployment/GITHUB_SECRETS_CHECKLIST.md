@@ -8,16 +8,16 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음
 
 ### ✅ 필수 Secrets
 
-- [ ] **EC2_HOST**
+- [ ] **EC2_HOST** (Lightsail Public IP)
   - 값: `3.39.48.139`
-  - 설명: Lightsail Public IP 주소
+  - 설명: Lightsail 인스턴스 Public IP 주소
 
 - [ ] **EC2_USER**
   - 값: `ubuntu`
-  - 설명: Lightsail 인스턴스 사용자명
+  - 설명: Lightsail 인스턴스 SSH 사용자명
 
 - [ ] **EC2_SSH_KEY**
-  - 값: Lightsail SSH 키 전체 내용
+  - 값: Lightsail SSH 키 전체 내용 (Lightsail 콘솔에서 다운로드)
   - 형식: `-----BEGIN RSA PRIVATE KEY-----`로 시작하는 전체 키 내용
   - 확인 방법: `cat LightsailDefaultKey-ap-northeast-2.pem`
 

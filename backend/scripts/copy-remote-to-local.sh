@@ -50,8 +50,8 @@ if [[ "$DATABASE_URL" == *".rds.amazonaws.com"* ]] || [[ "$DATABASE_URL" == *"3.
         echo ""
         echo ".env 파일에 다음 변수들을 설정하세요:"
         echo "  - SSH_KEY_PATH (예: ~/.ssh/your-key.pem)"
-        echo "  - EC2_HOST (예: ec2-xxx.ap-northeast-2.compute.amazonaws.com)"
-        echo "  - EC2_USER (예: ec2-user 또는 ubuntu)"
+        echo "  - LIGHTSAIL_HOST 또는 EC2_HOST (예: Lightsail Public IP)"
+        echo "  - LIGHTSAIL_USER 또는 EC2_USER (예: ubuntu)"
         echo ""
         echo "SSH_TUNNEL_REMOTE_HOST는 자동으로 설정되었습니다: $SSH_TUNNEL_REMOTE_HOST"
         exit 1

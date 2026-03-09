@@ -140,10 +140,10 @@ chmod 600 ~/.ssh/authorized_keys
 
 1. **GitHub Secrets 확인:**
    - GitHub 저장소 → Settings → Secrets and variables → Actions
-   - `EC2_SSH_KEY` Secret이 올바르게 설정되어 있는지 확인
+   - `EC2_SSH_KEY` Secret(Lightsail SSH 키)이 올바르게 설정되어 있는지 확인
 
 2. **GitHub Actions 배포 실행:**
-   - Actions 탭 → "Deploy Backend to EC2" 워크플로우
+   - Actions 탭 → "Deploy Backend to Lightsail" 워크플로우
    - "Run workflow" 클릭
    - GitHub Actions는 다른 IP에서 접속하므로 성공할 수 있음
 

@@ -7,7 +7,7 @@ ChaLog 백엔드의 HTTPS 구조 및 사용 방법입니다.
 ### 인프라 구성
 
 - **도메인**: `api.yourdomain.com` (실제 도메인으로 설정됨)
-- **EC2 인스턴스**: Ubuntu Server 22.04 LTS
+- **Lightsail 인스턴스**: Ubuntu Server 22.04 LTS
 - **웹 서버**: Nginx (리버스 프록시)
 - **SSL 인증서**: Let's Encrypt (자동 갱신)
 - **백엔드 서버**: NestJS (포트 3000)
@@ -25,7 +25,7 @@ Nginx (포트 443) - SSL/TLS 종료
 ### 파일 구조
 
 ```
-EC2 서버:
+Lightsail 서버:
 ├── /etc/nginx/sites-available/chalog-backend  # Nginx 설정
 ├── /etc/nginx/sites-enabled/chalog-backend    # 활성화된 설정 (심볼릭 링크)
 ├── /etc/letsencrypt/live/api.yourdomain.com/   # SSL 인증서
@@ -229,6 +229,6 @@ sudo nginx -T 2>&1 | grep error
 
 ## 관련 문서
 
-- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - EC2 배포 구조
+- [`docs/deployment/AWS_EC2_DEPLOYMENT.md`](./AWS_EC2_DEPLOYMENT.md) - Lightsail 배포 구조
 - [`backend/nginx.conf.example`](../backend/nginx.conf.example) - Nginx 설정 예시
 - [`backend/scripts/setup-https.sh`](../backend/scripts/setup-https.sh) - HTTPS 설정 스크립트

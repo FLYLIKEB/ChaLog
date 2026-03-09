@@ -49,8 +49,8 @@ Vercel 서버리스 함수가 백엔드 서버(`3.39.48.139`)에 **TCP 연결을
    - 포트: **3000**
    - 소스: **Anywhere (0.0.0.0/0)**
 
-#### EC2 Security Group
-1. EC2 콘솔 → Security Groups → 해당 인스턴스의 보안 그룹
+#### Lightsail 방화벽
+1. Lightsail 콘솔 → 인스턴스 → 네트워킹 탭
 2. **Inbound rules** → **Edit** → **Add rule**
    - Type: Custom TCP
    - Port: 3000
@@ -58,7 +58,7 @@ Vercel 서버리스 함수가 백엔드 서버(`3.39.48.139`)에 **TCP 연결을
 
 ### 3. 백엔드 서버 실행 확인
 
-EC2/Lightsail에 SSH 접속 후:
+Lightsail에 SSH 접속 후:
 
 ```bash
 # PM2 상태 확인
@@ -86,7 +86,7 @@ curl -v http://3.39.48.139:3000/api/teas
 
 ### 5. IP 주소 변경 여부 확인
 
-EC2/Lightsail 인스턴스를 재시작하면 **퍼블릭 IP가 바뀔 수 있습니다**. Elastic IP를 사용하지 않았다면:
+Lightsail 인스턴스를 재시작하면 **퍼블릭 IP가 바뀔 수 있습니다**. 고정 IP를 사용하지 않았다면:
 
 1. AWS 콘솔에서 현재 퍼블릭 IP 확인
 2. Vercel `BACKEND_URL` 환경 변수를 새 IP로 업데이트
