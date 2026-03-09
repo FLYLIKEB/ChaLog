@@ -35,7 +35,7 @@ export function RatingVisualization({ axisValues }: RatingVisualizationProps) {
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all"
+                className="h-full bg-linear-to-r from-emerald-400 to-teal-500 rounded-full transition-all"
                 style={{ width: `${(value / maxValue) * 100}%` }}
               />
             </div>
