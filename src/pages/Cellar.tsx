@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2 } from 'lucide-react';
+import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2, Coffee, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
@@ -48,11 +48,13 @@ function CellarCard({
   onDelete,
   onEdit,
   onNoteClick,
+  onSessionClick,
 }: {
   item: CellarItem;
   onDelete: (id: number) => void;
   onEdit: (id: number) => void;
   onNoteClick: (teaId: number) => void;
+  onSessionClick: (teaId: number) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
 
@@ -144,16 +146,24 @@ function CellarCard({
         <p className="text-sm text-foreground/80 line-clamp-2">{item.memo}</p>
       )}
 
-      <div className="flex gap-2 pt-1">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 gap-1 text-xs"
+      <div className="flex gap-0 pt-1 overflow-hidden rounded-lg border border-border">
+        <button
+          type="button"
           onClick={() => onNoteClick(item.teaId)}
+          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 text-xs font-medium border-r border-border bg-background hover:bg-muted/50 transition-colors"
         >
-          <FileText className="w-3.5 h-3.5" />
-          차록 작성
-        </Button>
+          <FileText className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">차록</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onSessionClick(item.teaId)}
+          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 text-xs font-medium bg-background hover:bg-muted/50 transition-colors"
+          title="다회 모드"
+        >
+          <Coffee className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">다회</span>
+        </button>
       </div>
     </div>
   );
@@ -312,6 +322,10 @@ export function Cellar() {
     navigate(`/note/new?teaId=${teaId}`);
   };
 
+  const handleSessionClick = (teaId: number) => {
+    navigate(`/sessions/new?teaId=${teaId}`);
+  };
+
   const handleEdit = (id: number) => {
     navigate(`/cellar/${id}/edit`);
   };
@@ -350,6 +364,23 @@ export function Cellar() {
       <Header showProfile title="📦 내 찻장" showLogo />
 
       <div className="space-y-0">
+        {/* 다회 모드 */}
+        <Link
+          to="/sessions"
+          className="mx-4 mt-4 sm:mx-6 sm:mt-6 flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Coffee className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">다회 모드</p>
+              <p className="text-xs text-muted-foreground mt-0.5">탕별 타이머·기록, 세션 요약·노트 발행</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </Link>
+
         {/* 리마인더 배너 */}
         {reminders.length > 0 && (
           <div className="mx-4 mt-4 sm:mx-6 flex items-start gap-3 bg-rating/10 border border-rating/30 rounded-xl p-3">
@@ -487,7 +518,7 @@ export function Cellar() {
                   <ul
                     role="listbox"
                     aria-label="정렬 옵션"
-                    className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-lg py-1 min-w-28 overflow-hidden"
+                    className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-sm py-1 min-w-28 overflow-hidden"
                   >
                     {SORT_OPTIONS.map((opt) => (
                       <li key={opt.key}>
@@ -572,6 +603,7 @@ export function Cellar() {
                     onDelete={handleDelete}
                     onEdit={handleEdit}
                     onNoteClick={handleNoteClick}
+                    onSessionClick={handleSessionClick}
                   />
                 </div>
               ))}
@@ -603,6 +635,7 @@ export function Cellar() {
                       onDelete={handleDelete}
                       onEdit={handleEdit}
                       onNoteClick={handleNoteClick}
+                      onSessionClick={handleSessionClick}
                     />
                   ))}
                 </div>

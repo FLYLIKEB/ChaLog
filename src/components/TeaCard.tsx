@@ -15,7 +15,7 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-4 h-[120px] flex flex-col overflow-hidden hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer"
+      className="w-full text-left p-4 h-[120px] flex flex-col overflow-hidden card-appearance-hover transition-shadow cursor-pointer"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">

@@ -172,9 +172,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-2xl border border-black/5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]',
-        'bg-card transition-shadow duration-200',
-        canView && 'hover:shadow-[0_4px_16px_rgba(0,0,0,0.06)]',
+        'relative overflow-hidden card-appearance',
+        'bg-card transition-shadow duration-200 min-h-[136px]',
+        canView && 'card-appearance-hover',
         !canView && 'opacity-60'
       )}
     >
@@ -230,7 +230,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
         )}
         style={{ transform: `translateX(${translateX}px)` }}
       >
-        <div className="flex items-start gap-3 sm:gap-4">
+        <div className="flex items-start gap-3 sm:gap-4 min-h-[96px] sm:min-h-[112px]">
           {/* 이미지 썸네일 */}
           <div
             className={cn(
@@ -256,9 +256,9 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
           </div>
 
           {/* 내용 영역 */}
-          <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5">
+          <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5 min-h-[96px] sm:min-h-[112px]">
             {/* 상단: 제목/메모 */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 min-h-10">
               {showTeaName && (
                 <div className="flex items-center gap-2 min-w-0 mb-1">
                   <h3 className="truncate text-foreground font-semibold text-[15px]">
@@ -284,7 +284,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
 
             {/* 태그 */}
             {note.tags && note.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 max-h-9 overflow-hidden">
                 {note.tags.slice(0, 5).map((tag, index) => (
                   <Link
                     key={index}

@@ -10,6 +10,8 @@ import {
   MoreVertical,
   Megaphone,
   Eye,
+  Pin,
+  Shield,
 } from 'lucide-react';
 import { Post, Comment, POST_CATEGORY_LABELS } from '../types';
 import { postsApi, commentsApi } from '../lib/api';
@@ -142,18 +144,24 @@ export function PostDetail() {
     <div className="min-h-screen pb-20">
       <Header showBack title="게시글" showProfile />
 
-      <div className="px-4 py-4 flex flex-col gap-5">
+      <div
+        className={cn(
+          'px-5 py-5 flex flex-col gap-5',
+          post.isPinned && 'relative border-l-2 border-l-primary/60 pl-6 pr-5 py-4 my-2 bg-primary/[0.04] rounded-lg',
+        )}
+      >
         {/* 카테고리 + 공지 + 협찬 뱃지 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              {POST_CATEGORY_LABELS[post.category]}
-            </span>
             {post.isPinned && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                <Pin className="w-3 h-3 fill-muted-foreground" />
                 공지
               </span>
             )}
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              {POST_CATEGORY_LABELS[post.category]}
+            </span>
             {post.isSponsored && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium flex items-center gap-1">
                 <Megaphone className="w-3 h-3" />
@@ -208,21 +216,24 @@ export function PostDetail() {
           {post.isAnonymous ? (
             <span className="font-medium text-foreground">익명</span>
           ) : (
-            <>
+            <span className="inline-flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={() => post.user?.id && navigate(`/user/${post.user.id}`)}
-                className="font-medium text-foreground hover:underline"
+                className={cn(
+                  'hover:underline',
+                  post.user?.role === 'admin'
+                    ? 'font-semibold text-green-600 hover:text-green-700'
+                    : 'font-medium text-foreground',
+                )}
                 aria-label="작성자 프로필 보기"
               >
                 {post.user?.name}
               </button>
               {post.user?.role === 'admin' && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
-                  관리자
-                </span>
+                <Shield className="w-3.5 h-3.5 text-green-600 shrink-0" aria-label="관리자" />
               )}
-            </>
+            </span>
           )}
           <span>·</span>
           <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>

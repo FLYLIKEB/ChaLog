@@ -61,10 +61,12 @@ describe('NewPost 페이지', () => {
   it('카테고리 버튼들을 표시한다', () => {
     renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
+    expect(screen.getByText('질문·토론')).toBeInTheDocument();
+    expect(screen.getByText('리뷰')).toBeInTheDocument();
+    expect(screen.getByText('제보')).toBeInTheDocument();
     expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('맞춤차')).toBeInTheDocument();
+    expect(screen.getByText('맞춤 추천')).toBeInTheDocument();
     expect(screen.getByText('도구')).toBeInTheDocument();
-    expect(screen.getByText('찻집 후기')).toBeInTheDocument();
   });
 
   it('제목/내용이 비어 있으면 제출 버튼이 비활성화된다', () => {

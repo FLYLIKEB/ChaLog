@@ -13,7 +13,7 @@ export function ChadamBanner({ className }: ChadamBannerProps) {
         '-mx-4 -mt-4',
         'rounded-b-2xl',
         'bg-linear-to-br from-primary/15 via-primary/10 to-primary/5',
-        'px-5 py-6 sm:px-6 sm:py-7',
+        'px-5 py-4 sm:px-6 sm:py-5',
         className,
       )}
     >
@@ -35,8 +35,8 @@ export function ChadamBanner({ className }: ChadamBannerProps) {
         </svg>
       </div>
 
-      <div className="relative flex flex-col gap-2">
-        <div className="space-y-1.5">
+      <div className="relative flex flex-col gap-1.5">
+        <div className="space-y-1">
           <p className="text-sm sm:text-base text-foreground/90 font-medium leading-snug">
             차를 사랑하는 사람들의 이야기
           </p>

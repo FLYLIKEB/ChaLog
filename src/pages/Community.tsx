@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, ArrowDownUp } from 'lucide-react';
 import { PostCardSkeleton } from '../components/PostCardSkeleton';
 import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
-import { postsApi } from '../lib/api';
+import { postsApi, type PostSort } from '../lib/api';
 import { PostCard } from '../components/PostCard';
 import { Header } from '../components/Header';
 import { ChadamBanner } from '../components/ChadamBanner';
@@ -15,14 +15,24 @@ import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { cn } from '../components/ui/utils';
 import { toast } from 'sonner';
 
-const CATEGORIES: Array<{ value: PostCategory | null; label: string }> = [
-  { value: null, label: '전체' },
-  { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question },
-  { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation },
-  { value: 'tool', label: POST_CATEGORY_LABELS.tool },
-  { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review },
-  { value: 'announcement', label: POST_CATEGORY_LABELS.announcement },
-  { value: 'bug_report', label: POST_CATEGORY_LABELS.bug_report },
+const SORT_OPTIONS: Array<{ value: PostSort; label: string }> = [
+  { value: 'latest', label: '최신순' },
+  { value: 'popular', label: '인기글' },
+  { value: 'commented', label: '댓글많은순' },
+];
+
+type GroupKey = 'all' | 'qna' | 'review' | 'announcement' | 'report';
+
+const GROUPS: Array<{ key: GroupKey; label: string; categories: PostCategory[] }> = [
+  { key: 'all', label: '전체', categories: [] },
+  {
+    key: 'qna',
+    label: '질문·토론',
+    categories: ['brewing_question', 'recommendation', 'tool'],
+  },
+  { key: 'review', label: '리뷰', categories: ['tea_room_review'] },
+  { key: 'announcement', label: '공지', categories: ['announcement'] },
+  { key: 'report', label: '제보', categories: ['bug_report'] },
 ];
 
 export function Community() {
@@ -30,19 +40,27 @@ export function Community() {
   const { user } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<PostCategory | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupKey>('all');
+  const [sort, setSort] = useState<PostSort>('latest');
 
   const fetchPosts = useCallback(async () => {
+    const group = GROUPS.find((g) => g.key === selectedGroup);
+    const categoryParam =
+      !group || group.categories.length === 0
+        ? undefined
+        : group.categories.length === 1
+          ? group.categories[0]
+          : group.categories;
     setIsLoading(true);
     try {
-      const data = await postsApi.getAll(selectedCategory ?? undefined);
+      const data = await postsApi.getAll(categoryParam, 1, 20, sort);
       setPosts(data);
     } catch {
       toast.error('게시글을 불러오는 데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCategory]);
+  }, [selectedGroup, sort]);
 
   useEffect(() => {
     fetchPosts();
@@ -63,16 +81,16 @@ export function Community() {
         <ChadamBanner />
       </div>
 
-      {/* 카테고리 탭 - 헤더 높이만큼 아래에서 고정 */}
+      {/* 카테고리 탭 + 정렬 - 헤더 높이만큼 아래에서 고정 */}
       <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-10 bg-background border-b border-border/50">
-        <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-2">
-          {CATEGORIES.map(({ value, label }) => (
+        <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-1.5 items-center">
+          {GROUPS.map(({ key, label }) => (
             <button
-              key={label}
-              onClick={() => setSelectedCategory(value)}
+              key={key}
+              onClick={() => setSelectedGroup(key)}
               className={cn(
                 'shrink-0 px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
-                selectedCategory === value
+                selectedGroup === key
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
               )}
@@ -80,6 +98,23 @@ export function Community() {
               {label}
             </button>
           ))}
+          <div className="shrink-0 ml-auto flex items-center gap-1 pl-2 border-l border-border/50">
+            <ArrowDownUp className="w-4 h-4 text-muted-foreground" aria-hidden />
+            {SORT_OPTIONS.map(({ value, label }) => (
+              <button
+                key={value}
+                onClick={() => setSort(value)}
+                className={cn(
+                  'shrink-0 px-2 py-1 rounded text-xs font-medium transition-colors',
+                  sort === value
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -95,14 +130,14 @@ export function Community() {
           <EmptyState
             type="feed"
             message={
-              selectedCategory
-                ? `${POST_CATEGORY_LABELS[selectedCategory]} 카테고리에 아직 게시글이 없어요.`
+              selectedGroup !== 'all'
+                ? `${GROUPS.find((g) => g.key === selectedGroup)?.label}에 아직 게시글이 없어요.`
                 : '첫 번째 게시글을 작성해보세요!'
             }
             action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
           />
         ) : (
-          <div>
+          <div className="divide-y divide-gray-200 dark:divide-gray-700 pt-2">
             {posts.map((post, i) => (
               <div
                 key={post.id}

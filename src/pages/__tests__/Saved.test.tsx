@@ -57,9 +57,8 @@ vi.mock('../../contexts/AuthContext', async () => {
 });
 
 vi.mock('../../lib/api', () => ({
-  notesApi: {
-    getAll: vi.fn(),
-  },
+  notesApi: { getAll: vi.fn() },
+  postsApi: { getAll: vi.fn().mockResolvedValue([]) },
 }));
 
 const mockNavigate = vi.fn();

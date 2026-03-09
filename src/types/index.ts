@@ -169,7 +169,7 @@ export type PostCategory =
 
 export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   brewing_question: '우림 질문',
-  recommendation: '맞춤차',
+  recommendation: '맞춤 추천',
   tool: '도구',
   tea_room_review: '찻집 후기',
   announcement: '공지사항',
