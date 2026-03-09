@@ -11,6 +11,7 @@ export interface Tea {
   seller?: string;
   origin?: string;
   price?: number;
+  weight?: number;
   averageRating: number;
   reviewCount: number;
 }
@@ -104,6 +105,8 @@ export interface Note {
   userId: number;
   userName: string;
   schemaId: number;
+  /** 다중 스키마 ID 목록 (note_schemas 기반) */
+  schemaIds?: number[];
   schema?: RatingSchema;
   overallRating: number | null;
   isRatingIncluded: boolean;

@@ -37,15 +37,61 @@ export const RECOMMENDED_NOTE_TAGS = [
   '온화함', '상쾌함', '따뜻함', '시원함', '은은함', '강렬함'
 ] as const;
 
-// 차 종류
-export const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'] as const;
+// 차 종류 (6대다류 순서: 녹·백·황·청·홍·흑 + 보이차·대용차)
+export const TEA_TYPES = ['녹차', '백차', '황차', '우롱차', '홍차', '흑차', '보이차', '대용차'] as const;
+
+/** 차 종류별 색상 (칩/배지용) - 차 색감 연상 */
+export const TEA_TYPE_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
+  녹차: 'bg-emerald-500',
+  홍차: 'bg-rose-500',
+  우롱차: 'bg-teal-500',
+  백차: 'bg-stone-300 dark:bg-stone-500',
+  흑차: 'bg-slate-700 dark:bg-slate-500',
+  대용차: 'bg-slate-400 dark:bg-slate-600',
+  황차: 'bg-amber-400 dark:bg-amber-500',
+  보이차: 'bg-amber-800 dark:bg-amber-600',
+};
 
 // 새 차 등록 - 연도 선택 (현재년 ~ 1990)
 const currentYear = new Date().getFullYear();
+export const CURRENT_YEAR = currentYear;
 export const YEAR_OPTIONS = Array.from({ length: currentYear - 1989 }, (_, i) => currentYear - i);
 
-// 새 차 등록 - 자주 쓰는 산지
+// 새 차 등록 - 기본 산지 (차종 미선택 시)
 export const COMMON_ORIGINS = ['중국', '한국', '일본', '대만', '인도', '스리랑카', '베트남', '케냐'] as const;
+
+/** 차 종류별 추천 산지 - 구체적 지역명 (차종에 따라 다른 버튼 표시) */
+export const TEA_TYPE_ORIGINS: Record<(typeof TEA_TYPES)[number], readonly string[]> = {
+  녹차: ['한국 제주도', '한국 보성', '한국 하동', '일본 시즈오카', '일본 교토 우지', '일본 가고시마', '중국 용정', '중국 푸젠', '대만 핑린', '베트남 탄응옌'],
+  백차: ['중국 푸젠 복정', '중국 푸젠 정화', '중국 푸젠 무이산', '대만 핑린', '중국 건강', '인도 다즐링'],
+  황차: ['중국 쓰촨 몽정산', '중국 푸젠', '중국 쓰촨', '중국 후난', '대만'],
+  우롱차: ['중국 운남성', '중국 푸젠 무이산', '중국 푸젠 안시', '대만 동정', '대만 문산', '대만 아리산', '중국 광동 펑황단총'],
+  홍차: ['인도 다즐링', '인도 아삼', '인도 닐기리', '스리랑카 누완엘리야', '스리랑카 실론', '케냐', '중국 운남', '중국 푸젠', '대만 동정'],
+  흑차: ['중국 운남 시솽반나', '중국 운남 란창강', '중국 안후이 안화', '중국 후난 안화', '중국 운남', '중국 후난'],
+  보이차: ['중국 운남성 시솽반나', '중국 운남성 란창강', '중국 운남성', '미얀마', '라오스', '베트남'],
+  대용차: ['한국 제주도', '한국 보성', '중국 구이저우', '일본 홋카이도', '대만 핑린', '인도 다즐링', '베트남 탄응옌'],
+};
+
+/** 차종에 따른 산지 버튼 목록 반환 (미선택 시 COMMON_ORIGINS) */
+export function getOriginsForTeaType(type: string): readonly string[] {
+  if (type && type in TEA_TYPE_ORIGINS) {
+    return TEA_TYPE_ORIGINS[type as (typeof TEA_TYPES)[number]];
+  }
+  return COMMON_ORIGINS;
+}
+
+// 새 차 등록 - 자주 쓰는 가격 (원)
+export const COMMON_PRICES = [5000, 10000, 20000, 50000] as const;
+
+/** 가격을 한글 단위로 표시 (예: 5000 → 5천, 20000 → 2만) */
+export function formatPriceToKorean(price: number): string {
+  if (price >= 10000) return `${price / 10000}만`;
+  if (price >= 1000) return `${price / 1000}천`;
+  return String(price);
+}
+
+// 새 차 등록 - 자주 쓰는 무게 (g) - 찻집 일반 판매단위
+export const COMMON_WEIGHTS = [50, 100, 200, 250, 357] as const;
 
 export type TeaType = typeof TEA_TYPES[number];
 

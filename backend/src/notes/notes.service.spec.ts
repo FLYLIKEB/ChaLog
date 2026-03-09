@@ -10,6 +10,7 @@ import { NoteBookmark } from './entities/note-bookmark.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
+import { NoteSchema } from './entities/note-schema.entity';
 import { UserSchemaPin } from './entities/user-schema-pin.entity';
 import { TagFollow } from './entities/tag-follow.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
@@ -110,6 +111,13 @@ describe('NotesService', () => {
     save: jest.fn(),
   };
 
+  const mockNoteSchemaRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    delete: jest.fn(),
+    find: jest.fn(),
+  };
+
   const mockUserSchemaPinRepository = {
     find: jest.fn().mockResolvedValue([]),
     findOne: jest.fn(),
@@ -185,6 +193,10 @@ describe('NotesService', () => {
         {
           provide: getRepositoryToken(NoteAxisValue),
           useValue: mockNoteAxisValueRepository,
+        },
+        {
+          provide: getRepositoryToken(NoteSchema),
+          useValue: mockNoteSchemaRepository,
         },
         {
           provide: getRepositoryToken(UserSchemaPin),
@@ -364,7 +376,7 @@ describe('NotesService', () => {
 
     beforeEach(() => {
       mockTeasService.findOne.mockResolvedValue(mockTea);
-      mockRatingSchemaRepository.findOne.mockResolvedValue(mockSchema);
+      mockRatingSchemaRepository.find.mockResolvedValue([mockSchema]);
       // setNoteAxisValues에서 스키마 검증을 위해 축들을 조회할 때 사용
       mockRatingAxisRepository.find.mockResolvedValue(mockAxes);
       mockNotesRepository.create.mockReturnValue(mockNote);
@@ -374,6 +386,7 @@ describe('NotesService', () => {
         user: { id: userId, name: '테스트 사용자' },
         tea: mockTea,
         schema: mockSchema,
+        noteSchemas: [{ schemaId }],
         noteTags: [],
         axisValues: [],
       });
@@ -382,14 +395,16 @@ describe('NotesService', () => {
       mockNoteAxisValueRepository.delete.mockResolvedValue(undefined);
       mockNoteAxisValueRepository.create.mockImplementation((av) => av);
       mockNoteAxisValueRepository.save.mockResolvedValue([]);
+      mockNoteSchemaRepository.create.mockImplementation((o: any) => o);
+      mockNoteSchemaRepository.save.mockResolvedValue([]);
     });
 
     it('스키마와 축 값을 포함한 노트를 생성해야 함', async () => {
       const result = await service.create(userId, createNoteDto);
 
       expect(mockTeasService.findOne).toHaveBeenCalledWith(teaId);
-      expect(mockRatingSchemaRepository.findOne).toHaveBeenCalledWith({
-        where: { id: schemaId },
+      expect(mockRatingSchemaRepository.find).toHaveBeenCalledWith({
+        where: { id: In([schemaId]) },
       });
       expect(mockRatingAxisRepository.find).toHaveBeenCalledWith({
         where: { id: In([1, 2]) },
@@ -401,7 +416,7 @@ describe('NotesService', () => {
     });
 
     it('존재하지 않는 스키마일 때 NotFoundException을 던져야 함', async () => {
-      mockRatingSchemaRepository.findOne.mockResolvedValue(null);
+      mockRatingSchemaRepository.find.mockResolvedValue([]);
 
       await expect(service.create(userId, createNoteDto)).rejects.toThrow(NotFoundException);
     });
@@ -475,6 +490,7 @@ describe('NotesService', () => {
         user: { id: userId, name: '테스트 사용자' },
         tea: { id: 1, name: '테스트 차' },
         schema: mockSchema,
+        noteSchemas: [{ schemaId }],
         noteTags: [],
         axisValues: [],
       });
@@ -485,6 +501,10 @@ describe('NotesService', () => {
       mockNoteAxisValueRepository.create.mockImplementation((av) => av);
       mockNoteAxisValueRepository.save.mockResolvedValue([]);
       mockRatingAxisRepository.find.mockResolvedValue(mockAxes);
+      mockRatingSchemaRepository.find.mockResolvedValue([mockSchema]);
+      mockNoteSchemaRepository.delete.mockResolvedValue({ affected: 1 } as any);
+      mockNoteSchemaRepository.create.mockImplementation((o: any) => o);
+      mockNoteSchemaRepository.save.mockResolvedValue([]);
     });
 
     it('축 값을 업데이트해야 함', async () => {
@@ -520,12 +540,12 @@ describe('NotesService', () => {
         version: '2.0.0',
       };
 
-      mockRatingSchemaRepository.findOne.mockResolvedValue(newSchema);
+      mockRatingSchemaRepository.find.mockResolvedValue([newSchema]);
 
       await service.update(noteId, userId, updateNoteDto);
 
-      expect(mockRatingSchemaRepository.findOne).toHaveBeenCalledWith({
-        where: { id: newSchemaId },
+      expect(mockRatingSchemaRepository.find).toHaveBeenCalledWith({
+        where: { id: In([newSchemaId]) },
       });
     });
 
@@ -534,7 +554,7 @@ describe('NotesService', () => {
         schemaId: 999,
       };
 
-      mockRatingSchemaRepository.findOne.mockResolvedValue(null);
+      mockRatingSchemaRepository.find.mockResolvedValue([]);
 
       await expect(service.update(noteId, userId, updateNoteDto)).rejects.toThrow(NotFoundException);
     });

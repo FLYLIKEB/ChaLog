@@ -16,6 +16,7 @@ export interface TestTea {
   type: string;
   seller?: string;
   origin?: string;
+  weight?: number;
 }
 
 export interface TestNote {
@@ -118,6 +119,7 @@ export class TestHelper {
       seller?: string;
       sellerId?: number;
       origin?: string;
+      weight?: number;
     },
   ): Promise<TestTea> {
     let payload: Record<string, unknown> = {
@@ -125,6 +127,7 @@ export class TestHelper {
       year: teaData.year,
       type: teaData.type,
       origin: teaData.origin,
+      ...(teaData.weight != null ? { weight: teaData.weight } : {}),
     };
     if (teaData.sellerId != null) {
       payload.sellerId = teaData.sellerId;
@@ -149,6 +152,7 @@ export class TestHelper {
       type: response.body.type,
       seller: response.body.seller,
       origin: response.body.origin,
+      weight: response.body.weight,
     };
   }
 

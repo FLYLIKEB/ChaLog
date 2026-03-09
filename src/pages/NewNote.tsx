@@ -35,7 +35,7 @@ export function NewNote() {
   const [searchQuery, setSearchQuery] = useState('');
   const [schemas, setSchemas] = useState<RatingSchema[]>([]);
   const [pinnedSchemaIds, setPinnedSchemaIds] = useState<number[]>([]);
-  const [selectedSchemaId, setSelectedSchemaId] = useState<number | null>(null);
+  const [selectedSchemaIds, setSelectedSchemaIds] = useState<number[]>([]);
   const [axes, setAxes] = useState<RatingAxis[]>([]);
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
   const [overallRating, setOverallRating] = useState<number | null>(null);
@@ -53,7 +53,7 @@ export function NewNote() {
   const handleTemplateAdded = (schema: RatingSchema) => {
     setSchemas(prev => [schema, ...prev]);
     setPinnedSchemaIds(prev => [schema.id, ...prev]);
-    setSelectedSchemaId(schema.id);
+    setSelectedSchemaIds(prev => (prev.includes(schema.id) ? prev : [schema.id, ...prev]));
   };
 
   useEffect(() => {
@@ -92,30 +92,36 @@ export function NewNote() {
     fetchSchemas();
   }, [overallRating]);
 
+  const primarySchemaId = selectedSchemaIds[0] ?? null;
+
   useEffect(() => {
-    if (!selectedSchemaId) {
+    if (selectedSchemaIds.length === 0) {
       setAxes([]);
       setAxisValues({});
       return;
     }
     const fetchAxes = async () => {
       try {
-        const axesData = (await notesApi.getSchemaAxes(selectedSchemaId)) as RatingAxis[];
-        if (Array.isArray(axesData)) {
-          setAxes(axesData);
-          const initialValues: Record<number, number> = {};
-          axesData.forEach((axis: RatingAxis) => {
-            initialValues[axis.id] = RATING_DEFAULT;
-          });
-          setAxisValues(initialValues);
-        }
+        const axesBySchema = await Promise.all(
+          selectedSchemaIds.map(async (schemaId) => {
+            const axesData = (await notesApi.getSchemaAxes(schemaId)) as RatingAxis[];
+            return Array.isArray(axesData) ? axesData : [];
+          })
+        );
+        const allAxes = axesBySchema.flat();
+        setAxes(allAxes);
+        const initialValues: Record<number, number> = {};
+        allAxes.forEach((axis: RatingAxis) => {
+          initialValues[axis.id] = RATING_DEFAULT;
+        });
+        setAxisValues(initialValues);
       } catch (error) {
         logger.error('Failed to fetch schema axes:', error);
         toast.error('평가 축 정보를 불러오는데 실패했습니다.');
       }
     };
     fetchAxes();
-  }, [selectedSchemaId]);
+  }, [selectedSchemaIds.join(',')]);
 
   const registerRefresh = useRegisterRefresh();
   useEffect(() => {
@@ -186,9 +192,9 @@ export function NewNote() {
       return;
     }
 
-    const schemaId = selectedSchemaId ?? defaultSchema?.id;
-    if (!schemaId) {
-      toast.error('평가 스키마를 불러오지 못했습니다.');
+    const schemaIdsToSend = selectedSchemaIds.length > 0 ? selectedSchemaIds : (defaultSchema ? [defaultSchema.id] : []);
+    if (schemaIdsToSend.length === 0) {
+      toast.error('최소 1개의 평가 스키마를 선택해주세요.');
       return;
     }
 
@@ -196,10 +202,10 @@ export function NewNote() {
       setIsSaving(true);
 
       const axisValuesArray =
-        selectedSchemaId && axes.length > 0
+        selectedSchemaIds.length > 0 && axes.length > 0
           ? axes
-              .filter(axis => axisValues[axis.id] !== undefined)
-              .map(axis => ({
+              .filter((axis) => axisValues[axis.id] !== undefined)
+              .map((axis) => ({
                 axisId: axis.id,
                 value: Math.max(RATING_MIN, Math.min(RATING_MAX, axisValues[axis.id])),
               }))
@@ -209,7 +215,7 @@ export function NewNote() {
 
       await notesApi.create({
         teaId: selectedTea,
-        schemaId,
+        schemaIds: schemaIdsToSend,
         overallRating,
         isRatingIncluded: true,
         axisValues: axisValuesArray,
@@ -276,7 +282,7 @@ export function NewNote() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {tea.type}
                     {tea.seller && ` · ${tea.seller}`}
-                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
+                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
                     {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}
                   </p>
                 </button>
@@ -361,10 +367,11 @@ export function NewNote() {
               schemas={schemas}
               pinnedSchemaIds={pinnedSchemaIds}
               onPinnedChange={setPinnedSchemaIds}
-              value={selectedSchemaId}
-              onChange={setSelectedSchemaId}
+              value={selectedSchemaIds}
+              onChange={(v) => setSelectedSchemaIds(Array.isArray(v) ? v : v != null ? [v] : [])}
               onAddTemplate={() => setAddTemplateOpen(true)}
               isAuthenticated={isAuthenticated}
+              multiple
             />
           ) : (
             <p className="text-sm text-muted-foreground py-2">
@@ -379,8 +386,8 @@ export function NewNote() {
           onSuccess={handleTemplateAdded}
         />
 
-        {/* 구체적 평가 (템플릿 선택 시에만 표시) */}
-        {selectedSchemaId && axes.length > 0 && (
+        {/* 구체적 평가 (선택된 모든 템플릿의 축 표시) */}
+        {selectedSchemaIds.length > 0 && axes.length > 0 && (
           <section className="bg-card rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-base font-semibold text-foreground">
@@ -390,19 +397,33 @@ export function NewNote() {
                 1 ~ 5점
               </span>
             </div>
-            <div className="space-y-0 divide-y divide-border/60">
-              {axes
-                .sort((a, b) => a.displayOrder - b.displayOrder)
-                .map((axis) => (
-                  <AxisStarRow
-                    key={axis.id}
-                    label={axis.nameKo}
-                    value={axisValues[axis.id] ?? RATING_DEFAULT}
-                    onChange={(value) =>
-                      setAxisValues(prev => ({ ...prev, [axis.id]: value }))
-                    }
-                  />
-                ))}
+            <div className="space-y-4">
+              {selectedSchemaIds.map((schemaId) => {
+                const schemaAxes = axes
+                  .filter((a) => a.schemaId === schemaId)
+                  .sort((a, b) => a.displayOrder - b.displayOrder);
+                const schema = schemas.find((s) => s.id === schemaId);
+                if (schemaAxes.length === 0) return null;
+                return (
+                  <div key={schemaId} className="space-y-0 divide-y divide-border/60 rounded-lg border border-border/60 overflow-hidden">
+                    {selectedSchemaIds.length > 1 && (
+                      <div className="px-3 py-2 bg-muted/50 text-sm font-medium text-foreground">
+                        {schema?.nameKo ?? `템플릿 ${schemaId}`}
+                      </div>
+                    )}
+                    {schemaAxes.map((axis) => (
+                      <AxisStarRow
+                        key={axis.id}
+                        label={axis.nameKo}
+                        value={axisValues[axis.id] ?? RATING_DEFAULT}
+                        onChange={(value) =>
+                          setAxisValues((prev) => ({ ...prev, [axis.id]: value }))
+                        }
+                      />
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           </section>
         )}

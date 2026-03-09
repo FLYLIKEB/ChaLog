@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { TeasService } from './teas.service';
 import { Tea } from './entities/tea.entity';
 import { Seller } from './entities/seller.entity';
@@ -19,6 +19,8 @@ const mockTea = (overrides: Partial<Tea> = {}): Tea =>
     year: 2023,
     seller: mockSeller(),
     origin: '중국 푸젠',
+    price: 15000,
+    weight: 50,
     averageRating: 4.0,
     reviewCount: 5,
     notes: [],
@@ -63,6 +65,7 @@ describe('TeasService', () => {
 
   const mockSellerRepository = {
     findOne: jest.fn(),
+    find: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
   };
@@ -70,6 +73,7 @@ describe('TeasService', () => {
   const mockCacheManager = {
     get: jest.fn(),
     set: jest.fn(),
+    del: jest.fn(),
   };
 
   const mockUsersService = {
@@ -78,6 +82,7 @@ describe('TeasService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockCacheManager.get.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -323,10 +328,12 @@ describe('TeasService', () => {
 
   describe('findSellersByQuery', () => {
     it('검색어로 seller를 필터링하여 반환해야 한다', async () => {
-      mockDataSource.query.mockResolvedValue([
-        { name: '차향', teaCount: '5' },
-        { name: '차향몰', teaCount: '2' },
-      ]);
+      mockDataSource.query
+        .mockResolvedValueOnce([
+          { name: '차향', teaCount: '5' },
+          { name: '차향몰', teaCount: '2' },
+        ])
+        .mockRejectedValueOnce(new Error('skip additional'));
 
       const result = await service.findSellersByQuery('차');
 

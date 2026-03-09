@@ -13,8 +13,7 @@ import {
 } from '../../components/ui/dialog';
 import { Loader2, Trash2, Pencil, Merge, Plus, FileText } from 'lucide-react';
 import { toast } from 'sonner';
-
-const TEA_TYPES = ['녹차', '홍차', '우롱차', '백차', '흑차', '대용차', '황차', '보이차'];
+import { TEA_TYPES, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../../constants';
 
 type Tab = 'teas' | 'sellers' | 'tags' | 'users';
 
@@ -166,6 +165,10 @@ export function AdminMaster() {
             const v = (form.elements.namedItem('dtPrice') as HTMLInputElement)?.value?.trim();
             return v === '' ? null : parseInt(v, 10);
           })(),
+          weight: (() => {
+            const v = (form.elements.namedItem('dtWeight') as HTMLInputElement)?.value?.trim();
+            return v === '' ? null : parseInt(v, 10);
+          })(),
         };
         await adminApi.updateTea(detailOpen.id, dto);
         adminApi.getTeas({ search: search || undefined }).then(setTeas);
@@ -207,6 +210,7 @@ export function AdminMaster() {
     const seller = (form.elements.namedItem('teaSeller') as HTMLInputElement)?.value?.trim();
     const origin = (form.elements.namedItem('teaOrigin') as HTMLInputElement)?.value?.trim();
     const priceStr = (form.elements.namedItem('teaPrice') as HTMLInputElement)?.value?.trim();
+    const weightStr = (form.elements.namedItem('teaWeight') as HTMLInputElement)?.value?.trim();
     if (!name || !type) {
       toast.error('이름과 종류는 필수입니다.');
       return;
@@ -220,6 +224,7 @@ export function AdminMaster() {
         seller: seller || undefined,
         origin: origin || undefined,
         price: priceStr ? parseInt(priceStr, 10) : undefined,
+        weight: weightStr ? parseInt(weightStr, 10) : undefined,
       });
       toast.success('추가했습니다.');
       setCreateOpen((o) => ({ ...o, tea: false }));
@@ -613,6 +618,7 @@ export function AdminMaster() {
                   <div><Label>판매처</Label><Input name="dtSeller" defaultValue={detailData.seller ?? ''} placeholder="찻집 이름" /></div>
                   <div><Label>원산지</Label><Input name="dtOrigin" defaultValue={detailData.origin ?? ''} /></div>
                   <div><Label>가격</Label><Input name="dtPrice" type="number" defaultValue={detailData.price ?? ''} /></div>
+                  <div><Label>무게 (g)</Label><Input name="dtWeight" type="number" min={0} defaultValue={detailData.weight ?? ''} /></div>
                   <div><Label>평균 평점 / 리뷰 수</Label><p className="text-sm">{detailData.averageRating ?? 0} / {detailData.reviewCount ?? 0}</p></div>
                   <div><Label>차록 수</Label><p className="text-sm">{detailData.noteCount ?? 0}</p></div>
                   <div><Label>생성/수정일</Label><p className="text-sm">{detailData.createdAt ? new Date(detailData.createdAt).toLocaleString() : '-'} / {detailData.updatedAt ? new Date(detailData.updatedAt).toLocaleString() : '-'}</p></div>
@@ -683,7 +689,51 @@ export function AdminMaster() {
             </div>
             <div>
               <Label>가격</Label>
-              <Input name="teaPrice" type="number" placeholder="0" />
+              <div className="flex flex-wrap gap-2 mb-1">
+                {COMMON_PRICES.map((p) => (
+                  <Button
+                    key={p}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => {
+                      const input = (e.currentTarget.closest('form')?.elements.namedItem('teaPrice') as HTMLInputElement);
+                      if (input) {
+                        const current = parseInt(input.value, 10) || 0;
+                        input.value = String(current + p);
+                      }
+                    }}
+                  >
+                    +{formatPriceToKorean(p)}원
+                  </Button>
+                ))}
+              </div>
+              <Input name="teaPrice" type="number" placeholder="직접 입력" />
+            </div>
+            <div>
+              <Label>무게 (g)</Label>
+              <div className="flex flex-wrap gap-2 mb-1">
+                {COMMON_WEIGHTS.map((w) => (
+                  <Button
+                    key={w}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => {
+                      const input = (e.currentTarget.closest('form')?.elements.namedItem('teaWeight') as HTMLInputElement);
+                      if (input) {
+                        const current = parseInt(input.value, 10) || 0;
+                        input.value = String(current + w);
+                      }
+                    }}
+                  >
+                    +{w}g
+                  </Button>
+                ))}
+              </div>
+              <Input name="teaWeight" type="number" placeholder="직접 입력" min={0} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen((o) => ({ ...o, tea: false }))}>취소</Button>

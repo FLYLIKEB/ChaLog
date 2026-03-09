@@ -25,20 +25,28 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
             </span>
             <h3 className="truncate font-medium text-foreground">{tea.name}</h3>
           </div>
-          <div className="flex items-center gap-2 mt-1.5 text-muted-foreground text-sm">
-            <span>{tea.type}</span>
-            {tea.year && <span>{tea.year}년</span>}
-            {tea.price != null && tea.price > 0 && (
-              <span>{tea.price.toLocaleString()}원</span>
-            )}
-            {tea.seller && (
-              <Link
-                to={`/teahouse/${encodeURIComponent(tea.seller)}`}
-                onClick={(e) => e.stopPropagation()}
-                className="truncate text-primary hover:underline"
-              >
-                {tea.seller}
-              </Link>
+          <div className="flex flex-col gap-0.5 mt-1.5">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+              <span>{tea.type}</span>
+              {tea.year && <span>{tea.year}년</span>}
+              {tea.price != null && tea.price > 0 && (
+                <span>
+                  {tea.price.toLocaleString()}원
+                  {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
+                </span>
+              )}
+              {tea.seller && (
+                <Link
+                  to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="truncate text-primary hover:underline"
+                >
+                  {tea.seller}
+                </Link>
+              )}
+            </div>
+            {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (
+              <span className="text-xs text-muted-foreground">정확한 정보가 아닐 수 있습니다</span>
             )}
           </div>
         </div>

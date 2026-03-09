@@ -181,17 +181,29 @@ export function TeaDetail() {
             )}
             {tea.origin && (
               <div>
-                <p className="text-xs text-muted-foreground mb-1">산지</p>
-                <p className="text-sm">{tea.origin}</p>
+                <p className="text-[10px] text-muted-foreground mb-0.5">산지</p>
+                <p className="text-xs">{tea.origin}</p>
               </div>
             )}
             {tea.price != null && tea.price > 0 && (
               <div>
                 <p className="text-xs text-muted-foreground mb-1">가격</p>
-                <p className="text-sm">{tea.price.toLocaleString()}원</p>
+                <p className="text-sm">
+                  {tea.price.toLocaleString()}원
+                  {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
+                </p>
+              </div>
+            )}
+            {tea.weight != null && tea.weight > 0 && (tea.price == null || tea.price <= 0) && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">무게</p>
+                <p className="text-sm">{tea.weight}g</p>
               </div>
             )}
           </div>
+          {tea.weight != null && tea.weight > 0 && (
+            <p className="text-xs text-muted-foreground mt-2">정확한 정보가 아닐 수 있습니다</p>
+          )}
         </section>
 
         {/* 평균 평점 */}

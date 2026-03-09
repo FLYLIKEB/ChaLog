@@ -10,6 +10,7 @@ import { TagFollow } from './entities/tag-follow.entity';
 import { RatingSchema } from './entities/rating-schema.entity';
 import { RatingAxis } from './entities/rating-axis.entity';
 import { NoteAxisValue } from './entities/note-axis-value.entity';
+import { NoteSchema } from './entities/note-schema.entity';
 import { UserSchemaPin } from './entities/user-schema-pin.entity';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
@@ -44,6 +45,8 @@ export class NotesService {
     private ratingAxisRepository: Repository<RatingAxis>,
     @InjectRepository(NoteAxisValue)
     private noteAxisValueRepository: Repository<NoteAxisValue>,
+    @InjectRepository(NoteSchema)
+    private noteSchemaRepository: Repository<NoteSchema>,
     @InjectRepository(UserSchemaPin)
     private userSchemaPinRepository: Repository<UserSchemaPin>,
     @InjectDataSource()
@@ -57,46 +60,66 @@ export class NotesService {
   async create(userId: number, createNoteDto: CreateNoteDto): Promise<Note> {
     // 차가 존재하는지 확인
     const tea = await this.teasService.findOne(createNoteDto.teaId);
-    
-    // 스키마가 존재하는지 확인
-    const schema = await this.ratingSchemaRepository.findOne({
-      where: { id: createNoteDto.schemaId },
+
+    // schemaIds 또는 schemaId로 스키마 목록 결정
+    const schemaIds = (createNoteDto.schemaIds?.length ?? 0) > 0
+      ? [...new Set(createNoteDto.schemaIds!)]
+      : createNoteDto.schemaId != null
+        ? [createNoteDto.schemaId]
+        : [];
+
+    if (schemaIds.length === 0) {
+      throw new BadRequestException('최소 1개의 평가 스키마를 선택해주세요.');
+    }
+
+    // 모든 스키마 존재 확인
+    const schemas = await this.ratingSchemaRepository.find({
+      where: { id: In(schemaIds) },
     });
-    if (!schema) {
+    if (schemas.length !== schemaIds.length) {
       throw new NotFoundException('평가 스키마를 찾을 수 없습니다.');
     }
 
+    const primarySchemaId = schemaIds[0];
+
     // tags와 axisValues 필드를 분리
-    const { tags, axisValues, ...noteData } = createNoteDto;
-    
+    const { tags, axisValues, schemaId: _schemaId, schemaIds: _schemaIds, ...noteData } = createNoteDto;
+
     // isRatingIncluded 기본값 설정
-    const isRatingIncluded = createNoteDto.isRatingIncluded !== undefined 
-      ? createNoteDto.isRatingIncluded 
+    const isRatingIncluded = createNoteDto.isRatingIncluded !== undefined
+      ? createNoteDto.isRatingIncluded
       : true;
-    
+
     const note = this.notesRepository.create({
       ...noteData,
-      userId,
       teaId: tea.id,
+      schemaId: primarySchemaId,
+      userId,
       isRatingIncluded,
     });
 
     const savedNote = await this.notesRepository.save(note);
-    
+
+    // note_schemas에 모든 스키마 저장
+    await this.noteSchemaRepository.save(
+      schemaIds.map((schemaId) =>
+        this.noteSchemaRepository.create({ noteId: savedNote.id, schemaId }),
+      ),
+    );
+
     // 축 값 처리
     if (axisValues && axisValues.length > 0) {
-      await this.setNoteAxisValues(savedNote.id, schema.id, axisValues);
+      await this.setNoteAxisValues(savedNote.id, schemaIds, axisValues);
     }
-    
+
     // 태그 처리
     if (tags && tags.length > 0) {
       await this.setNoteTags(savedNote.id, tags);
     }
-    
+
     // 차의 평균 평점 업데이트
     await this.updateTeaRating(tea.id);
 
-    // 축 값와 태그를 포함한 노트 반환
     return this.findOne(savedNote.id, userId);
   }
 
@@ -119,6 +142,8 @@ export class NotesService {
           .leftJoinAndSelect('note.user', 'user')
           .leftJoinAndSelect('note.tea', 'tea')
           .leftJoinAndSelect('note.schema', 'schema')
+          .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
+          .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
           .leftJoinAndSelect('note.noteTags', 'noteTags')
           .leftJoinAndSelect('noteTags.tag', 'tag')
           .leftJoinAndSelect('note.axisValues', 'axisValues')
@@ -153,6 +178,8 @@ export class NotesService {
           .leftJoinAndSelect('note.user', 'user')
           .leftJoinAndSelect('note.tea', 'tea')
           .leftJoinAndSelect('note.schema', 'schema')
+          .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
+          .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
           .leftJoinAndSelect('note.noteTags', 'noteTags')
           .leftJoinAndSelect('noteTags.tag', 'tag')
           .leftJoinAndSelect('note.axisValues', 'axisValues')
@@ -193,6 +220,8 @@ export class NotesService {
           .leftJoinAndSelect('note.user', 'user')
           .leftJoinAndSelect('note.tea', 'tea')
           .leftJoinAndSelect('note.schema', 'schema')
+          .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
+          .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
           .leftJoinAndSelect('note.noteTags', 'noteTags')
           .leftJoinAndSelect('noteTags.tag', 'tag')
           .leftJoinAndSelect('note.axisValues', 'axisValues')
@@ -221,6 +250,8 @@ export class NotesService {
         .leftJoinAndSelect('note.user', 'user')
         .leftJoinAndSelect('note.tea', 'tea')
         .leftJoinAndSelect('note.schema', 'schema')
+        .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
+        .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
         .leftJoinAndSelect('note.noteTags', 'noteTags')
         .leftJoinAndSelect('noteTags.tag', 'tag')
         .leftJoinAndSelect('note.axisValues', 'axisValues')
@@ -262,21 +293,24 @@ export class NotesService {
   async findOne(id: number, userId?: number): Promise<any> {
     const note = await this.notesRepository.findOne({
       where: { id },
-      relations: ['user', 'tea', 'schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
+      relations: ['user', 'tea', 'schema', 'noteSchemas', 'noteSchemas.schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
     });
 
     if (!note) {
       throw new NotFoundException('노트를 찾을 수 없습니다.');
     }
 
-    // 비공개 노트는 작성자만 볼 수 있음
     if (!note.isPublic && note.userId !== userId) {
       throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
     }
 
-    // 좋아요 및 북마크 정보 추가
     const enrichedNotes = await this.enrichNotesWithLikesAndBookmarks([note], userId);
-    return enrichedNotes[0];
+    const result = enrichedNotes[0];
+    // schemaIds: note_schemas에서 추출 (없으면 [schemaId]로 하위 호환)
+    result.schemaIds = (note as any).noteSchemas?.length > 0
+      ? (note as any).noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b)
+      : note.schemaId != null ? [note.schemaId] : [];
+    return result;
   }
 
   async update(id: number, userId: number, updateNoteDto: UpdateNoteDto): Promise<Note> {
@@ -286,18 +320,17 @@ export class NotesService {
       throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
 
-    // schemaId 변경 시 스키마 존재 확인
-    if (updateNoteDto.schemaId !== undefined) {
-      const schema = await this.ratingSchemaRepository.findOne({
-        where: { id: updateNoteDto.schemaId },
-      });
-      if (!schema) {
+    // schemaIds 또는 schemaId 변경 시 스키마 존재 확인
+    const updateSchemaIds = (updateNoteDto as any).schemaIds ?? (updateNoteDto.schemaId !== undefined ? [updateNoteDto.schemaId] : null);
+    if (updateSchemaIds != null && updateSchemaIds.length > 0) {
+      const schemas = await this.ratingSchemaRepository.find({ where: { id: In(updateSchemaIds) } });
+      if (schemas.length !== updateSchemaIds.length) {
         throw new NotFoundException('평가 스키마를 찾을 수 없습니다.');
       }
     }
 
     // tags와 axisValues 필드를 분리
-    const { tags, axisValues, ...noteData } = updateNoteDto;
+    const { tags, axisValues, schemaId: _schemaId, schemaIds: _schemaIds, ...noteData } = updateNoteDto as any;
 
     // 이미지 변경 시 제거된 이미지 S3에서 삭제
     if (noteData.images !== undefined && note.images && note.images.length > 0) {
@@ -308,15 +341,23 @@ export class NotesService {
       }
     }
 
+    if (updateSchemaIds != null && updateSchemaIds.length > 0) {
+      noteData.schemaId = updateSchemaIds[0];
+      await this.noteSchemaRepository.delete({ noteId: id });
+      await this.noteSchemaRepository.save(
+        updateSchemaIds.map((schemaId: number) =>
+          this.noteSchemaRepository.create({ noteId: id, schemaId }),
+        ),
+      );
+    }
+
     Object.assign(note, noteData);
     const updatedNote = await this.notesRepository.save(note);
 
-    // 업데이트된 스키마 ID 확인 (변경되었을 수 있음)
-    const finalSchemaId = updateNoteDto.schemaId !== undefined ? updateNoteDto.schemaId : note.schemaId;
+    const finalSchemaIds = updateSchemaIds ?? (note as any).schemaIds ?? (note.schemaId != null ? [note.schemaId] : []);
 
-    // 축 값 업데이트 (axisValues가 제공된 경우에만)
     if (axisValues !== undefined) {
-      await this.setNoteAxisValues(id, finalSchemaId, axisValues);
+      await this.setNoteAxisValues(id, finalSchemaIds, axisValues);
     }
 
     // 태그 업데이트 (tags가 제공된 경우에만)
@@ -627,6 +668,9 @@ export class NotesService {
           noteObj.likeCount = 0;
           noteObj.isLiked = false;
           noteObj.isBookmarked = false;
+          noteObj.schemaIds = (noteObj.noteSchemas?.length ?? 0) > 0
+            ? noteObj.noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b)
+            : note.schemaId != null ? [note.schemaId] : [];
           return noteObj;
         });
       }
@@ -678,12 +722,15 @@ export class NotesService {
       }
       const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
 
-      // 노트에 좋아요 및 북마크 정보 추가
+      // 노트에 좋아요, 북마크, schemaIds 추가
       return notes.map((note) => {
         const noteObj = note as any;
         noteObj.likeCount = likeCountMap.get(note.id) || 0;
         noteObj.isLiked = userLikedNoteIds.has(note.id);
         noteObj.isBookmarked = userBookmarkedNoteIds.has(note.id);
+        noteObj.schemaIds = (noteObj.noteSchemas?.length ?? 0) > 0
+          ? noteObj.noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b)
+          : note.schemaId != null ? [note.schemaId] : [];
         return noteObj;
       });
     } catch (error) {
@@ -704,15 +751,16 @@ export class NotesService {
    * 노트의 축 값을 설정합니다.
    * 기존 축 값을 삭제하고 새로운 축 값을 추가합니다.
    * 검증은 데이터 삭제 전에 수행되어 일관성을 보장합니다.
+   * schemaIds: 노트에 연결된 스키마 ID 목록 (축이 이 중 하나에 속해야 함)
    */
-  private async setNoteAxisValues(noteId: number, schemaId: number, axisValues: Array<{ axisId: number; value: number }>): Promise<void> {
+  private async setNoteAxisValues(noteId: number, schemaIds: number | number[], axisValues: Array<{ axisId: number; value: number }>): Promise<void> {
+    const schemaIdSet = new Set(Array.isArray(schemaIds) ? schemaIds : [schemaIds]);
+
     if (axisValues.length === 0) {
-      // 빈 배열인 경우 기존 값만 삭제
       await this.noteAxisValueRepository.delete({ noteId });
       return;
     }
 
-    // 검증: 축 ID 유효성 검증 및 스키마 일치 확인 (데이터 삭제 전에 수행)
     const axisIds = axisValues.map(av => av.axisId);
     const axes = await this.ratingAxisRepository.find({
       where: { id: In(axisIds) },
@@ -722,16 +770,13 @@ export class NotesService {
       throw new BadRequestException('유효하지 않은 축 ID가 포함되어 있습니다.');
     }
 
-    // 모든 축이 노트의 스키마에 속하는지 확인
-    const invalidAxes = axes.filter(axis => axis.schemaId !== schemaId);
+    const invalidAxes = axes.filter(axis => !schemaIdSet.has(axis.schemaId));
     if (invalidAxes.length > 0) {
       throw new BadRequestException('제공된 축 중 일부가 노트의 스키마에 속하지 않습니다.');
     }
 
-    // 검증이 성공한 후에만 기존 축 값 삭제
     await this.noteAxisValueRepository.delete({ noteId });
 
-    // NoteAxisValue 생성
     const noteAxisValues = axisValues.map(av =>
       this.noteAxisValueRepository.create({
         noteId,
