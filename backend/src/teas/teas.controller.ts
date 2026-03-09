@@ -6,6 +6,7 @@ import { UpdateTeaDto } from './dto/update-tea.dto';
 import { CreateSellerDto } from './dto/create-seller.dto';
 import { UpdateSellerDto } from './dto/update-seller.dto';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
+import { mapTeaToResponse } from './teas.helper';
 
 function parseTeaId(id: string): number {
   if (!/^\d+$/.test(id)) {
@@ -20,12 +21,13 @@ export class TeasController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Body() createTeaDto: CreateTeaDto) {
-    return this.teasService.create(createTeaDto);
+  async create(@Body() createTeaDto: CreateTeaDto) {
+    const tea = await this.teasService.create(createTeaDto);
+    return mapTeaToResponse(tea);
   }
 
   @Get()
-  findAll(
+  async findAll(
     @Query('q') query?: string,
     @Query('type') type?: string,
     @Query('minRating') minRatingStr?: string,
@@ -33,18 +35,20 @@ export class TeasController {
     @Query('limit') limitStr?: string,
   ) {
     const hasFilters = query || type || minRatingStr || sort;
-    if (hasFilters) {
-      const minRating = minRatingStr ? parseFloat(minRatingStr) : undefined;
-      const limit = limitStr ? parseInt(limitStr, 10) : undefined;
-      return this.teasService.findWithFilters({
-        q: query,
-        type,
-        minRating: Number.isNaN(minRating as number) ? undefined : minRating,
-        sort,
-        limit: Number.isNaN(limit as number) ? undefined : limit,
-      });
-    }
-    return this.teasService.findAll();
+    const teas = hasFilters
+      ? await (async () => {
+          const minRating = minRatingStr ? parseFloat(minRatingStr) : undefined;
+          const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+          return this.teasService.findWithFilters({
+            q: query,
+            type,
+            minRating: Number.isNaN(minRating as number) ? undefined : minRating,
+            sort,
+            limit: Number.isNaN(limit as number) ? undefined : limit,
+          });
+        })()
+      : await this.teasService.findAll();
+    return teas.map(mapTeaToResponse);
   }
 
   @Get('trending')
@@ -54,15 +58,17 @@ export class TeasController {
   }
 
   @Get('rankings/popular')
-  getPopularRankings(@Query('limit') limit?: string) {
+  async getPopularRankings(@Query('limit') limit?: string) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.teasService.findPopularTeas(Number.isNaN(limitNum) ? 10 : limitNum);
+    const teas = await this.teasService.findPopularTeas(Number.isNaN(limitNum) ? 10 : limitNum);
+    return teas.map(mapTeaToResponse);
   }
 
   @Get('rankings/new')
-  getNewRankings(@Query('limit') limit?: string) {
+  async getNewRankings(@Query('limit') limit?: string) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.teasService.findNewTeas(Number.isNaN(limitNum) ? 10 : limitNum);
+    const teas = await this.teasService.findNewTeas(Number.isNaN(limitNum) ? 10 : limitNum);
+    return teas.map(mapTeaToResponse);
   }
 
   @Get('sellers')
@@ -92,15 +98,17 @@ export class TeasController {
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('curation')
-  getCuration(@Query('limit') limit?: string, @Request() req?: { user?: { userId: number } }) {
+  async getCuration(@Query('limit') limit?: string, @Request() req?: { user?: { userId: number } }) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
     const userId = req?.user?.userId;
-    return this.teasService.findCurationTeas(Number.isNaN(limitNum) ? 10 : limitNum, userId);
+    const teas = await this.teasService.findCurationTeas(Number.isNaN(limitNum) ? 10 : limitNum, userId);
+    return teas.map(mapTeaToResponse);
   }
 
   @Get('by-seller/:name')
-  getBySeller(@Param('name') name: string) {
-    return this.teasService.findBySeller(decodeURIComponent(name));
+  async getBySeller(@Param('name') name: string) {
+    const teas = await this.teasService.findBySeller(decodeURIComponent(name));
+    return teas.map(mapTeaToResponse);
   }
 
   @Get('by-tags')
@@ -119,14 +127,16 @@ export class TeasController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.teasService.findOne(parseTeaId(id));
+  async findOne(@Param('id') id: string) {
+    const tea = await this.teasService.findOne(parseTeaId(id));
+    return mapTeaToResponse(tea);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateTeaDto) {
-    return this.teasService.update(parseTeaId(id), dto);
+  async update(@Param('id') id: string, @Body() dto: UpdateTeaDto) {
+    const tea = await this.teasService.update(parseTeaId(id), dto);
+    return mapTeaToResponse(tea);
   }
 
   @Get(':id/popular-tags')
@@ -142,13 +152,15 @@ export class TeasController {
   }
 
   @Get(':id/similar')
-  getSimilarTeas(@Param('id') id: string) {
-    return this.teasService.getSimilarTeas(parseTeaId(id));
+  async getSimilarTeas(@Param('id') id: string) {
+    const teas = await this.teasService.getSimilarTeas(parseTeaId(id));
+    return teas.map(mapTeaToResponse);
   }
 
   @Get(':id/similar-by-tags')
-  getSimilarTeasByTags(@Param('id') id: string, @Query('limit') limitStr?: string) {
+  async getSimilarTeasByTags(@Param('id') id: string, @Query('limit') limitStr?: string) {
     const limit = limitStr ? parseInt(limitStr, 10) : 6;
-    return this.teasService.getSimilarTeasByTags(parseTeaId(id), Number.isNaN(limit) ? 6 : limit);
+    const teas = await this.teasService.getSimilarTeasByTags(parseTeaId(id), Number.isNaN(limit) ? 6 : limit);
+    return teas.map(mapTeaToResponse);
   }
 }

@@ -17,6 +17,11 @@ export class CreateTeaDto {
   type: string;
 
   @IsOptional()
+  @IsNumber()
+  sellerId?: number | null;
+
+  /** sellerId가 없을 때 찻집 이름으로 찾거나 생성. sellerId 우선 */
+  @IsOptional()
   @IsString()
   seller?: string;
 

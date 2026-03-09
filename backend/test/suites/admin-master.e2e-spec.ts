@@ -35,6 +35,23 @@ describe('/admin - 마스터 데이터 CRUD API', () => {
   });
 
   it('POST /admin/teas - 차 생성', async () => {
+    let sellerId: number;
+    const sellersRes = await request(context.app.getHttpServer())
+      .get('/admin/sellers?limit=100')
+      .set('Authorization', `Bearer ${adminUser.token}`)
+      .expect(200);
+    const existing = sellersRes.body.items?.find((s: any) => s.name === '차향');
+    if (existing) {
+      sellerId = existing.id;
+    } else {
+      const sellerRes = await request(context.app.getHttpServer())
+        .post('/admin/sellers')
+        .set('Authorization', `Bearer ${adminUser.token}`)
+        .send({ name: '차향' })
+        .expect(201);
+      sellerId = sellerRes.body.id;
+    }
+
     const res = await request(context.app.getHttpServer())
       .post('/admin/teas')
       .set('Authorization', `Bearer ${adminUser.token}`)
@@ -42,7 +59,7 @@ describe('/admin - 마스터 데이터 CRUD API', () => {
         name: '정산소종',
         year: 2023,
         type: '녹차',
-        seller: '차향',
+        sellerId,
         origin: '중국 푸젠',
       })
       .expect(201);

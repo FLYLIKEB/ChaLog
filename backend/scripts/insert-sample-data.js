@@ -85,65 +85,44 @@ const insertSampleData = async () => {
       console.log(`  ✅ 사용자 추가: ${user.name} (${user.email})`);
     }
 
-    // 2. 차 데이터 추가
+    // 2. 찻집(sellers) 데이터 추가
+    console.log('\n🏪 찻집 데이터 추가 중...');
+    const sellerNames = ['차향', '찻잎', '티하우스'];
+    const sellerIdMap = {};
+    for (const name of sellerNames) {
+      const [rows] = await connection.query('SELECT id FROM sellers WHERE name = ?', [name]);
+      if (rows.length > 0) {
+        sellerIdMap[name] = rows[0].id;
+      } else {
+        const [result] = await connection.query(
+          'INSERT INTO sellers (name, createdAt) VALUES (?, NOW(6))',
+          [name]
+        );
+        sellerIdMap[name] = result.insertId;
+      }
+      console.log(`  ✅ 찻집 추가: ${name}`);
+    }
+
+    // 3. 차 데이터 추가
     console.log('\n🍵 차 데이터 추가 중...');
     const teas = [
-      {
-        name: '정산소종',
-        year: 2023,
-        type: '홍차',
-        seller: '차향',
-        origin: '중국 푸젠',
-        averageRating: 4.5,
-        reviewCount: 2,
-      },
-      {
-        name: '대홍포',
-        year: 2022,
-        type: '우롱차',
-        seller: '찻잎',
-        origin: '중국 우이산',
-        averageRating: 4.8,
-        reviewCount: 1,
-      },
-      {
-        name: '용정',
-        year: 2024,
-        type: '녹차',
-        seller: '차향',
-        origin: '중국 항저우',
-        averageRating: 4.2,
-        reviewCount: 1,
-      },
-      {
-        name: '백호은침',
-        year: 2023,
-        type: '백차',
-        seller: '티하우스',
-        origin: '중국 푸젠',
-        averageRating: 4.6,
-        reviewCount: 1,
-      },
-      {
-        name: '철관음',
-        year: 2023,
-        type: '우롱차',
-        seller: '찻잎',
-        origin: '중국 안시',
-        averageRating: 4.4,
-        reviewCount: 0,
-      },
+      { name: '정산소종', year: 2023, type: '홍차', seller: '차향', origin: '중국 푸젠', averageRating: 4.5, reviewCount: 2 },
+      { name: '대홍포', year: 2022, type: '우롱차', seller: '찻잎', origin: '중국 우이산', averageRating: 4.8, reviewCount: 1 },
+      { name: '용정', year: 2024, type: '녹차', seller: '차향', origin: '중국 항저우', averageRating: 4.2, reviewCount: 1 },
+      { name: '백호은침', year: 2023, type: '백차', seller: '티하우스', origin: '중국 푸젠', averageRating: 4.6, reviewCount: 1 },
+      { name: '철관음', year: 2023, type: '우롱차', seller: '찻잎', origin: '중국 안시', averageRating: 4.4, reviewCount: 0 },
     ];
 
     for (const tea of teas) {
+      const sellerId = sellerIdMap[tea.seller] ?? null;
       await connection.query(
-        'INSERT INTO teas (name, year, type, seller, origin, averageRating, reviewCount) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.averageRating, tea.reviewCount]
+        'INSERT INTO teas (name, year, type, sellerId, origin, averageRating, reviewCount) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [tea.name, tea.year, tea.type, sellerId, tea.origin, tea.averageRating, tea.reviewCount]
       );
       console.log(`  ✅ 차 추가: ${tea.name} (${tea.type})`);
     }
 
-    // 3. 노트 데이터 추가
+    // 4. 노트 데이터 추가
     console.log('\n📝 노트 데이터 추가 중...');
     
     // 사용자와 차 ID 가져오기

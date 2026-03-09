@@ -1480,6 +1480,7 @@ export const adminApi = {
     if (params?.sortOrder) search.set('sortOrder', params.sortOrder);
     return apiClient.get(`/admin/tags?${search.toString()}`);
   },
+  getTagDetail: (id: number) => apiClient.get(`/admin/tags/${id}`),
   createTag: (dto: { name: string }) => apiClient.post('/admin/tags', dto),
   updateTag: (id: number, dto: { name: string }) => apiClient.patch(`/admin/tags/${id}`, dto),
   deleteTag: (id: number) => apiClient.delete(`/admin/tags/${id}`),

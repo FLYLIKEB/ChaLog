@@ -377,6 +377,11 @@ export class AdminController {
     });
   }
 
+  @Get('tags/:id')
+  getTagDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.adminService.getTagDetail(id);
+  }
+
   @Post('tags')
   createTag(@Body() dto: CreateTagDto, @UserId() adminId: number) {
     return this.adminService.createTag(dto, adminId);

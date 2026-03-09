@@ -18,6 +18,7 @@ import { PostsModule } from '../posts/posts.module';
 import { CommentsModule } from '../comments/comments.module';
 import { FollowsModule } from '../follows/follows.module';
 import { UsersModule } from '../users/users.module';
+import { TeasModule } from '../teas/teas.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { UsersModule } from '../users/users.module';
     CommentsModule,
     FollowsModule,
     UsersModule,
+    TeasModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, AdminGuard],
