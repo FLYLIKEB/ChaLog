@@ -32,7 +32,8 @@
     "migration:create": "typeorm-ts-node-commonjs migration:create migrations/",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/database/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/database/data-source.ts",
-    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts"
+    "migration:show": "typeorm-ts-node-commonjs migration:show -d src/database/data-source.ts",
+    "generate:seller-updates": "node scripts/generate-seller-updates.js"
   },
   "keywords": [],
   "author": "",

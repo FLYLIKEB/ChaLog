@@ -1180,6 +1180,8 @@ export interface CreateRatingSchemaRequest {
   axes: Array<{
     nameKo: string;
     nameEn: string;
+    descriptionKo?: string;
+    descriptionEn?: string;
     minValue?: number;
     maxValue?: number;
     stepValue?: number;
