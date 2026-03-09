@@ -36,6 +36,7 @@ export function NewTea() {
   const [seller, setSeller] = useState(sellerParam || '');
   const [origin, setOrigin] = useState('');
   const [price, setPrice] = useState('');
+  const [weight, setWeight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
@@ -133,6 +134,13 @@ export function NewTea() {
         return;
       }
 
+      const weightNum = weight.trim() ? parseInt(weight.replace(/,/g, ''), 10) : undefined;
+      if (weight.trim() && (isNaN(weightNum!) || weightNum! < 0)) {
+        toast.error('무게를 올바르게 입력해주세요.');
+        setIsLoading(false);
+        return;
+      }
+
       const teaData = {
         name: name.trim(),
         type: type.trim(),
@@ -140,6 +148,7 @@ export function NewTea() {
         seller: seller.trim() || undefined,
         origin: origin.trim() || undefined,
         price: priceNum,
+        weight: weightNum,
       };
 
       const createdTea = await teasApi.create(teaData);
@@ -348,6 +357,21 @@ export function NewTea() {
                 onChange={(e) => setPrice(e.target.value.replace(/[^0-9,]/g, ''))}
                 disabled={isLoading}
                 aria-label="가격 (원)"
+              />
+            </div>
+
+            {/* 무게 */}
+            <div className="space-y-2">
+              <Label htmlFor="weight">무게 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <Input
+                id="weight"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 50"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value.replace(/[^0-9,]/g, ''))}
+                disabled={isLoading}
+                aria-label="무게 (g)"
               />
             </div>
 

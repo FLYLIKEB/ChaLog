@@ -24,6 +24,9 @@ export class Tea {
   @Column({ type: 'int', nullable: true })
   price: number;
 
+  @Column({ type: 'int', nullable: true })
+  weight: number;
+
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
   averageRating: number;
 

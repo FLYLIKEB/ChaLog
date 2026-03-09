@@ -81,6 +81,7 @@ function CellarCard({
             {item.tea.price != null && item.tea.price > 0 && (
               <span className="ml-2 text-xs text-muted-foreground">
                 {item.tea.price.toLocaleString()}원
+                {item.tea.weight != null && item.tea.weight > 0 && ` · ${item.tea.weight}g`}
               </span>
             )}
           </p>

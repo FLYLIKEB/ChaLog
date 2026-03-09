@@ -35,6 +35,7 @@ export function EditTea() {
   const [seller, setSeller] = useState('');
   const [origin, setOrigin] = useState('');
   const [price, setPrice] = useState('');
+  const [weight, setWeight] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingTea, setIsLoadingTea] = useState(true);
   const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
@@ -76,6 +77,7 @@ export function EditTea() {
         setSeller(data.seller ?? '');
         setOrigin(data.origin ?? '');
         setPrice(data.price != null && data.price > 0 ? String(data.price) : '');
+        setWeight(data.weight != null && data.weight > 0 ? String(data.weight) : '');
       } catch (error) {
         logger.error('Failed to fetch tea:', error);
         toast.error('차 정보를 불러오는데 실패했습니다.');
@@ -165,6 +167,12 @@ export function EditTea() {
       return;
     }
 
+    const weightNum = weight.trim() ? parseInt(weight.replace(/,/g, ''), 10) : undefined;
+    if (weight.trim() && (isNaN(weightNum!) || weightNum! < 0)) {
+      toast.error('무게를 올바르게 입력해주세요.');
+      return;
+    }
+
     try {
       setIsLoading(true);
 
@@ -175,6 +183,7 @@ export function EditTea() {
         seller: seller.trim() || undefined,
         origin: origin.trim() || undefined,
         price: priceNum,
+        weight: weightNum,
       };
 
       await teasApi.update(teaId, teaData);
@@ -357,6 +366,24 @@ export function EditTea() {
                 }
                 disabled={isLoading}
                 aria-label="가격 (원)"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-weight">
+                무게 <span className="text-muted-foreground font-normal">(선택)</span>
+              </Label>
+              <Input
+                id="edit-weight"
+                type="text"
+                inputMode="numeric"
+                placeholder="예: 50"
+                value={weight}
+                onChange={(e) =>
+                  setWeight(e.target.value.replace(/[^0-9,]/g, ''))
+                }
+                disabled={isLoading}
+                aria-label="무게 (g)"
               />
             </div>
 

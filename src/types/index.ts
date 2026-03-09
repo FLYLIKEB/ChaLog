@@ -11,6 +11,7 @@ export interface Tea {
   seller?: string;
   origin?: string;
   price?: number;
+  weight?: number;
   averageRating: number;
   reviewCount: number;
 }

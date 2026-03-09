@@ -23,9 +23,15 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
             <span className="text-sm">{tea.type}</span>
             {tea.year && <span className="text-sm">{tea.year}년</span>}
             {tea.price != null && tea.price > 0 && (
-              <span className="text-sm">{tea.price.toLocaleString()}원</span>
+              <span className="text-sm">
+                {tea.price.toLocaleString()}원
+                {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
+              </span>
             )}
           </div>
+          {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (
+            <p className="text-xs text-muted-foreground mt-0.5">정확한 정보가 아닐 수 있습니다</p>
+          )}
           {tea.seller && (
             <p className="text-sm text-muted-foreground mt-1">{tea.seller}</p>
           )}

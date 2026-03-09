@@ -6,20 +6,23 @@ import { TeasService } from './teas.service';
 import { Tea } from './entities/tea.entity';
 import { UsersService } from '../users/users.service';
 
-const mockTea = (overrides: Partial<Tea> = {}): Tea => ({
-  id: 1,
-  name: '정산소종',
-  type: '홍차',
-  year: 2023,
-  seller: '차향',
-  origin: '중국 푸젠',
-  averageRating: 4.0,
-  reviewCount: 5,
-  notes: [],
-  createdAt: new Date('2024-01-01'),
-  updatedAt: new Date('2024-01-01'),
-  ...overrides,
-});
+const mockTea = (overrides: Partial<Tea> = {}): Tea =>
+  ({
+    id: 1,
+    name: '정산소종',
+    type: '홍차',
+    year: 2023,
+    seller: '차향',
+    origin: '중국 푸젠',
+    price: 15000,
+    weight: 50,
+    averageRating: 4.0,
+    reviewCount: 5,
+    notes: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+    ...overrides,
+  }) as Tea;
 
 describe('TeasService', () => {
   let service: TeasService;

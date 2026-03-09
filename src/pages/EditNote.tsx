@@ -388,7 +388,7 @@ export function EditNote() {
                   <p className="text-xs text-muted-foreground mt-1">
                     {tea.type}
                     {tea.seller && ` · ${tea.seller}`}
-                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
+                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
                     {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}
                   </p>
                 </button>

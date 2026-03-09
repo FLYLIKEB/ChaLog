@@ -30,4 +30,9 @@ export class UpdateTeaDto {
   @IsNumber()
   @Min(0)
   price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weight?: number;
 }

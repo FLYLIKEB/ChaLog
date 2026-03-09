@@ -139,6 +139,7 @@ export function AdminMaster() {
     const seller = (form.elements.namedItem('teaSeller') as HTMLInputElement)?.value?.trim();
     const origin = (form.elements.namedItem('teaOrigin') as HTMLInputElement)?.value?.trim();
     const priceStr = (form.elements.namedItem('teaPrice') as HTMLInputElement)?.value?.trim();
+    const weightStr = (form.elements.namedItem('teaWeight') as HTMLInputElement)?.value?.trim();
     if (!name || !type) {
       toast.error('이름과 종류는 필수입니다.');
       return;
@@ -152,6 +153,7 @@ export function AdminMaster() {
         seller: seller || undefined,
         origin: origin || undefined,
         price: priceStr ? parseInt(priceStr, 10) : undefined,
+        weight: weightStr ? parseInt(weightStr, 10) : undefined,
       });
       toast.success('추가했습니다.');
       setCreateOpen((o) => ({ ...o, tea: false }));
@@ -530,6 +532,10 @@ export function AdminMaster() {
             <div>
               <Label>가격</Label>
               <Input name="teaPrice" type="number" placeholder="0" />
+            </div>
+            <div>
+              <Label>무게 (g)</Label>
+              <Input name="teaWeight" type="number" placeholder="50" min={0} />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setCreateOpen((o) => ({ ...o, tea: false }))}>취소</Button>

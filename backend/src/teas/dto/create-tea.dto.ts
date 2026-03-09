@@ -28,5 +28,10 @@ export class CreateTeaDto {
   @IsNumber()
   @Min(0)
   price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  weight?: number;
 }
 

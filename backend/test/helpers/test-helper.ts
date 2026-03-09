@@ -16,6 +16,7 @@ export interface TestTea {
   type: string;
   seller?: string;
   origin?: string;
+  weight?: number;
 }
 
 export interface TestNote {
@@ -116,6 +117,7 @@ export class TestHelper {
       type: string;
       seller?: string;
       origin?: string;
+      weight?: number;
     },
   ): Promise<TestTea> {
     const response = await request(this.app.getHttpServer())
@@ -131,6 +133,7 @@ export class TestHelper {
       type: response.body.type,
       seller: response.body.seller,
       origin: response.body.origin,
+      weight: response.body.weight,
     };
   }
 

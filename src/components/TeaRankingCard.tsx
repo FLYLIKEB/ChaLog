@@ -37,11 +37,19 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="truncate font-medium text-foreground text-sm">{tea.name}</h3>
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs truncate">
-            <span>{tea.type}</span>
-            {tea.year && <span>{tea.year}년</span>}
-            {tea.price != null && tea.price > 0 && (
-              <span>{tea.price.toLocaleString()}원</span>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs truncate">
+              <span>{tea.type}</span>
+              {tea.year && <span>{tea.year}년</span>}
+              {tea.price != null && tea.price > 0 && (
+                <span>
+                  {tea.price.toLocaleString()}원
+                  {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
+                </span>
+              )}
+            </div>
+            {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (
+              <span className="text-[10px] text-muted-foreground/80">정확한 정보가 아닐 수 있습니다</span>
             )}
           </div>
         </div>

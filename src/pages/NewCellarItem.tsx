@@ -202,7 +202,7 @@ export function NewCellarItem() {
                         <p className="text-sm font-medium">{tea.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {tea.type}
-                          {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원`}
+                          {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
                         </p>
                       </button>
                     ))

@@ -68,6 +68,31 @@ describe('/teas - 차 API', () => {
     expect(response.body.name).toBe(teaData.name);
   });
 
+  it('POST /teas - 무게(weight) 필드 포함 생성 및 조회', async () => {
+    const teaData = {
+      name: '무게테스트차',
+      year: 2024,
+      type: '녹차',
+      seller: '차향',
+      weight: 50,
+    };
+
+    const createRes = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/teas')
+      .send(teaData)
+      .expect(201);
+
+    expect(createRes.body).toHaveProperty('weight', 50);
+
+    const getRes = await context.testHelper.unauthenticatedRequest()
+      .get(`/teas/${createRes.body.id}`)
+      .expect(200);
+
+    expect(getRes.body.weight).toBe(50);
+
+    await context.dataSource.query('DELETE FROM teas WHERE id = ?', [createRes.body.id]);
+  });
+
   it('POST /teas - 인증 없이 차 생성 실패', () => {
     return context.testHelper.unauthenticatedRequest()
       .post('/teas')
