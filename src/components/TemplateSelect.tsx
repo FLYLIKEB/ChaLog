@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Pin, PinOff, Search, ChevronDown } from 'lucide-react';
+import { Pin, PinOff, Search, ChevronDown, X } from 'lucide-react';
 import { Input } from './ui/input';
 import { cn } from './ui/utils';
 import { RatingSchema } from '../types';
@@ -13,11 +13,13 @@ interface TemplateSelectProps {
   schemas: RatingSchema[];
   pinnedSchemaIds: number[];
   onPinnedChange: (pinnedSchemaIds: number[]) => void;
-  value: number | null;
-  onChange: (schemaId: number | null) => void;
+  value: number | number[] | null;
+  onChange: (schemaId: number | number[] | null) => void;
   onAddTemplate?: () => void;
   disabled?: boolean;
   isAuthenticated?: boolean;
+  /** 여러 개 선택 가능 여부 (기본 false) */
+  multiple?: boolean;
 }
 
 export function TemplateSelect({
@@ -29,6 +31,7 @@ export function TemplateSelect({
   onAddTemplate,
   disabled = false,
   isAuthenticated = false,
+  multiple = false,
 }: TemplateSelectProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -63,9 +66,35 @@ export function TemplateSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const selectedIds = Array.isArray(value) ? value : value != null ? [value] : [];
+  const selectedSchemas = selectedIds
+    .map(id => schemas.find(s => s.id === id))
+    .filter((s): s is RatingSchema => s != null);
+
   const handleSelect = (schemaId: number | null) => {
-    onChange(schemaId);
-    setOpen(false);
+    if (multiple) {
+      if (schemaId == null) {
+        onChange([]);
+      } else {
+        const next = selectedIds.includes(schemaId)
+          ? selectedIds.filter(id => id !== schemaId)
+          : [...selectedIds, schemaId];
+        onChange(next.length > 0 ? next : null);
+      }
+      if (schemaId == null) setOpen(false);
+    } else {
+      onChange(schemaId);
+      setOpen(false);
+    }
+  };
+
+  const handleRemove = (e: React.MouseEvent, schemaId: number) => {
+    e.stopPropagation();
+    if (multiple && selectedIds.length > 1) {
+      onChange(selectedIds.filter(id => id !== schemaId));
+    } else {
+      onChange(null);
+    }
   };
 
   const handlePinClick = async (e: React.MouseEvent, schemaId: number) => {
@@ -83,10 +112,33 @@ export function TemplateSelect({
     }
   };
 
-  const selectedSchema = schemas.find(s => s.id === value);
+  const selectedSchema = !multiple && value != null && !Array.isArray(value)
+    ? schemas.find(s => s.id === value)
+    : null;
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative space-y-2">
+      {/* 선택된 템플릿 칩 (여러 개 선택 시 X 버튼으로 삭제) */}
+      {selectedSchemas.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selectedSchemas.map(schema => (
+            <span
+              key={schema.id}
+              className="inline-flex items-center gap-1 rounded-md bg-primary/15 text-primary px-2 py-1 text-xs font-medium"
+            >
+              <button
+                type="button"
+                onClick={e => handleRemove(e, schema.id)}
+                className="shrink-0 p-0.5 rounded hover:bg-primary/30 -ml-0.5"
+                aria-label={`${schema.nameKo} 제거`}
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <span>{schema.nameKo}</span>
+            </span>
+          ))}
+        </div>
+      )}
       <button
         type="button"
         onClick={() => !disabled && setOpen(prev => !prev)}
@@ -97,8 +149,10 @@ export function TemplateSelect({
           disabled && 'cursor-not-allowed opacity-50'
         )}
       >
-        <span className={value ? 'text-foreground' : 'text-muted-foreground'}>
-          {selectedSchema ? selectedSchema.nameKo : '템플릿 선택 (선택사항)'}
+        <span className={selectedSchemas.length > 0 ? 'text-foreground' : 'text-muted-foreground'}>
+          {selectedSchemas.length > 0
+            ? (multiple ? `${selectedSchemas.length}개 선택됨` : selectedSchemas[0].nameKo)
+            : '템플릿 선택 (선택사항)'}
         </span>
         <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground', open && 'rotate-180')} />
       </button>
@@ -123,7 +177,7 @@ export function TemplateSelect({
               onClick={() => handleSelect(null)}
               className={cn(
                 'flex w-full items-center px-3 py-2 text-sm hover:bg-accent',
-                !value && 'bg-accent/50'
+                selectedIds.length === 0 && 'bg-accent/50'
               )}
             >
               선택 안 함
@@ -135,7 +189,7 @@ export function TemplateSelect({
             ) : (
               displayList.map(schema => {
                 const isPinned = pinnedSet.has(schema.id);
-                const isSelected = value === schema.id;
+                const isSelected = selectedIds.includes(schema.id);
                 return (
                   <div
                     key={schema.id}

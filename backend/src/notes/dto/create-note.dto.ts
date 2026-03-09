@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, IsObject } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 class AxisValueDto {
@@ -15,8 +15,17 @@ export class CreateNoteDto {
   @IsNumber()
   teaId: number;
 
+  /** 단일 스키마 (하위 호환) - schemaIds가 있으면 무시됨 */
+  @IsOptional()
   @IsNumber()
-  schemaId: number;
+  schemaId?: number;
+
+  /** 다중 스키마 ID (1개 이상) */
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  @ArrayMaxSize(10)
+  schemaIds?: number[];
 
   @IsOptional()
   @IsNumber()

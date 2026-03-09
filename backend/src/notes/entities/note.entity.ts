@@ -4,6 +4,7 @@ import { Tea } from '../../teas/entities/tea.entity';
 import { NoteTag } from './note-tag.entity';
 import { RatingSchema } from './rating-schema.entity';
 import { NoteAxisValue } from './note-axis-value.entity';
+import { NoteSchema } from './note-schema.entity';
 
 @Entity('notes')
 export class Note {
@@ -54,6 +55,9 @@ export class Note {
 
   @OneToMany(() => NoteAxisValue, (axisValue) => axisValue.note, { cascade: true })
   axisValues: NoteAxisValue[];
+
+  @OneToMany(() => NoteSchema, (ns) => ns.note, { cascade: true })
+  noteSchemas: NoteSchema[];
 
   @CreateDateColumn()
   createdAt: Date;

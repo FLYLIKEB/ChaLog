@@ -1076,7 +1076,10 @@ export type UpdateUserRequest = {
 
 export interface CreateNoteRequest {
   teaId: number;
-  schemaId: number;
+  /** 다중 스키마 (권장) - schemaId보다 우선 */
+  schemaIds?: number[];
+  /** 단일 스키마 (하위 호환) - schemaIds가 있으면 무시됨 */
+  schemaId?: number;
   overallRating?: number | null;
   isRatingIncluded?: boolean;
   axisValues: Array<{
