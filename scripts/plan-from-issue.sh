@@ -36,11 +36,18 @@ if ! command -v jq &> /dev/null; then
   exit 1
 fi
 
+# Git 저장소 루트 확인
+if ! git rev-parse --show-toplevel &> /dev/null; then
+  echo "❌ Git 저장소 루트에서 실행해주세요."
+  exit 1
+fi
+
 # 이슈 내용 가져오기
 echo "📋 Fetching GitHub issue #$ISSUE_NUMBER..."
 ISSUE_JSON=$(gh issue view "$ISSUE_NUMBER" --json title,body,number,labels,url 2>/dev/null) || true
 if [ -z "$ISSUE_JSON" ]; then
   echo "❌ 이슈 #$ISSUE_NUMBER을 찾을 수 없습니다."
+  echo "   저장소/권한 확인: gh repo view 또는 gh auth status"
   exit 1
 fi
 

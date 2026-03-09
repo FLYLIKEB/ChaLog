@@ -364,12 +364,27 @@ export function AdminMaster() {
                         <form
                           onSubmit={(e) => {
                             e.preventDefault();
-                            const address = (e.currentTarget.elements.namedItem('sellerEditAddress') as HTMLInputElement)?.value?.trim();
-                            handleUpdateSeller(s.id, { address: address || undefined });
+                            const form = e.currentTarget;
+                            const address = (form.elements.namedItem('sellerEditAddress') as HTMLInputElement)?.value?.trim();
+                            const mapUrl = (form.elements.namedItem('sellerEditMapUrl') as HTMLInputElement)?.value?.trim();
+                            const websiteUrl = (form.elements.namedItem('sellerEditWebsiteUrl') as HTMLInputElement)?.value?.trim();
+                            const phone = (form.elements.namedItem('sellerEditPhone') as HTMLInputElement)?.value?.trim();
+                            const businessHours = (form.elements.namedItem('sellerEditBusinessHours') as HTMLInputElement)?.value?.trim();
+                            handleUpdateSeller(s.id, {
+                              address: address || undefined,
+                              mapUrl: mapUrl || undefined,
+                              websiteUrl: websiteUrl || undefined,
+                              phone: phone || undefined,
+                              businessHours: businessHours || undefined,
+                            });
                           }}
-                          className="flex gap-2 items-center"
+                          className="flex flex-wrap gap-2 items-center"
                         >
                           <Input name="sellerEditAddress" defaultValue={s.address ?? ''} placeholder="주소" className="w-48" />
+                          <Input name="sellerEditMapUrl" defaultValue={s.mapUrl ?? ''} placeholder="지도 URL" className="w-40" />
+                          <Input name="sellerEditWebsiteUrl" defaultValue={s.websiteUrl ?? ''} placeholder="웹사이트" className="w-40" />
+                          <Input name="sellerEditPhone" defaultValue={s.phone ?? ''} placeholder="전화" className="w-28" />
+                          <Input name="sellerEditBusinessHours" defaultValue={s.businessHours ?? ''} placeholder="영업시간" className="w-28" />
                           <Button size="sm" type="submit">저장</Button>
                           <Button size="sm" variant="ghost" type="button" onClick={() => setEditing(null)}>취소</Button>
                         </form>

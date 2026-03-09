@@ -1066,6 +1066,14 @@ export interface UpdateSellerRequest {
   businessHours?: string;
 }
 
+export type UpdateUserRequest = {
+  name?: string;
+  profileImageUrl?: string | null;
+  bio?: string | null;
+  instagramUrl?: string | null;
+  blogUrl?: string | null;
+};
+
 export interface CreateNoteRequest {
   teaId: number;
   schemaId: number;
@@ -1222,7 +1230,7 @@ export const usersApi = {
   unlinkAccount: (userId: number, authId: number) =>
     apiClient.delete(`/users/${userId}/authentications/${authId}`),
   uploadProfileImage: (file: File) => apiClient.uploadFile<{ url: string }>('/users/profile-image', file),
-  updateProfile: (id: number, data: { name?: string; profileImageUrl?: string | null; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) => apiClient.patch<User>(`/users/${id}`, data),
+  updateProfile: (id: number, data: UpdateUserRequest) => apiClient.patch<User>(`/users/${id}`, data),
   getOnboardingPreference: (id: number) => apiClient.get<UserOnboardingPreference>(`/users/${id}/onboarding`),
   updateOnboardingPreference: (
     id: number,
@@ -1380,7 +1388,7 @@ export const adminApi = {
     return apiClient.get(`/admin/users?${search.toString()}`);
   },
   getUserDetail: (id: number) => apiClient.get(`/admin/users/${id}`),
-  updateUser: (id: number, dto: { name?: string; bio?: string | null; instagramUrl?: string | null; blogUrl?: string | null }) =>
+  updateUser: (id: number, dto: UpdateUserRequest) =>
     apiClient.patch(`/admin/users/${id}`, dto),
   suspendUser: (id: number) => apiClient.post(`/admin/users/${id}/suspend`),
   promoteUser: (id: number) => apiClient.post(`/admin/users/${id}/promote`),
@@ -1429,7 +1437,7 @@ export const adminApi = {
     return apiClient.get(`/admin/teas?${search.toString()}`);
   },
   getTeaDetail: (id: number) => apiClient.get(`/admin/teas/${id}`),
-  createTea: (dto: { name: string; year?: number; type: string; seller?: string; origin?: string; price?: number }) =>
+  createTea: (dto: CreateTeaRequest) =>
     apiClient.post('/admin/teas', dto),
   updateTea: (id: number, dto: Record<string, unknown>) => apiClient.patch(`/admin/teas/${id}`, dto),
   deleteTea: (id: number) => apiClient.delete(`/admin/teas/${id}`),
@@ -1443,7 +1451,7 @@ export const adminApi = {
     return apiClient.get(`/admin/sellers?${search.toString()}`);
   },
   getSellerDetail: (id: number) => apiClient.get(`/admin/sellers/${id}`),
-  createSeller: (dto: { name: string; address?: string; mapUrl?: string; websiteUrl?: string; phone?: string; description?: string; businessHours?: string }) =>
+  createSeller: (dto: CreateSellerRequest) =>
     apiClient.post('/admin/sellers', dto),
   updateSeller: (id: number, dto: Record<string, unknown>) => apiClient.patch(`/admin/sellers/${id}`, dto),
   deleteSeller: (id: number) => apiClient.delete(`/admin/sellers/${id}`),

@@ -36,11 +36,13 @@ git checkout -b feature/issue-42-add-login
 
 | 대상 | 명령어 | 용도 |
 |------|--------|------|
+| 프론트엔드 빌드 | `npm run build` | 프론트엔드 프로덕션 빌드 검증 |
 | 프론트엔드 | `npm run test:run` | Vitest 단위/통합 테스트 |
+| 백엔드 빌드 | `cd backend && npm run build` | 백엔드 컴파일/번들 검증 |
 | 백엔드 | `cd backend && npm run test` | Jest 단위 테스트 |
 | 백엔드 E2E | `cd backend && npm run test:e2e` | E2E API 테스트 |
 
-- **전체 검증:** `npm run test:run` 후 `cd backend && npm run test`
+- **전체 검증:** `npm run build && npm run test:run` 후 `cd backend && npm run build && npm run test`
 - **DB 스키마 변경 시:** Migration 적용 후 E2E 테스트 필수 (`cd backend && npm run test:e2e`)
 
 ### 5. PR 자동 생성 (마무리 시)
@@ -59,7 +61,9 @@ gh pr create --title "feat: {기능 요약}" --body "$(cat <<'EOF'
 
 ## Test plan
 ### 자동 테스트
+- [ ] `npm run build` 통과 (프론트엔드 빌드)
 - [ ] `npm run test:run` 통과 (프론트엔드)
+- [ ] `cd backend && npm run build` 통과 (백엔드 빌드)
 - [ ] `cd backend && npm run test` 통과 (백엔드 단위)
 - [ ] (DB 변경 시) `cd backend && npm run test:e2e` 통과
 

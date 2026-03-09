@@ -150,7 +150,11 @@ graph TD
     AppModule --> UsersModule["UsersModule<br/>사용자 모듈"]
     AppModule --> TeasModule["TeasModule<br/>차 모듈"]
     AppModule --> NotesModule["NotesModule<br/>노트 모듈"]
+    AppModule --> AdminModule["AdminModule<br/>운영자 콘솔"]
     AppModule --> HealthController["HealthController<br/>헬스 체크"]
+    
+    AdminModule --> AdminController["AdminController<br/>admin.controller.ts"]
+    AdminModule --> AdminService["AdminService<br/>admin.service.ts"]
     
     AuthModule --> AuthController["auth.controller.ts<br/>POST /auth/register<br/>POST /auth/login<br/>POST /auth/kakao<br/>POST /auth/profile"]
     AuthModule --> AuthService["auth.service.ts<br/>인증 로직"]
@@ -234,6 +238,7 @@ graph TB
     end
 
 ```
+> **참고:** Admin API에는 위 대표 엔드포인트 외에도 `/admin/metrics`, `/admin/logs`, 신고 처리, 감사 로그, 포스트/댓글 관리 등이 있습니다. 전체 목록은 `backend/src/admin/admin.controller.ts`를 참조하세요.
 
 ## 데이터 흐름
 

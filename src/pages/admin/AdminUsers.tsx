@@ -73,8 +73,8 @@ export function AdminUsers() {
   };
 
   const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
-    if (!detail) return;
     e.preventDefault();
+    if (!detail) return;
     const form = e.currentTarget;
     const name = (form.elements.namedItem('editName') as HTMLInputElement)?.value?.trim();
     const bio = (form.elements.namedItem('editBio') as HTMLInputElement)?.value?.trim();
