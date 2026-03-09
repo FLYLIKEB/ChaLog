@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 export function NoteDetail() {
   const { id } = useParams();
@@ -216,7 +217,7 @@ export function NoteDetail() {
             >
               <h2 className="mb-2 text-primary">{tea.name}</h2>
               <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-                <span>{tea.type}</span>
+                {tea.type && <TeaTypeBadge type={tea.type} />}
                 {tea.year && <span>· {tea.year}년</span>}
                 {tea.seller && (
                   <span>

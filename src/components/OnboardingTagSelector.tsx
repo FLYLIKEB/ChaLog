@@ -7,6 +7,8 @@ interface OnboardingTagSelectorProps {
   tags: readonly string[];
   selectedTags: string[];
   onToggle: (tag: string) => void;
+  /** 차종 등 태그별 색상 (key: tag, value: Tailwind bg class) */
+  tagColors?: Record<string, string>;
 }
 
 export function OnboardingTagSelector({
@@ -15,30 +17,35 @@ export function OnboardingTagSelector({
   tags,
   selectedTags,
   onToggle,
+  tagColors,
 }: OnboardingTagSelectorProps) {
   return (
     <section className="space-y-3">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
         {description && (
-          <p className="text-sm text-gray-600">{description}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         )}
       </div>
       <div className="flex flex-wrap gap-2 -mx-1">
         {tags.map((tag) => {
           const isSelected = selectedTags.includes(tag);
+          const colorClass = tagColors?.[tag];
           return (
             <button
               key={tag}
               type="button"
               onClick={() => onToggle(tag)}
               className={cn(
-                'px-4 py-2 rounded-full text-sm font-medium border transition-colors whitespace-nowrap',
+                'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-colors whitespace-nowrap',
                 isSelected
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white text-gray-700 border-gray-200 hover:border-emerald-300 hover:text-emerald-600',
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground border-border hover:bg-muted/60',
               )}
             >
+              {!isSelected && colorClass && (
+                <span className={cn('w-1.5 h-5 rounded-full shrink-0', colorClass)} aria-hidden />
+              )}
               {tag}
             </button>
           );

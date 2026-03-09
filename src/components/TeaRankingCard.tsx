@@ -1,9 +1,10 @@
 import React, { type FC } from 'react';
 import { Star } from 'lucide-react';
 import { Tea } from '../types';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card } from './ui/card';
 import { cn } from './ui/utils';
+import { TeaTypeBadge } from './TeaTypeBadge';
 
 interface TeaRankingCardProps {
   tea: Tea;
@@ -23,7 +24,7 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer flex flex-col gap-2 min-h-0"
+      className="w-full text-left p-3 h-[120px] flex flex-col gap-2 overflow-hidden hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer"
     >
       <div className="flex items-center gap-2">
         <div
@@ -36,21 +37,40 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
           {style.icon ?? rank}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="truncate font-medium text-foreground text-sm">{tea.name}</h3>
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="truncate font-medium text-foreground text-sm">{tea.name}</h3>
+            {tea.type && <TeaTypeBadge type={tea.type} className="shrink-0" />}
+          </div>
           <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-muted-foreground text-xs truncate">
-              <span>{tea.type}</span>
-              {tea.year && <span>{tea.year}년</span>}
-              {tea.price != null && tea.price > 0 && (
-                <span>
-                  {tea.price.toLocaleString()}원
-                  {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
+            <div className="flex items-center gap-1.5 text-muted-foreground text-xs truncate whitespace-nowrap">
+              <span className={!tea.year ? 'text-muted-foreground/50' : undefined}>
+                {tea.year ? `${tea.year}년` : '연도미상'}
+              </span>
+              <span>
+                <span className={!(tea.price != null && tea.price > 0) ? 'text-muted-foreground/50' : undefined}>
+                  {tea.price != null && tea.price > 0 ? `${tea.price.toLocaleString()}원` : '가격미상'}
                 </span>
-              )}
+                <span className={!(tea.weight != null && tea.weight > 0) ? 'text-muted-foreground/50' : undefined}>
+                  {tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ' · 용량미상'}
+                </span>
+              </span>
             </div>
             {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (
               <span className="text-[10px] text-muted-foreground/80">정확한 정보가 아닐 수 있습니다</span>
             )}
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
+              {tea.seller ? (
+                <Link
+                  to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-primary hover:underline"
+                >
+                  {tea.seller}
+                </Link>
+              ) : (
+                <span className="text-muted-foreground/50">판매처 미상</span>
+              )}
+            </p>
           </div>
         </div>
       </div>

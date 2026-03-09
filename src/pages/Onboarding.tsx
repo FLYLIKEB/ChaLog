@@ -5,7 +5,7 @@ import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { usersApi } from '../lib/api';
-import { ONBOARDING_FLAVOR_TAGS, ONBOARDING_TEA_TYPES } from '../constants';
+import { ONBOARDING_FLAVOR_TAGS, ONBOARDING_TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { OnboardingTagSelector } from '../components/OnboardingTagSelector';
 import { RatingGuideModal } from '../components/RatingGuideModal';
 import { toast } from 'sonner';
@@ -140,6 +140,7 @@ export function Onboarding() {
                 tags={ONBOARDING_TEA_TYPES}
                 selectedTags={selectedTeaTypes}
                 onToggle={toggleTeaType}
+                tagColors={TEA_TYPE_COLORS}
               />
               <Button type="button" className="w-full" onClick={handleNextToStep2}>
                 다음

@@ -25,6 +25,7 @@ import { UserProfile } from './pages/UserProfile';
 import { Settings } from './pages/Settings';
 import { Cellar } from './pages/Cellar';
 import { NewCellarItem } from './pages/NewCellarItem';
+import { EditCellarItem } from './pages/EditCellarItem';
 import { Community } from './pages/Community';
 import { PostDetail } from './pages/PostDetail';
 import { NewPost } from './pages/NewPost';
@@ -94,6 +95,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname.match(/^\/teahouse\/[^/]+\/edit$/) ||
     location.pathname === '/cellar' ||
     location.pathname === '/cellar/new' ||
+    location.pathname.match(/^\/cellar\/\d+\/edit$/) ||
     location.pathname === '/chadam' ||
     location.pathname.startsWith('/chadam/') ||
     location.pathname === '/onboarding' ||
@@ -190,6 +192,7 @@ function AppContent() {
             <Route path="/saved" element={<Saved />} />
             <Route path="/cellar" element={<Cellar />} />
             <Route path="/cellar/new" element={<NewCellarItem />} />
+            <Route path="/cellar/:id/edit" element={<EditCellarItem />} />
             <Route path="/chadam" element={<Community />} />
             <Route path="/chadam/new" element={<NewPost />} />
             <Route path="/chadam/:id" element={<PostDetail />} />

@@ -3,6 +3,7 @@ import { Star, Sparkles } from 'lucide-react';
 import { Tea } from '../types';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card } from './ui/card';
+import { TeaTypeBadge } from './TeaTypeBadge';
 
 interface TeaNewCardProps {
   tea: Tea;
@@ -14,28 +15,32 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-3 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-shadow cursor-pointer border-l-4 border-l-primary/40"
+      className="w-full text-left p-3 h-[120px] flex flex-col overflow-hidden hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-shadow cursor-pointer border-l-4 border-l-primary/40"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary shrink-0">
               <Sparkles className="w-3 h-3" />
               NEW
             </span>
             <h3 className="truncate font-medium text-foreground">{tea.name}</h3>
+            {tea.type && <TeaTypeBadge type={tea.type} className="shrink-0" />}
           </div>
           <div className="flex flex-col gap-0.5 mt-1.5">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-              <span>{tea.type}</span>
-              {tea.year && <span>{tea.year}년</span>}
-              {tea.price != null && tea.price > 0 && (
-                <span>
-                  {tea.price.toLocaleString()}원
-                  {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
+            <div className="flex items-center gap-2 text-muted-foreground text-sm truncate whitespace-nowrap">
+              <span className={!tea.year ? 'text-muted-foreground/50' : undefined}>
+                {tea.year ? `${tea.year}년` : '연도미상'}
+              </span>
+              <span>
+                <span className={!(tea.price != null && tea.price > 0) ? 'text-muted-foreground/50' : undefined}>
+                  {tea.price != null && tea.price > 0 ? `${tea.price.toLocaleString()}원` : '가격미상'}
                 </span>
-              )}
-              {tea.seller && (
+                <span className={!(tea.weight != null && tea.weight > 0) ? 'text-muted-foreground/50' : undefined}>
+                  {tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ' · 용량미상'}
+                </span>
+              </span>
+              {tea.seller ? (
                 <Link
                   to={`/teahouse/${encodeURIComponent(tea.seller)}`}
                   onClick={(e) => e.stopPropagation()}
@@ -43,6 +48,8 @@ export const TeaNewCard: FC<TeaNewCardProps> = ({ tea }) => {
                 >
                   {tea.seller}
                 </Link>
+              ) : (
+                <span className="text-muted-foreground/50">판매처 미상</span>
               )}
             </div>
             {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (

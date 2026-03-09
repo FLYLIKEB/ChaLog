@@ -15,6 +15,7 @@ import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
 import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 function StarRating({ value, max = 5 }: { value: number; max?: number }) {
   return (
@@ -160,7 +161,7 @@ export function TeaDetail() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <p className="text-xs text-muted-foreground mb-1">종류</p>
-              <p className="text-sm">{tea.type}</p>
+              {tea.type ? <TeaTypeBadge type={tea.type} /> : <span className="text-sm">-</span>}
             </div>
             {tea.year && (
               <div>

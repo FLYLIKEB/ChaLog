@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { notesApi } from '../lib/api';
 import { logger } from '../lib/logger';
 import { cn } from './ui/utils';
+import { TeaTypeBadge } from './TeaTypeBadge';
 
 interface NoteCardProps {
   note: Note;
@@ -249,9 +250,12 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
             {/* 상단: 제목/메모 */}
             <div className="flex-1 min-w-0">
               {showTeaName && (
-                <h3 className="truncate mb-1 text-foreground font-semibold text-[15px]">
-                  {note.teaName}
-                </h3>
+                <div className="flex items-center gap-2 min-w-0 mb-1">
+                  <h3 className="truncate text-foreground font-semibold text-[15px]">
+                    {note.teaName}
+                  </h3>
+                  {note.teaType && <TeaTypeBadge type={note.teaType} className="shrink-0" />}
+                </div>
               )}
               {note.memo && (
                 <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">

@@ -16,7 +16,8 @@ import { teasApi, tagsApi } from '../lib/api';
 import { Tea, Seller } from '../types';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
-import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES } from '../constants';
+import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
+import { cn } from '../components/ui/utils';
 
 const SORT_OPTIONS = [
   { key: 'popular' as const, label: '인기순' },
@@ -43,6 +44,7 @@ export function Search() {
   const urlType = searchParams.get('type');
   const urlMinRating = searchParams.get('minRating');
   const urlTags = searchParams.get('tags')?.split(',').map((t) => t.trim()).filter(Boolean) ?? [];
+  const urlTagsStr = urlTags.join(',');
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -198,7 +200,7 @@ export function Search() {
     } else {
       await fetchSections();
     }
-  }, [showResults, hasTagParams, urlTags, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
+  }, [showResults, hasTagParams, urlTagsStr, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
 
   const registerRefresh = useRegisterRefresh();
   useEffect(() => {
@@ -237,7 +239,7 @@ export function Search() {
         });
       }
     }
-  }, [hasFilterParams, hasTagParams, urlTags, urlSort, urlType, urlMinRating, fetchWithFilters, searchQuery]);
+  }, [hasFilterParams, hasTagParams, urlTagsStr, urlSort, urlType, urlMinRating, fetchWithFilters, searchQuery]);
 
   useEffect(() => {
     if (!searchQuery.trim() && !hasSearched && !hasFilterParams) {
@@ -372,22 +374,30 @@ export function Search() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              {TEA_TYPES.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => {
-                    setFilterType(filterType === type ? null : type);
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    filterType === type
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 hover:bg-muted/80'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
+              {TEA_TYPES.map((type) => {
+                const isSelected = filterType === type;
+                const colorClass = TEA_TYPE_COLORS[type];
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setFilterType(isSelected ? null : type);
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 hover:bg-muted/80',
+                    )}
+                  >
+                    {!isSelected && (
+                      <span className={cn('w-1.5 h-5 rounded-full shrink-0', colorClass)} aria-hidden />
+                    )}
+                    {type}
+                  </button>
+                );
+              })}
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">평점:</span>

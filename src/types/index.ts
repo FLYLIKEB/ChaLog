@@ -102,6 +102,7 @@ export interface Note {
   id: number;
   teaId: number;
   teaName: string;
+  teaType?: string;
   userId: number;
   userName: string;
   schemaId: number;
