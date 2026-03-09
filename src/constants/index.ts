@@ -52,6 +52,18 @@ export const TEA_TYPE_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
   대용차: 'bg-slate-300 dark:bg-slate-500',
 };
 
+/** 차 종류별 이미지 없을 때 플레이스홀더 배경 (차록 카드용) */
+export const TEA_TYPE_PLACEHOLDER_BG: Record<(typeof TEA_TYPES)[number], string> = {
+  녹차: 'bg-emerald-300/40 dark:bg-emerald-400/30',
+  백차: 'bg-stone-200/80 dark:bg-stone-400/30',
+  황차: 'bg-amber-300/40 dark:bg-amber-400/30',
+  우롱차: 'bg-blue-400/40 dark:bg-blue-500/30',
+  홍차: 'bg-rose-300/40 dark:bg-rose-400/30',
+  흑차: 'bg-slate-400/40 dark:bg-slate-500/30',
+  보이차: 'bg-amber-500/40 dark:bg-amber-600/30',
+  대용차: 'bg-slate-300/40 dark:bg-slate-500/30',
+};
+
 /** 차 종류별 글자 색 (배지 텍스트용) */
 export const TEA_TYPE_TEXT_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
   녹차: 'text-emerald-700 dark:text-emerald-400',

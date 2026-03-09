@@ -106,6 +106,7 @@ export class TagsService {
       id: note.id,
       teaId: note.teaId,
       teaName: (note as any).tea?.name ?? '',
+      teaType: (note as any).tea?.type ?? null,
       teaImageUrl: (note as any).tea?.imageUrl ?? null,
       userId: note.userId,
       userName: (note as any).user?.name ?? '',

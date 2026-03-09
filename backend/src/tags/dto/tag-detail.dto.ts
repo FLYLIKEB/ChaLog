@@ -9,6 +9,7 @@ export class TagNoteDto {
   id: number;
   teaId: number;
   teaName: string;
+  teaType: string | null;
   teaImageUrl: string | null;
   userId: number;
   userName: string;

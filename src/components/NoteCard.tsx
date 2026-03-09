@@ -10,6 +10,7 @@ import { notesApi } from '../lib/api';
 import { logger } from '../lib/logger';
 import { cn } from './ui/utils';
 import { TeaTypeBadge } from './TeaTypeBadge';
+import { TEA_TYPE_PLACEHOLDER_BG } from '../constants';
 
 interface NoteCardProps {
   note: Note;
@@ -231,7 +232,16 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
       >
         <div className="flex items-start gap-3 sm:gap-4">
           {/* 이미지 썸네일 */}
-          <div className="shrink-0 rounded-xl overflow-hidden bg-muted w-24 h-24 sm:w-28 sm:h-28">
+          <div
+            className={cn(
+              'shrink-0 rounded-xl overflow-hidden w-24 h-24 sm:w-28 sm:h-28',
+              hasImage && firstImage
+                ? ''
+                : note.teaType && note.teaType in TEA_TYPE_PLACEHOLDER_BG
+                  ? TEA_TYPE_PLACEHOLDER_BG[note.teaType as keyof typeof TEA_TYPE_PLACEHOLDER_BG]
+                  : 'bg-muted'
+            )}
+          >
             {hasImage && firstImage ? (
               <ImageWithFallback
                 src={firstImage}
@@ -240,7 +250,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center min-h-[96px]">
-                <img src={teaCupSvg} alt="Tea cup" className="w-10 h-10 opacity-40" />
+                <img src={teaCupSvg} alt="Tea cup" className="w-10 h-10 brightness-0 invert" />
               </div>
             )}
           </div>
@@ -258,7 +268,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
                 </div>
               )}
               {note.memo && (
-                <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                <p className="text-sm text-muted-foreground line-clamp-1 leading-relaxed">
                   {note.memo}
                 </p>
               )}
