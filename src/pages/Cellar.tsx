@@ -323,7 +323,7 @@ export function Cellar() {
   };
 
   const handleSessionClick = (teaId: number) => {
-    navigate(`/sessions/new?teaId=${teaId}`);
+    navigate(`/session/new?teaId=${teaId}`);
   };
 
   const handleEdit = (id: number) => {
