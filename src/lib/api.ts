@@ -1352,12 +1352,26 @@ export interface CreatePostRequest {
 
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
 
+export type PostSort = 'latest' | 'popular' | 'commented';
+
 export const postsApi = {
-  getAll: (category?: import('../types').PostCategory, page = 1, limit = 20) => {
+  getAll: (
+    category?: import('../types').PostCategory | import('../types').PostCategory[],
+    page = 1,
+    limit = 20,
+    sort?: PostSort,
+    bookmarked?: boolean,
+  ) => {
     const params = new URLSearchParams();
-    if (category) params.append('category', category);
+    if (Array.isArray(category) && category.length > 0) {
+      params.append('categories', category.join(','));
+    } else if (category && !Array.isArray(category)) {
+      params.append('category', category);
+    }
     params.append('page', String(page));
     params.append('limit', String(limit));
+    if (sort && sort !== 'latest') params.append('sort', sort);
+    if (bookmarked) params.append('bookmarked', 'true');
     return apiClient.get<import('../types').Post[]>(`/posts?${params.toString()}`);
   },
   getById: (id: number) => apiClient.get<import('../types').Post>(`/posts/${id}`),

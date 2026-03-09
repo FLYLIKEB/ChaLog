@@ -6,6 +6,7 @@ import { PostsService } from './posts.service';
 import { Post, PostCategory } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
+import { UsersService } from '../users/users.service';
 
 describe('PostsService', () => {
   let service: PostsService;
@@ -21,6 +22,7 @@ describe('PostsService', () => {
   const mockPostQb = {
     leftJoinAndSelect: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
+    addOrderBy: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
     skip: jest.fn().mockReturnThis(),
     take: jest.fn().mockReturnThis(),
@@ -49,6 +51,10 @@ describe('PostsService', () => {
     transaction: jest.fn(),
   };
 
+  const mockUsersService = {
+    findOne: jest.fn().mockResolvedValue({ id: 1, role: 'user' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -57,6 +63,7 @@ describe('PostsService', () => {
         { provide: getRepositoryToken(PostLike), useValue: mockPostLikesRepository },
         { provide: getRepositoryToken(PostBookmark), useValue: mockPostBookmarksRepository },
         { provide: DataSource, useValue: mockDataSource },
+        { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
 

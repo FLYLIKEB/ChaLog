@@ -94,13 +94,13 @@ describe('Community 페이지', () => {
     });
   });
 
-  it('카테고리 탭을 표시한다', () => {
+  it('대분류 탭을 표시한다', () => {
     renderWithRouter(<Community />, { route: '/chadam' });
     expect(screen.getByText('전체')).toBeInTheDocument();
-    expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('맞춤차')).toBeInTheDocument();
-    expect(screen.getByText('도구')).toBeInTheDocument();
-    expect(screen.getByText('찻집 후기')).toBeInTheDocument();
+    expect(screen.getByText('질문·토론')).toBeInTheDocument();
+    expect(screen.getByText('리뷰')).toBeInTheDocument();
+    expect(screen.getByText('공지')).toBeInTheDocument();
+    expect(screen.getByText('제보')).toBeInTheDocument();
   });
 
   it('게시글이 없을 때 빈 상태를 표시한다', async () => {

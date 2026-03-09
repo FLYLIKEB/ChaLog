@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
@@ -54,23 +55,51 @@ export class PostsService {
   }
 
   async findAll(
-    category?: PostCategory,
+    category?: PostCategory | PostCategory[],
     page = 1,
     limit = 20,
+    sort: 'latest' | 'popular' | 'commented' = 'latest',
     currentUserId?: number,
+    bookmarked?: boolean,
   ): Promise<any[]> {
+    if (bookmarked && !currentUserId) {
+      throw new BadRequestException('북마크한 게시글을 조회하려면 로그인이 필요합니다.');
+    }
+
     const skip = (page - 1) * limit;
     const qb = this.postsRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
       .orderBy('post.isPinned', 'DESC')
-      .addOrderBy('post.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
 
-    if (category) {
-      qb.where('post.category = :category', { category });
+    if (bookmarked && currentUserId) {
+      qb.innerJoin('post_bookmarks', 'pb', 'pb.postId = post.id AND pb.userId = :bookmarkUserId', {
+        bookmarkUserId: currentUserId,
+      });
     }
+
+    if (category) {
+      if (Array.isArray(category)) {
+        qb.where('post.category IN (:...categories)', { categories: category });
+      } else {
+        qb.where('post.category = :category', { category });
+      }
+    }
+
+    if (sort === 'popular') {
+      qb.addOrderBy(
+        '(SELECT COUNT(*) FROM post_likes pl WHERE pl.postId = post.id)',
+        'DESC',
+      );
+    } else if (sort === 'commented') {
+      qb.addOrderBy(
+        '(SELECT COUNT(*) FROM comments c WHERE c.postId = post.id)',
+        'DESC',
+      );
+    }
+    qb.addOrderBy('post.createdAt', 'DESC');
 
     const posts = await qb.getMany();
     return this.enrichPostsWithStats(posts, currentUserId);

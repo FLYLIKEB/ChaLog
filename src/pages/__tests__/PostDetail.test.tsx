@@ -11,7 +11,7 @@ const mockPost = {
   id: 1,
   userId: 2,
   user: { id: 2, name: '김차인', profileImageUrl: null },
-  title: '우림 질문입니다',
+  title: '우려 질문입니다',
   content: '어떻게 우리면 좋을까요? 자세히 알려주세요.',
   category: 'brewing_question' as const,
   isSponsored: false,
@@ -97,7 +97,7 @@ describe('PostDetail 페이지', () => {
     renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
-      expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
+      expect(screen.getByText('우려 질문입니다')).toBeInTheDocument();
       expect(screen.getByText('어떻게 우리면 좋을까요? 자세히 알려주세요.')).toBeInTheDocument();
     });
   });
@@ -106,7 +106,7 @@ describe('PostDetail 페이지', () => {
     renderWithRouter(<PostDetail />, { route: '/chadam/1' });
 
     await waitFor(() => {
-      expect(screen.getByText('우림 질문')).toBeInTheDocument();
+      expect(screen.getByText('우려 질문')).toBeInTheDocument();
     });
   });
 
