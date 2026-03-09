@@ -119,15 +119,65 @@ export class PostsService {
     }
 
     if (sort === 'popular') {
-      qb.addOrderBy(
-        '(SELECT COUNT(*) FROM post_likes pl WHERE pl.postId = post.id)',
-        'DESC',
+      // 인기글: 좋아요 5개 이상만, 별도 쿼리로 ID 조회 후 fetch (TypeORM 서브쿼리 alias 이슈 회피)
+      const popularQb = this.dataSource
+        .createQueryBuilder()
+        .select('pl.postId', 'postId')
+        .addSelect('COUNT(pl.id)', 'likeCount')
+        .from(PostLike, 'pl')
+        .innerJoin(Post, 'p', 'p.id = pl.postId')
+        .groupBy('pl.postId')
+        .having('COUNT(pl.id) >= 5')
+        .orderBy('likeCount', 'DESC')
+        .addOrderBy('MAX(p.createdAt)', 'DESC');
+
+      if (category) {
+        if (Array.isArray(category)) {
+          popularQb.andWhere('p.category IN (:...categories)', { categories: category });
+        } else {
+          popularQb.andWhere('p.category = :category', { category });
+        }
+      }
+      if (bookmarked && currentUserId) {
+        popularQb.innerJoin('post_bookmarks', 'pb', 'pb.postId = pl.postId AND pb.userId = :bookmarkUserId', {
+          bookmarkUserId: currentUserId,
+        });
+      }
+
+      const popularRows = await popularQb.skip(skip).take(limit).getRawMany();
+      const popularIds = popularRows.map((r) => r.postId);
+
+      if (popularIds.length === 0) {
+        return this.enrichPostsWithStats([], currentUserId);
+      }
+
+      const posts = await this.postsRepository
+        .createQueryBuilder('post')
+        .leftJoinAndSelect('post.user', 'user')
+        .leftJoinAndSelect('post.images', 'postImages')
+        .where('post.id IN (:...ids)', { ids: popularIds })
+        .orderBy('post.isPinned', 'DESC')
+        .addOrderBy('post.createdAt', 'DESC')
+        .getMany();
+
+      const orderMap = new Map(popularIds.map((id, i) => [id, i]));
+      posts.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+
+      return this.enrichPostsWithStats(posts, currentUserId);
+    }
+
+    if (sort === 'commented') {
+      qb.leftJoin(
+        (sub) =>
+          sub
+            .select('c.postId', 'postId')
+            .addSelect('COUNT(c.id)', 'commentCount')
+            .from('comments', 'c')
+            .groupBy('c.postId'),
+        'commentCounts',
+        'commentCounts.postId = post.id',
       );
-    } else if (sort === 'commented') {
-      qb.addOrderBy(
-        '(SELECT COUNT(*) FROM comments c WHERE c.postId = post.id)',
-        'DESC',
-      );
+      qb.addOrderBy('COALESCE(commentCounts.commentCount, 0)', 'DESC');
     }
     qb.addOrderBy('post.createdAt', 'DESC');
 

@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 
 const SORT_OPTIONS: Array<{ value: PostSort; label: string }> = [
   { value: 'latest', label: '최신순' },
-  { value: 'popular', label: '인기순' },
+  { value: 'popular', label: '인기글' },
   { value: 'commented', label: '댓글많은순' },
 ];
 
@@ -83,7 +83,7 @@ export function Community() {
 
       {/* 카테고리 탭 + 정렬 - 헤더 높이만큼 아래에서 고정 */}
       <div className="sticky top-[calc(4.25rem+env(safe-area-inset-top))] z-10 bg-background border-b border-border/50">
-        <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-2 items-center">
+        <div className="flex overflow-x-auto scrollbar-hide px-4 gap-1 py-1.5 items-center">
           {GROUPS.map(({ key, label }) => (
             <button
               key={key}
@@ -137,7 +137,7 @@ export function Community() {
             action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
           />
         ) : (
-          <div>
+          <div className="divide-y divide-gray-200 dark:divide-gray-700 pt-2">
             {posts.map((post, i) => (
               <div
                 key={post.id}

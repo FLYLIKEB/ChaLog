@@ -11,14 +11,43 @@ import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
-const CATEGORIES: PostCategory[] = [
-  'brewing_question',
-  'recommendation',
-  'tool',
-  'tea_room_review',
-  'announcement',
-  'bug_report',
+type WriteGroupKey = 'qna' | 'review' | 'announcement' | 'report';
+
+const WRITE_GROUPS: Array<{
+  key: WriteGroupKey;
+  label: string;
+  categories: Array<{ value: PostCategory; label: string; hint?: string }>;
+}> = [
+  {
+    key: 'qna',
+    label: '질문·토론',
+    categories: [
+      { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우림법, 온도, 시간 등' },
+      { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation, hint: '차 추천 요청' },
+      { value: 'tool', label: POST_CATEGORY_LABELS.tool, hint: '도구·기구 관련' },
+    ],
+  },
+  {
+    key: 'review',
+    label: '리뷰',
+    categories: [{ value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review }],
+  },
+  {
+    key: 'announcement',
+    label: '공지',
+    categories: [{ value: 'announcement', label: POST_CATEGORY_LABELS.announcement }],
+  },
+  {
+    key: 'report',
+    label: '제보',
+    categories: [{ value: 'bug_report', label: POST_CATEGORY_LABELS.bug_report }],
+  },
 ];
+
+function getGroupFromCategory(cat: PostCategory): WriteGroupKey {
+  const g = WRITE_GROUPS.find((group) => group.categories.some((c) => c.value === cat));
+  return g?.key ?? 'qna';
+}
 
 export function EditPost() {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +59,7 @@ export function EditPost() {
   const [isLoadingPost, setIsLoadingPost] = useState(true);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<WriteGroupKey>('qna');
   const [category, setCategory] = useState<PostCategory>('brewing_question');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
@@ -56,6 +86,7 @@ export function EditPost() {
         setTitle(data.title);
         setContent(data.content);
         setCategory(data.category);
+        setSelectedGroup(getGroupFromCategory(data.category));
         setIsAnonymous(data.isAnonymous ?? false);
         setIsPinned(data.isPinned ?? false);
         setIsSponsored(data.isSponsored);
@@ -127,25 +158,49 @@ export function EditPost() {
       <Header showBack title="게시글 수정" showProfile />
 
       <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">
-        {/* 카테고리 선택 */}
-        <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-foreground">카테고리</label>
+        {/* 카테고리 선택 (등록과 동일한 2단계) */}
+        <div className="flex flex-col gap-3">
+          <label className="text-sm font-medium text-foreground">어떤 주제인가요?</label>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {WRITE_GROUPS.filter((g) => g.key !== 'announcement' || isAdmin).map((g) => (
               <button
-                key={cat}
+                key={g.key}
                 type="button"
-                onClick={() => setCategory(cat)}
+                onClick={() => {
+                  setSelectedGroup(g.key);
+                  setCategory(g.categories[0].value);
+                }}
                 className={cn(
                   'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
-                  category === cat
+                  selectedGroup === g.key
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
                 )}
               >
-                {POST_CATEGORY_LABELS[cat]}
+                {g.label}
               </button>
             ))}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground">세부 주제</span>
+            <div className="flex flex-wrap gap-2">
+              {WRITE_GROUPS.find((g) => g.key === selectedGroup)?.categories.map(({ value, label, hint }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setCategory(value)}
+                  title={hint}
+                  className={cn(
+                    'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                    category === value
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
