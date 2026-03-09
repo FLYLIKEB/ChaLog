@@ -314,8 +314,17 @@ export class NotesService {
   }
 
   async update(id: number, userId: number, updateNoteDto: UpdateNoteDto): Promise<Note> {
-    const note = await this.findOne(id, userId);
-
+    // noteSchemas를 로드하지 않음 → notesRepository.save 시 cascade로 중복 저장되어 UQ_note_schemas 위반 방지
+    const note = await this.notesRepository.findOne({
+      where: { id },
+      relations: ['user', 'tea', 'schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
+    });
+    if (!note) {
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
+    }
+    if (!note.isPublic && note.userId !== userId) {
+      throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
+    }
     if (note.userId !== userId) {
       throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
@@ -353,11 +362,6 @@ export class NotesService {
     }
 
     Object.assign(note, noteData);
-    // note_schemas는 위에서 별도로 delete/save 했으므로, notesRepository.save 시
-    // cascade로 기존 noteSchemas가 중복 저장되어 UQ_note_schemas 위반을 방지하기 위해 제거
-    if ((note as any).noteSchemas !== undefined) {
-      delete (note as any).noteSchemas;
-    }
     const updatedNote = await this.notesRepository.save(note);
 
     const finalSchemaIds = updateSchemaIds ?? (note as any).schemaIds ?? (note.schemaId != null ? [note.schemaId] : []);

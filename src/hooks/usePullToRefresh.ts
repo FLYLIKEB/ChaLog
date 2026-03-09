@@ -179,6 +179,12 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
       if (disabled || isRefreshing) return;
       // 두 손가락 이상(핀치 줌 등)이면 브라우저 기본 동작 허용
       if (e.touches.length > 1) return;
+      // input/textarea 내부 터치 시 preventDefault 하지 않음 → 텍스트 선택(드래그) 허용
+      const target = e.target as Node;
+      if (target && el.contains(target)) {
+        const editable = (target as Element).closest?.('input, textarea, [contenteditable="true"]');
+        if (editable) return;
+      }
       if (el.scrollTop > 0) {
         if (pullDistanceRef.current > 0) {
           touchStartY.current = e.touches[0].clientY;

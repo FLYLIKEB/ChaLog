@@ -172,9 +172,10 @@ export function NewPost() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="내용을 입력하세요"
+            placeholder="내용을 입력하세요. 마크다운(제목, 리스트, 링크, 테이블 등)을 사용할 수 있어요."
             rows={8}
           />
+          <p className="text-xs text-muted-foreground">마크다운 문법 지원</p>
         </div>
 
         {/* 사진 */}

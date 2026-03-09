@@ -208,20 +208,29 @@ export class TeaSessionsService {
     }
 
     const sorted = [...steeps].sort((a, b) => a.steepNumber - b.steepNumber);
-    const lines = sorted.map((s) => {
-      const parts = [`${s.steepNumber}탕 ${s.steepDurationSeconds}초`];
+
+    const escapeCell = (s: string | null | undefined): string => {
+      if (s == null || s === '') return '-';
+      return String(s).replace(/\|/g, '·').replace(/\n/g, ' ');
+    };
+
+    const header = '| 탕 | 시간 | 수색 | 향 | 물온도 | 몸반응 | 만족도 | 메모 |';
+    const separator = '|:---|:---|:---|:---|:---|:---|:---|:---|';
+    const rows = sorted.map((s) => {
       const d = s.data as SteepDataV1 | null;
-      if (d?.v === 1) {
-        if (d.color_note) parts.push(`수색: ${d.color_note}`);
-        if (d.aroma_profile) parts.push(`향: ${d.aroma_profile}`);
-        if (d.water_temp) parts.push(`물온도: ${d.water_temp}`);
-        if (d.body_feeling) parts.push(`몸반응: ${d.body_feeling}`);
-        if (d.rating != null) parts.push(`만족도: ${d.rating}/5`);
-        if (d.memo) parts.push(d.memo);
-      }
-      return parts.join(' | ');
+      const parts = [
+        `${s.steepNumber}탕`,
+        `${s.steepDurationSeconds}초`,
+        escapeCell(d?.v === 1 ? d.color_note : null),
+        escapeCell(d?.v === 1 ? d.aroma_profile : null),
+        escapeCell(d?.v === 1 ? d.water_temp : null),
+        escapeCell(d?.v === 1 ? d.body_feeling : null),
+        d?.v === 1 && d.rating != null ? `${d.rating}/5` : '-',
+        escapeCell(d?.v === 1 ? d.memo : null),
+      ];
+      return '| ' + parts.join(' | ') + ' |';
     });
 
-    return lines.join('\n');
+    return [header, separator, ...rows].join('\n');
   }
 }
