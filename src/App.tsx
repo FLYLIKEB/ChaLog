@@ -59,6 +59,11 @@ const SessionNew = lazy(() => import('./pages/SessionNew').then((m) => ({ defaul
 const SessionInProgress = lazy(() => import('./pages/SessionInProgress').then((m) => ({ default: m.SessionInProgress })));
 const SessionSummary = lazy(() => import('./pages/SessionSummary').then((m) => ({ default: m.SessionSummary })));
 const SessionHistory = lazy(() => import('./pages/SessionHistory').then((m) => ({ default: m.SessionHistory })));
+const BlindSessionNew = lazy(() => import('./pages/BlindSessionNew').then((m) => ({ default: m.BlindSessionNew })));
+const BlindSessionJoin = lazy(() => import('./pages/BlindSessionJoin').then((m) => ({ default: m.BlindSessionJoin })));
+const BlindSessionDetail = lazy(() => import('./pages/BlindSessionDetail').then((m) => ({ default: m.BlindSessionDetail })));
+const BlindNoteWrite = lazy(() => import('./pages/BlindNoteWrite').then((m) => ({ default: m.BlindNoteWrite })));
+const BlindSessionReport = lazy(() => import('./pages/BlindSessionReport').then((m) => ({ default: m.BlindSessionReport })));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports').then((m) => ({ default: m.AdminReports })));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then((m) => ({ default: m.AdminUsers })));
@@ -67,6 +72,7 @@ const AdminPosts = lazy(() => import('./pages/admin/AdminPosts').then((m) => ({ 
 const AdminAudit = lazy(() => import('./pages/admin/AdminAudit').then((m) => ({ default: m.AdminAudit })));
 const AdminMonitoring = lazy(() => import('./pages/admin/AdminMonitoring').then((m) => ({ default: m.AdminMonitoring })));
 const AdminMaster = lazy(() => import('./pages/admin/AdminMaster').then((m) => ({ default: m.AdminMaster })));
+
 
 type FloatingActionRouteConfig = {
   position?: 'default' | 'aboveNav';
@@ -90,6 +96,11 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/cellar/new': { hidden: true },
   '/session/new': { hidden: true },
   '/sessions': { hidden: true },
+  '/blind/new': { hidden: true },
+  '/blind/join/:code': { hidden: true },
+  '/blind/:id': { hidden: true },
+  '/blind/:id/write': { hidden: true },
+  '/blind/:id/report': { hidden: true },
   '/onboarding': { hidden: true },
 };
 
@@ -103,6 +114,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
     location.pathname.startsWith('/session/') ||
     location.pathname === '/sessions' ||
+    location.pathname.startsWith('/blind/') ||
     location.pathname === '/tea/new' ||
     location.pathname === '/teahouse/new' ||
     location.pathname.match(/^\/teahouse\/[^/]+\/edit$/) ||
@@ -212,6 +224,11 @@ function AppContent() {
                 <Route path="/session/:id" element={<SessionInProgress />} />
                 <Route path="/session/:id/summary" element={<SessionSummary />} />
                 <Route path="/sessions" element={<SessionHistory />} />
+                <Route path="/blind/new" element={<BlindSessionNew />} />
+                <Route path="/blind/join/:code" element={<BlindSessionJoin />} />
+                <Route path="/blind/:id" element={<BlindSessionDetail />} />
+                <Route path="/blind/:id/write" element={<BlindNoteWrite />} />
+                <Route path="/blind/:id/report" element={<BlindSessionReport />} />
                 <Route path="/note/:id" element={<NoteDetail />} />
                 <Route path="/user/:id" element={<UserProfile />} />
                 <Route path="/my-notes" element={<MyNotes />} />
