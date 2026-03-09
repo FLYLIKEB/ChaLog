@@ -94,6 +94,33 @@ describe('useAsyncData', () => {
     expect(toast.error).toHaveBeenCalledWith('커스텀 에러 메시지');
   });
 
+  it('deps가 변경되면 재조회가 트리거됨', async () => {
+    const fetchFn = vi.fn((id: number) =>
+      Promise.resolve({ id, name: `item-${id}` })
+    );
+
+    const { result, rerender } = renderHook(
+      ({ postId }: { postId: number }) =>
+        useAsyncData(() => fetchFn(postId) as Promise<{ id: number; name: string }>, {
+          deps: [postId],
+        }),
+      { initialProps: { postId: 1 } }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
+    expect(result.current.data).toEqual({ id: 1, name: 'item-1' });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+
+    rerender({ postId: 2 });
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual({ id: 2, name: 'item-2' });
+    });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
   it('에러 발생 시 onError 콜백이 호출됨', async () => {
     const onError = vi.fn();
     const fetchFn = vi.fn().mockRejectedValue(new Error('API error'));
