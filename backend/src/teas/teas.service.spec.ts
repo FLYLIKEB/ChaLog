@@ -1,9 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { TeasService } from './teas.service';
 import { Tea } from './entities/tea.entity';
+import { Seller } from './entities/seller.entity';
 import { UsersService } from '../users/users.service';
 
 const mockTea = (overrides: Partial<Tea> = {}): Tea =>
@@ -58,14 +60,30 @@ describe('TeasService', () => {
     getOnboardingPreference: jest.fn(),
   };
 
+  const mockSellerRepository = {
+    findOne: jest.fn(),
+    find: jest.fn(),
+    create: jest.fn(),
+    save: jest.fn(),
+  };
+
+  const mockCacheManager = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockCacheManager.get.mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TeasService,
         { provide: getRepositoryToken(Tea), useValue: mockTeasRepository },
+        { provide: getRepositoryToken(Seller), useValue: mockSellerRepository },
         { provide: DataSource, useValue: mockDataSource },
+        { provide: CACHE_MANAGER, useValue: mockCacheManager },
         { provide: UsersService, useValue: mockUsersService },
       ],
     }).compile();
@@ -286,10 +304,12 @@ describe('TeasService', () => {
 
   describe('findSellers', () => {
     it('seller별 teaCount를 집계하여 반환해야 한다', async () => {
-      mockDataSource.query.mockResolvedValue([
-        { seller: '차향', teaCount: '5' },
-        { seller: '티하우스', teaCount: '3' },
-      ]);
+      mockDataSource.query
+        .mockResolvedValueOnce([
+          { seller: '차향', teaCount: '5' },
+          { seller: '티하우스', teaCount: '3' },
+        ])
+        .mockResolvedValueOnce([]);
 
       const result = await service.findSellers();
 
@@ -311,10 +331,12 @@ describe('TeasService', () => {
 
   describe('findSellersByQuery', () => {
     it('검색어로 seller를 필터링하여 반환해야 한다', async () => {
-      mockDataSource.query.mockResolvedValue([
-        { seller: '차향', teaCount: '5' },
-        { seller: '차향몰', teaCount: '2' },
-      ]);
+      mockDataSource.query
+        .mockResolvedValueOnce([
+          { seller: '차향', teaCount: '5' },
+          { seller: '차향몰', teaCount: '2' },
+        ])
+        .mockResolvedValueOnce([]);
 
       const result = await service.findSellersByQuery('차');
 
