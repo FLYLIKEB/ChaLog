@@ -8,7 +8,6 @@ import { TeaCard } from '../components/TeaCard';
 import { tagsApi, teasApi } from '../lib/api';
 import { TagDetail as TagDetailType, TagNoteList, PopularTagItem, Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 import { TEA_TYPE_PLACEHOLDER_BG } from '../constants';
@@ -69,12 +68,6 @@ export function TagDetail() {
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(loadInitialData);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, loadInitialData]);
 
   const fetchTeasByTag = useCallback(async () => {
     if (!decodedName) return;

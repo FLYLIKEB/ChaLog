@@ -7,7 +7,6 @@ import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
@@ -94,12 +93,6 @@ export function NewPost() {
       setIsSubmitting(false);
     }
   };
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   return (
     <div className="min-h-screen">

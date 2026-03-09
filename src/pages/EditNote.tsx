@@ -15,7 +15,6 @@ import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
@@ -124,12 +123,6 @@ export function EditNote() {
       }
     }
   }, [preselectedTeaId]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   // 노트 데이터 불러오기
   useEffect(() => {

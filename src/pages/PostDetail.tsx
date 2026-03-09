@@ -20,7 +20,6 @@ import { BottomNav } from '../components/BottomNav';
 import { CommentList } from '../components/CommentList';
 import { PostReportModal } from '../components/PostReportModal';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 import {
@@ -74,12 +73,6 @@ export function PostDetail() {
     }
     fetchData();
   }, [postId, navigate, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchData);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData]);
 
   const handleToggleLike = async () => {
     if (!user) {

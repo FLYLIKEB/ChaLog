@@ -9,7 +9,6 @@ import { Bell, Heart, UserPlus, CheckCheck, Loader2 } from 'lucide-react';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 
 function formatRelativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -103,12 +102,6 @@ export function Notifications() {
     }
     fetchNotifications(1);
   }, [user, navigate, fetchNotifications]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(() => fetchNotifications(1));
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchNotifications]);
 
   const handleMarkAllAsRead = async () => {
     try {

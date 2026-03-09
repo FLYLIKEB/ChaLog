@@ -9,7 +9,6 @@ import { Card } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { usersApi, authApi, LinkedAccount } from '../lib/api';
 import { BottomNav } from '../components/BottomNav';
@@ -95,12 +94,6 @@ export function Settings() {
   useEffect(() => {
     fetchLinkedAccounts();
   }, [fetchLinkedAccounts]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchNotificationSetting);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchNotificationSetting]);
 
   // 카카오 연동 콜백 처리 (redirect 후 /settings?code=xxx&state=link_kakao)
   useEffect(() => {

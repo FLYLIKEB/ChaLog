@@ -8,7 +8,6 @@ import { Textarea } from '../components/ui/textarea';
 import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { logger } from '../lib/logger';
@@ -66,12 +65,6 @@ export function NewCellarItem() {
 
     fetchTeas();
   }, [isAuthenticated, authLoading, navigate, returnedTeaId]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   const filteredTeas = teaSearch.trim()
     ? teas.filter(

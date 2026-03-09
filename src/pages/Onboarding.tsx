@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { usersApi } from '../lib/api';
 import { ONBOARDING_FLAVOR_TAGS, ONBOARDING_TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { OnboardingTagSelector } from '../components/OnboardingTagSelector';
@@ -51,12 +50,6 @@ export function Onboarding() {
 
     fetchPreference();
   }, [authLoading, navigate, user]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   const toggleTeaType = (tag: string) => {
     setSelectedTeaTypes((prev) =>

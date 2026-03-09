@@ -7,7 +7,6 @@ import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 
@@ -108,12 +107,6 @@ export function EditPost() {
 
     fetchPost();
   }, [postId, user, navigate]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   if (isLoadingPost) {
     return (

@@ -12,7 +12,6 @@ import { logger } from '../lib/logger';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { cn } from '../components/ui/utils';
 
 type SavedTab = 'notes' | 'posts';
@@ -77,16 +76,6 @@ export function Saved() {
       fetchBookmarkedPosts();
     }
   }, [activeTab, fetchBookmarkedNotes, fetchBookmarkedPosts]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      registerRefresh(handleRefresh);
-    } else {
-      registerRefresh(undefined);
-    }
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, handleRefresh, isAuthenticated, user]);
 
   const handleNoteBookmarkRemoved = (noteId: number) => {
     setBookmarkedNotes(prev => prev.filter(n => n.id !== noteId));

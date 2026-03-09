@@ -1,7 +1,9 @@
-import React, { createContext, useCallback, useRef, useContext, useState } from 'react';
+import React, { createContext, useCallback, useRef, useContext, useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { BottomNavSpacer } from '../components/BottomNavSpacer';
+import { isPullToRefreshAllowed } from '../config/pullToRefresh';
 
 type RegisterRefreshFn = (callback: (() => Promise<void>) | undefined) => void;
 
@@ -17,13 +19,37 @@ export function useRegisterRefresh() {
   );
 }
 
+/**
+ * 위로 당겨 새로고침을 사용하는 페이지에서 호출합니다.
+ * pathname이 허용 목록에 있을 때만 콜백을 등록합니다.
+ * @param callback 새로고침 시 실행할 함수
+ * @param path 이 페이지의 경로 (예: '/', '/sasaek', '/chadam')
+ */
+export function usePullToRefreshForPage(callback: () => Promise<void>, path: string) {
+  const location = useLocation();
+  const registerRefresh = useRegisterRefresh();
+
+  useEffect(() => {
+    if (location.pathname === path) {
+      registerRefresh(callback);
+    } else {
+      registerRefresh(undefined);
+    }
+    return () => registerRefresh(undefined);
+  }, [registerRefresh, callback, location.pathname, path]);
+}
+
 export function PullToRefreshProvider({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const refreshCallbackRef = useRef<(() => Promise<void>) | undefined>(undefined);
-  const [isPullDisabled, setIsPullDisabled] = useState(false);
+  const [registeredCallback, setRegisteredCallback] = useState<(() => Promise<void>) | undefined>(undefined);
 
   const onRefresh = useCallback(async () => {
     await refreshCallbackRef.current?.();
   }, []);
+
+  const isPathAllowed = isPullToRefreshAllowed(location.pathname);
+  const isPullDisabled = !isPathAllowed || !registeredCallback;
 
   const {
     scrollContainerRef,
@@ -35,7 +61,7 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
 
   const registerRefresh = useCallback((callback: (() => Promise<void>) | undefined) => {
     refreshCallbackRef.current = callback;
-    setIsPullDisabled(callback === undefined);
+    setRegisteredCallback(callback ?? undefined);
   }, []);
 
   const showIndicator = !isPullDisabled && (pullDistance > 0 || isRefreshing);
@@ -45,7 +71,7 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
       <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
         <div
           ref={scrollContainerRef}
-          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain touch-pan-y"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain touch-manipulation"
           style={{
             WebkitOverflowScrolling: 'touch',
             scrollBehavior: 'auto',

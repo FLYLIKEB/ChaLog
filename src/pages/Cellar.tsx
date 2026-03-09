@@ -9,7 +9,6 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import { cellarApi } from '../lib/api';
 import { CellarItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { CellarCardSkeleton } from '../components/CellarCardSkeleton';
@@ -208,16 +207,6 @@ export function Cellar() {
     }
     fetchData();
   }, [isAuthenticated, user, authLoading, navigate, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      registerRefresh(fetchData);
-    } else {
-      registerRefresh(undefined);
-    }
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData, isAuthenticated, user]);
 
   // 잔량 > 0: 찻장 목록, 잔량 = 0: 다 마신 차 목록
   const activeItems = useMemo(

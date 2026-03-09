@@ -11,7 +11,7 @@ import { BottomNav } from '../components/BottomNav';
 import { EmptyState } from '../components/EmptyState';
 import { FloatingActionButton } from '../components/FloatingActionButton';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { cn } from '../components/ui/utils';
 import { toast } from 'sonner';
 
@@ -66,11 +66,7 @@ export function Community() {
     fetchPosts();
   }, [fetchPosts]);
 
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchPosts);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchPosts]);
+  usePullToRefreshForPage(fetchPosts, '/chadam');
 
   return (
     <div className="min-h-screen pb-20">

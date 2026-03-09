@@ -14,7 +14,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
 import { toast } from 'sonner';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 function StarRating({ value, max = 5 }: { value: number; max?: number }) {
@@ -100,12 +99,6 @@ export function TeaDetail() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchData);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData]);
 
   if (isLoading) {
     return (

@@ -6,7 +6,6 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { teasApi } from '../lib/api';
 import { logger } from '../lib/logger';
 import { toast } from 'sonner';
@@ -33,11 +32,6 @@ export function NewShop() {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

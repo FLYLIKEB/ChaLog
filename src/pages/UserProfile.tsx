@@ -23,7 +23,6 @@ import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
@@ -92,12 +91,6 @@ export function UserProfile() {
     if (authLoading) return;
     fetchData();
   }, [authLoading, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchData);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {

@@ -14,7 +14,7 @@ import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
 import { Tea, Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
 import { Loader2, Hash, MessageCircle, ChevronRight } from 'lucide-react';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { TeaCardSkeleton } from '../components/TeaCardSkeleton';
 import { toast } from 'sonner';
@@ -138,11 +138,7 @@ export function Home() {
     if (activeTab === 'tags' && currentUser) await fetchTagsFeed();
   }, [fetchForYouFeed, fetchFollowingFeed, fetchTagsFeed, activeTab, currentUser]);
 
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(handleRefresh);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, handleRefresh]);
+  usePullToRefreshForPage(handleRefresh, '/');
 
   const recentContributors = useMemo(() => {
     const seen = new Set<number>();

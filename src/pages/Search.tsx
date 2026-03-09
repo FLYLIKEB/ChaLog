@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { Search as SearchIcon, Plus, Loader2, Store, Filter } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -202,11 +202,7 @@ export function Search() {
     }
   }, [showResults, hasTagParams, urlTagsStr, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
 
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(handleRefresh);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, handleRefresh]);
+  usePullToRefreshForPage(handleRefresh, '/sasaek');
 
   useEffect(() => {
     const trimmedQuery = searchQuery.trim();

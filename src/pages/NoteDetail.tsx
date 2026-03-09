@@ -24,7 +24,6 @@ import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 export function NoteDetail() {
@@ -85,16 +84,6 @@ export function NoteDetail() {
     if (isDeleted) return;
     fetchData();
   }, [noteId, isDeleted, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    if (!isDeleted) {
-      registerRefresh(fetchData);
-    } else {
-      registerRefresh(undefined);
-    }
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData, isDeleted]);
 
   if (isLoading) {
     return (
