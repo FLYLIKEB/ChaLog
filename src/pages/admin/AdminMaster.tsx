@@ -165,6 +165,10 @@ export function AdminMaster() {
             const v = (form.elements.namedItem('dtPrice') as HTMLInputElement)?.value?.trim();
             return v === '' ? null : parseInt(v, 10);
           })(),
+          weight: (() => {
+            const v = (form.elements.namedItem('dtWeight') as HTMLInputElement)?.value?.trim();
+            return v === '' ? null : parseInt(v, 10);
+          })(),
         };
         await adminApi.updateTea(detailOpen.id, dto);
         adminApi.getTeas({ search: search || undefined }).then(setTeas);
@@ -614,6 +618,7 @@ export function AdminMaster() {
                   <div><Label>판매처</Label><Input name="dtSeller" defaultValue={detailData.seller ?? ''} placeholder="찻집 이름" /></div>
                   <div><Label>원산지</Label><Input name="dtOrigin" defaultValue={detailData.origin ?? ''} /></div>
                   <div><Label>가격</Label><Input name="dtPrice" type="number" defaultValue={detailData.price ?? ''} /></div>
+                  <div><Label>무게 (g)</Label><Input name="dtWeight" type="number" min={0} defaultValue={detailData.weight ?? ''} /></div>
                   <div><Label>평균 평점 / 리뷰 수</Label><p className="text-sm">{detailData.averageRating ?? 0} / {detailData.reviewCount ?? 0}</p></div>
                   <div><Label>차록 수</Label><p className="text-sm">{detailData.noteCount ?? 0}</p></div>
                   <div><Label>생성/수정일</Label><p className="text-sm">{detailData.createdAt ? new Date(detailData.createdAt).toLocaleString() : '-'} / {detailData.updatedAt ? new Date(detailData.updatedAt).toLocaleString() : '-'}</p></div>

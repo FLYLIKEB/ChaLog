@@ -228,6 +228,7 @@ describe('NewTea 페이지', () => {
       seller: '새 찻집',
       origin: '한국 제주도',
       price: undefined,
+      weight: undefined,
     });
 
     await waitFor(() => {
@@ -339,6 +340,7 @@ describe('NewTea 페이지', () => {
       seller: undefined,
       origin: undefined,
       price: undefined,
+      weight: undefined,
     });
   });
 

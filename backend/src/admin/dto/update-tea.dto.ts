@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, Min, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsInt, Min, IsIn } from 'class-validator';
 import { ALLOWED_TEA_TYPES } from '../../teas/dto/create-tea.dto';
 
 export class UpdateTeaDto {
@@ -32,7 +32,7 @@ export class UpdateTeaDto {
   price?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(0)
   weight?: number;
 }

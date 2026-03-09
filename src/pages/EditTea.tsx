@@ -444,7 +444,7 @@ export function EditTea() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs">산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
+              <Label htmlFor="edit-origin" className="text-xs">산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
               <div className="flex flex-wrap gap-2">
                 {getOriginsForTeaType(type).map((o) => (
                   <Button
@@ -461,6 +461,7 @@ export function EditTea() {
                 ))}
               </div>
               <Input
+                id="edit-origin"
                 type="text"
                 placeholder="직접 입력 (예: 윈난, 다즐링)"
                 value={origin}

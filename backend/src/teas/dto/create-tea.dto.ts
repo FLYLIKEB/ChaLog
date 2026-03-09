@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, Min, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsInt, Min, IsIn } from 'class-validator';
 
 // 허용된 차 종류 목록 (6대다류 순서)
 export const ALLOWED_TEA_TYPES = ['녹차', '백차', '황차', '우롱차', '홍차', '흑차', '보이차', '대용차'] as const;
@@ -35,7 +35,7 @@ export class CreateTeaDto {
   price?: number;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
   @Min(0)
   weight?: number;
 }

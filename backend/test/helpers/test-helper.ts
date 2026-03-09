@@ -127,6 +127,7 @@ export class TestHelper {
       year: teaData.year,
       type: teaData.type,
       origin: teaData.origin,
+      ...(teaData.weight != null ? { weight: teaData.weight } : {}),
     };
     if (teaData.sellerId != null) {
       payload.sellerId = teaData.sellerId;

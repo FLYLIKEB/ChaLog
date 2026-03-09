@@ -1035,6 +1035,7 @@ export interface CreateTeaRequest {
   seller?: string;
   origin?: string;
   price?: number;
+  weight?: number;
 }
 
 export interface UpdateTeaRequest {
@@ -1044,6 +1045,7 @@ export interface UpdateTeaRequest {
   seller?: string;
   origin?: string;
   price?: number;
+  weight?: number;
 }
 
 
