@@ -13,13 +13,6 @@
         },
         {
             "type": "node-terminal",
-            "name": "스크립트 실행: start",
-            "request": "launch",
-            "command": "npm run start",
-            "cwd": "${workspaceFolder}/backend"
-        },
-        {
-            "type": "node-terminal",
             "name": "🚀 로컬 서버 시작 (start-local.sh)",
             "request": "launch",
             "command": "bash scripts/start-local.sh",
