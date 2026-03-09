@@ -70,7 +70,7 @@ export function TeaDetail() {
       const [tagsResult, reviewsResult, similarResult] = await Promise.allSettled([
         teasApi.getPopularTags(teaId),
         teasApi.getTopReviews(teaId),
-        teasApi.getSimilarTeas(teaId),
+        teasApi.getSimilarTeasByTags(teaId, 6),
       ]);
 
       setTea(teaData as Tea);
@@ -268,10 +268,10 @@ export function TeaDetail() {
           </section>
         )}
 
-        {/* 유사 맞춤차 */}
+        {/* 더 살펴보기 - 태그 기반 추천 */}
         {similarTeas.length > 0 && (
           <section>
-            <h2 className="mb-3">비슷한 차</h2>
+            <h2 className="mb-3">더 살펴보기</h2>
             <div
               className="flex gap-3 overflow-x-auto pb-2"
               data-testid="similar-teas"

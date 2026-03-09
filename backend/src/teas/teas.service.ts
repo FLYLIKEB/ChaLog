@@ -493,6 +493,74 @@ export class TeasService {
       .getMany();
   }
 
+  async findTeasByTags(params: {
+    tags: string[];
+    sort?: 'match' | 'popular' | 'recent';
+    limit?: number;
+    excludeTeaId?: number;
+  }): Promise<Tea[]> {
+    const tags = params.tags?.filter((t) => t?.trim()).map((t) => t.trim()) ?? [];
+    if (tags.length === 0) return [];
+
+    const sortType = params.sort ?? 'match';
+    const take = Math.min(Math.max(1, params.limit ?? 50), 100);
+
+    const placeholders = tags.map(() => '?').join(',');
+    const args: (string | number)[] = [...tags];
+    if (params.excludeTeaId != null) {
+      args.push(params.excludeTeaId);
+    }
+    args.push(take);
+
+    const orderClause =
+      sortType === 'match'
+        ? 'ORDER BY COUNT(DISTINCT t.id) DESC, tea.reviewCount DESC, tea.averageRating DESC, tea.id ASC'
+        : sortType === 'popular'
+          ? 'ORDER BY tea.reviewCount DESC, tea.averageRating DESC, tea.id ASC'
+          : 'ORDER BY MAX(n.createdAt) DESC, tea.id ASC';
+
+    const excludeClause = params.excludeTeaId != null ? 'AND tea.id != ?' : '';
+
+    const rows = await this.dataSource.query(
+      `SELECT tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.price,
+              tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
+       FROM teas tea
+       JOIN notes n ON n.teaId = tea.id AND n.isPublic = 1
+       JOIN note_tags nt ON nt.noteId = n.id
+       JOIN tags t ON t.id = nt.tagId AND t.name IN (${placeholders})
+       WHERE 1=1 ${excludeClause}
+       GROUP BY tea.id, tea.name, tea.year, tea.type, tea.seller, tea.origin, tea.price,
+                tea.averageRating, tea.reviewCount, tea.createdAt, tea.updatedAt
+       ${orderClause}
+       LIMIT ?`,
+      args,
+    );
+
+    return rows.map((r: any) => ({
+      ...r,
+      averageRating: Number(r.averageRating),
+      reviewCount: Number(r.reviewCount),
+    })) as Tea[];
+  }
+
+  async getSimilarTeasByTags(teaId: number, limit = 6): Promise<Tea[]> {
+    await this.assertTeaExists(teaId);
+
+    const { tags } = await this.getPopularTags(teaId);
+    if (tags.length === 0) {
+      return this.getSimilarTeas(teaId).then((arr) => arr.slice(0, limit));
+    }
+
+    const tagNames = tags.map((t) => t.name);
+    const result = await this.findTeasByTags({
+      tags: tagNames,
+      sort: 'match',
+      limit: Math.min(Math.max(1, limit), 20),
+      excludeTeaId: teaId,
+    });
+    return result;
+  }
+
   private async assertTeaExists(teaId: number): Promise<Tea> {
     const tea = await this.teasRepository.findOne({ where: { id: teaId } });
     if (!tea) {

@@ -103,6 +103,21 @@ export class TeasController {
     return this.teasService.findBySeller(decodeURIComponent(name));
   }
 
+  @Get('by-tags')
+  getByTags(
+    @Query('tags') tagsStr?: string,
+    @Query('sort') sort?: 'match' | 'popular' | 'recent',
+    @Query('limit') limitStr?: string,
+  ) {
+    const tags = tagsStr?.split(',').map((t) => t.trim()).filter(Boolean) ?? [];
+    const limit = limitStr ? parseInt(limitStr, 10) : 50;
+    return this.teasService.findTeasByTags({
+      tags,
+      sort: sort && ['match', 'popular', 'recent'].includes(sort) ? sort : 'match',
+      limit: Number.isNaN(limit) ? 50 : limit,
+    });
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.teasService.findOne(parseTeaId(id));
@@ -129,5 +144,11 @@ export class TeasController {
   @Get(':id/similar')
   getSimilarTeas(@Param('id') id: string) {
     return this.teasService.getSimilarTeas(parseTeaId(id));
+  }
+
+  @Get(':id/similar-by-tags')
+  getSimilarTeasByTags(@Param('id') id: string, @Query('limit') limitStr?: string) {
+    const limit = limitStr ? parseInt(limitStr, 10) : 6;
+    return this.teasService.getSimilarTeasByTags(parseTeaId(id), Number.isNaN(limit) ? 6 : limit);
   }
 }

@@ -12,7 +12,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
-import { teasApi } from '../lib/api';
+import { teasApi, tagsApi } from '../lib/api';
 import { Tea, Seller } from '../types';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
@@ -24,6 +24,12 @@ const SORT_OPTIONS = [
   { key: 'rating' as const, label: '평점순' },
 ];
 
+const SORT_OPTIONS_WITH_MATCH = [
+  { key: 'match' as const, label: '일치율순' },
+  { key: 'popular' as const, label: '인기도순' },
+  { key: 'recent' as const, label: '최신순' },
+];
+
 const MIN_RATING_OPTIONS = [
   { value: undefined, label: '전체' },
   { value: 4, label: '4점 이상' },
@@ -33,9 +39,10 @@ const MIN_RATING_OPTIONS = [
 export function Search() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | null;
+  const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | 'match' | 'recent' | null;
   const urlType = searchParams.get('type');
   const urlMinRating = searchParams.get('minRating');
+  const urlTags = searchParams.get('tags')?.split(',').map((t) => t.trim()).filter(Boolean) ?? [];
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,29 +53,31 @@ export function Search() {
   const [filterMinRating, setFilterMinRating] = useState<number | undefined>(() =>
     urlMinRating ? parseFloat(urlMinRating) : undefined,
   );
-  const [filterSort, setFilterSort] = useState<'popular' | 'new' | 'rating'>(() =>
-    urlSort && ['popular', 'new', 'rating'].includes(urlSort) ? urlSort : 'popular',
+  const [filterSort, setFilterSort] = useState<'popular' | 'new' | 'rating' | 'match' | 'recent'>(() =>
+    urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort) ? urlSort : 'popular',
   );
 
   useEffect(() => {
     if (urlType !== null) setFilterType(urlType);
     if (urlMinRating !== null) setFilterMinRating(parseFloat(urlMinRating));
-    if (urlSort && ['popular', 'new', 'rating'].includes(urlSort)) setFilterSort(urlSort);
+    if (urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort)) setFilterSort(urlSort);
   }, [urlType, urlMinRating, urlSort]);
 
   const [popularTeas, setPopularTeas] = useState<Tea[]>([]);
   const [newTeas, setNewTeas] = useState<Tea[]>([]);
   const [curationTeas, setCurationTeas] = useState<Tea[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [popularTags, setPopularTags] = useState<{ name: string; noteCount: number }[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
 
   const fetchSections = useCallback(async () => {
     setSectionsLoading(true);
-    const [popularRes, newRes, curationRes, sellersRes] = await Promise.allSettled([
+    const [popularRes, newRes, curationRes, sellersRes, tagsRes] = await Promise.allSettled([
       teasApi.getPopularRankings(10),
       teasApi.getNewRankings(3),
       teasApi.getCuration(3),
       teasApi.getSellers(),
+      tagsApi.getPopularTags(15),
     ]);
     if (popularRes.status === 'fulfilled') {
       setPopularTeas(Array.isArray(popularRes.value) ? popularRes.value : []);
@@ -89,6 +98,14 @@ export function Search() {
       setSellers(sellersRes.value.sellers);
     } else if (sellersRes.status === 'rejected') {
       logger.error('Failed to fetch sellers:', sellersRes.reason);
+    }
+    if (tagsRes.status === 'fulfilled' && Array.isArray(tagsRes.value)) {
+      setPopularTags(
+        tagsRes.value.map((t: { name: string; noteCount: number }) => ({
+          name: t.name,
+          noteCount: t.noteCount ?? 0,
+        })),
+      );
     }
     const anyFailed =
       popularRes.status === 'rejected' ||
@@ -132,16 +149,24 @@ export function Search() {
   }, []);
 
   const fetchWithFilters = useCallback(
-    async (params: { q?: string; type?: string; minRating?: number; sort?: string }) => {
+    async (params: { q?: string; type?: string; minRating?: number; sort?: string; tags?: string[] }) => {
       try {
         setIsLoading(true);
-        const data = await teasApi.getWithFilters({
-          q: params.q || undefined,
-          type: params.type || undefined,
-          minRating: params.minRating,
-          sort: (params.sort as 'popular' | 'new' | 'rating') || 'popular',
-        });
-        setTeas(Array.isArray(data) ? data : []);
+        if (params.tags && params.tags.length > 0) {
+          const tagSort = ['match', 'popular', 'recent'].includes(params.sort || '')
+            ? (params.sort as 'match' | 'popular' | 'recent')
+            : 'match';
+          const data = await teasApi.getByTags(params.tags, tagSort, 50);
+          setTeas(Array.isArray(data) ? data : []);
+        } else {
+          const data = await teasApi.getWithFilters({
+            q: params.q || undefined,
+            type: params.type || undefined,
+            minRating: params.minRating,
+            sort: (params.sort as 'popular' | 'new' | 'rating') || 'popular',
+          });
+          setTeas(Array.isArray(data) ? data : []);
+        }
       } catch (error) {
         logger.error('Filter failed:', error);
         toast.error('필터 결과를 불러오는데 실패했습니다.');
@@ -152,15 +177,28 @@ export function Search() {
     [],
   );
 
-  const hasFilterParams = urlSort || urlType || urlMinRating;
+  const hasTagParams = urlTags.length > 0;
+  const hasFilterParams = urlSort || urlType || urlMinRating || hasTagParams;
   const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
   const handleRefresh = useCallback(async () => {
     if (showResults) {
-      await fetchWithFilters({ q: searchQuery || undefined, type: filterType || undefined, minRating: filterMinRating, sort: filterSort });
+      if (hasTagParams) {
+        await fetchWithFilters({
+          tags: urlTags,
+          sort: ['match', 'popular', 'recent'].includes(filterSort) ? filterSort : 'match',
+        });
+      } else {
+        await fetchWithFilters({
+          q: searchQuery || undefined,
+          type: filterType || undefined,
+          minRating: filterMinRating,
+          sort: filterSort,
+        });
+      }
     } else {
       await fetchSections();
     }
-  }, [showResults, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
+  }, [showResults, hasTagParams, urlTags, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
 
   const registerRefresh = useRegisterRefresh();
   useEffect(() => {
@@ -185,14 +223,21 @@ export function Search() {
   useEffect(() => {
     if (hasFilterParams) {
       setHasSearched(true);
-      fetchWithFilters({
-        q: searchQuery.trim() || undefined,
-        type: urlType || undefined,
-        minRating: urlMinRating ? parseFloat(urlMinRating) : undefined,
-        sort: urlSort || 'popular',
-      });
+      if (hasTagParams) {
+        fetchWithFilters({
+          tags: urlTags,
+          sort: urlSort && ['match', 'popular', 'recent'].includes(urlSort) ? urlSort : 'match',
+        });
+      } else {
+        fetchWithFilters({
+          q: searchQuery.trim() || undefined,
+          type: urlType || undefined,
+          minRating: urlMinRating ? parseFloat(urlMinRating) : undefined,
+          sort: urlSort || 'popular',
+        });
+      }
     }
-  }, [hasFilterParams, urlSort, urlType, urlMinRating, fetchWithFilters, searchQuery]);
+  }, [hasFilterParams, hasTagParams, urlTags, urlSort, urlType, urlMinRating, fetchWithFilters, searchQuery]);
 
   useEffect(() => {
     if (!searchQuery.trim() && !hasSearched && !hasFilterParams) {
@@ -200,21 +245,42 @@ export function Search() {
     }
   }, [searchQuery, hasSearched, hasFilterParams, fetchSections]);
 
+  useEffect(() => {
+    if (showResults && popularTags.length === 0) {
+      tagsApi.getPopularTags(15).then((data) => {
+        setPopularTags(
+          (data as { name: string; noteCount: number }[]).map((t) => ({
+            name: t.name,
+            noteCount: t.noteCount ?? 0,
+          })),
+        );
+      });
+    }
+  }, [showResults, popularTags.length]);
+
   const applyFilters = useCallback(() => {
     const params = new URLSearchParams();
     params.set('sort', filterSort);
     if (filterType) params.set('type', filterType);
     if (filterMinRating != null && !Number.isNaN(filterMinRating))
       params.set('minRating', String(filterMinRating));
+    if (urlTags.length > 0) params.set('tags', urlTags.join(','));
     setSearchParams(params);
     setHasSearched(true);
-    fetchWithFilters({
-      q: searchQuery.trim() || undefined,
-      type: filterType || undefined,
-      minRating: filterMinRating,
-      sort: filterSort,
-    });
-  }, [filterSort, filterType, filterMinRating, searchQuery, setSearchParams, fetchWithFilters]);
+    if (urlTags.length > 0) {
+      fetchWithFilters({
+        tags: urlTags,
+        sort: ['match', 'popular', 'recent'].includes(filterSort) ? filterSort : 'match',
+      });
+    } else {
+      fetchWithFilters({
+        q: searchQuery.trim() || undefined,
+        type: filterType || undefined,
+        minRating: filterMinRating,
+        sort: filterSort,
+      });
+    }
+  }, [filterSort, filterType, filterMinRating, searchQuery, urlTags, setSearchParams, fetchWithFilters]);
 
   const SECTION_TITLES: Record<string, string> = {
     popular: '🏆 사랑받는 차',
@@ -224,15 +290,33 @@ export function Search() {
   const resultsTitle =
     urlSection && SECTION_TITLES[urlSection]
       ? SECTION_TITLES[urlSection]
-      : searchQuery.trim()
-        ? '🔍 검색 결과'
-        : '🔍 차 사색';
+      : urlTags.length > 0
+        ? `🔍 #${urlTags.join(', #')} 추천`
+        : searchQuery.trim()
+          ? '🔍 검색 결과'
+          : '🔍 차 사색';
 
   const goBackToExplore = useCallback(() => {
     setSearchParams({});
     setSearchQuery('');
     setHasSearched(false);
   }, [setSearchParams]);
+
+  const handleTagClick = useCallback(
+    (tagName: string) => {
+      const newTags = urlTags.includes(tagName)
+        ? urlTags.filter((t) => t !== tagName)
+        : [...urlTags, tagName];
+      const params = new URLSearchParams();
+      if (newTags.length > 0) {
+        params.set('tags', newTags.join(','));
+        params.set('sort', 'match');
+      }
+      setSearchParams(params);
+      setHasSearched(true);
+    },
+    [urlTags, setSearchParams],
+  );
 
   const handleMorePopular = () => {
     setSearchParams({ sort: 'popular', section: 'popular' });
@@ -277,6 +361,29 @@ export function Search() {
               <Filter className="w-4 h-4" />
               필터
             </div>
+            {/* 향미 태그 선택 */}
+            <div>
+              <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
+              <div className="flex flex-wrap gap-2">
+                {popularTags.slice(0, 12).map((tag) => (
+                  <button
+                    key={tag.name}
+                    type="button"
+                    onClick={() => handleTagClick(tag.name)}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                      urlTags.includes(tag.name)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 hover:bg-muted/80'
+                    }`}
+                  >
+                    #{tag.name}
+                    {tag.noteCount > 0 && (
+                      <span className="text-xs opacity-70">({tag.noteCount})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex flex-wrap gap-2">
               {TEA_TYPES.map((type) => (
                 <button
@@ -314,7 +421,7 @@ export function Search() {
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm text-muted-foreground">정렬:</span>
-              {SORT_OPTIONS.map((opt) => (
+              {(hasTagParams ? SORT_OPTIONS_WITH_MATCH : SORT_OPTIONS).map((opt) => (
                 <button
                   key={opt.key}
                   type="button"
@@ -459,6 +566,35 @@ export function Search() {
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">등록된 차가 없습니다.</p>
+                  )}
+                </Section>
+
+                <Section
+                  title="🏷️ 향미로 탐색"
+                  description="좋아하는 향미를 선택하면 비슷한 차를 추천해드려요."
+                  spacing="lg"
+                >
+                  {popularTags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {popularTags.slice(0, 15).map((tag) => (
+                        <button
+                          key={tag.name}
+                          type="button"
+                          onClick={() => {
+                            setSearchParams({ tags: tag.name, sort: 'match' });
+                            setHasSearched(true);
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-border/60 bg-background hover:bg-muted/80 transition-colors"
+                        >
+                          #{tag.name}
+                          {tag.noteCount > 0 && (
+                            <span className="text-xs text-muted-foreground">({tag.noteCount})</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground py-4">인기 향미를 불러오는 중...</p>
                   )}
                 </Section>
 
