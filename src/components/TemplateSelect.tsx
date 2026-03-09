@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Pin, PinOff, Search, ChevronDown, X } from 'lucide-react';
+import { Pin, PinOff, Search, ChevronDown, X, Info } from 'lucide-react';
 import { Input } from './ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from './ui/popover';
 import { cn } from './ui/utils';
 import { RatingSchema } from '../types';
 import { notesApi } from '../lib/api';
@@ -135,6 +140,27 @@ export function TemplateSelect({
                 <X className="h-3 w-3" />
               </button>
               <span>{schema.nameKo}</span>
+              {schema.descriptionKo?.trim() && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      onClick={e => e.stopPropagation()}
+                      className="shrink-0 rounded p-0.5 opacity-80 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                      aria-label={`${schema.nameKo} 설명 보기`}
+                    >
+                      <Info className="h-3 w-3" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    side="top"
+                    className="max-w-[280px] text-sm"
+                  >
+                    <p className="text-muted-foreground">{schema.descriptionKo}</p>
+                  </PopoverContent>
+                </Popover>
+              )}
             </span>
           ))}
         </div>
@@ -207,7 +233,30 @@ export function TemplateSelect({
                       isSelected && 'bg-accent/50'
                     )}
                   >
-                    <span className="truncate">{schema.nameKo}</span>
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                      <span className="truncate">{schema.nameKo}</span>
+                      {schema.descriptionKo?.trim() && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              onClick={e => e.stopPropagation()}
+                              className="shrink-0 rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                              aria-label={`${schema.nameKo} 설명 보기`}
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            align="start"
+                            side="top"
+                            className="max-w-[280px] text-sm"
+                          >
+                            <p className="text-muted-foreground">{schema.descriptionKo}</p>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
                     {isAuthenticated && (
                       <button
                         type="button"

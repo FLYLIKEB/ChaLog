@@ -24,6 +24,16 @@ export class CreateSchemaAxisDto {
   nameEn: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  descriptionKo?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  descriptionEn?: string;
+
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(5)

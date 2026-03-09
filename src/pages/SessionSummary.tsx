@@ -250,6 +250,8 @@ export function SessionSummary() {
                     onChange={(value) =>
                       setAxisValues((prev) => ({ ...prev, [axis.id]: value }))
                     }
+                    minValue={axis.minValue}
+                    maxValue={axis.maxValue}
                   />
                 ))}
             </div>

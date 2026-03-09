@@ -13,12 +13,22 @@ const MAX = 5;
 const STEP = 0.25;
 const STAR_COLOR = 'var(--rating)';
 
+/** 5점 척도 → 10점 환산 (value × 10/max, 예: 5점→10점) */
+function toScore10(value: number, max: number): number {
+  if (max <= 0) return 0;
+  return value * (10 / max);
+}
+
 interface AxisStarRowProps {
   label: string;
   value: number;
   onChange: (value: number) => void;
   /** 축별 설명 (있으면 Info 아이콘으로 도움말 표시) */
   description?: string | null;
+  /** 축 최소값 (10점 환산용, 기본 1) */
+  minValue?: number;
+  /** 축 최대값 (10점 환산용, 기본 5) */
+  maxValue?: number;
 }
 
 function clamp(v: number) {
@@ -30,6 +40,8 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
   value,
   onChange,
   description,
+  minValue = MIN,
+  maxValue = MAX,
 }) => {
   const validatedValue = clamp(value);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -124,9 +136,14 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
               );
             })}
           </div>
-          <span className="w-9 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
-            {validatedValue.toFixed(2)}
-          </span>
+          <div className="flex items-baseline gap-1.5 shrink-0">
+            <span className="text-xs text-muted-foreground tabular-nums" aria-label="10점 환산">
+              {toScore10(validatedValue, maxValue).toFixed(1)}
+            </span>
+            <span className="w-9 text-right text-sm font-semibold tabular-nums text-foreground">
+              {validatedValue.toFixed(2)}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-2 pl-16">
           <Slider

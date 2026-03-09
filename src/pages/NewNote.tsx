@@ -468,6 +468,8 @@ export function NewNote() {
                         onChange={(value) =>
                           setAxisValues((prev) => ({ ...prev, [axis.id]: value }))
                         }
+                        minValue={axis.minValue}
+                        maxValue={axis.maxValue}
                       />
                     ))}
                   </div>
