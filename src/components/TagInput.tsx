@@ -14,7 +14,6 @@ interface TagInputProps {
 
 export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,24 +33,6 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
       return normalizedTag.includes(normalizedInput);
     });
   }, [inputValue, tags]);
-
-  // 위치 계산 대신 입력창 바로 아래에 고정 표시
-
-  // 외부 클릭 시 추천 목록 닫기
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node) &&
-        !(event.target as Element).closest('[data-tag-suggestions]')
-      ) {
-        setShowSuggestions(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -105,7 +86,6 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
       }
     } else if (e.key === 'Escape') {
       e.preventDefault();
-      setShowSuggestions(false);
       inputRef.current?.blur();
     }
   };
@@ -130,7 +110,6 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
     // 태그 추가
     onChange([...tags, trimmedTag]);
     setInputValue('');
-    setShowSuggestions(false);
     
     // 입력 필드에 포커스 유지
     setTimeout(() => {
@@ -149,15 +128,32 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
     addTag(tag);
   };
 
-  const shouldShowSuggestions = showSuggestions && filteredSuggestions.length > 0;
-
   return (
     <div
       ref={containerRef}
       className="space-y-2"
-      onTouchStart={() => setShowSuggestions(true)}
     >
       <Label>향미</Label>
+
+      {/* 맞춤차 향미 - 항상 위에 표시 */}
+      <div className="rounded-lg border border-border/60 bg-muted/30 p-2">
+        <p className="text-xs text-muted-foreground mb-2 px-1">맞춤차 향미</p>
+        <div className="flex flex-wrap gap-2">
+          {filteredSuggestions.slice(0, 20).map((tag) => (
+            <Button
+              key={tag}
+              type="button"
+              variant="outline"
+              size="sm"
+              className="min-h-[32px] h-auto py-1 px-2 text-[11px] leading-none"
+              onClick={() => handleSuggestionClick(tag)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              {tag}
+            </Button>
+          ))}
+        </div>
+      </div>
       
       {/* 입력된 태그 표시 */}
       {tags.length > 0 && (
@@ -193,51 +189,9 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
           onKeyDown={handleInputKeyDown}
           onCompositionStart={handleCompositionStart}
           onCompositionEnd={handleCompositionEnd}
-          onFocus={() => {
-            setShowSuggestions(true);
-          }}
-          onBlur={(e) => {
-            const nextTarget = e.relatedTarget as HTMLElement | null;
-            if (
-              nextTarget &&
-              (containerRef.current?.contains(nextTarget) ||
-                nextTarget.closest('[data-tag-suggestions]'))
-            ) {
-              return;
-            }
-            setShowSuggestions(false);
-          }}
           disabled={tags.length >= maxTags}
         />
 
-        {/* 추천 태그 목록 - 입력창 바로 아래 */}
-        {shouldShowSuggestions && (
-          <div
-            data-tag-suggestions
-            className="absolute z-50 mt-2 w-full bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto"
-          >
-            <div className="p-2">
-              <p className="text-xs text-gray-500 mb-2 px-2">맞춤차 향미</p>
-              <div className="flex flex-wrap gap-2">
-                {filteredSuggestions.slice(0, 12).map((tag) => (
-                  <Button
-                    key={tag}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="min-h-[32px] h-auto py-1 px-2 text-[11px] leading-none"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onTouchStart={() => setShowSuggestions(true)}
-                    onClick={() => handleSuggestionClick(tag)}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    {tag}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 도움말 텍스트 */}
