@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { logger } from "./lib/logger";
 
 // 전역 에러 핸들러 추가 (모바일 디버깅용)
 // HMR 등으로 여러 번 평가될 때 중복 등록 방지
@@ -8,7 +9,7 @@ if (typeof window !== "undefined" && !window.__chalLogErrorHandlerRegistered) {
   window.__chalLogErrorHandlerRegistered = true;
 
   window.addEventListener('error', (event) => {
-    console.error('[Global Error Handler]', {
+    logger.error('[Global Error Handler]', {
       message: event.message,
       filename: event.filename,
       lineno: event.lineno,
@@ -20,7 +21,7 @@ if (typeof window !== "undefined" && !window.__chalLogErrorHandlerRegistered) {
   });
 
   window.addEventListener('unhandledrejection', (event) => {
-    console.error('[Unhandled Promise Rejection]', {
+    logger.error('[Unhandled Promise Rejection]', {
       reason: event.reason,
       promise: event.promise,
       error: event.reason instanceof Error ? {

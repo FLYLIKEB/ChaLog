@@ -178,27 +178,20 @@ export function NoteDetail() {
   };
 
   const handleBookmarkClick = async () => {
-    console.log('북마크 버튼 클릭됨 (Detail)', { noteId, user, isTogglingBookmark });
-    
     if (!user) {
       toast.error('로그인이 필요합니다.');
       return;
     }
 
     if (isTogglingBookmark || isNaN(noteId)) {
-      console.log('북마크 처리 불가:', { isTogglingBookmark, noteId });
       return;
     }
 
     try {
-      console.log('북마크 API 호출 시작 (Detail)', noteId);
       setIsTogglingBookmark(true);
       const result = await notesApi.toggleBookmark(noteId);
-      console.log('북마크 API 호출 성공 (Detail)', result, 'bookmarked:', result.bookmarked);
       setIsBookmarked(result.bookmarked);
-      console.log('북마크 상태 업데이트 (Detail):', result.bookmarked);
     } catch (error: any) {
-      console.error('북마크 API 호출 실패 (Detail)', error);
       logger.error('Failed to toggle bookmark:', error);
       toast.error('북마크 처리에 실패했습니다.');
     } finally {
