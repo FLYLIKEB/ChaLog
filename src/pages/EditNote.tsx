@@ -3,6 +3,8 @@ import { useNavigate, useParams, useSearchParams, Link } from 'react-router-dom'
 import { Check, Loader2, Plus } from 'lucide-react';
 import { Header } from '../components/Header';
 import { AxisStarRow } from '../components/AxisStarRow';
+import { StarRating } from '../components/StarRating';
+import { AddTemplateModal } from '../components/AddTemplateModal';
 import { ImageUploader } from '../components/ImageUploader';
 import { TagInput } from '../components/TagInput';
 import { Input } from '../components/ui/input';
@@ -10,6 +12,8 @@ import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import { TemplateSelect } from '../components/TemplateSelect';
+import { RatingGuideModal } from '../components/RatingGuideModal';
 import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
 import { Tea, Note, RatingSchema, RatingAxis } from '../types';
@@ -31,7 +35,9 @@ export function EditNote() {
   const [teas, setTeas] = useState<Tea[]>([]);
   const [selectedTea, setSelectedTea] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [schema, setSchema] = useState<RatingSchema | null>(null);
+  const [schemas, setSchemas] = useState<RatingSchema[]>([]);
+  const [pinnedSchemaIds, setPinnedSchemaIds] = useState<number[]>([]);
+  const [selectedSchemaIds, setSelectedSchemaIds] = useState<number[]>([]);
   const [axes, setAxes] = useState<RatingAxis[]>([]);
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
   const [overallRating, setOverallRating] = useState<number | null>(null);
@@ -41,9 +47,16 @@ export function EditNote() {
   const [tags, setTags] = useState<string[]>([]);
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [addTemplateOpen, setAddTemplateOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [note, setNote] = useState<Note | null>(null);
   const teaInputRef = useRef<HTMLInputElement>(null);
+
+  const handleTemplateAdded = (schema: RatingSchema) => {
+    setSchemas(prev => [schema, ...prev]);
+    setPinnedSchemaIds(prev => [schema.id, ...prev]);
+    setSelectedSchemaIds(prev => (prev.includes(schema.id) ? prev : [schema.id, ...prev]));
+  };
 
   // 초기 로드 시 모든 차 목록 가져오기
   useEffect(() => {
@@ -60,34 +73,26 @@ export function EditNote() {
     fetchTeas();
   }, []);
 
-  // 스키마와 축 정보 가져오기
+  // 스키마 목록 가져오기
   useEffect(() => {
-    const fetchSchema = async () => {
+    const fetchSchemas = async () => {
       try {
         const res = await notesApi.getActiveSchemas();
         const list = res?.schemas ?? [];
+        const pinned = res?.pinnedSchemaIds ?? [];
         if (list.length > 0) {
-          const firstSchema = list[0];
-          setSchema(firstSchema);
-          
-          // 스키마의 축 정보 가져오기
-          const axesData = (await notesApi.getSchemaAxes(firstSchema.id)) as RatingAxis[];
-          if (Array.isArray(axesData)) {
-            setAxes(axesData);
-          } else {
-            logger.error('Failed to fetch schema axes: axes data is not an array');
-            toast.error('평가 스키마의 축 정보를 불러오는데 실패했습니다.');
-          }
+          setSchemas(list);
+          setPinnedSchemaIds(pinned);
         } else {
           logger.error('No active schema found');
           toast.error('활성 평가 스키마를 찾을 수 없습니다.');
         }
       } catch (error) {
-        logger.error('Failed to fetch schema:', error);
+        logger.error('Failed to fetch schemas:', error);
         toast.error('평가 스키마를 불러오는데 실패했습니다.');
       }
     };
-    fetchSchema();
+    fetchSchemas();
   }, []);
 
   // NewTea에서 돌아올 때 teaId 처리
@@ -148,17 +153,17 @@ export function EditNote() {
 
         setNote(normalizedNote);
         setSelectedTea(normalizedNote.teaId);
-        setOverallRating(normalizedNote.overallRating);
-        
+        setOverallRating(normalizedNote.overallRating ?? null);
+
         // 스키마와 축 정보 설정
         if (normalizedNote.schema) {
-          setSchema(normalizedNote.schema);
-          
+          setSelectedSchemaIds([normalizedNote.schema.id]);
+
           // 축 정보 가져오기
           try {
             const axesData = (await notesApi.getSchemaAxes(normalizedNote.schema.id)) as RatingAxis[];
-            setAxes(axesData);
-            
+            setAxes(Array.isArray(axesData) ? axesData : []);
+
             // axisValues 설정
             if (normalizedNote.axisValues && normalizedNote.axisValues.length > 0) {
               const initialValues: Record<number, number> = {};
@@ -167,9 +172,8 @@ export function EditNote() {
               });
               setAxisValues(initialValues);
             } else {
-              // 기본값 설정
               const initialValues: Record<number, number> = {};
-              axesData.forEach((axis: RatingAxis) => {
+              (Array.isArray(axesData) ? axesData : []).forEach((axis: RatingAxis) => {
                 initialValues[axis.id] = RATING_DEFAULT;
               });
               setAxisValues(initialValues);
@@ -216,23 +220,37 @@ export function EditNote() {
     }
   }, [noteId, isAuthenticated, user, navigate]);
 
-  // axisValues 변경 시 overallRating 자동 재계산
+  // 선택된 스키마 변경 시 축 정보 가져오기 (템플릿 변경 시에만, 초기 로드는 fetchNote에서 처리)
+  const initialSchemaSet = useRef(false);
   useEffect(() => {
-    if (axes.length === 0 || Object.keys(axisValues).length === 0) {
+    if (selectedSchemaIds.length === 0) {
+      setAxes([]);
+      setAxisValues({});
       return;
     }
-
-    const values = axes
-      .filter(axis => axisValues[axis.id] !== undefined)
-      .map(axis => axisValues[axis.id]);
-
-    if (values.length > 0) {
-      const calculatedRating = values.reduce((sum, val) => sum + val, 0) / values.length;
-      setOverallRating(calculatedRating);
-    } else {
-      setOverallRating(null);
+    const schemaId = selectedSchemaIds[0];
+    // 초기 로드 시에는 fetchNote에서 이미 axes/axisValues 설정함
+    if (!initialSchemaSet.current && note) {
+      initialSchemaSet.current = true;
+      return;
     }
-  }, [axisValues, axes]);
+    const fetchAxes = async () => {
+      try {
+        const axesData = (await notesApi.getSchemaAxes(schemaId)) as RatingAxis[];
+        const allAxes = Array.isArray(axesData) ? axesData : [];
+        setAxes(allAxes);
+        const initialValues: Record<number, number> = {};
+        allAxes.forEach((axis: RatingAxis) => {
+          initialValues[axis.id] = axisValues[axis.id] ?? RATING_DEFAULT;
+        });
+        setAxisValues(initialValues);
+      } catch (error) {
+        logger.error('Failed to fetch schema axes:', error);
+        toast.error('평가 축 정보를 불러오는데 실패했습니다.');
+      }
+    };
+    fetchAxes();
+  }, [selectedSchemaIds.join(',')]);
 
   // 검색 필터링
   const filteredTeas = teas.filter(tea => {
@@ -263,27 +281,32 @@ export function EditNote() {
       return;
     }
 
-    if (!schema) {
-      toast.error('평가 스키마를 불러오지 못했습니다.');
+    const schemaId = selectedSchemaIds[0];
+    if (!schemaId) {
+      toast.error('평가 스키마를 선택해주세요.');
       return;
     }
 
     try {
       setIsSaving(true);
-      
+
       // axisValues 배열 생성
       const axisValuesArray = axes
         .filter(axis => axisValues[axis.id] !== undefined)
         .map(axis => ({
           axisId: axis.id,
-          value: Math.max(RATING_MIN, Math.min(RATING_MAX, axisValues[axis.id])),
+          value: Math.max(
+            RATING_MIN,
+            Math.min(RATING_MAX, axisValues[axis.id]),
+          ),
         }));
 
-      // overallRating 계산 (축 값들의 평균) - 항상 현재 axisValues에서 재계산
-      const values = axisValuesArray.map(av => av.value);
-      const calculatedOverallRating = values.length > 0
-        ? values.reduce((sum, val) => sum + val, 0) / values.length
-        : null;
+      const calculatedOverallRating =
+        overallRating ??
+        (axisValuesArray.length > 0
+          ? axisValuesArray.reduce((sum, av) => sum + av.value, 0) /
+            axisValuesArray.length
+          : null);
 
       // memo 처리: 빈 문자열이나 공백만 있는 경우 null로 변환
       // 백엔드 API는 @IsOptional()로 memo를 선택적 필드로 허용하지만,
@@ -292,7 +315,7 @@ export function EditNote() {
 
       await notesApi.update(noteId, {
         teaId: selectedTea,
-        schemaId: schema.id,
+        schemaId,
         overallRating: calculatedOverallRating,
         isRatingIncluded: true,
         axisValues: axisValuesArray,
@@ -343,7 +366,7 @@ export function EditNote() {
 
   return (
     <div className="min-h-screen">
-      <Header showBack title="차록 수정" showProfile />
+      <Header showBack title="차록 수정" showProfile showLogo />
       
       <div className="p-4 pb-24 space-y-6">
         {/* 차 선택 영역 */}
@@ -356,15 +379,13 @@ export function EditNote() {
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
-              if (!filteredTeas.some(t => t.name === e.target.value)) {
-                setSelectedTea(null);
-              }
+              setSelectedTea(null);
             }}
           />
           
           {searchQuery && !selectedTea && filteredTeas.length > 0 && (
             <div
-              className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-white border rounded-lg shadow-lg divide-y max-h-48 overflow-y-auto"
+              className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-card border border-border rounded-lg shadow-lg divide-y divide-border max-h-48 overflow-y-auto"
               style={{
                 top: `${teaInputRef.current ? teaInputRef.current.getBoundingClientRect().bottom + 8 : 0}px`,
                 left: '50%',
@@ -413,12 +434,12 @@ export function EditNote() {
           )}
 
           {selectedTeaData && (
-            <div className="mt-2 py-2.5 px-3 bg-success/10 border border-success/30 rounded-lg">
+            <div className="mt-2 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg">
               <div className="flex items-center gap-2 mb-1">
-                <Check className="w-3.5 h-3.5 text-success" />
-                <span className="text-sm text-foreground font-medium">{selectedTeaData.name}</span>
+                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="text-sm text-emerald-900 dark:text-emerald-100">{selectedTeaData.name}</span>
               </div>
-              <div className="text-xs text-muted-foreground space-y-0.5">
+              <div className="text-xs text-emerald-700 dark:text-emerald-300 space-y-0.5">
                 {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
                 <p>종류: {selectedTeaData.type}</p>
                 {selectedTeaData.seller && (
@@ -437,32 +458,113 @@ export function EditNote() {
           )}
         </section>
 
-        {/* 평점 슬라이더 */}
+        {/* 1-5 평점 */}
         <section className="bg-card rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3>평가</h3>
-            <span className="text-xs text-muted-foreground tabular-nums">
-              1 ~ 5점
-            </span>
-          </div>
-          <div className="space-y-0 divide-y divide-border/60">
-            {axes
-              .sort((a, b) => a.displayOrder - b.displayOrder)
-              .map((axis) => (
-                <AxisStarRow
-                  key={axis.id}
-                  label={axis.nameKo}
-                  description={axis.descriptionKo ?? undefined}
-                  value={axisValues[axis.id] ?? RATING_DEFAULT}
-                  onChange={(value) =>
-                    setAxisValues(prev => ({ ...prev, [axis.id]: value }))
-                  }
-                  minValue={axis.minValue}
-                  maxValue={axis.maxValue}
-                />
-              ))}
-          </div>
+          <Label className="mb-3 block text-base font-semibold text-foreground">
+            평점 <span className="text-destructive">*</span>
+          </Label>
+          <p className="text-sm text-muted-foreground mb-2">
+            이 차에 몇 점을 주시겠어요?
+          </p>
+          <p className="text-xs text-muted-foreground mb-3">
+            같은 온도·시간에서 비교하면 일관된 평가가 가능해요.{' '}
+            <RatingGuideModal />
+          </p>
+          <StarRating
+            value={overallRating}
+            onChange={setOverallRating}
+            max={5}
+            size="lg"
+          />
         </section>
+
+        {/* 테이스팅 템플릿 선택 */}
+        <section className="bg-card rounded-lg p-4">
+          <Label className="mb-2 block text-base font-semibold text-foreground">
+            테이스팅 템플릿
+          </Label>
+          <p className="text-sm text-muted-foreground mb-2">
+            템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 검색·핀 고정 가능.
+          </p>
+          {schemas.length > 0 ? (
+            <TemplateSelect
+              schemas={schemas}
+              pinnedSchemaIds={pinnedSchemaIds}
+              onPinnedChange={setPinnedSchemaIds}
+              value={selectedSchemaIds}
+              onChange={(v) => setSelectedSchemaIds(Array.isArray(v) ? v : v != null ? [v] : [])}
+              onAddTemplate={() => setAddTemplateOpen(true)}
+              isAuthenticated={isAuthenticated}
+              multiple={false}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground py-2">
+              사용 가능한 템플릿이 없습니다.
+            </p>
+          )}
+        </section>
+
+        <AddTemplateModal
+          open={addTemplateOpen}
+          onOpenChange={setAddTemplateOpen}
+          onSuccess={handleTemplateAdded}
+        />
+
+        {/* 구체적 평가 */}
+        {selectedSchemaIds.length > 0 && axes.length > 0 && (
+          <section className="bg-card rounded-lg p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <h3 className="text-base font-semibold text-foreground">
+                구체적 평가
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  1 ~ 5점
+                </span>
+                <RatingGuideModal
+                  trigger={
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-foreground underline"
+                    >
+                      축 설명 보기
+                    </button>
+                  }
+                  schemaAxes={[...new Set(axes.map((a) => a.nameKo))]}
+                />
+              </div>
+            </div>
+            <div className="space-y-4">
+              {selectedSchemaIds.map((schemaId) => {
+                const schemaAxes = axes
+                  .filter((a) => a.schemaId === schemaId)
+                  .sort((a, b) => a.displayOrder - b.displayOrder);
+                const schema = schemas.find((s) => s.id === schemaId);
+                if (schemaAxes.length === 0) return null;
+                return (
+                  <div
+                    key={schemaId}
+                    className="space-y-0 divide-y divide-border/60 rounded-lg border border-border/60 overflow-hidden"
+                  >
+                    {schemaAxes.map((axis) => (
+                      <AxisStarRow
+                        key={axis.id}
+                        label={axis.nameKo}
+                        description={axis.descriptionKo ?? undefined}
+                        value={axisValues[axis.id] ?? RATING_DEFAULT}
+                        onChange={(value) =>
+                          setAxisValues((prev) => ({ ...prev, [axis.id]: value }))
+                        }
+                        minValue={axis.minValue}
+                        maxValue={axis.maxValue}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* 사진 업로드 */}
         <section className="bg-card rounded-lg p-4">
@@ -522,7 +624,7 @@ export function EditNote() {
       </div>
 
       {/* 저장 버튼 - 하단 고정 플로팅 */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/70 backdrop-blur-sm z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/80 dark:bg-background/90 backdrop-blur-sm z-40">
         <Button 
           onClick={handleSave} 
           className="w-full opacity-70 hover:opacity-100 transition-opacity"
@@ -534,7 +636,7 @@ export function EditNote() {
               저장 중...
             </>
           ) : (
-            '수정 완료'
+            '저장'
           )}
         </Button>
       </div>
