@@ -75,6 +75,8 @@ export function PullToRefreshProvider({ children }: { children: React.ReactNode 
           style={{
             WebkitOverflowScrolling: 'touch',
             scrollBehavior: 'auto',
+            scrollPaddingTop: 'var(--header-spacer)',
+            scrollPaddingBottom: 'var(--bottom-nav-spacer)',
           } as React.CSSProperties}
         >
         <div

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { commentsApi } from '../lib/api';
 import { toast } from 'sonner';
 import { Button } from './ui/button';
-import { cn } from './ui/utils';
+import { Textarea } from './ui/textarea';
 
 interface CommentListProps {
   postId: number;
@@ -91,12 +91,12 @@ export function CommentList({ postId, comments, onCommentsChange }: CommentListP
 
                 {editingId === comment.id ? (
                   <div className="flex flex-col gap-2 mt-1">
-                    <textarea
+                    <Textarea
                       value={editContent}
                       onChange={(e) => setEditContent(e.target.value)}
-                      className="w-full text-sm border border-border rounded-md p-2 resize-none focus:outline-none focus:ring-2 focus:ring-ring bg-background"
                       rows={2}
                       autoFocus
+                      className="min-h-0"
                     />
                     <div className="flex gap-2">
                       <Button
@@ -151,15 +151,10 @@ export function CommentList({ postId, comments, onCommentsChange }: CommentListP
       {/* 댓글 작성 폼 */}
       {user ? (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-1">
-          <textarea
+          <Textarea
             value={newContent}
             onChange={(e) => setNewContent(e.target.value)}
             placeholder="댓글을 입력하세요..."
-            className={cn(
-              'w-full text-sm border border-border rounded-lg p-3 resize-none',
-              'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-              'placeholder:text-muted-foreground',
-            )}
             rows={3}
             maxLength={1000}
           />

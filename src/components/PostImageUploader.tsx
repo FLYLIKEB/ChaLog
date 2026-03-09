@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from './ui/button';
+import { Textarea } from './ui/textarea';
 import { postsApi } from '../lib/api';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
@@ -154,13 +155,13 @@ export function PostImageUploader({
                   loading="lazy"
                 />
               </div>
-              <textarea
+              <Textarea
                 value={item.caption ?? ''}
                 onChange={(e) => handleCaptionChange(index, e.target.value)}
                 placeholder="이미지 설명 (선택)"
                 maxLength={300}
                 rows={2}
-                className="w-full text-xs border border-border rounded-lg px-2 py-1.5 resize-none focus:outline-none focus:ring-2 focus:ring-ring bg-background placeholder:text-muted-foreground"
+                className="min-h-0"
               />
               <button
                 type="button"

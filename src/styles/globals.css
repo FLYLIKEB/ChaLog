@@ -2,6 +2,7 @@
 
 :root {
   --header-spacer: calc(4.25rem + env(safe-area-inset-top, 0px));
+  --bottom-nav-spacer: calc(5rem + env(safe-area-inset-bottom, 0px));
   --font-size: 16px;
   /* 카드 공통 */
   --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
@@ -212,6 +213,13 @@
 
 html {
   font-size: var(--font-size);
+}
+
+/* 확대 후 줌아웃 시 input/textarea가 상하단 fixed 바에 가려지지 않도록 */
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+textarea {
+  scroll-margin-top: var(--header-spacer);
+  scroll-margin-bottom: var(--bottom-nav-spacer);
 }
 
 @layer utilities {

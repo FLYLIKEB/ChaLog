@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { Button } from '../../components/ui/button';
+import { Textarea } from '../../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Loader2, ExternalLink, Check, Trash2 } from 'lucide-react';
@@ -201,11 +202,11 @@ export function AdminReports() {
               해당 콘텐츠를 삭제합니다. 사유를 입력하세요 (선택).
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <textarea
+          <Textarea
             value={actionReason}
             onChange={(e) => setActionReason(e.target.value)}
             placeholder="조치 사유"
-            className="w-full border rounded p-2 min-h-[80px]"
+            className="min-h-[80px]"
           />
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>

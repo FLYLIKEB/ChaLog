@@ -8,6 +8,7 @@ import {
   DialogDescription,
 } from './ui/dialog';
 import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { usersApi } from '../lib/api';
 import { toast } from 'sonner';
 import { User } from '../types';
@@ -87,7 +88,7 @@ export function ProfileEditModal({
             <label htmlFor="profile-name" className="text-sm font-medium text-foreground">
               이름 <span className="text-destructive">*</span>
             </label>
-            <input
+            <Input
               id="profile-name"
               type="text"
               value={name}
@@ -95,7 +96,6 @@ export function ProfileEditModal({
               maxLength={50}
               placeholder="이름을 입력하세요"
               disabled={saving}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 transition-colors"
             />
           </div>
 
@@ -104,7 +104,7 @@ export function ProfileEditModal({
               한 줄 자기소개
             </label>
             <div className="relative">
-              <input
+              <Input
                 id="profile-bio"
                 type="text"
                 value={bio}
@@ -112,7 +112,7 @@ export function ProfileEditModal({
                 maxLength={150}
                 placeholder="차에 대한 짧은 소개를 남겨보세요"
                 disabled={saving}
-                className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 transition-colors pr-12"
+                className="pr-12"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
                 {bio.length}/150
@@ -124,7 +124,7 @@ export function ProfileEditModal({
             <label htmlFor="profile-instagram" className="text-sm font-medium text-foreground">
               인스타그램
             </label>
-            <input
+            <Input
               id="profile-instagram"
               type="url"
               value={instagramUrl}
@@ -132,7 +132,6 @@ export function ProfileEditModal({
               maxLength={500}
               placeholder="https://instagram.com/yourname"
               disabled={saving}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 transition-colors"
             />
           </div>
 
@@ -140,7 +139,7 @@ export function ProfileEditModal({
             <label htmlFor="profile-blog" className="text-sm font-medium text-foreground">
               블로그 / 웹사이트
             </label>
-            <input
+            <Input
               id="profile-blog"
               type="url"
               value={blogUrl}
@@ -148,7 +147,6 @@ export function ProfileEditModal({
               maxLength={500}
               placeholder="https://myblog.com"
               disabled={saving}
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 transition-colors"
             />
           </div>
 

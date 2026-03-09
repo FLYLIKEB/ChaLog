@@ -5,6 +5,8 @@ import { Post, PostCategory, POST_CATEGORY_LABELS, PostImageItem } from '../type
 import { postsApi } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -202,18 +204,13 @@ export function EditPost() {
           <label className="text-sm font-medium text-foreground" htmlFor="edit-title">
             제목 <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             id="edit-title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제목을 입력하세요"
             maxLength={200}
-            className={cn(
-              'w-full text-sm border border-border rounded-lg px-3 py-2.5',
-              'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-              'placeholder:text-muted-foreground',
-            )}
           />
           <span className="text-xs text-muted-foreground text-right">{title.length}/200</span>
         </div>
@@ -223,17 +220,12 @@ export function EditPost() {
           <label className="text-sm font-medium text-foreground" htmlFor="edit-content">
             내용 <span className="text-destructive">*</span>
           </label>
-          <textarea
+          <Textarea
             id="edit-content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="내용을 입력하세요"
             rows={8}
-            className={cn(
-              'w-full text-sm border border-border rounded-lg px-3 py-2.5 resize-none',
-              'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-              'placeholder:text-muted-foreground',
-            )}
           />
         </div>
 
@@ -281,17 +273,12 @@ export function EditPost() {
           </label>
 
           {isSponsored && (
-            <input
+            <Input
               type="text"
               value={sponsorNote}
               onChange={(e) => setSponsorNote(e.target.value)}
               placeholder="협찬 다실 또는 내용을 입력하세요 (선택)"
               maxLength={300}
-              className={cn(
-                'w-full text-sm border border-border rounded-lg px-3 py-2.5',
-                'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-                'placeholder:text-muted-foreground',
-              )}
             />
           )}
         </div>

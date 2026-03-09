@@ -7,8 +7,8 @@ export function BottomNavSpacer() {
     <div
       className="shrink-0 w-full"
       style={{
-        height: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
-        minHeight: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
+        height: 'var(--bottom-nav-spacer)',
+        minHeight: 'var(--bottom-nav-spacer)',
       }}
       aria-hidden
     />

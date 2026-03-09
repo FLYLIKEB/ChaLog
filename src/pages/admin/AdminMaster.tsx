@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
 import { Label } from '../../components/ui/label';
 import {
   Dialog,
@@ -632,7 +633,7 @@ export function AdminMaster() {
                   <div><Label>지도 URL</Label><Input name="dtMapUrl" defaultValue={detailData.mapUrl ?? ''} /></div>
                   <div><Label>웹사이트</Label><Input name="dtWebsiteUrl" defaultValue={detailData.websiteUrl ?? ''} /></div>
                   <div><Label>전화</Label><Input name="dtPhone" defaultValue={detailData.phone ?? ''} /></div>
-                  <div><Label>설명</Label><textarea name="dtDescription" defaultValue={detailData.description ?? ''} rows={3} className="w-full border rounded px-3 py-2 bg-background" /></div>
+                  <div><Label>설명</Label><Textarea name="dtDescription" defaultValue={detailData.description ?? ''} rows={3} /></div>
                   <div><Label>영업시간</Label><Input name="dtBusinessHours" defaultValue={detailData.businessHours ?? ''} /></div>
                   <div><Label>차 수</Label><p className="text-sm">{detailData.teaCount ?? 0}</p></div>
                   <div><Label>생성일</Label><p className="text-sm">{detailData.createdAt ? new Date(detailData.createdAt).toLocaleString() : '-'}</p></div>
@@ -772,7 +773,7 @@ export function AdminMaster() {
             </div>
             <div>
               <Label>설명</Label>
-              <textarea name="sellerDescription" rows={3} className="w-full border rounded px-3 py-2 bg-background" placeholder="찻집 소개" />
+              <Textarea name="sellerDescription" rows={3} placeholder="찻집 소개" />
             </div>
             <div>
               <Label>영업시간</Label>

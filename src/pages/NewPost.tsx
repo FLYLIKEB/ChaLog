@@ -5,6 +5,8 @@ import { PostCategory, POST_CATEGORY_LABELS, PostImageItem } from '../types';
 import { postsApi, CreatePostRequest } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -150,18 +152,13 @@ export function NewPost() {
           <label className="text-sm font-medium text-foreground" htmlFor="title">
             제목 <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="제목을 입력하세요"
             maxLength={200}
-            className={cn(
-              'w-full text-sm border border-border rounded-lg px-3 py-2.5',
-              'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-              'placeholder:text-muted-foreground',
-            )}
           />
           <span className="text-xs text-muted-foreground text-right">{title.length}/200</span>
         </div>
@@ -171,17 +168,12 @@ export function NewPost() {
           <label className="text-sm font-medium text-foreground" htmlFor="content">
             내용 <span className="text-destructive">*</span>
           </label>
-          <textarea
+          <Textarea
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="내용을 입력하세요"
             rows={8}
-            className={cn(
-              'w-full text-sm border border-border rounded-lg px-3 py-2.5 resize-none',
-              'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-              'placeholder:text-muted-foreground',
-            )}
           />
         </div>
 
@@ -229,17 +221,12 @@ export function NewPost() {
           </label>
 
           {isSponsored && (
-            <input
+            <Input
               type="text"
               value={sponsorNote}
               onChange={(e) => setSponsorNote(e.target.value)}
               placeholder="협찬 다실 또는 내용을 입력하세요 (선택)"
               maxLength={300}
-              className={cn(
-                'w-full text-sm border border-border rounded-lg px-3 py-2.5',
-                'focus:outline-none focus:ring-2 focus:ring-ring bg-background',
-                'placeholder:text-muted-foreground',
-              )}
             />
           )}
         </div>
