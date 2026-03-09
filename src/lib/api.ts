@@ -24,36 +24,32 @@ const API_BASE_URL = (() => {
   if (import.meta.env.PROD && typeof window !== 'undefined' && window.location.hostname.includes('vercel.app')) {
     // Vercel rewrites를 통해 /api로 프록시됨
     const baseURL = '/api';
-    if (typeof console !== 'undefined' && console.log) {
-      console.log('[API Config] 프로덕션 환경 (Vercel)', {
-        baseURL,
-        hostname: window.location.hostname,
-        origin: window.location.origin,
-        isMobile,
-        networkType: networkInfo?.effectiveType || 'unknown',
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'unknown',
-      });
-    }
+    logger.debug('[API Config] 프로덕션 환경 (Vercel)', {
+      baseURL,
+      hostname: window.location.hostname,
+      origin: window.location.origin,
+      isMobile,
+      networkType: networkInfo?.effectiveType || 'unknown',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'unknown',
+    });
     return baseURL;
   }
   // 개발 환경: Vite 프록시를 사용하여 같은 origin으로 요청 (CORS 문제 방지)
   // 환경 변수가 명시적으로 설정되어 있으면 사용, 없으면 /api 프록시 사용
   const baseURL = import.meta.env.VITE_API_BASE_URL || '/api';
-  if (typeof console !== 'undefined' && console.log) {
-    console.log('[API Config] 환경 설정', {
-      isProduction: import.meta.env.PROD,
-      isDevelopment: import.meta.env.DEV,
-      VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
-      finalBaseURL: baseURL,
-      hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
-      origin: typeof window !== 'undefined' ? window.location.origin : 'unknown',
-      isMobile,
-      networkType: networkInfo?.effectiveType || 'unknown',
-      networkDownlink: networkInfo?.downlink || 'unknown',
-      networkRtt: networkInfo?.rtt || 'unknown',
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'unknown',
-    });
-  }
+  logger.debug('[API Config] 환경 설정', {
+    isProduction: import.meta.env.PROD,
+    isDevelopment: import.meta.env.DEV,
+    VITE_API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    finalBaseURL: baseURL,
+    hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
+    origin: typeof window !== 'undefined' ? window.location.origin : 'unknown',
+    isMobile,
+    networkType: networkInfo?.effectiveType || 'unknown',
+    networkDownlink: networkInfo?.downlink || 'unknown',
+    networkRtt: networkInfo?.rtt || 'unknown',
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'unknown',
+  });
   return baseURL;
 })();
 
@@ -355,9 +351,9 @@ class ApiClient {
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
-    if (typeof navigator !== 'undefined' && typeof console !== 'undefined' && console.log) {
+    if (typeof navigator !== 'undefined') {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      console.log('[ApiClient] 초기화', {
+      logger.debug('[ApiClient] 초기화', {
         baseURL: this.baseURL,
         isMobile,
         userAgent: navigator.userAgent.substring(0, 100),
