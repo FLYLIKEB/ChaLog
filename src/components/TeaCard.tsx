@@ -18,22 +18,26 @@ export const TeaCard: FC<TeaCardProps> = ({ tea }) => {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="truncate font-medium text-foreground">{tea.name}</h3>
-          <div className="flex items-center gap-3 mt-2 text-muted-foreground">
-            <span className="text-sm">{tea.type}</span>
-            {tea.year && <span className="text-sm">{tea.year}년</span>}
-            {tea.price != null && tea.price > 0 && (
-              <span className="text-sm">
-                {tea.price.toLocaleString()}원
-                {tea.weight != null && tea.weight > 0 && ` · ${tea.weight}g`}
-              </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <h3 className="truncate font-medium text-foreground">{tea.name}</h3>
+            {tea.type && (
+              <span className="shrink-0 text-xs text-muted-foreground">{tea.type}</span>
             )}
           </div>
+          <p className="text-xs text-muted-foreground mt-1.5 truncate whitespace-nowrap">
+            {[
+              tea.year && `${tea.year}년`,
+              tea.price != null && tea.price > 0 && `${tea.price.toLocaleString()}원`,
+              tea.weight != null && tea.weight > 0 && `${tea.weight}g`,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
           {tea.price != null && tea.price > 0 && tea.weight != null && tea.weight > 0 && (
-            <p className="text-xs text-muted-foreground mt-0.5">정확한 정보가 아닐 수 있습니다</p>
+            <p className="text-[10px] text-muted-foreground/70 mt-0.5">정확한 정보가 아닐 수 있습니다</p>
           )}
           {tea.seller && (
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">
               <Link
                 to={`/teahouse/${encodeURIComponent(tea.seller)}`}
                 onClick={(e) => e.stopPropagation()}
