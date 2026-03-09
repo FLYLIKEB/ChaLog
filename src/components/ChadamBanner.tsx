@@ -35,6 +35,14 @@ export function ChadamBanner({ className }: ChadamBannerProps) {
         </svg>
       </div>
 
+      {/* 배경 로고 - 글자와 겹침 */}
+      <div
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-48 h-48 sm:w-64 sm:h-64 opacity-[0.12] pointer-events-none"
+        aria-hidden
+      >
+        <img src="/logo.png" alt="" className="w-full h-full object-contain" />
+      </div>
+
       <div className="relative flex flex-col gap-1.5">
         <div className="space-y-1">
           <p className="text-sm sm:text-base text-foreground/90 font-medium leading-snug">

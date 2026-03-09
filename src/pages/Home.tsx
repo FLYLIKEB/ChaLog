@@ -157,7 +157,7 @@ export function Home() {
         <Header showProfile showLogo />
         <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
           <HeroSection />
-          <Section title="📝 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
+          <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
@@ -188,7 +188,7 @@ export function Home() {
         <HeroSection />
 
         {/* 요즘 인기 차 섹션 */}
-        <Section title="🔥 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
+        <Section title="🍵 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingTeas.map((tea) => (
@@ -203,7 +203,7 @@ export function Home() {
         </Section>
 
         {/* 인기 다우 섹션 */}
-        <Section title="✨ 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
+        <Section title="🌿 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
           {trendingCreators.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
               {trendingCreators.map((creator) => (
@@ -218,7 +218,7 @@ export function Home() {
         </Section>
 
         {/* 차록 흐름 탭 섹션 */}
-        <Section title="📝 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
+        <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as FeedTab)}
@@ -246,7 +246,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="아직 등록된 차록이 없어요. 첫 차록을 남겨볼까요?"
-                action={{ label: '✍️ 첫 차록 쓰기', onClick: () => navigate('/note/new') }}
+                action={{ label: '첫 차록 쓰기', onClick: () => navigate('/note/new') }}
               />
             )}
           </TabsContent>
@@ -275,7 +275,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="구독한 다우의 차록이 없어요. 다우를 구독해 보세요!"
-                action={{ label: '🔍 사색하기', onClick: () => navigate('/sasaek') }}
+                action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </TabsContent>
@@ -331,7 +331,7 @@ export function Home() {
                   <EmptyState
                     type="feed"
                     message="구독한 테마의 공개 차록이 없어요."
-                    action={{ label: '🔍 테마 사색하기', onClick: () => navigate('/sasaek') }}
+                    action={{ label: '테마 사색하기', onClick: () => navigate('/sasaek') }}
                   />
                 )}
               </>

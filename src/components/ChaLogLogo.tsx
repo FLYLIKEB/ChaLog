@@ -18,7 +18,7 @@ export function ChaLogLogo({ iconOnly = false, className, asButton, onClick }: C
   const content = (
     <>
       <div className="flex items-center justify-center shrink-0 w-12 h-12">
-        <img src="/logo.jpg" alt="" className="w-12 h-12 object-contain" aria-hidden />
+        <img src="/logo.png" alt="" className="w-12 h-12 object-contain" aria-hidden />
       </div>
       {!iconOnly && (
         <span className="font-['Jua'] font-normal tracking-tight text-2xl pt-1">
