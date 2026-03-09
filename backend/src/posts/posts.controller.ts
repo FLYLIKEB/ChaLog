@@ -93,6 +93,12 @@ export class PostsController {
         throw error;
       }
       console.error('Image upload failed:', error);
+      const msg = String(error?.message ?? error).toLowerCase();
+      if (msg.includes('heif') || msg.includes('heic')) {
+        throw new BadRequestException(
+          'HEIC/HEIF 형식은 지원하지 않습니다. 사진 앱에서 JPEG 또는 PNG로 변환 후 업로드해 주세요.',
+        );
+      }
       throw new InternalServerErrorException('이미지 업로드 중 오류가 발생했습니다.');
     }
   }

@@ -70,7 +70,15 @@ export class PostsService {
         await manager.save(PostImage, postImages);
       }
 
-      return this.findOne(saved.id, userId);
+      const createdPost = await manager.findOne(Post, {
+        where: { id: saved.id },
+        relations: ['user', 'images'],
+      });
+      if (!createdPost) {
+        throw new NotFoundException('게시글을 찾을 수 없습니다.');
+      }
+      const enriched = await this.enrichPostsWithStats([createdPost], userId);
+      return enriched[0];
     });
   }
 
@@ -150,7 +158,15 @@ export class PostsService {
         }
       }
 
-      return this.findOne(id, userId);
+      const updatedPost = await manager.findOne(Post, {
+        where: { id },
+        relations: ['user', 'images'],
+      });
+      if (!updatedPost) {
+        throw new NotFoundException('게시글을 찾을 수 없습니다.');
+      }
+      const enriched = await this.enrichPostsWithStats([updatedPost], userId);
+      return enriched[0];
     });
   }
 

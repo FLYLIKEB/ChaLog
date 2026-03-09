@@ -106,11 +106,11 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
           {post.title}
         </h3>
 
-        {/* 첫 이미지 썸네일 */}
-        {post.images && post.images.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-0.5">
-              <div className="flex-shrink-0 w-14 h-14 rounded-lg overflow-hidden bg-muted">
+        {/* 이미지 + 내용 미리보기 (나란히 배치) */}
+        <div className="flex gap-3 items-start min-w-0">
+          {post.images && post.images.length > 0 && (
+            <div className="flex gap-1.5 shrink-0">
+              <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted">
                 <img
                   src={post.images[0].thumbnailUrl || post.images[0].url}
                   alt={post.images[0].caption || post.title}
@@ -119,24 +119,17 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
                 />
               </div>
               {post.images.length > 1 && (
-                <span className="flex items-center gap-0.5 text-xs text-muted-foreground shrink-0">
+                <span className="flex items-center gap-0.5 text-xs text-muted-foreground">
                   <ImageIcon className="w-3.5 h-3.5" />
                   +{post.images.length - 1}
                 </span>
               )}
             </div>
-            {post.images[0].caption && (
-              <p className="text-xs text-muted-foreground line-clamp-1">
-                {post.images[0].caption}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* 내용 미리보기 */}
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-          {post.content}
-        </p>
+          )}
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed min-w-0 flex-1">
+            {post.content.length > 100 ? `${post.content.slice(0, 100)}...` : post.content}
+          </p>
+        </div>
 
         {/* 하단: 작성자 + 통계 */}
         <div className="flex items-center justify-between gap-2 mt-1">

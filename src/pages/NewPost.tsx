@@ -62,8 +62,9 @@ export function NewPost() {
       const post = await postsApi.create(dto);
       toast.success('게시글이 작성되었습니다.');
       navigate(`/chadam/${post.id}`, { replace: true });
-    } catch {
-      toast.error('게시글 작성에 실패했습니다.');
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message;
+      toast.error(msg && typeof msg === 'string' ? msg : '게시글 작성에 실패했습니다.');
     } finally {
       setIsSubmitting(false);
     }
