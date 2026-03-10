@@ -65,6 +65,28 @@ export function Search() {
     if (urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort)) setFilterSort(urlSort);
   }, [urlType, urlMinRating, urlSort]);
 
+  const [selectedFlavorTag, setSelectedFlavorTag] = useState<string | null>(null);
+  const [flavorTeas, setFlavorTeas] = useState<Tea[]>([]);
+  const [isFlavorLoading, setIsFlavorLoading] = useState(false);
+
+  const handleFlavorTagClick = useCallback(async (tagName: string) => {
+    if (selectedFlavorTag === tagName) {
+      setSelectedFlavorTag(null);
+      setFlavorTeas([]);
+      return;
+    }
+    setSelectedFlavorTag(tagName);
+    setIsFlavorLoading(true);
+    try {
+      const data = await teasApi.getByTags([tagName], 'match', 20);
+      setFlavorTeas(Array.isArray(data) ? data : []);
+    } catch {
+      setFlavorTeas([]);
+    } finally {
+      setIsFlavorLoading(false);
+    }
+  }, [selectedFlavorTag]);
+
   const [popularTeas, setPopularTeas] = useState<Tea[]>([]);
   const [newTeas, setNewTeas] = useState<Tea[]>([]);
   const [curationTeas, setCurationTeas] = useState<Tea[]>([]);
@@ -552,24 +574,51 @@ export function Search() {
                   spacing="lg"
                 >
                   {popularTags.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {popularTags.slice(0, 15).map((tag) => (
-                        <button
-                          key={tag.name}
-                          type="button"
-                          onClick={() => {
-                            setSearchParams({ tags: tag.name, sort: 'match' });
-                            setHasSearched(true);
-                          }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-border/60 bg-background hover:bg-muted/80 transition-colors"
-                        >
-                          #{tag.name}
-                          {tag.noteCount > 0 && (
-                            <span className="text-xs text-muted-foreground">({tag.noteCount})</span>
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {popularTags.slice(0, 15).map((tag) => (
+                          <button
+                            key={tag.name}
+                            type="button"
+                            onClick={() => handleFlavorTagClick(tag.name)}
+                            className={cn(
+                              'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
+                              selectedFlavorTag === tag.name
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'border-border/60 bg-background hover:bg-muted/80',
+                            )}
+                          >
+                            #{tag.name}
+                            {tag.noteCount > 0 && (
+                              <span className="text-xs opacity-70">({tag.noteCount})</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedFlavorTag && (
+                        <div className="mt-4">
+                          {isFlavorLoading ? (
+                            <div className="flex gap-3 overflow-x-hidden">
+                              {[1, 2, 3].map((i) => (
+                                <div key={i} className="shrink-0 w-[200px]">
+                                  <TeaCardSkeleton />
+                                </div>
+                              ))}
+                            </div>
+                          ) : flavorTeas.length > 0 ? (
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                              {flavorTeas.map((tea) => (
+                                <div key={tea.id} className="shrink-0 w-[200px]">
+                                  <TeaCard tea={tea} />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground py-3">#{selectedFlavorTag} 향미의 차가 없습니다.</p>
                           )}
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">인기 향미를 불러오는 중...</p>
                   )}
