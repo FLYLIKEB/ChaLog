@@ -52,18 +52,17 @@ export const RECOMMENDED_NOTE_TAGS = [
   '온화함', '상쾌함', '따뜻함', '시원함', '은은함', '강렬함'
 ] as const;
 
-// 차 종류 (산화도 낮은 순: 녹→백→황→청(우롱)→홍→흑, + 보이차·대용차)
-export const TEA_TYPES = ['녹차', '백차', '황차', '우롱차', '홍차', '흑차', '보이차', '대용차'] as const;
+// 차 종류 (산화도 낮은 순: 녹→백→황→청/우롱→홍→흑/보이, + 대용차)
+export const TEA_TYPES = ['녹차', '백차', '황차', '청차/우롱차', '홍차', '흑차/보이차', '대용차'] as const;
 
 /** 차 종류별 색상 (칩/배지용) - 파스텔 톤, 차 색감 연상 */
 export const TEA_TYPE_COLORS: Record<(typeof TEA_TYPES)[number], string> = {
   녹차: 'bg-emerald-300 dark:bg-emerald-400',
   백차: 'bg-stone-200 dark:bg-stone-400',
   황차: 'bg-amber-300 dark:bg-amber-400',
-  우롱차: 'bg-blue-400 dark:bg-blue-500',
+  '청차/우롱차': 'bg-blue-400 dark:bg-blue-500',
   홍차: 'bg-rose-300 dark:bg-rose-400',
-  흑차: 'bg-slate-400 dark:bg-slate-500',
-  보이차: 'bg-amber-500 dark:bg-amber-600',
+  '흑차/보이차': 'bg-amber-500 dark:bg-amber-600',
   대용차: 'bg-slate-300 dark:bg-slate-500',
 };
 
@@ -72,10 +71,9 @@ export const TEA_TYPE_PLACEHOLDER_BG: Record<(typeof TEA_TYPES)[number], string>
   녹차: 'bg-emerald-300/40 dark:bg-emerald-400/30',
   백차: 'bg-stone-200/80 dark:bg-stone-400/30',
   황차: 'bg-amber-300/40 dark:bg-amber-400/30',
-  우롱차: 'bg-blue-400/40 dark:bg-blue-500/30',
+  '청차/우롱차': 'bg-blue-400/40 dark:bg-blue-500/30',
   홍차: 'bg-rose-300/40 dark:bg-rose-400/30',
-  흑차: 'bg-slate-400/40 dark:bg-slate-500/30',
-  보이차: 'bg-amber-500/40 dark:bg-amber-600/30',
+  '흑차/보이차': 'bg-amber-500/40 dark:bg-amber-600/30',
   대용차: 'bg-slate-300/40 dark:bg-slate-500/30',
 };
 
@@ -84,10 +82,9 @@ export const TEA_TYPE_TEXT_COLORS: Record<(typeof TEA_TYPES)[number], string> = 
   녹차: 'text-emerald-700 dark:text-emerald-400',
   백차: 'text-stone-600 dark:text-stone-400',
   황차: 'text-amber-700 dark:text-amber-400',
-  우롱차: 'text-blue-600 dark:text-blue-400',
+  '청차/우롱차': 'text-blue-600 dark:text-blue-400',
   홍차: 'text-rose-700 dark:text-rose-400',
-  흑차: 'text-slate-600 dark:text-slate-400',
-  보이차: 'text-amber-800 dark:text-amber-500',
+  '흑차/보이차': 'text-amber-800 dark:text-amber-500',
   대용차: 'text-slate-600 dark:text-slate-400',
 };
 
@@ -104,10 +101,9 @@ export const TEA_TYPE_ORIGINS: Record<(typeof TEA_TYPES)[number], readonly strin
   녹차: ['한국 제주도', '한국 보성', '한국 하동', '일본 시즈오카', '일본 교토 우지', '일본 가고시마', '중국 용정', '중국 푸젠', '대만 핑린', '베트남 탄응옌'],
   백차: ['중국 푸젠 복정', '중국 푸젠 정화', '중국 푸젠 무이산', '대만 핑린', '중국 건강', '인도 다즐링'],
   황차: ['중국 쓰촨 몽정산', '중국 푸젠', '중국 쓰촨', '중국 후난', '대만'],
-  우롱차: ['중국 운남성', '중국 푸젠 무이산', '중국 푸젠 안시', '대만 동정', '대만 문산', '대만 아리산', '중국 광동 펑황단총'],
+  '청차/우롱차': ['중국 푸젠 무이산', '중국 푸젠 안시', '중국 광동 펑황단총', '중국 운남성', '대만 동정', '대만 문산', '대만 아리산'],
   홍차: ['인도 다즐링', '인도 아삼', '인도 닐기리', '스리랑카 누완엘리야', '스리랑카 실론', '케냐', '중국 운남', '중국 푸젠', '대만 동정'],
-  흑차: ['중국 운남 시솽반나', '중국 운남 란창강', '중국 안후이 안화', '중국 후난 안화', '중국 운남', '중국 후난'],
-  보이차: ['중국 운남성 시솽반나', '중국 운남성 란창강', '중국 운남성', '미얀마', '라오스', '베트남'],
+  '흑차/보이차': ['중국 운남성 시솽반나', '중국 운남성 란창강', '중국 운남성', '중국 안후이 안화', '중국 후난 안화', '미얀마', '라오스', '베트남'],
   대용차: ['한국 제주도', '한국 보성', '중국 구이저우', '일본 홋카이도', '대만 핑린', '인도 다즐링', '베트남 탄응옌'],
 };
 
