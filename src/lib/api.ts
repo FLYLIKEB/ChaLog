@@ -1353,7 +1353,7 @@ export const blindSessionsApi = {
   create: (data: CreateBlindSessionRequest) =>
     apiClient.post<{ id: number; inviteCode: string; teaId: number; status: string }>('/blind-sessions', data),
   getByInviteCode: (inviteCode: string) =>
-    apiClient.get<{ id: number; inviteCode: string; status: string; hostName: string; participantCount: number }>(
+    apiClient.get<{ id: number; inviteCode: string; status: string; hostId: number; hostName: string; participantCount: number }>(
       `/blind-sessions/join/${encodeURIComponent(inviteCode)}`,
     ),
   join: (inviteCode: string) =>

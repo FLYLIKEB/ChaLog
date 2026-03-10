@@ -57,6 +57,7 @@ export class BlindTastingService {
     id: number;
     inviteCode: string;
     status: string;
+    hostId: number;
     hostName: string;
     participantCount: number;
   }> {
@@ -74,6 +75,7 @@ export class BlindTastingService {
       id: session.id,
       inviteCode: session.inviteCode,
       status: session.status,
+      hostId: session.hostId,
       hostName: session.host.name,
       participantCount: session.participants?.length ?? 0,
     };
