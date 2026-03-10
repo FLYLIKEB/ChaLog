@@ -225,6 +225,60 @@ export class BlindTastingService {
     return this.sessionsRepository.save(session);
   }
 
+  async getMyBlindSessions(userId: number): Promise<
+    Array<{
+      id: number;
+      status: string;
+      createdAt: Date;
+      endedAt: Date | null;
+      teaName: string | null;
+      teaType: string | null;
+      hostName: string;
+      participantCount: number;
+      isHost: boolean;
+    }>
+  > {
+    const hostedSessions = await this.sessionsRepository.find({
+      where: { hostId: userId },
+      relations: ['host', 'tea', 'participants'],
+      order: { createdAt: 'DESC' },
+    });
+
+    const participantRows = await this.participantsRepository.find({
+      where: { userId },
+      relations: ['session', 'session.host', 'session.tea', 'session.participants'],
+    });
+
+    const participatedSessionIds = new Set(participantRows.map((p) => p.sessionId));
+    const hostedSessionIds = new Set(hostedSessions.map((s) => s.id));
+
+    const participatedSessions = participantRows
+      .filter((p) => !hostedSessionIds.has(p.sessionId))
+      .map((p) => p.session);
+
+    const allSessions = [...hostedSessions, ...participatedSessions];
+
+    allSessions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    return allSessions.map((session) => {
+      const isHost = session.hostId === userId;
+      const isActive = session.status === BlindSessionStatus.ACTIVE;
+      const hideTeaInfo = isActive && !isHost;
+
+      return {
+        id: session.id,
+        status: session.status,
+        createdAt: session.createdAt,
+        endedAt: session.endedAt,
+        teaName: hideTeaInfo ? null : (session.tea?.name ?? null),
+        teaType: hideTeaInfo ? null : (session.tea?.type ?? null),
+        hostName: session.host?.name ?? '',
+        participantCount: session.participants?.length ?? 0,
+        isHost,
+      };
+    });
+  }
+
   async getComparisonReport(userId: number, sessionId: number): Promise<any> {
     const session = await this.sessionsRepository.findOne({
       where: { id: sessionId },

@@ -1390,7 +1390,21 @@ export const blindSessionsApi = {
         tagDistribution: Array<{ name: string; count: number }>;
       };
     }>(`/blind-sessions/${sessionId}/report`),
+  getMySessions: () =>
+    apiClient.get<BlindSessionSummary[]>('/blind-sessions/my'),
 };
+
+export interface BlindSessionSummary {
+  id: number;
+  status: string;
+  createdAt: string;
+  endedAt: string | null;
+  teaName: string | null;
+  teaType: string | null;
+  hostName: string;
+  participantCount: number;
+  isHost: boolean;
+}
 
 export const cellarApi = {
   getAll: () => apiClient.get<CellarItem[]>('/cellar'),

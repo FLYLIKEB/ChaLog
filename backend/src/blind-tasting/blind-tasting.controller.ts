@@ -38,6 +38,11 @@ export class BlindTastingController {
     return this.blindTastingService.join(userId, dto.inviteCode);
   }
 
+  @Get('my')
+  getMyBlindSessions(@UserId() userId: number) {
+    return this.blindTastingService.getMyBlindSessions(userId);
+  }
+
   @Get(':id')
   getSession(@UserId() userId: number, @Param('id') id: string) {
     const sessionId = this.parseId(id, 'id');
