@@ -266,11 +266,16 @@ function normalizeNote(note: BackendNote): NormalizedNote {
 /**
  * Note 배열 또는 단일 Note를 정규화
  */
-function normalizeNotes<T extends BackendNote | BackendNote[]>(data: T): T extends BackendNote[] ? NormalizedNote[] : NormalizedNote {
-  if (Array.isArray(data)) {
-    return data.map(normalizeNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
+function normalizeNotes(data: unknown): unknown {
+  // 페이지네이션 응답 { data, total, page, limit }
+  if (data && typeof data === 'object' && 'data' in data && 'total' in data && Array.isArray((data as Record<string, unknown>).data)) {
+    const paged = data as { data: BackendNote[]; total: number; page: number; limit: number };
+    return { ...paged, data: paged.data.map(normalizeNote) };
   }
-  return normalizeNote(data as BackendNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
+  if (Array.isArray(data)) {
+    return data.map(normalizeNote);
+  }
+  return normalizeNote(data as BackendNote);
 }
 
 /**

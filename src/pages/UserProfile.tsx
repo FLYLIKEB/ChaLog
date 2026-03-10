@@ -121,16 +121,27 @@ export function UserProfile() {
     fetchNotes(sort, 1);
   }, [sort, fetchNotes]);
 
-  const handleLoadMore = async () => {
-    setIsLoadingMore(true);
-    try {
-      await fetchNotes(sort, notePage + 1, true);
-    } finally {
-      setIsLoadingMore(false);
-    }
-  };
-
   const hasMore = notes.length < noteTotal;
+
+  // 무한 스크롤: 마지막 노트 카드 감지
+  const loadMoreRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!hasMore || isLoadingMore) return;
+    const el = loadMoreRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMore(true);
+          fetchNotes(sort, notePage + 1, true).finally(() => setIsLoadingMore(false));
+        }
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, isLoadingMore, sort, notePage, fetchNotes]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -494,17 +505,8 @@ export function UserProfile() {
                 ))}
               </div>
               {hasMore && (
-                <div className="flex justify-center mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
-                  >
-                    {isLoadingMore ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : null}
-                    더보기 ({notes.length}/{noteTotal})
-                  </Button>
+                <div ref={loadMoreRef} className="flex justify-center py-6">
+                  {isLoadingMore && <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />}
                 </div>
               )}
             </>
