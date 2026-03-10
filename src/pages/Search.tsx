@@ -535,7 +535,7 @@ export function Search() {
                 <Section title="✨ 맞춤차" spacing="lg">
                   <div className="flex gap-3 overflow-x-hidden">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="shrink-0 w-[200px]">
+                      <div key={i} className="shrink-0 w-[300px]">
                         <TeaCardSkeleton />
                       </div>
                     ))}
@@ -644,7 +644,7 @@ export function Search() {
                   {curationTeas.length > 0 ? (
                     <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                       {curationTeas.slice(0, 3).map((tea) => (
-                        <div key={tea.id} className="shrink-0 w-[200px]">
+                        <div key={tea.id} className="shrink-0 w-[300px]">
                           <TeaCard tea={tea} />
                         </div>
                       ))}
