@@ -76,10 +76,12 @@ export function BlindSessionReport() {
     );
   }
 
-  const axisChartData = report.stats.axisAverages.map((a) => ({
+  const axisAverages = report.stats.axisAverages;
+  const axisChartData = axisAverages.map((a) => ({
     name: a.axisName,
     평균: Math.round(a.avg * 10) / 10,
   }));
+  const axisDomainMax = Math.max(...axisAverages.map((a) => a.avg), 5);
 
   const tagChartData = report.stats.tagDistribution.slice(0, 10).map((t) => ({
     name: t.name,
@@ -116,7 +118,7 @@ export function BlindSessionReport() {
             <ChartContainer config={{ 평균: { label: '평균' } }} className="h-48">
               <BarChart data={axisChartData} layout="vertical" margin={{ left: 60, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" domain={[0, 5]} />
+                <XAxis type="number" domain={[0, axisDomainMax]} />
                 <YAxis type="category" dataKey="name" width={80} tick={{ fontSize: 12 }} />
                 <Bar dataKey="평균" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
               </BarChart>

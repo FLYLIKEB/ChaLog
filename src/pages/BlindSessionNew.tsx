@@ -15,7 +15,6 @@ export function BlindSessionNew() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [teas, setTeas] = useState<Tea[]>([]);
-  const teasRef = useRef<Tea[]>([]);
   const [selectedTea, setSelectedTea] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -31,13 +30,25 @@ export function BlindSessionNew() {
         const data = await teasApi.getAll();
         const teasArray = Array.isArray(data) ? data : [];
         setTeas(teasArray);
-        teasRef.current = teasArray;
       } catch (error) {
         logger.error('Failed to fetch teas:', error);
       }
     };
     fetchTeas();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (teaInputRef.current && !teaInputRef.current.contains(e.target as Node)) {
+        setSearchQuery((prev) => {
+          if (!selectedTea) return '';
+          return prev;
+        });
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedTea]);
 
   const filteredTeas = teas.filter((tea) => {
     const query = searchQuery.toLowerCase();

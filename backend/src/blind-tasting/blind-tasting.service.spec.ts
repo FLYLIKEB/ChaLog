@@ -14,7 +14,6 @@ describe('BlindTastingService', () => {
   let service: BlindTastingService;
   let sessionsRepository: jest.Mocked<Repository<BlindTastingSession>>;
   let participantsRepository: jest.Mocked<Repository<BlindSessionParticipant>>;
-  let notesRepository: jest.Mocked<Repository<Note>>;
   let teasService: jest.Mocked<TeasService>;
   let notesService: jest.Mocked<NotesService>;
 
@@ -77,7 +76,6 @@ describe('BlindTastingService', () => {
     service = module.get<BlindTastingService>(BlindTastingService);
     sessionsRepository = module.get(getRepositoryToken(BlindTastingSession));
     participantsRepository = module.get(getRepositoryToken(BlindSessionParticipant));
-    notesRepository = module.get(getRepositoryToken(Note));
     teasService = module.get(TeasService);
     notesService = module.get(NotesService);
   });

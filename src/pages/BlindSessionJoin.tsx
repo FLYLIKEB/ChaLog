@@ -99,7 +99,19 @@ export function BlindSessionJoin() {
     );
   }
 
-  if (!sessionInfo) return null;
+  if (!sessionInfo) {
+    return (
+      <div className="min-h-screen">
+        <Header showBack title="블라인드 세션 참가" showProfile showLogo />
+        <div className="p-4">
+          <p className="text-destructive">세션 정보를 불러올 수 없습니다.</p>
+          <Button className="mt-4" variant="outline" onClick={() => navigate('/')}>
+            홈으로
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
