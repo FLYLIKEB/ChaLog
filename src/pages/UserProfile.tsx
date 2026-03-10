@@ -80,22 +80,21 @@ export function UserProfile() {
     try {
       setIsLoading(true);
       setOnboardingPreference(null);
-      const [userData] = await Promise.all([
+      const promises: [Promise<unknown>, Promise<void>, Promise<UserOnboardingPreference | null>] = [
         usersApi.getById(userId),
         fetchNotes(sort),
-      ]);
+        isOwnProfile
+          ? usersApi.getOnboardingPreference(userId).catch((error) => {
+              if ((error as { statusCode?: number })?.statusCode !== 404) {
+                logger.warn('Failed to fetch onboarding preference:', error);
+              }
+              return null;
+            })
+          : Promise.resolve(null),
+      ];
+      const [userData, , pref] = await Promise.all(promises);
       setUser(userData as User);
-      if (isOwnProfile) {
-        try {
-          const pref = await usersApi.getOnboardingPreference(userId);
-          setOnboardingPreference(pref);
-        } catch (error) {
-          setOnboardingPreference(null);
-          if ((error as { statusCode?: number })?.statusCode !== 404) {
-            logger.warn('Failed to fetch onboarding preference:', error);
-          }
-        }
-      }
+      setOnboardingPreference(pref);
       initialLoadDone.current = true;
     } catch (error: unknown) {
       logger.error('Failed to fetch user profile:', error);
@@ -225,8 +224,41 @@ export function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
+      <div className="min-h-screen pb-20">
+        <Header
+          showBack={!isOwnProfile}
+          showProfile={isOwnProfile}
+          showLogo={isOwnProfile}
+          title={isOwnProfile ? '내 차록' : '사용자 프로필'}
+        />
+        <div className="p-6 space-y-6">
+          {/* 프로필 카드 스켈레톤 */}
+          <Card className="p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <div className="w-20 h-20 rounded-full bg-muted animate-pulse" />
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-6 w-24 rounded bg-muted animate-pulse" />
+                <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+              </div>
+            </div>
+          </Card>
+          {/* 통계 스켈레톤 */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-3 flex flex-col items-center gap-1">
+                <div className="h-5 w-8 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-12 rounded bg-muted animate-pulse" />
+              </Card>
+            ))}
+          </div>
+          {/* 노트 리스트 스켈레톤 */}
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
+        </div>
+        <BottomNav />
       </div>
     );
   }

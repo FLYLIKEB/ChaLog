@@ -291,11 +291,10 @@ export class NotesService {
 
       // 페이지네이션 적용
       if (page != null && limit != null) {
-        const total = await queryBuilder.getCount();
-        const notes = await queryBuilder
+        const [notes, total] = await queryBuilder
           .skip((page - 1) * limit)
           .take(limit)
-          .getMany();
+          .getManyAndCount();
         const data = await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
         return { data, total, page, limit };
       }
@@ -716,23 +715,33 @@ export class NotesService {
         });
       }
 
-      // 좋아요 수 조회
-      const likeCounts = await this.noteLikesRepository
-        .createQueryBuilder('like')
-        .select('like.noteId', 'noteId')
-        .addSelect('COUNT(like.id)', 'count')
-        .where('like.noteId IN (:...noteIds)', { noteIds })
-        .groupBy('like.noteId')
-        .getRawMany();
+      // 좋아요 수, 사용자 좋아요/북마크 여부를 병렬로 조회
+      const [likeCounts, userLikes, userBookmarks] = await Promise.all([
+        this.noteLikesRepository
+          .createQueryBuilder('like')
+          .select('like.noteId', 'noteId')
+          .addSelect('COUNT(like.id)', 'count')
+          .where('like.noteId IN (:...noteIds)', { noteIds })
+          .groupBy('like.noteId')
+          .getRawMany(),
+        currentUserId && noteIds.length > 0
+          ? this.noteLikesRepository.find({
+              where: { noteId: In(noteIds), userId: currentUserId },
+            })
+          : Promise.resolve([] as NoteLike[]),
+        currentUserId && noteIds.length > 0
+          ? this.noteBookmarksRepository.find({
+              where: { noteId: In(noteIds), userId: currentUserId },
+            })
+          : Promise.resolve([] as NoteBookmark[]),
+      ]);
 
       const likeCountMap = new Map<number, number>();
       likeCounts.forEach((item) => {
         try {
-          // TypeORM의 getRawMany()는 alias를 사용할 때 지정한 alias를 키로 사용
-          // 하지만 때때로 다른 형식으로 반환될 수 있으므로 안전하게 처리
           const noteId = item.noteId ?? item.like_noteId ?? item.note_id;
           const count = item.count ?? item.COUNT_like_id;
-          
+
           if (noteId !== undefined && count !== undefined) {
             const parsedCount = typeof count === 'string' ? parseInt(count, 10) : Number(count);
             const parsedNoteId = typeof noteId === 'string' ? parseInt(noteId, 10) : Number(noteId);
@@ -745,22 +754,7 @@ export class NotesService {
         }
       });
 
-      // 현재 사용자의 좋아요 여부 조회
-      let userLikes: NoteLike[] = [];
-      if (currentUserId && noteIds.length > 0) {
-        userLikes = await this.noteLikesRepository.find({
-          where: { noteId: In(noteIds), userId: currentUserId },
-        });
-      }
       const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
-
-      // 현재 사용자의 북마크 여부 조회
-      let userBookmarks: NoteBookmark[] = [];
-      if (currentUserId && noteIds.length > 0) {
-        userBookmarks = await this.noteBookmarksRepository.find({
-          where: { noteId: In(noteIds), userId: currentUserId },
-        });
-      }
       const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
 
       // 노트에 좋아요, 북마크, schemaIds 추가
