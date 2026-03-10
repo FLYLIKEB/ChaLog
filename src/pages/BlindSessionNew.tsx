@@ -23,6 +23,7 @@ export function BlindSessionNew() {
     inviteCode: string;
   } | null>(null);
   const teaInputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchTeas = async () => {
@@ -39,11 +40,11 @@ export function BlindSessionNew() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (teaInputRef.current && !teaInputRef.current.contains(e.target as Node)) {
-        setSearchQuery((prev) => {
-          if (!selectedTea) return '';
-          return prev;
-        });
+      const target = e.target as Node;
+      const isInsideInput = teaInputRef.current?.contains(target);
+      const isInsideDropdown = dropdownRef.current?.contains(target);
+      if (!isInsideInput && !isInsideDropdown) {
+        if (!selectedTea) setSearchQuery('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -155,6 +156,7 @@ export function BlindSessionNew() {
 
           {searchQuery && !selectedTea && filteredTeas.length > 0 && (
             <div
+              ref={dropdownRef}
               className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-card border border-border rounded-lg shadow-lg divide-y divide-border max-h-48 overflow-y-auto"
               style={{
                 top: `${
