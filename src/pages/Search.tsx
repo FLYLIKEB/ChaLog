@@ -222,7 +222,7 @@ export function Search() {
   );
 
   const hasTagParams = urlTags.length > 0;
-  const hasFilterParams = urlSort || urlType || urlMinRating || hasTagParams;
+  const hasFilterParams = !!(urlSort || urlType || urlMinRating || hasTagParams);
   const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
   const handleRefresh = useCallback(async () => {
     if (showResults) {

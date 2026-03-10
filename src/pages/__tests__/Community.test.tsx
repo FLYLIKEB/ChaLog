@@ -69,6 +69,7 @@ describe('Community 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),
@@ -89,8 +90,8 @@ describe('Community 페이지', () => {
     renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
-      expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
-      expect(screen.getByText('엄선 게시글')).toBeInTheDocument();
+      expect(screen.getAllByText('우림 질문입니다').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('엄선 게시글').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -124,6 +125,7 @@ describe('Community 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),
@@ -140,7 +142,7 @@ describe('Community 페이지', () => {
     renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
-      expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
+      expect(screen.getAllByText('우림 질문입니다').length).toBeGreaterThanOrEqual(1);
     });
 
     expect(screen.queryByLabelText('새 게시글 작성')).not.toBeInTheDocument();

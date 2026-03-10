@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, ArrowDownUp, ChevronRight } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import { PostCardSkeleton } from '../components/PostCardSkeleton';
 import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
 import { postsApi, type PostSort } from '../lib/api';
@@ -39,6 +40,8 @@ const GROUPS: Array<{ key: GroupKey; label: string; categories: PostCategory[] }
 // 데스크톱에서 표시할 게시판 그룹 (전체 제외)
 const DESKTOP_BOARDS = GROUPS.filter((g) => g.key !== 'all');
 
+const PAGE_SIZE = 20;
+
 export function Community() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -48,6 +51,9 @@ export function Community() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [selectedGroup, setSelectedGroup] = useState<GroupKey>('all');
   const [sort, setSort] = useState<PostSort>('latest');
 
@@ -60,13 +66,15 @@ export function Community() {
           ? group.categories[0]
           : group.categories;
     setIsLoading(true);
+    setPage(1);
     try {
       // 모바일: 선택된 그룹만 fetch / 데스크톱: 전체 fetch
       const [filtered, all] = await Promise.all([
-        postsApi.getAll(categoryParam, 1, 20, sort),
+        postsApi.getAll(categoryParam, 1, PAGE_SIZE, sort),
         isMobileRef.current ? Promise.resolve([]) : postsApi.getAll(undefined, 1, 50, sort),
       ]);
       setPosts(filtered);
+      setHasMore(filtered.length === PAGE_SIZE);
       if (!isMobileRef.current) setAllPosts(all);
     } catch {
       toast.error('게시글을 불러오는 데 실패했습니다.');
@@ -74,6 +82,28 @@ export function Community() {
       setIsLoading(false);
     }
   }, [selectedGroup, sort]);
+
+  const handleLoadMore = useCallback(async () => {
+    const group = GROUPS.find((g) => g.key === selectedGroup);
+    const categoryParam =
+      !group || group.categories.length === 0
+        ? undefined
+        : group.categories.length === 1
+          ? group.categories[0]
+          : group.categories;
+    const nextPage = page + 1;
+    setIsLoadingMore(true);
+    try {
+      const morePosts = await postsApi.getAll(categoryParam, nextPage, PAGE_SIZE, sort);
+      setPosts((prev) => [...prev, ...morePosts]);
+      setPage(nextPage);
+      setHasMore(morePosts.length === PAGE_SIZE);
+    } catch {
+      toast.error('게시글을 더 불러오는 데 실패했습니다.');
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [selectedGroup, sort, page]);
 
   useEffect(() => {
     fetchPosts();
@@ -162,10 +192,25 @@ export function Community() {
               ) : (
                 <div className="space-y-0 divide-y divide-border/30 pt-2">
                   {posts.map((post, i) => (
-                    <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 50}ms` }}>
+                    <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${Math.min(i, 5) * 50}ms` }}>
                       <PostCard post={post} />
                     </div>
                   ))}
+                </div>
+              )}
+              {/* 더 보기 버튼 */}
+              {!isLoading && hasMore && posts.length > 0 && (
+                <div className="flex justify-center pt-4 pb-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="w-full max-w-xs"
+                  >
+                    {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                    더 보기
+                  </Button>
                 </div>
               )}
             </div>
@@ -206,20 +251,37 @@ export function Community() {
                   })}
                 </div>
               ) : (
-                <div className="space-y-0 divide-y divide-border/30">
-                  {posts.map((post, i) => (
-                    <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 50}ms` }}>
-                      <PostCard post={post} />
+                <>
+                  <div className="space-y-0 divide-y divide-border/30">
+                    {posts.map((post, i) => (
+                      <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${Math.min(i, 5) * 50}ms` }}>
+                        <PostCard post={post} />
+                      </div>
+                    ))}
+                    {posts.length === 0 && (
+                      <EmptyState
+                        type="feed"
+                        message={`${GROUPS.find((g) => g.key === selectedGroup)?.label}에 아직 게시글이 없어요.`}
+                        action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
+                      />
+                    )}
+                  </div>
+                  {/* 데스크톱 특정 그룹에서도 더 보기 */}
+                  {hasMore && posts.length > 0 && (
+                    <div className="flex justify-center pt-4 pb-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLoadMore}
+                        disabled={isLoadingMore}
+                        className="w-full max-w-xs"
+                      >
+                        {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                        더 보기
+                      </Button>
                     </div>
-                  ))}
-                  {posts.length === 0 && (
-                    <EmptyState
-                      type="feed"
-                      message={`${GROUPS.find((g) => g.key === selectedGroup)?.label}에 아직 게시글이 없어요.`}
-                      action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
-                    />
                   )}
-                </div>
+                </>
               )}
             </div>
           </>

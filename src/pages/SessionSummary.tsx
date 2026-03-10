@@ -262,7 +262,7 @@ export function SessionSummary() {
               pinnedSchemaIds={pinnedSchemaIds}
               onPinnedChange={setPinnedSchemaIds}
               value={selectedSchemaId}
-              onChange={setSelectedSchemaId}
+              onChange={(v) => { if (!Array.isArray(v)) setSelectedSchemaId(v); }}
               isAuthenticated={isAuthenticated}
             />
           ) : (
