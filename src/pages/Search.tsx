@@ -490,16 +490,20 @@ export function Search() {
                   </div>
                 </Section>
                 <Section title="🆕 신규 차" spacing="lg">
-                  <div className="space-y-2">
+                  <div className="flex gap-3 overflow-x-hidden">
                     {[1, 2, 3].map((i) => (
-                      <TeaCardSkeleton key={i} />
+                      <div key={i} className="shrink-0 w-[200px]">
+                        <TeaCardSkeleton />
+                      </div>
                     ))}
                   </div>
                 </Section>
                 <Section title="✨ 맞춤차" spacing="lg">
-                  <div className="space-y-3">
+                  <div className="flex gap-3 overflow-x-hidden">
                     {[1, 2, 3].map((i) => (
-                      <TeaCardSkeleton key={i} />
+                      <div key={i} className="shrink-0 w-[200px]">
+                        <TeaCardSkeleton />
+                      </div>
                     ))}
                   </div>
                 </Section>
@@ -530,9 +534,11 @@ export function Search() {
                   spacing="lg"
                 >
                   {newTeas.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                       {newTeas.slice(0, 3).map((tea) => (
-                        <TeaNewCard key={tea.id} tea={tea} />
+                        <div key={tea.id} className="shrink-0 w-[200px]">
+                          <TeaNewCard tea={tea} />
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -575,9 +581,11 @@ export function Search() {
                   spacing="lg"
                 >
                   {curationTeas.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                       {curationTeas.slice(0, 3).map((tea) => (
-                        <TeaCard key={tea.id} tea={tea} />
+                        <div key={tea.id} className="shrink-0 w-[200px]">
+                          <TeaCard tea={tea} />
+                        </div>
                       ))}
                     </div>
                   ) : (
