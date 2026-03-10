@@ -16,7 +16,7 @@ import { teasApi, tagsApi } from '../lib/api';
 import { Tea, Seller } from '../types';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
-import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
+import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS, CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES, CARD_SKELETON_CONTAINER_CLASSES } from '../constants';
 import { cn } from '../components/ui/utils';
 
 const SORT_OPTIONS = [
@@ -515,27 +515,27 @@ export function Search() {
             {sectionsLoading ? (
               <div className="space-y-8">
                 <Section title="🏆 사랑받는 차" spacing="lg">
-                  <div className="flex gap-3 overflow-x-hidden">
+                  <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="shrink-0 w-[300px]">
+                      <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
                         <TeaCardSkeleton />
                       </div>
                     ))}
                   </div>
                 </Section>
                 <Section title="🆕 신규 차" spacing="lg">
-                  <div className="flex gap-3 overflow-x-hidden">
+                  <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="shrink-0 w-[300px]">
+                      <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
                         <TeaCardSkeleton />
                       </div>
                     ))}
                   </div>
                 </Section>
                 <Section title="✨ 맞춤차" spacing="lg">
-                  <div className="flex gap-3 overflow-x-hidden">
+                  <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="shrink-0 w-[300px]">
+                      <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
                         <TeaCardSkeleton />
                       </div>
                     ))}
@@ -550,9 +550,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {popularTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+                    <div className={CARD_CONTAINER_CLASSES}>
                       {popularTeas.slice(0, 10).map((tea, index) => (
-                        <div key={tea.id} className="shrink-0 w-[300px] flex">
+                        <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                           <TeaRankingCard tea={tea} rank={index + 1} />
                         </div>
                       ))}
@@ -568,9 +568,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {newTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+                    <div className={CARD_CONTAINER_CLASSES}>
                       {newTeas.slice(0, 3).map((tea) => (
-                        <div key={tea.id} className="shrink-0 w-[300px] flex">
+                        <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                           <TeaNewCard tea={tea} />
                         </div>
                       ))}
@@ -610,17 +610,17 @@ export function Search() {
                       {selectedFlavorTag && (
                         <div className="mt-4">
                           {isFlavorLoading ? (
-                            <div className="flex gap-3 overflow-x-hidden">
+                            <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                               {[1, 2, 3].map((i) => (
-                                <div key={i} className="shrink-0 w-[300px]">
+                                <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
                                   <TeaCardSkeleton />
                                 </div>
                               ))}
                             </div>
                           ) : flavorTeas.length > 0 ? (
-                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+                            <div className={CARD_CONTAINER_CLASSES}>
                               {flavorTeas.map((tea) => (
-                                <div key={tea.id} className="shrink-0 w-[300px] flex">
+                                <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                                   <TeaCard tea={tea} />
                                 </div>
                               ))}
@@ -642,9 +642,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {curationTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+                    <div className={CARD_CONTAINER_CLASSES}>
                       {curationTeas.slice(0, 3).map((tea) => (
-                        <div key={tea.id} className="shrink-0 w-[300px] flex">
+                        <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                           <TeaCard tea={tea} />
                         </div>
                       ))}

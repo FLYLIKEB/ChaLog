@@ -21,6 +21,8 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
+import { cn } from '../components/ui/utils';
+import { CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES } from '../constants';
 
 type FeedTab = 'forYou' | 'following' | 'tags';
 
@@ -190,9 +192,9 @@ export function Home() {
         {/* 요즘 인기 차 섹션 */}
         <Section title="🍵 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+            <div className={CARD_CONTAINER_CLASSES}>
               {trendingTeas.map((tea) => (
-                <div key={tea.id} className="shrink-0 w-[300px]">
+                <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                   <TeaCard tea={tea} />
                 </div>
               ))}
@@ -205,9 +207,9 @@ export function Home() {
         {/* 인기 다우 섹션 */}
         <Section title="🌿 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
           {trendingCreators.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+            <div className={CARD_CONTAINER_CLASSES}>
               {trendingCreators.map((creator) => (
-                <div key={creator.id} className="shrink-0 w-[200px] flex">
+                <div key={creator.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.DEFAULT)}>
                   <CreatorCard user={creator} followerCount={creator.followerCount} />
                 </div>
               ))}
@@ -231,11 +233,11 @@ export function Home() {
 
           <TabsContent value="forYou" className="mt-4">
             {publicNotes.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+              <div className={CARD_CONTAINER_CLASSES}>
                 {publicNotes.map((note, i) => (
                   <div
                     key={note.id}
-                    className="shrink-0 w-[300px] flex animate-fade-in-up opacity-0"
+                    className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE, 'animate-fade-in-up opacity-0')}
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <NoteCard note={note} showTeaName />
@@ -266,9 +268,9 @@ export function Home() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : followingNotes.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+              <div className={CARD_CONTAINER_CLASSES}>
                 {followingNotes.map(note => (
-                  <div key={note.id} className="shrink-0 w-[300px] flex">
+                  <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                     <NoteCard note={note} showTeaName />
                   </div>
                 ))}
@@ -314,9 +316,9 @@ export function Home() {
                   </div>
                 )}
                 {tagNotes.length > 0 ? (
-                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
+                  <div className={CARD_CONTAINER_CLASSES}>
                     {tagNotes.map(note => (
-                      <div key={note.id} className="shrink-0 w-[300px] flex">
+                      <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                         <NoteCard note={note} showTeaName />
                       </div>
                     ))}

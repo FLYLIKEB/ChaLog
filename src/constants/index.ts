@@ -15,6 +15,21 @@ export const RATING_FIELDS_COUNT = 5;
 export const NAVIGATION_DELAY = 500; // 밀리초
 export const SEARCH_DEBOUNCE_DELAY = 600; // 밀리초
 
+/** 가로 스크롤 카드 레이아웃 관련 상수 */
+export const CARD_WIDTH = {
+  DEFAULT: 'w-[200px]', // 인기 다우 등
+  WIDE: 'w-[300px]',    // 차 카드, 차록 카드 등
+} as const;
+
+/** 가로 스크롤 카드 컨테이너 공통 클래스 */
+export const CARD_CONTAINER_CLASSES = 'flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch';
+
+/** 가로 스크롤 카드 아이템 래퍼 공통 클래스 (너비는 CARD_WIDTH와 조합) */
+export const CARD_ITEM_WRAPPER_CLASSES = 'shrink-0 flex';
+
+/** 로딩 시 스켈레톤용 가로 스크롤 컨테이너 (스크롤 없음) */
+export const CARD_SKELETON_CONTAINER_CLASSES = 'flex gap-3 overflow-x-hidden';
+
 /** 앱 전체 페이지 배경 그라데이션 (라이트: 흰색→배경, 다크: 단색) */
 export const PAGE_BG_GRADIENT =
   'bg-gradient-to-b from-white to-background dark:from-background dark:to-background';
