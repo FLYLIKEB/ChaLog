@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { Link } from 'react-router-dom';
+import { BREW_COLORS } from '../components/BrewColorPicker';
 import { notesApi, teasApi } from '../lib/api';
 import { Note, Tea } from '../types';
 import { toast } from 'sonner';
@@ -401,6 +402,25 @@ export function NoteDetail() {
             </div>
           )}
         </section>
+
+        {/* 수색 */}
+        {note.appearance && (() => {
+          const bc = BREW_COLORS.find((c) => c.value === note.appearance);
+          return (
+            <section className="bg-card rounded-lg p-4">
+              <h3 className="mb-3 text-primary">수색</h3>
+              <div className="flex items-center gap-3">
+                <span
+                  className="inline-block w-8 h-8 rounded-full border border-border/50 shadow-sm"
+                  style={{ backgroundColor: bc?.hex ?? '#ccc' }}
+                />
+                <span className="text-sm font-medium">
+                  {bc?.label ?? note.appearance}
+                </span>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 이미지 갤러리 */}
         {note.images && note.images.length > 0 && (

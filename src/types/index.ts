@@ -125,6 +125,7 @@ export interface Note {
     valueNumeric: number;
     axis?: RatingAxis;
   }>;
+  appearance?: string | null;
   memo: string | null;
   images?: string[] | null;
   imageThumbnails?: string[] | null;

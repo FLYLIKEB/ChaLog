@@ -167,46 +167,57 @@ export function SessionInProgress() {
       <Header showBack title={session.tea?.name ?? '다회 세션'} showProfile showLogo />
 
       <div className="flex-1 flex flex-col p-4 pb-24">
-        {/* 타이머 - 뷰포트 상하 중앙 정렬 */}
-        <div className="flex-1 flex flex-col justify-center min-h-0 py-6">
-          <section className="bg-card rounded-xl py-12 px-6 flex flex-col items-center text-center">
+        {/* 타이머 */}
+        <div className="flex-1 flex flex-col justify-center min-h-0 py-8">
+          <section className="flex flex-col items-center text-center gap-10">
           <p
-            className="text-6xl sm:text-5xl font-bold tabular-nums mb-8 mx-auto tracking-wider"
+            className="text-7xl font-bold tabular-nums text-primary tracking-widest"
             style={{ fontFamily: "'Orbitron', monospace" }}
           >
             {formatTime(elapsedSeconds)}
           </p>
-          <div className="flex gap-6 justify-center items-center">
-            <Button
-              variant="outline"
-              className="min-h-[72px] min-w-[72px] rounded-full p-0 shrink-0 touch-manipulation"
+
+          <div className="flex gap-8 justify-center items-center">
+            <button
+              type="button"
+              onClick={() => setElapsedSeconds(0)}
+              className="w-[76px] h-[76px] rounded-full bg-muted/60 border border-border/40 flex items-center justify-center active:scale-95 transition-transform touch-manipulation"
+              aria-label="리셋"
+            >
+              <RotateCcw className="w-7 h-7 text-muted-foreground" />
+            </button>
+            <button
+              type="button"
               onClick={() => setIsRunning(!isRunning)}
+              className={`w-[96px] h-[96px] rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-all touch-manipulation ${
+                isRunning
+                  ? 'bg-muted border-2 border-border'
+                  : 'bg-primary text-primary-foreground'
+              }`}
               aria-label={isRunning ? '일시정지' : '시작'}
             >
               {isRunning ? (
-                <Pause className="w-9 h-9" />
+                <Pause className="w-10 h-10 text-foreground" />
               ) : (
-                <Play className="w-9 h-9 ml-0.5" />
+                <Play className="w-10 h-10 ml-1" />
               )}
-            </Button>
-            <Button
-              variant="outline"
-              className="min-h-[72px] min-w-[72px] rounded-full p-0 shrink-0 touch-manipulation"
-              onClick={() => setElapsedSeconds(0)}
-              aria-label="리셋"
+            </button>
+            <button
+              type="button"
+              onClick={handleCompleteSteep}
+              disabled={elapsedSeconds === 0}
+              className="w-[76px] h-[76px] rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center active:scale-95 transition-transform touch-manipulation disabled:opacity-30 disabled:active:scale-100"
+              aria-label="탕 완료"
             >
-              <RotateCcw className="w-8 h-8" />
-            </Button>
+              <Check className="w-7 h-7 text-primary" />
+            </button>
           </div>
-          <Button
-            className="mt-8 w-full max-w-sm mx-auto min-h-[60px] text-lg font-semibold touch-manipulation flex justify-center items-center"
-            size="lg"
-            onClick={handleCompleteSteep}
-            disabled={elapsedSeconds === 0}
-          >
-            <Check className="w-6 h-6 mr-2" />
-            탕 완료 ({formatTime(elapsedSeconds)})
-          </Button>
+
+          {elapsedSeconds > 0 && (
+            <p className="text-sm text-muted-foreground animate-pulse">
+              탕 완료 버튼을 눌러 기록하세요
+            </p>
+          )}
         </section>
         </div>
 
@@ -277,9 +288,31 @@ export function SessionInProgress() {
                     </div>
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">우려낸 시간</Label>
-                    <div className="mt-1 py-2.5 px-3 rounded-lg bg-muted text-sm">
-                      {pendingDuration}초
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">
+                      우려낸 시간 <span className="text-foreground font-semibold">{pendingDuration}초</span>
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPendingDuration((d) => Math.max(0, d - 5))}
+                        className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-lg font-medium touch-manipulation active:scale-95 transition-transform"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={0}
+                        value={pendingDuration}
+                        onChange={(e) => setPendingDuration(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                        className="flex-1 text-center py-2 rounded-lg bg-muted text-sm font-medium [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPendingDuration((d) => d + 5)}
+                        className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-lg font-medium touch-manipulation active:scale-95 transition-transform"
+                      >
+                        +
+                      </button>
                     </div>
                   </div>
                 </div>
