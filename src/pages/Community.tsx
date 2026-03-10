@@ -30,9 +30,9 @@ const GROUPS: Array<{ key: GroupKey; label: string; categories: PostCategory[] }
   {
     key: 'qna',
     label: '질문·토론',
-    categories: ['brewing_question', 'recommendation', 'tool'],
+    categories: ['brewing_question', 'recommendation', 'discussion'],
   },
-  { key: 'review', label: '리뷰', categories: ['tea_room_review'] },
+  { key: 'review', label: '리뷰', categories: ['tea_review', 'tool_review', 'tea_room_review'] },
   { key: 'announcement', label: '공지', categories: ['announcement'] },
   { key: 'report', label: '제보', categories: ['bug_report'] },
 ];

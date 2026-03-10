@@ -25,13 +25,17 @@ const WRITE_GROUPS: Array<{
     categories: [
       { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우림법, 온도, 시간 등' },
       { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation, hint: '차 추천 요청' },
-      { value: 'tool', label: POST_CATEGORY_LABELS.tool, hint: '도구·기구 관련' },
+      { value: 'discussion', label: POST_CATEGORY_LABELS.discussion, hint: '자유 주제 토론' },
     ],
   },
   {
     key: 'review',
     label: '리뷰',
-    categories: [{ value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review }],
+    categories: [
+      { value: 'tea_review', label: POST_CATEGORY_LABELS.tea_review, hint: '차 시음 후기' },
+      { value: 'tool_review', label: POST_CATEGORY_LABELS.tool_review, hint: '다기·도구 후기' },
+      { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review, hint: '찻집·카페 방문기' },
+    ],
   },
   {
     key: 'announcement',
