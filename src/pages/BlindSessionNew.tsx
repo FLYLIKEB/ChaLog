@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, Loader2, Plus, Copy } from 'lucide-react';
+import { Loader2, Plus, Copy, X } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -15,7 +15,7 @@ export function BlindSessionNew() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [teas, setTeas] = useState<Tea[]>([]);
-  const [selectedTea, setSelectedTea] = useState<number | null>(null);
+  const [selectedTeas, setSelectedTeas] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [createdSession, setCreatedSession] = useState<{
@@ -40,17 +40,15 @@ export function BlindSessionNew() {
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (teaInputRef.current && !teaInputRef.current.contains(e.target as Node)) {
-        setSearchQuery((prev) => {
-          if (!selectedTea) return '';
-          return prev;
-        });
+        setSearchQuery('');
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [selectedTea]);
+  }, []);
 
   const filteredTeas = teas.filter((tea) => {
+    if (!searchQuery) return false;
     const query = searchQuery.toLowerCase();
     return (
       tea.name.toLowerCase().includes(query) ||
@@ -59,7 +57,22 @@ export function BlindSessionNew() {
     );
   });
 
-  const selectedTeaData = selectedTea ? teas.find((t) => t.id === selectedTea) : null;
+  const handleSelectTea = (tea: Tea) => {
+    if (selectedTeas.includes(tea.id)) {
+      toast.error('이미 추가된 차입니다.');
+      return;
+    }
+    if (selectedTeas.length >= 10) {
+      toast.error('최대 10개까지 추가할 수 있습니다.');
+      return;
+    }
+    setSelectedTeas((prev) => [...prev, tea.id]);
+    setSearchQuery('');
+  };
+
+  const handleRemoveTea = (teaId: number) => {
+    setSelectedTeas((prev) => prev.filter((id) => id !== teaId));
+  };
 
   const handleStartSession = async () => {
     if (!isAuthenticated) {
@@ -68,14 +81,14 @@ export function BlindSessionNew() {
       return;
     }
 
-    if (!selectedTea) {
-      toast.error('차를 선택해주세요.');
+    if (selectedTeas.length === 0) {
+      toast.error('차를 최소 1개 선택해주세요.');
       return;
     }
 
     try {
       setIsCreating(true);
-      const session = await blindSessionsApi.create({ teaId: selectedTea });
+      const session = await blindSessionsApi.create({ teaIds: selectedTeas });
       setCreatedSession({ id: session.id, inviteCode: session.inviteCode });
       toast.success('블라인드 세션이 생성되었습니다.');
     } catch (error) {
@@ -141,19 +154,16 @@ export function BlindSessionNew() {
 
       <div className="p-4 pb-24 space-y-6">
         <section className="bg-card rounded-lg p-3">
-          <Label className="mb-1.5 block text-sm">차 선택 (참가자에게 숨김)</Label>
+          <Label className="mb-1.5 block text-sm">차 선택 (참가자에게 숨김, 최대 10개)</Label>
           <Input
             ref={teaInputRef}
             type="text"
             placeholder="차 이름으로 검색..."
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setSelectedTea(null);
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
 
-          {searchQuery && !selectedTea && filteredTeas.length > 0 && (
+          {searchQuery && filteredTeas.length > 0 && (
             <div
               className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-card border border-border rounded-lg shadow-lg divide-y divide-border max-h-48 overflow-y-auto"
               style={{
@@ -168,10 +178,7 @@ export function BlindSessionNew() {
                 <button
                   key={tea.id}
                   type="button"
-                  onClick={() => {
-                    setSelectedTea(tea.id);
-                    setSearchQuery(tea.name);
-                  }}
+                  onClick={() => handleSelectTea(tea)}
                   className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
                 >
                   <p className="text-sm">{tea.name}</p>
@@ -184,7 +191,7 @@ export function BlindSessionNew() {
             </div>
           )}
 
-          {searchQuery && !selectedTea && filteredTeas.length === 0 && (
+          {searchQuery && filteredTeas.length === 0 && (
             <div className="mt-2 py-3 px-4 border border-dashed border-border rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-2">
                 &quot;{searchQuery}&quot;에 대한 검색 결과가 없습니다.
@@ -205,17 +212,36 @@ export function BlindSessionNew() {
             </div>
           )}
 
-          {selectedTeaData && (
-            <div className="mt-2 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-sm text-emerald-900 dark:text-emerald-100">
-                  {selectedTeaData.name}
-                </span>
-              </div>
-              <div className="text-xs text-emerald-700 dark:text-emerald-300">
-                참가자에게는 숨겨집니다
-              </div>
+          {selectedTeas.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {selectedTeas.map((teaId, index) => {
+                const teaData = teas.find((t) => t.id === teaId);
+                if (!teaData) return null;
+                return (
+                  <div
+                    key={teaId}
+                    className="flex items-center justify-between py-2 px-3 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium w-5">
+                        {index + 1}.
+                      </span>
+                      <div>
+                        <p className="text-sm">{teaData.name}</p>
+                        <p className="text-xs text-muted-foreground">{teaData.type}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTea(teaId)}
+                      className="p-1 hover:bg-muted rounded transition-colors"
+                      aria-label="제거"
+                    >
+                      <X className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -224,7 +250,7 @@ export function BlindSessionNew() {
           className="w-full"
           size="lg"
           onClick={handleStartSession}
-          disabled={!selectedTea || isCreating}
+          disabled={selectedTeas.length === 0 || isCreating}
         >
           {isCreating ? (
             <>
@@ -232,7 +258,7 @@ export function BlindSessionNew() {
               세션 생성 중...
             </>
           ) : (
-            '블라인드 세션 시작'
+            `블라인드 세션 시작 (${selectedTeas.length}개 차)`
           )}
         </Button>
       </div>

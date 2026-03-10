@@ -22,6 +22,9 @@ class AxisValueDto {
 }
 
 export class SubmitBlindNoteDto {
+  @IsNumber()
+  roundId: number;
+
   @IsOptional()
   @IsNumber()
   schemaId?: number;

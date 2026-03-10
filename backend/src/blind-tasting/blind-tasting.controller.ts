@@ -44,6 +44,19 @@ export class BlindTastingController {
     return this.blindTastingService.getSession(userId, sessionId);
   }
 
+  @Get(':id/rounds')
+  getRounds(@UserId() userId: number, @Param('id') id: string) {
+    const sessionId = this.parseId(id, 'id');
+    return this.blindTastingService.getRounds(userId, sessionId);
+  }
+
+  @Post(':id/next-round')
+  @HttpCode(HttpStatus.OK)
+  nextRound(@UserId() userId: number, @Param('id') id: string) {
+    const sessionId = this.parseId(id, 'id');
+    return this.blindTastingService.nextRound(userId, sessionId);
+  }
+
   @Post(':id/notes')
   @HttpCode(HttpStatus.CREATED)
   submitNote(

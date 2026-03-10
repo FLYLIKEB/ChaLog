@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { AxisStarRow } from '../components/AxisStarRow';
@@ -19,6 +19,8 @@ import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../con
 export function BlindNoteWrite() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const roundId = searchParams.get('roundId') ? parseInt(searchParams.get('roundId')!, 10) : null;
   const { isAuthenticated } = useAuth();
   const [schemas, setSchemas] = useState<RatingSchema[]>([]);
   const [pinnedSchemaIds, setPinnedSchemaIds] = useState<number[]>([]);
@@ -30,6 +32,10 @@ export function BlindNoteWrite() {
   const [tags, setTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [schemasLoading, setSchemasLoading] = useState(false);
+  const [sessionData, setSessionData] = useState<{
+    totalRounds: number;
+    currentRoundOrder: number | null;
+  } | null>(null);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
   const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -50,7 +56,11 @@ export function BlindNoteWrite() {
 
     const checkSession = async () => {
       try {
-        await blindSessionsApi.getById(parseInt(id, 10));
+        const data = await blindSessionsApi.getById(parseInt(id, 10));
+        setSessionData({
+          totalRounds: data.totalRounds,
+          currentRoundOrder: data.currentRoundOrder,
+        });
         setSessionValid(true);
       } catch {
         setSessionValid(false);
@@ -120,6 +130,10 @@ export function BlindNoteWrite() {
       toast.error('1~5점 평점을 선택해주세요.');
       return;
     }
+    if (roundId === null) {
+      toast.error('라운드 정보가 없습니다.');
+      return;
+    }
 
     const schemaIdsToSend =
       selectedSchemaIds.length > 0 ? selectedSchemaIds : (schemas[0] ? [schemas[0].id] : []);
@@ -144,6 +158,7 @@ export function BlindNoteWrite() {
       const processedMemo = memo && memo.trim() ? memo.trim() : null;
 
       await blindSessionsApi.submitNote(parseInt(id, 10), {
+        roundId,
         schemaIds: schemaIdsToSend,
         overallRating,
         isRatingIncluded: true,
@@ -184,9 +199,14 @@ export function BlindNoteWrite() {
     );
   }
 
+  const roundLabel =
+    sessionData && sessionData.currentRoundOrder != null
+      ? `차 ${sessionData.currentRoundOrder}/${sessionData.totalRounds} 기록 중`
+      : '블라인드 기록 작성';
+
   return (
     <div className="min-h-screen">
-      <Header showBack title="블라인드 기록 작성" showProfile showLogo />
+      <Header showBack title={roundLabel} showProfile showLogo />
 
       <div className="p-4 pb-24 space-y-6">
         <div className="bg-card rounded-lg p-3 border border-dashed border-muted-foreground/30">
