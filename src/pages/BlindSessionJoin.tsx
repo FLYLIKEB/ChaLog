@@ -16,9 +16,9 @@ export function BlindSessionJoin() {
     id: number;
     inviteCode: string;
     status: string;
-    hostId: number;
     hostName: string;
     participantCount: number;
+    hostId: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
@@ -60,8 +60,8 @@ export function BlindSessionJoin() {
   const handleJoin = async () => {
     if (!code || !isAuthenticated) return;
 
-    // 호스트는 join 없이 바로 세션으로 이동
-    if (sessionInfo.hostId === user?.id) {
+    // 호스트는 join 없이 바로 세션 상세로 이동
+    if (sessionInfo && user && sessionInfo.hostId === user.id) {
       navigate(`/blind/${sessionInfo.id}`, { replace: true });
       return;
     }
@@ -70,16 +70,18 @@ export function BlindSessionJoin() {
       setJoining(true);
       await blindSessionsApi.join(code);
       toast.success('참가되었습니다.');
-      navigate(`/blind/${sessionInfo.id}/write`, { replace: true });
+      const info = sessionInfo ?? (await blindSessionsApi.getByInviteCode(code));
+      navigate(`/blind/${info.id}`, { replace: true });
     } catch (err) {
       logger.error('Failed to join:', err);
-      const msg = err instanceof Error ? err.message : '참가에 실패했습니다.';
-      if (msg.includes('이미 참가')) {
-        toast.info('이미 참가한 세션입니다. 세션으로 이동합니다.');
-        navigate(`/blind/${sessionInfo.id}/write`, { replace: true });
-      } else {
-        toast.error(msg);
+      const errorMessage = err instanceof Error ? err.message : String((err as any)?.message ?? '참가에 실패했습니다.');
+      if (errorMessage.includes('이미 참가') || errorMessage.includes('호스트')) {
+        toast.info(errorMessage.includes('호스트') ? '호스트 세션으로 이동합니다.' : '이미 참가한 세션입니다.');
+        const info = sessionInfo ?? (await blindSessionsApi.getByInviteCode(code));
+        navigate(`/blind/${info.id}`, { replace: true });
+        return;
       }
+      toast.error(errorMessage);
     } finally {
       setJoining(false);
     }

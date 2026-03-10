@@ -73,6 +73,7 @@ const AdminAudit = lazy(() => import('./pages/admin/AdminAudit').then((m) => ({ 
 const AdminMonitoring = lazy(() => import('./pages/admin/AdminMonitoring').then((m) => ({ default: m.AdminMonitoring })));
 const AdminMaster = lazy(() => import('./pages/admin/AdminMaster').then((m) => ({ default: m.AdminMaster })));
 
+
 type FloatingActionRouteConfig = {
   position?: 'default' | 'aboveNav';
   ariaLabel?: string;
@@ -95,6 +96,11 @@ const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = 
   '/cellar/new': { hidden: true },
   '/session/new': { hidden: true },
   '/sessions': { hidden: true },
+  '/blind/new': { hidden: true },
+  '/blind/join/:code': { hidden: true },
+  '/blind/:id': { hidden: true },
+  '/blind/:id/write': { hidden: true },
+  '/blind/:id/report': { hidden: true },
   '/onboarding': { hidden: true },
 };
 

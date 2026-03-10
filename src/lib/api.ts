@@ -1334,10 +1334,11 @@ export const teaSessionsApi = {
 };
 
 export interface CreateBlindSessionRequest {
-  teaId: number;
+  teaIds: number[];
 }
 
 export interface SubmitBlindNoteRequest {
+  roundId: number;
   schemaId?: number;
   schemaIds?: number[];
   overallRating?: number | null;
@@ -1351,9 +1352,9 @@ export interface SubmitBlindNoteRequest {
 
 export const blindSessionsApi = {
   create: (data: CreateBlindSessionRequest) =>
-    apiClient.post<{ id: number; inviteCode: string; teaId: number; status: string }>('/blind-sessions', data),
+    apiClient.post<{ id: number; inviteCode: string; status: string; rounds: Array<{ id: number; roundOrder: number; status: string }> }>('/blind-sessions', data),
   getByInviteCode: (inviteCode: string) =>
-    apiClient.get<{ id: number; inviteCode: string; status: string; hostId: number; hostName: string; participantCount: number }>(
+    apiClient.get<{ id: number; inviteCode: string; status: string; hostName: string; participantCount: number; hostId: number }>(
       `/blind-sessions/join/${encodeURIComponent(inviteCode)}`,
     ),
   join: (inviteCode: string) =>
@@ -1366,29 +1367,42 @@ export const blindSessionsApi = {
       hostName: string;
       participantCount: number;
       isHost: boolean;
-      participants: Array<{ userId: number; userName: string; hasNote: boolean }>;
+      totalRounds: number;
+      currentRoundOrder: number | null;
+      currentRoundId: number | null;
+      participants: Array<{ userId: number; userName: string; hasNote: boolean; completedRounds: number[] }>;
+      rounds: Array<{ id: number; roundOrder: number; status: string; tea?: { id: number; name: string; type: string; year?: number } | null }>;
+      myCompletedRounds: number[];
       tea?: { id: number; name: string; type: string; year?: number } | null;
     }>(`/blind-sessions/${id}`),
+  getRounds: (sessionId: number) =>
+    apiClient.get<Array<{ id: number; roundOrder: number; status: string; tea?: { id: number; name: string; type: string; year?: number } | null }>>(`/blind-sessions/${sessionId}/rounds`),
+  nextRound: (sessionId: number) =>
+    apiClient.post<{ completedRound: { id: number; roundOrder: number }; currentRound: { id: number; roundOrder: number; status: string } | null; isLastRound: boolean }>(`/blind-sessions/${sessionId}/next-round`, {}),
   submitNote: (sessionId: number, data: SubmitBlindNoteRequest) =>
     apiClient.post<{ noteId: number }>(`/blind-sessions/${sessionId}/notes`, data),
   endSession: (sessionId: number) =>
     apiClient.post<{ id: number; status: string }>(`/blind-sessions/${sessionId}/end`, {}),
   getReport: (sessionId: number) =>
     apiClient.get<{
-      tea: { id: number; name: string; type: string; year?: number } | null;
-      participants: Array<{
-        userId: number;
-        userName: string;
-        overallRating: number | null;
-        axisValues: Array<{ axisId: number; valueNumeric: number; axis?: { nameKo: string } }>;
-        tags: string[];
-        memo: string | null;
+      rounds: Array<{
+        roundId: number;
+        roundOrder: number;
+        tea: { id: number; name: string; type: string; year?: number } | null;
+        participants: Array<{
+          userId: number;
+          userName: string;
+          overallRating: number | null;
+          axisValues: Array<{ axisId: number; valueNumeric: number; axis?: { nameKo: string } }>;
+          tags: string[];
+          memo: string | null;
+        }>;
+        stats: {
+          avgOverallRating: number | null;
+          axisAverages: Array<{ axisName: string; avg: number; count: number }>;
+          tagDistribution: Array<{ name: string; count: number }>;
+        };
       }>;
-      stats: {
-        avgOverallRating: number | null;
-        axisAverages: Array<{ axisName: string; avg: number; count: number }>;
-        tagDistribution: Array<{ name: string; count: number }>;
-      };
     }>(`/blind-sessions/${sessionId}/report`),
   getMySessions: () =>
     apiClient.get<BlindSessionSummary[]>('/blind-sessions/my'),
@@ -1405,6 +1419,7 @@ export interface BlindSessionSummary {
   participantCount: number;
   isHost: boolean;
 }
+
 
 export const cellarApi = {
   getAll: () => apiClient.get<CellarItem[]>('/cellar'),

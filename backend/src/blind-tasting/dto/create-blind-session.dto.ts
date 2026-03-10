@@ -1,6 +1,9 @@
-import { IsNumber } from 'class-validator';
+import { IsArray, ArrayMinSize, ArrayMaxSize, IsNumber } from 'class-validator';
 
 export class CreateBlindSessionDto {
-  @IsNumber()
-  teaId: number;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(10)
+  @IsNumber({}, { each: true })
+  teaIds: number[];
 }

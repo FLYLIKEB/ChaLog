@@ -10,6 +10,7 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Tea } from '../../teas/entities/tea.entity';
 import { BlindSessionParticipant } from './blind-session-participant.entity';
+import { BlindSessionRound } from './blind-session-round.entity';
 
 export enum BlindSessionStatus {
   ACTIVE = 'active',
@@ -28,12 +29,12 @@ export class BlindTastingSession {
   @JoinColumn({ name: 'hostId' })
   host: User;
 
-  @Column()
-  teaId: number;
+  @Column({ nullable: true })
+  teaId: number | null;
 
-  @ManyToOne(() => Tea, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Tea, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'teaId' })
-  tea: Tea;
+  tea: Tea | null;
 
   @Column({ type: 'enum', enum: BlindSessionStatus, default: BlindSessionStatus.ACTIVE })
   status: BlindSessionStatus;
@@ -49,4 +50,7 @@ export class BlindTastingSession {
 
   @OneToMany(() => BlindSessionParticipant, (p) => p.session, { cascade: true })
   participants: BlindSessionParticipant[];
+
+  @OneToMany(() => BlindSessionRound, (r) => r.session, { cascade: true })
+  rounds: BlindSessionRound[];
 }
