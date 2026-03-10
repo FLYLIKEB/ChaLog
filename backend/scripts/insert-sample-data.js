@@ -107,10 +107,10 @@ const insertSampleData = async () => {
     console.log('\n🍵 차 데이터 추가 중...');
     const teas = [
       { name: '정산소종', year: 2023, type: '홍차', seller: '차향', origin: '중국 푸젠', averageRating: 4.5, reviewCount: 2 },
-      { name: '대홍포', year: 2022, type: '우롱차', seller: '찻잎', origin: '중국 우이산', averageRating: 4.8, reviewCount: 1 },
+      { name: '대홍포', year: 2022, type: '청차/우롱차', seller: '찻잎', origin: '중국 우이산', averageRating: 4.8, reviewCount: 1 },
       { name: '용정', year: 2024, type: '녹차', seller: '차향', origin: '중국 항저우', averageRating: 4.2, reviewCount: 1 },
       { name: '백호은침', year: 2023, type: '백차', seller: '티하우스', origin: '중국 푸젠', averageRating: 4.6, reviewCount: 1 },
-      { name: '철관음', year: 2023, type: '우롱차', seller: '찻잎', origin: '중국 안시', averageRating: 4.4, reviewCount: 0 },
+      { name: '철관음', year: 2023, type: '청차/우롱차', seller: '찻잎', origin: '중국 안시', averageRating: 4.4, reviewCount: 0 },
     ];
 
     for (const tea of teas) {

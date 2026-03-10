@@ -315,7 +315,7 @@ describe('UserProfile', () => {
 
   describe('온보딩 취향 태그', () => {
     const mockOnboardingPreference: UserOnboardingPreference = {
-      preferredTeaTypes: ['녹차', '홍차', '우롱차'],
+      preferredTeaTypes: ['녹차', '홍차', '청차/우롱차'],
       preferredFlavorTags: ['꽃향', '과일향'],
       hasCompletedOnboarding: true,
     };
@@ -339,7 +339,7 @@ describe('UserProfile', () => {
         expect(screen.getByText('관심 차종')).toBeInTheDocument();
         expect(screen.getByText('녹차')).toBeInTheDocument();
         expect(screen.getByText('홍차')).toBeInTheDocument();
-        expect(screen.getByText('우롱차')).toBeInTheDocument();
+        expect(screen.getByText('청차/우롱차')).toBeInTheDocument();
       });
     });
 
