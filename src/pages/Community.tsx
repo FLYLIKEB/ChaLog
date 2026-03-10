@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, ArrowDownUp, ChevronRight } from 'lucide-react';
 import { PostCardSkeleton } from '../components/PostCardSkeleton';
@@ -43,6 +43,8 @@ export function Community() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const isMobileRef = useRef(isMobile);
+  isMobileRef.current = isMobile;
   const [posts, setPosts] = useState<Post[]>([]);
   const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,16 +64,16 @@ export function Community() {
       // 모바일: 선택된 그룹만 fetch / 데스크톱: 전체 fetch
       const [filtered, all] = await Promise.all([
         postsApi.getAll(categoryParam, 1, 20, sort),
-        isMobile ? Promise.resolve([]) : postsApi.getAll(undefined, 1, 50, sort),
+        isMobileRef.current ? Promise.resolve([]) : postsApi.getAll(undefined, 1, 50, sort),
       ]);
       setPosts(filtered);
-      if (!isMobile) setAllPosts(all);
+      if (!isMobileRef.current) setAllPosts(all);
     } catch {
       toast.error('게시글을 불러오는 데 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
-  }, [selectedGroup, sort, isMobile]);
+  }, [selectedGroup, sort]);
 
   useEffect(() => {
     fetchPosts();

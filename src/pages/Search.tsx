@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { Search as SearchIcon, Plus, Loader2, Store, Filter } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -43,8 +43,11 @@ export function Search() {
   const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | 'match' | 'recent' | null;
   const urlType = searchParams.get('type');
   const urlMinRating = searchParams.get('minRating');
-  const urlTags = searchParams.get('tags')?.split(',').map((t) => t.trim()).filter(Boolean) ?? [];
-  const urlTagsStr = urlTags.join(',');
+  const urlTagsStr = searchParams.get('tags') ?? '';
+  const urlTags = useMemo(
+    () => urlTagsStr.split(',').map((t) => t.trim()).filter(Boolean),
+    [urlTagsStr],
+  );
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,22 +71,31 @@ export function Search() {
   const [selectedFlavorTag, setSelectedFlavorTag] = useState<string | null>(null);
   const [flavorTeas, setFlavorTeas] = useState<Tea[]>([]);
   const [isFlavorLoading, setIsFlavorLoading] = useState(false);
+  const flavorRequestRef = useRef<string | null>(null);
 
   const handleFlavorTagClick = useCallback(async (tagName: string) => {
     if (selectedFlavorTag === tagName) {
       setSelectedFlavorTag(null);
       setFlavorTeas([]);
+      flavorRequestRef.current = null;
       return;
     }
     setSelectedFlavorTag(tagName);
     setIsFlavorLoading(true);
+    flavorRequestRef.current = tagName;
     try {
       const data = await teasApi.getByTags([tagName], 'match', 20);
-      setFlavorTeas(Array.isArray(data) ? data : []);
+      if (flavorRequestRef.current === tagName) {
+        setFlavorTeas(Array.isArray(data) ? data : []);
+      }
     } catch {
-      setFlavorTeas([]);
+      if (flavorRequestRef.current === tagName) {
+        setFlavorTeas([]);
+      }
     } finally {
-      setIsFlavorLoading(false);
+      if (flavorRequestRef.current === tagName) {
+        setIsFlavorLoading(false);
+      }
     }
   }, [selectedFlavorTag]);
 

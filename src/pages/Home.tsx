@@ -190,9 +190,9 @@ export function Home() {
         {/* 요즘 인기 차 섹션 */}
         <Section title="🍵 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
               {trendingTeas.map((tea) => (
-                <div key={tea.id}>
+                <div key={tea.id} className="shrink-0 w-[200px]">
                   <TeaCard tea={tea} />
                 </div>
               ))}

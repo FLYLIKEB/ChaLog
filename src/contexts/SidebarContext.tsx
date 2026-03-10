@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
 
+const STORAGE_KEY = 'chalog-sidebar-expanded';
+
 type SidebarContextValue = {
   isExpanded: boolean;
   toggle: () => void;
@@ -11,8 +13,22 @@ const SidebarContext = createContext<SidebarContextValue>({
 });
 
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const toggle = () => setIsExpanded((prev) => !prev);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored !== null ? stored === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const toggle = () =>
+    setIsExpanded((prev) => {
+      const next = !prev;
+      try { localStorage.setItem(STORAGE_KEY, String(next)); } catch {}
+      return next;
+    });
+
   return (
     <SidebarContext.Provider value={{ isExpanded, toggle }}>
       {children}
