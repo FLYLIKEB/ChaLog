@@ -207,7 +207,7 @@ export function Home() {
           {trendingCreators.length > 0 ? (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
               {trendingCreators.map((creator) => (
-                <div key={creator.id} className="shrink-0 w-[300px]">
+                <div key={creator.id} className="shrink-0 w-[200px]">
                   <CreatorCard user={creator} followerCount={creator.followerCount} />
                 </div>
               ))}
