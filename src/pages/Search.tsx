@@ -550,9 +550,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {popularTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                       {popularTeas.slice(0, 10).map((tea, index) => (
-                        <div key={tea.id} className="shrink-0 w-[300px]">
+                        <div key={tea.id} className="shrink-0 w-[300px] flex">
                           <TeaRankingCard tea={tea} rank={index + 1} />
                         </div>
                       ))}
@@ -568,9 +568,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {newTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                       {newTeas.slice(0, 3).map((tea) => (
-                        <div key={tea.id} className="shrink-0 w-[300px]">
+                        <div key={tea.id} className="shrink-0 w-[300px] flex">
                           <TeaNewCard tea={tea} />
                         </div>
                       ))}
@@ -618,9 +618,9 @@ export function Search() {
                               ))}
                             </div>
                           ) : flavorTeas.length > 0 ? (
-                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                               {flavorTeas.map((tea) => (
-                                <div key={tea.id} className="shrink-0 w-[300px]">
+                                <div key={tea.id} className="shrink-0 w-[300px] flex">
                                   <TeaCard tea={tea} />
                                 </div>
                               ))}
@@ -642,9 +642,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {curationTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                       {curationTeas.slice(0, 3).map((tea) => (
-                        <div key={tea.id} className="shrink-0 w-[300px]">
+                        <div key={tea.id} className="shrink-0 w-[300px] flex">
                           <TeaCard tea={tea} />
                         </div>
                       ))}

@@ -172,7 +172,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
   return (
     <div
       className={cn(
-        'relative overflow-hidden card-appearance',
+        'relative overflow-hidden card-appearance h-full w-full',
         'bg-card transition-shadow duration-200 min-h-[136px]',
         canView && 'card-appearance-hover',
         !canView && 'opacity-60'
@@ -225,7 +225,7 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
         role={canView ? 'button' : undefined}
         tabIndex={canView ? 0 : undefined}
         className={cn(
-          'w-full text-left p-4 transition-transform duration-200 cursor-pointer relative',
+          'w-full h-full text-left p-4 transition-transform duration-200 cursor-pointer relative',
           canView ? 'hover:bg-muted/5' : 'cursor-not-allowed'
         )}
         style={{ transform: `translateX(${translateX}px)` }}

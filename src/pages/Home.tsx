@@ -205,9 +205,9 @@ export function Home() {
         {/* 인기 다우 섹션 */}
         <Section title="🌿 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
           {trendingCreators.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
               {trendingCreators.map((creator) => (
-                <div key={creator.id} className="shrink-0 w-[200px]">
+                <div key={creator.id} className="shrink-0 w-[200px] flex">
                   <CreatorCard user={creator} followerCount={creator.followerCount} />
                 </div>
               ))}
@@ -231,11 +231,11 @@ export function Home() {
 
           <TabsContent value="forYou" className="mt-4">
             {publicNotes.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                 {publicNotes.map((note, i) => (
                   <div
                     key={note.id}
-                    className="shrink-0 w-[280px] animate-fade-in-up opacity-0"
+                    className="shrink-0 w-[280px] flex animate-fade-in-up opacity-0"
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <NoteCard note={note} showTeaName />
@@ -266,9 +266,9 @@ export function Home() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : followingNotes.length > 0 ? (
-              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+              <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                 {followingNotes.map(note => (
-                  <div key={note.id} className="shrink-0 w-[280px]">
+                  <div key={note.id} className="shrink-0 w-[280px] flex">
                     <NoteCard note={note} showTeaName />
                   </div>
                 ))}
@@ -314,9 +314,9 @@ export function Home() {
                   </div>
                 )}
                 {tagNotes.length > 0 ? (
-                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                     {tagNotes.map(note => (
-                      <div key={note.id} className="shrink-0 w-[280px]">
+                      <div key={note.id} className="shrink-0 w-[280px] flex">
                         <NoteCard note={note} showTeaName />
                       </div>
                     ))}
