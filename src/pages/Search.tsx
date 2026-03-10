@@ -439,13 +439,13 @@ export function Search() {
         {showResults && (
           <>
             {isLoading ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <TeaCardSkeleton key={i} />
                 ))}
               </div>
             ) : teas.length > 0 ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 {teas.map((tea, i) => (
                 <div
                   key={tea.id}

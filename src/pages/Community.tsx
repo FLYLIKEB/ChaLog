@@ -117,7 +117,7 @@ export function Community() {
       {/* 게시글 목록 */}
       <div className="px-4">
         {isLoading ? (
-          <div className="space-y-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
             {[1, 2, 3, 4, 5].map((i) => (
               <PostCardSkeleton key={i} />
             ))}
@@ -133,7 +133,7 @@ export function Community() {
             action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
           />
         ) : (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700 pt-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
             {posts.map((post, i) => (
               <div
                 key={post.id}

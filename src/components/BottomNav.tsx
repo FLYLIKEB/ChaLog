@@ -55,6 +55,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
         'fixed bottom-0 left-0 right-0 z-60 bg-card/95 backdrop-blur-md border-t border-black/5 rounded-t-2xl card-shadow-top px-4 py-3',
         'pb-[calc(0.75rem+env(safe-area-inset-bottom))]',
         'flex items-center justify-around',
+        'md:hidden',
         className,
       )}
       {...rest}
