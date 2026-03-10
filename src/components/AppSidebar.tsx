@@ -1,8 +1,9 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, MessageCircle, BookMarked, Wine, ChevronLeft, ChevronRight, Bell, Settings } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Search, MessageSquare, FileText, Package, ChevronLeft, ChevronRight, Bell, Settings } from 'lucide-react';
 import { cn } from './ui/utils';
 import { useSidebar } from '../contexts/SidebarContext';
+import { ChaLogLogo } from './ChaLogLogo';
 
 type NavItem = {
   path: string;
@@ -13,13 +14,14 @@ type NavItem = {
 const navItems: NavItem[] = [
   { path: '/', label: '홈', icon: Home },
   { path: '/sasaek', label: '사색', icon: Search },
-  { path: '/chadam', label: '차담', icon: MessageCircle },
-  { path: '/my-notes', label: '내 차록', icon: BookMarked },
-  { path: '/cellar', label: '찻장', icon: Wine },
+  { path: '/chadam', label: '차담', icon: MessageSquare },
+  { path: '/my-notes', label: '내 차록', icon: FileText },
+  { path: '/cellar', label: '찻장', icon: Package },
 ];
 
 export function AppSidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isExpanded, toggle } = useSidebar();
 
   const isActive = (path: string) => {
@@ -37,12 +39,7 @@ export function AppSidebar() {
       {/* 로고/브랜드 + 토글 버튼 */}
       <div className={cn('flex items-center border-b border-sidebar-border shrink-0 h-14', isExpanded ? 'px-4 justify-between' : 'justify-center')}>
         {isExpanded && (
-          <Link
-            to="/"
-            className="text-lg font-bold text-sidebar-foreground hover:text-sidebar-primary transition-colors truncate"
-          >
-            ChaLog
-          </Link>
+          <ChaLogLogo asButton onClick={() => navigate('/')} className="scale-75 origin-left" />
         )}
         <button
           type="button"
