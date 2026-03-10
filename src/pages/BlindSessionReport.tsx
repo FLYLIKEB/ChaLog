@@ -168,6 +168,7 @@ function RoundReportSection({ round }: { round: RoundReport }) {
   );
 }
 
+
 export function BlindSessionReport() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();

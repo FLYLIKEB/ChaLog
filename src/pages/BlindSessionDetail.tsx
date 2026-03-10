@@ -94,6 +94,7 @@ export function BlindSessionDetail() {
     }
   };
 
+
   const currentUserId = user?.id;
   const currentUserParticipant = session?.participants?.find(
     (p) => p.userId === currentUserId
@@ -168,6 +169,7 @@ export function BlindSessionDetail() {
             </div>
           </div>
         )}
+
 
         {session.participants && session.participants.length > 0 && (
           <div className="bg-card rounded-lg p-4 border border-border">

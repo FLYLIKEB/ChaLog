@@ -134,6 +134,60 @@ export const COMMON_WEIGHTS = [50, 100, 200, 250, 357] as const;
 
 export type TeaType = typeof TEA_TYPES[number];
 
+/**
+ * 차 이름 키워드 → 차 종류 자동 선택 매핑
+ * 키워드가 이름에 포함되면 해당 종류를 자동 선택
+ */
+export const TEA_NAME_KEYWORD_MAP: { keyword: string; type: TeaType }[] = [
+  // 우롱차
+  { keyword: '철관음', type: '우롱차' },
+  { keyword: '동방미인', type: '우롱차' },
+  { keyword: '봉황단총', type: '우롱차' },
+  { keyword: '펑황단총', type: '우롱차' },
+  { keyword: '무이암차', type: '우롱차' },
+  { keyword: '대홍포', type: '우롱차' },
+  { keyword: '동정', type: '우롱차' },
+  { keyword: '아리산', type: '우롱차' },
+  // 녹차
+  { keyword: '용정', type: '녹차' },
+  { keyword: '시즈오카', type: '녹차' },
+  { keyword: '말차', type: '녹차' },
+  { keyword: '전차', type: '녹차' },
+  { keyword: '옥로', type: '녹차' },
+  // 홍차
+  { keyword: '다즐링', type: '홍차' },
+  { keyword: '아삼', type: '홍차' },
+  { keyword: '실론', type: '홍차' },
+  { keyword: '정산소종', type: '홍차' },
+  { keyword: '기문', type: '홍차' },
+  { keyword: '딤불라', type: '홍차' },
+  // 백차
+  { keyword: '백호은침', type: '백차' },
+  { keyword: '백모단', type: '백차' },
+  { keyword: '수미', type: '백차' },
+  // 보이차
+  { keyword: '보이', type: '보이차' },
+  { keyword: '생차', type: '보이차' },
+  { keyword: '숙차', type: '보이차' },
+  // 황차
+  { keyword: '군산은침', type: '황차' },
+  { keyword: '몽정황아', type: '황차' },
+];
+
+/**
+ * 차 이름으로부터 자동 선택할 차 종류를 반환
+ * 매칭되는 키워드가 없으면 null 반환
+ */
+export function guessTeaTypeFromName(name: string): TeaType | null {
+  const lower = name.toLowerCase();
+  for (const { keyword, type } of TEA_NAME_KEYWORD_MAP) {
+    if (lower.includes(keyword.toLowerCase())) {
+      return type;
+    }
+  }
+  return null;
+}
+
 export const ONBOARDING_TEA_TYPES = TEA_TYPES;
 
 export const ONBOARDING_FLAVOR_TAGS = [
