@@ -40,6 +40,10 @@ export function UserProfile() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
+  const [notePage, setNotePage] = useState(1);
+  const [noteTotal, setNoteTotal] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const NOTE_LIMIT = 20;
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
   const [isOnboardingEditModalOpen, setIsOnboardingEditModalOpen] = useState(false);
@@ -50,12 +54,20 @@ export function UserProfile() {
 
   const initialLoadDone = useRef(false);
 
-  const fetchNotes = useCallback(async (sortType: SortType) => {
+  const fetchNotes = useCallback(async (sortType: SortType, pageNum = 1, append = false) => {
     if (isNaN(userId)) return;
     const isPublicFilter = isOwnProfile ? undefined : true;
-    const notesData = await notesApi.getAll(userId, isPublicFilter, undefined, undefined, undefined, sortType);
-    const notesArray = Array.isArray(notesData) ? notesData : [];
-    setNotes(notesArray as Note[]);
+    const result = await notesApi.getAll(userId, isPublicFilter, undefined, undefined, undefined, sortType, pageNum, NOTE_LIMIT);
+    if (result && typeof result === 'object' && 'data' in result) {
+      const paged = result as { data: Note[]; total: number; page: number; limit: number };
+      setNotes(prev => append ? [...prev, ...paged.data] : paged.data);
+      setNoteTotal(paged.total);
+      setNotePage(paged.page);
+    } else {
+      const notesArray = Array.isArray(result) ? result : [];
+      setNotes(append ? prev => [...prev, ...(notesArray as Note[])] : notesArray as Note[]);
+      setNoteTotal(notesArray.length);
+    }
   }, [userId, isOwnProfile]);
 
   const fetchData = useCallback(async () => {
@@ -105,8 +117,20 @@ export function UserProfile() {
   // 정렬 변경 시 노트만 다시 가져오기 (초기 로드 이후)
   useEffect(() => {
     if (!initialLoadDone.current) return;
-    fetchNotes(sort);
+    setNotePage(1);
+    fetchNotes(sort, 1);
   }, [sort, fetchNotes]);
+
+  const handleLoadMore = async () => {
+    setIsLoadingMore(true);
+    try {
+      await fetchNotes(sort, notePage + 1, true);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
+  const hasMore = notes.length < noteTotal;
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -172,9 +196,9 @@ export function UserProfile() {
     return {
       averageRating: safeAverageRating,
       totalLikes,
-      noteCount: notes.length,
+      noteCount: noteTotal || notes.length,
     };
-  }, [notes]);
+  }, [notes, noteTotal]);
 
   // 서버에서 정렬된 상태로 반환되므로 클라이언트 정렬 불필요
   const sortedNotes = notes;
@@ -430,7 +454,7 @@ export function UserProfile() {
         {notes.length > 0 && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              총 {sortedNotes.length}개
+              총 {noteTotal}개
             </span>
             <Select value={sort} onValueChange={(v) => setSort(v as SortType)}>
               <SelectTrigger className="w-32">
@@ -463,11 +487,27 @@ export function UserProfile() {
           }
         >
           {sortedNotes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {sortedNotes.map(note => (
-                <NoteCard key={note.id} note={note} showTeaName />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedNotes.map(note => (
+                  <NoteCard key={note.id} note={note} showTeaName />
+                ))}
+              </div>
+              {hasMore && (
+                <div className="flex justify-center mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : null}
+                    더보기 ({notes.length}/{noteTotal})
+                  </Button>
+                </div>
+              )}
+            </>
           ) : (
             <EmptyState
               type="notes"

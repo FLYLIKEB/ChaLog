@@ -123,7 +123,7 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string, sort: 'latest' | 'rating' = 'latest'): Promise<any[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string, sort: 'latest' | 'rating' = 'latest', page?: number, limit?: number): Promise<any[] | { data: any[]; total: number; page: number; limit: number }> {
     try {
       // following 피드: 팔로잉한 유저의 공개 노트만 조회
       if (feed === 'following') {
@@ -289,8 +289,19 @@ export class NotesService {
         queryBuilder.where(conditions.join(' AND '), params);
       }
 
+      // 페이지네이션 적용
+      if (page != null && limit != null) {
+        const total = await queryBuilder.getCount();
+        const notes = await queryBuilder
+          .skip((page - 1) * limit)
+          .take(limit)
+          .getMany();
+        const data = await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+        return { data, total, page, limit };
+      }
+
       const notes = await queryBuilder.getMany();
-      
+
       // 좋아요 및 북마크 정보 추가
       return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
     } catch (error) {
