@@ -235,7 +235,7 @@ export function Home() {
                 {publicNotes.map((note, i) => (
                   <div
                     key={note.id}
-                    className="shrink-0 w-[280px] flex animate-fade-in-up opacity-0"
+                    className="shrink-0 w-[300px] flex animate-fade-in-up opacity-0"
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <NoteCard note={note} showTeaName />
@@ -268,7 +268,7 @@ export function Home() {
             ) : followingNotes.length > 0 ? (
               <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                 {followingNotes.map(note => (
-                  <div key={note.id} className="shrink-0 w-[280px] flex">
+                  <div key={note.id} className="shrink-0 w-[300px] flex">
                     <NoteCard note={note} showTeaName />
                   </div>
                 ))}
@@ -316,7 +316,7 @@ export function Home() {
                 {tagNotes.length > 0 ? (
                   <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide items-stretch">
                     {tagNotes.map(note => (
-                      <div key={note.id} className="shrink-0 w-[280px] flex">
+                      <div key={note.id} className="shrink-0 w-[300px] flex">
                         <NoteCard note={note} showTeaName />
                       </div>
                     ))}
