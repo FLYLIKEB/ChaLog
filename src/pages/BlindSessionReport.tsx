@@ -136,6 +136,7 @@ function RoundReportSection({ round }: { round: RoundReport }) {
                     ? {
                         id: av.axisId,
                         nameKo: av.axis.nameKo ?? `축 ${av.axisId}`,
+                        nameEn: '',
                         maxValue: av.axis.maxValue ?? 5,
                         displayOrder: av.axis.displayOrder ?? 0,
                       }
