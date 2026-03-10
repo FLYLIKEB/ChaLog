@@ -16,6 +16,7 @@ import { logger } from '../lib/logger';
 import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 import { cn } from '../components/ui/utils';
+import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 
 const UNIT_LABELS: Record<string, string> = {
   g: 'g',
@@ -167,6 +168,7 @@ function CellarCard({
     </div>
   );
 }
+
 
 const CELLAR_PAGE_SIZE = 20;
 
@@ -624,16 +626,10 @@ export function Cellar() {
                 ))}
               </div>
               {displayCount < displayedItems.length && (
-                <div className="flex justify-center pt-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDisplayCount((prev) => prev + CELLAR_PAGE_SIZE)}
-                    className="w-full max-w-xs"
-                  >
-                    {`더 보기 (${displayedItems.length - displayCount}개 남음)`}
-                  </Button>
-                </div>
+                <InfiniteScrollSentinel
+                  onLoadMore={() => setDisplayCount((prev) => prev + CELLAR_PAGE_SIZE)}
+                  loading
+                />
               )}
             </>
           )}

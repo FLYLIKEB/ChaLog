@@ -28,6 +28,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { cn } from '../components/ui/utils';
+import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 
 type SortType = 'latest' | 'rating';
 
@@ -123,8 +124,6 @@ export function UserProfile() {
 
   const hasMore = notes.length < noteTotal;
 
-  // 무한 스크롤용 ref
-  const loadMoreRef = useRef<HTMLDivElement>(null);
   const isLoadingMoreRef = useRef(false);
   const notePageRef = useRef(notePage);
   notePageRef.current = notePage;
@@ -140,21 +139,6 @@ export function UserProfile() {
       setIsLoadingMore(false);
     }
   }, [hasMore, sort, fetchNotes]);
-
-  useEffect(() => {
-    const el = loadMoreRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore();
-        }
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [loadMore]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -517,14 +501,11 @@ export function UserProfile() {
                   <NoteCard key={note.id} note={note} showTeaName />
                 ))}
               </div>
-              <div ref={loadMoreRef} className="flex justify-center py-4">
-                {isLoadingMore && (
-                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    불러오는 중...
-                  </span>
-                )}
-              </div>
+              <InfiniteScrollSentinel
+                onLoadMore={loadMore}
+                loading={isLoadingMore}
+                hasMore={hasMore}
+              />
             </>
           ) : (
             <EmptyState
