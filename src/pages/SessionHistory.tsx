@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, FileText } from 'lucide-react';
 import { Header } from '../components/Header';
+import { Button } from '../components/ui/button';
 import { teaSessionsApi } from '../lib/api';
 import { TeaSession } from '../types';
 import { toast } from 'sonner';
@@ -60,6 +61,16 @@ export function SessionHistory() {
       <Header showBack title="다회 세션 히스토리" showProfile showLogo />
 
       <div className="p-4 pb-24">
+        <div className="mb-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => navigate('/blind/new')}
+          >
+            블라인드 테이스팅
+          </Button>
+        </div>
+
         {sessions.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
