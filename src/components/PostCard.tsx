@@ -1,6 +1,6 @@
 import React, { type FC, useState, memo } from 'react';
 import { Heart, Bookmark, Loader2, MessageCircle, Eye, Megaphone, Pin, Image as ImageIcon, Shield } from 'lucide-react';
-import { Post, POST_CATEGORY_LABELS } from '../types';
+import { Post, POST_CATEGORY_LABELS, POST_CATEGORY_GROUP_LABELS } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
@@ -99,6 +99,10 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
                   공지
                 </span>
               )}
+              <span className="text-xs text-muted-foreground font-medium">
+                {POST_CATEGORY_GROUP_LABELS[post.category]}
+              </span>
+              <span className="text-[10px] text-muted-foreground/60">·</span>
               <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
                 {POST_CATEGORY_LABELS[post.category]}
               </span>

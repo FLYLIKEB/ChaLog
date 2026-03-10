@@ -172,7 +172,9 @@ export interface CellarItem {
 export type PostCategory =
   | 'brewing_question'
   | 'recommendation'
-  | 'tool'
+  | 'discussion'
+  | 'tea_review'
+  | 'tool_review'
   | 'tea_room_review'
   | 'announcement'
   | 'bug_report';
@@ -180,10 +182,24 @@ export type PostCategory =
 export const POST_CATEGORY_LABELS: Record<PostCategory, string> = {
   brewing_question: '우림 질문',
   recommendation: '맞춤 추천',
-  tool: '도구',
+  discussion: '자유 토론',
+  tea_review: '차 리뷰',
+  tool_review: '차도구 리뷰',
   tea_room_review: '찻집 후기',
   announcement: '공지사항',
   bug_report: '버그/운영제보',
+};
+
+/** 카테고리 → 그룹 라벨 매핑 */
+export const POST_CATEGORY_GROUP_LABELS: Record<PostCategory, string> = {
+  brewing_question: '질문·토론',
+  recommendation: '질문·토론',
+  discussion: '질문·토론',
+  tea_review: '리뷰',
+  tool_review: '리뷰',
+  tea_room_review: '리뷰',
+  announcement: '공지',
+  bug_report: '제보',
 };
 
 export interface PostImageItem {
