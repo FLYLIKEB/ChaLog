@@ -16,6 +16,7 @@ import { TagsModule } from './tags/tags.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { TeaSessionsModule } from './tea-sessions/tea-sessions.module';
+import { BlindTastingModule } from './blind-tasting/blind-tasting.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
 import { User } from './users/entities/user.entity';
@@ -63,6 +64,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     NotificationsModule,
     AdminModule,
     TeaSessionsModule,
+    BlindTastingModule,
   ],
   controllers: [HealthController],
   providers: [

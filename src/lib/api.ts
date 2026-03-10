@@ -1333,6 +1333,79 @@ export const teaSessionsApi = {
     apiClient.post<{ noteId: number }>(`/tea-sessions/${sessionId}/publish`, data),
 };
 
+export interface CreateBlindSessionRequest {
+  teaId: number;
+}
+
+export interface SubmitBlindNoteRequest {
+  schemaId?: number;
+  schemaIds?: number[];
+  overallRating?: number | null;
+  isRatingIncluded?: boolean;
+  axisValues: Array<{ axisId: number; value: number }>;
+  memo?: string | null;
+  images?: string[] | null;
+  imageThumbnails?: string[] | null;
+  tags?: string[];
+}
+
+export const blindSessionsApi = {
+  create: (data: CreateBlindSessionRequest) =>
+    apiClient.post<{ id: number; inviteCode: string; teaId: number; status: string }>('/blind-sessions', data),
+  getByInviteCode: (inviteCode: string) =>
+    apiClient.get<{ id: number; inviteCode: string; status: string; hostId: number; hostName: string; participantCount: number }>(
+      `/blind-sessions/join/${encodeURIComponent(inviteCode)}`,
+    ),
+  join: (inviteCode: string) =>
+    apiClient.post<{ id: number; sessionId: number; userId: number }>('/blind-sessions/join', { inviteCode }),
+  getById: (id: number) =>
+    apiClient.get<{
+      id: number;
+      inviteCode: string;
+      status: string;
+      hostName: string;
+      participantCount: number;
+      isHost: boolean;
+      participants: Array<{ userId: number; userName: string; hasNote: boolean }>;
+      tea?: { id: number; name: string; type: string; year?: number } | null;
+    }>(`/blind-sessions/${id}`),
+  submitNote: (sessionId: number, data: SubmitBlindNoteRequest) =>
+    apiClient.post<{ noteId: number }>(`/blind-sessions/${sessionId}/notes`, data),
+  endSession: (sessionId: number) =>
+    apiClient.post<{ id: number; status: string }>(`/blind-sessions/${sessionId}/end`, {}),
+  getReport: (sessionId: number) =>
+    apiClient.get<{
+      tea: { id: number; name: string; type: string; year?: number } | null;
+      participants: Array<{
+        userId: number;
+        userName: string;
+        overallRating: number | null;
+        axisValues: Array<{ axisId: number; valueNumeric: number; axis?: { nameKo: string } }>;
+        tags: string[];
+        memo: string | null;
+      }>;
+      stats: {
+        avgOverallRating: number | null;
+        axisAverages: Array<{ axisName: string; avg: number; count: number }>;
+        tagDistribution: Array<{ name: string; count: number }>;
+      };
+    }>(`/blind-sessions/${sessionId}/report`),
+  getMySessions: () =>
+    apiClient.get<BlindSessionSummary[]>('/blind-sessions/my'),
+};
+
+export interface BlindSessionSummary {
+  id: number;
+  status: string;
+  createdAt: string;
+  endedAt: string | null;
+  teaName: string | null;
+  teaType: string | null;
+  hostName: string;
+  participantCount: number;
+  isHost: boolean;
+}
+
 export const cellarApi = {
   getAll: () => apiClient.get<CellarItem[]>('/cellar'),
   getById: (id: number) => apiClient.get<CellarItem>(`/cellar/${id}`),
