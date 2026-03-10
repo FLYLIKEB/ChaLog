@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Loader2, ArrowDownUp, ChevronRight } from 'lucide-react';
-import { Button } from '../components/ui/button';
+import { Plus, ArrowDownUp, ChevronRight } from 'lucide-react';
 import { PostCardSkeleton } from '../components/PostCardSkeleton';
 import { Post, PostCategory, POST_CATEGORY_LABELS } from '../types';
 import { postsApi, type PostSort } from '../lib/api';
@@ -16,6 +15,7 @@ import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { useIsMobile } from '../components/ui/use-mobile';
 import { cn } from '../components/ui/utils';
 import { toast } from 'sonner';
+import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 
 const SORT_OPTIONS: Array<{ value: PostSort; label: string }> = [
   { value: 'latest', label: '최신순' },
@@ -198,21 +198,11 @@ export function Community() {
                   ))}
                 </div>
               )}
-              {/* 더 보기 버튼 */}
-              {!isLoading && hasMore && posts.length > 0 && (
-                <div className="flex justify-center pt-4 pb-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLoadMore}
-                    disabled={isLoadingMore}
-                    className="w-full max-w-xs"
-                  >
-                    {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                    더 보기
-                  </Button>
-                </div>
-              )}
+              <InfiniteScrollSentinel
+                onLoadMore={handleLoadMore}
+                loading={isLoadingMore}
+                hasMore={hasMore && posts.length > 0}
+              />
             </div>
 
             {/* 데스크톱: selectedGroup === 'all' → 게시판별 분리 / 특정 그룹 → 단일 게시판 뷰 */}
@@ -266,21 +256,11 @@ export function Community() {
                       />
                     )}
                   </div>
-                  {/* 데스크톱 특정 그룹에서도 더 보기 */}
-                  {hasMore && posts.length > 0 && (
-                    <div className="flex justify-center pt-4 pb-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleLoadMore}
-                        disabled={isLoadingMore}
-                        className="w-full max-w-xs"
-                      >
-                        {isLoadingMore ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                        더 보기
-                      </Button>
-                    </div>
-                  )}
+                  <InfiniteScrollSentinel
+                    onLoadMore={handleLoadMore}
+                    loading={isLoadingMore}
+                    hasMore={hasMore && posts.length > 0}
+                  />
                 </>
               )}
             </div>
