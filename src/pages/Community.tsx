@@ -168,38 +168,57 @@ export function Community() {
               )}
             </div>
 
-            {/* 데스크톱: 게시판별 분리 표시 */}
-            <div className="hidden md:grid md:grid-cols-2 gap-6 pt-4">
-              {DESKTOP_BOARDS.map((board) => {
-                const boardPosts = allPosts.filter((p) =>
-                  board.categories.includes(p.category as PostCategory)
-                ).slice(0, 5);
-                return (
-                  <section key={board.key} className="space-y-2">
-                    <div className="flex items-center justify-between pb-2 border-b border-border/50">
-                      <h2 className="font-semibold text-foreground">{board.label}</h2>
-                      <button
-                        type="button"
-                        onClick={() => navigate('/chadam')}
-                        className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        더보기 <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    {boardPosts.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-4 text-center">아직 게시글이 없어요.</p>
-                    ) : (
-                      <div className="divide-y divide-border/30">
-                        {boardPosts.map((post, i) => (
-                          <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 50}ms` }}>
-                            <PostCard post={post} />
+            {/* 데스크톱: selectedGroup === 'all' → 게시판별 분리 / 특정 그룹 → 단일 게시판 뷰 */}
+            <div className="hidden md:block pt-4">
+              {selectedGroup === 'all' ? (
+                <div className="grid grid-cols-2 gap-6">
+                  {DESKTOP_BOARDS.map((board) => {
+                    const boardPosts = allPosts.filter((p) =>
+                      board.categories.includes(p.category as PostCategory)
+                    ).slice(0, 5);
+                    return (
+                      <section key={board.key} className="space-y-2">
+                        <div className="flex items-center justify-between pb-2 border-b border-border/50">
+                          <h2 className="font-semibold text-foreground">{board.label}</h2>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedGroup(board.key)}
+                            className="flex items-center gap-0.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            더보기 <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {boardPosts.length === 0 ? (
+                          <p className="text-sm text-muted-foreground py-4 text-center">아직 게시글이 없어요.</p>
+                        ) : (
+                          <div className="divide-y divide-border/30">
+                            {boardPosts.map((post, i) => (
+                              <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 50}ms` }}>
+                                <PostCard post={post} />
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </section>
-                );
-              })}
+                        )}
+                      </section>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="space-y-0 divide-y divide-border/30">
+                  {posts.map((post, i) => (
+                    <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 50}ms` }}>
+                      <PostCard post={post} />
+                    </div>
+                  ))}
+                  {posts.length === 0 && (
+                    <EmptyState
+                      type="feed"
+                      message={`${GROUPS.find((g) => g.key === selectedGroup)?.label}에 아직 게시글이 없어요.`}
+                      action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
+                    />
+                  )}
+                </div>
+              )}
             </div>
           </>
         )}
