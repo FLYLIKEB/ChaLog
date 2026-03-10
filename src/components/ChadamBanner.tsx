@@ -49,7 +49,7 @@ export function ChadamBanner({ className }: ChadamBannerProps) {
             차를 사랑하는 사람들의 이야기
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-            차 추천, 우리다 방법, 다실 후기 등 다양한 이야기를 나눠보세요.
+            차 추천, 차를 우리는 방법, 다실 후기 등 다양한 이야기를 나눠보세요.
           </p>
         </div>
       </div>
