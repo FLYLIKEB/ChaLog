@@ -35,6 +35,20 @@ export class RenameTeaTypes1808000000000 implements MigrationInterface {
        SET preferredTeaTypes = REPLACE(preferredTeaTypes, '"보이차"', '"흑차/보이차"')
        WHERE preferredTeaTypes LIKE '%"보이차"%'`,
     );
+
+    // 5. 중복 제거: "흑차"와 "보이차" 둘 다 있었으면 "흑차/보이차"가 2개 됨
+    // "흑차/보이차","흑차/보이차" → "흑차/보이차" (연속 중복 제거)
+    await queryRunner.query(
+      `UPDATE user_onboarding_preferences
+       SET preferredTeaTypes = REPLACE(preferredTeaTypes, '"흑차/보이차","흑차/보이차"', '"흑차/보이차"')
+       WHERE preferredTeaTypes LIKE '%"흑차/보이차","흑차/보이차"%'`,
+    );
+    // 공백 포함 변형도 처리
+    await queryRunner.query(
+      `UPDATE user_onboarding_preferences
+       SET preferredTeaTypes = REPLACE(preferredTeaTypes, '"흑차/보이차", "흑차/보이차"', '"흑차/보이차"')
+       WHERE preferredTeaTypes LIKE '%"흑차/보이차", "흑차/보이차"%'`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

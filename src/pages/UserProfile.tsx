@@ -410,7 +410,7 @@ export function UserProfile() {
                   <div>
                     <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {[...onboardingPreference.preferredTeaTypes]
+                      {[...new Set(onboardingPreference.preferredTeaTypes)]
                         .sort((a, b) => {
                           const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
                           const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
