@@ -517,7 +517,7 @@ export function Search() {
                 <Section title="🏆 사랑받는 차" spacing="lg">
                   <div className="flex gap-3 overflow-x-hidden">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="shrink-0 w-[200px]">
+                      <div key={i} className="shrink-0 w-[300px]">
                         <TeaCardSkeleton />
                       </div>
                     ))}
@@ -552,7 +552,7 @@ export function Search() {
                   {popularTeas.length > 0 ? (
                     <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                       {popularTeas.slice(0, 10).map((tea, index) => (
-                        <div key={tea.id} className="shrink-0 w-[200px]">
+                        <div key={tea.id} className="shrink-0 w-[300px]">
                           <TeaRankingCard tea={tea} rank={index + 1} />
                         </div>
                       ))}
@@ -612,7 +612,7 @@ export function Search() {
                           {isFlavorLoading ? (
                             <div className="flex gap-3 overflow-x-hidden">
                               {[1, 2, 3].map((i) => (
-                                <div key={i} className="shrink-0 w-[200px]">
+                                <div key={i} className="shrink-0 w-[300px]">
                                   <TeaCardSkeleton />
                                 </div>
                               ))}
@@ -620,7 +620,7 @@ export function Search() {
                           ) : flavorTeas.length > 0 ? (
                             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
                               {flavorTeas.map((tea) => (
-                                <div key={tea.id} className="shrink-0 w-[200px]">
+                                <div key={tea.id} className="shrink-0 w-[300px]">
                                   <TeaCard tea={tea} />
                                 </div>
                               ))}
