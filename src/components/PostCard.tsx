@@ -85,7 +85,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
         className={cn(
           'flex flex-col',
           post.isPinned
-            ? 'relative border-l-2 border-l-primary/60 pl-2.5 pr-2 py-2 bg-primary/[0.04] rounded-sm gap-1.5'
+            ? 'relative border-l-2 border-l-primary/60 pl-2.5 pr-2 py-2 bg-primary/4 rounded-sm gap-1.5'
             : 'gap-1.5',
         )}
       >

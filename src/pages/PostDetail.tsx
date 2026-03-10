@@ -142,7 +142,7 @@ export function PostDetail() {
       <div
         className={cn(
           'px-5 py-5 flex flex-col gap-5',
-          post.isPinned && 'relative border-l-2 border-l-primary/60 pl-6 pr-5 py-4 my-2 bg-primary/[0.04] rounded-lg',
+          post.isPinned && 'relative border-l-2 border-l-primary/60 pl-6 pr-5 py-4 my-2 bg-primary/4 rounded-lg',
         )}
       >
         {/* 카테고리 + 공지 + 협찬 뱃지 */}

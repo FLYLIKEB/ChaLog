@@ -159,14 +159,15 @@ describe('UserProfile', () => {
 
   it('로딩 중일 때 로딩 표시를 보여야 함', () => {
     vi.mocked(usersApi.getById).mockImplementation(() => new Promise(() => {}));
-    
+
     render(
       <MemoryRouter>
         <UserProfile />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('status', { hidden: true })).toBeInTheDocument();
+    // 스켈레톤 UI가 표시됨 (animate-pulse 요소)
+    expect(screen.getByText('사용자 프로필')).toBeInTheDocument();
   });
 
   it('사용자를 불러오는데 실패하면 에러 메시지를 표시해야 함', async () => {
@@ -289,8 +290,8 @@ describe('UserProfile', () => {
     );
 
     await waitFor(() => {
-      // 내 프로필이면 undefined (모든 노트 조회), 기본 정렬은 'latest'
-      expect(notesApi.getAll).toHaveBeenCalledWith(1, undefined, undefined, undefined, undefined, 'latest');
+      // 내 프로필이면 undefined (모든 노트 조회), 기본 정렬은 'latest', 페이지네이션 포함
+      expect(notesApi.getAll).toHaveBeenCalledWith(1, undefined, undefined, undefined, undefined, 'latest', 1, 20);
     }, { timeout: 3000 });
   });
 
@@ -308,8 +309,8 @@ describe('UserProfile', () => {
     );
 
     await waitFor(() => {
-      // 다른 사용자면 true (공개 노트만 조회), 기본 정렬은 'latest'
-      expect(notesApi.getAll).toHaveBeenCalledWith(2, true, undefined, undefined, undefined, 'latest');
+      // 다른 사용자면 true (공개 노트만 조회), 기본 정렬은 'latest', 페이지네이션 포함
+      expect(notesApi.getAll).toHaveBeenCalledWith(2, true, undefined, undefined, undefined, 'latest', 1, 20);
     }, { timeout: 3000 });
   });
 
