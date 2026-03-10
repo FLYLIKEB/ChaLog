@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2, Coffee, ChevronRight } from 'lucide-react';
+import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2, Coffee, ChevronRight, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
@@ -365,6 +365,23 @@ export function Cellar() {
             <div>
               <p className="text-sm font-medium text-foreground">다회 모드</p>
               <p className="text-xs text-muted-foreground mt-0.5">탕별 타이머·기록, 세션 요약·차록 발행</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </Link>
+
+        {/* 블라인드 테이스팅 */}
+        <Link
+          to="/blind/new"
+          className="mx-4 mt-2 sm:mx-6 flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <EyeOff className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">블라인드 테이스팅</p>
+              <p className="text-xs text-muted-foreground mt-0.5">정보 없이 평가, 참가자별 비교 리포트</p>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
