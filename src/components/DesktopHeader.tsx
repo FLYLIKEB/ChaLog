@@ -1,45 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { Bell, User, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { notificationsApi } from '../lib/api';
 import { useSidebar } from '../contexts/SidebarContext';
-
-const POLL_INTERVAL_MS = 30_000;
+import { useNotificationCount } from '../hooks/useNotificationCount';
 
 export function DesktopHeader() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { toggle } = useSidebar();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setUnreadCount(0);
-      return;
-    }
-
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await notificationsApi.getUnreadCount();
-        setUnreadCount(res.count);
-      } catch {
-        // 폴링 실패는 조용히 무시
-      }
-    };
-
-    fetchUnreadCount();
-    intervalRef.current = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
-
-    const handleFocus = () => fetchUnreadCount();
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [isAuthenticated]);
+  const unreadCount = useNotificationCount();
 
   return (
     <header className="hidden md:flex items-center justify-between px-6 h-14 shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-md">

@@ -71,33 +71,41 @@ export function Search() {
   const [selectedFlavorTag, setSelectedFlavorTag] = useState<string | null>(null);
   const [flavorTeas, setFlavorTeas] = useState<Tea[]>([]);
   const [isFlavorLoading, setIsFlavorLoading] = useState(false);
-  const flavorRequestRef = useRef<string | null>(null);
+  const flavorRequestRef = useRef<number | null>(null);
 
-  const handleFlavorTagClick = useCallback(async (tagName: string) => {
-    if (selectedFlavorTag === tagName) {
-      setSelectedFlavorTag(null);
-      setFlavorTeas([]);
-      flavorRequestRef.current = null;
-      return;
-    }
-    setSelectedFlavorTag(tagName);
-    setIsFlavorLoading(true);
-    flavorRequestRef.current = tagName;
-    try {
-      const data = await teasApi.getByTags([tagName], 'match', 20);
-      if (flavorRequestRef.current === tagName) {
-        setFlavorTeas(Array.isArray(data) ? data : []);
-      }
-    } catch {
-      if (flavorRequestRef.current === tagName) {
+  const handleFlavorTagClick = useCallback(
+    async (tagName: string) => {
+      if (selectedFlavorTag === tagName) {
+        setSelectedFlavorTag(null);
         setFlavorTeas([]);
-      }
-    } finally {
-      if (flavorRequestRef.current === tagName) {
+        flavorRequestRef.current = null;
         setIsFlavorLoading(false);
+        return;
       }
-    }
-  }, [selectedFlavorTag]);
+
+      setSelectedFlavorTag(tagName);
+      setIsFlavorLoading(true);
+
+      const requestId = (flavorRequestRef.current ?? 0) + 1;
+      flavorRequestRef.current = requestId;
+
+      try {
+        const data = await teasApi.getByTags([tagName], 'match', 20);
+        if (flavorRequestRef.current === requestId) {
+          setFlavorTeas(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        if (flavorRequestRef.current === requestId) {
+          setFlavorTeas([]);
+        }
+      } finally {
+        if (flavorRequestRef.current === requestId) {
+          setIsFlavorLoading(false);
+        }
+      }
+    },
+    [selectedFlavorTag],
+  );
 
   const [popularTeas, setPopularTeas] = useState<Tea[]>([]);
   const [newTeas, setNewTeas] = useState<Tea[]>([]);

@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { User, ChevronLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { notificationsApi } from '../lib/api';
 import { ChaLogLogo } from './ChaLogLogo';
-
-const POLL_INTERVAL_MS = 30_000;
+import { useNotificationCount } from '../hooks/useNotificationCount';
 
 interface HeaderProps {
   title?: string;
@@ -20,35 +18,7 @@ interface HeaderProps {
 export function Header({ title, showBack, onBack, showProfile, showLogo }: HeaderProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setUnreadCount(0);
-      return;
-    }
-
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await notificationsApi.getUnreadCount();
-        setUnreadCount(res.count);
-      } catch {
-        // 폴링 실패는 조용히 무시
-      }
-    };
-
-    fetchUnreadCount();
-    intervalRef.current = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
-
-    const handleFocus = () => fetchUnreadCount();
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [isAuthenticated]);
+  const unreadCount = useNotificationCount();
 
   const headerHeight = 'var(--header-spacer)';
 
