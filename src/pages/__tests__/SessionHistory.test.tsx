@@ -33,6 +33,9 @@ vi.mock('../../lib/api', async () => {
       ...actual.teaSessionsApi,
       getAll: mockGetAll,
     },
+    blindSessionsApi: {
+      getMySessions: vi.fn(() => Promise.resolve([])),
+    },
     notificationsApi: {
       getUnreadCount: vi.fn(() => Promise.resolve({ count: 0 })),
     },
@@ -58,7 +61,7 @@ const makeSession = (overrides: Record<string, unknown> = {}) => ({
   id: 1,
   userId: 1,
   teaId: 1,
-  tea: { id: 1, name: '동방미인', type: '녹차' },
+  tea: { id: 1, name: '동방미인', type: '녹차', averageRating: 0, reviewCount: 0 },
   noteId: null,
   steeps: [],
   createdAt: '2024-01-01T12:00:00.000Z',
@@ -80,7 +83,7 @@ describe('SessionHistory', () => {
 
   it('세션 목록을 렌더링한다', async () => {
     vi.mocked(teaSessionsApi.getAll).mockResolvedValue([
-      makeSession({ id: 1, tea: { id: 1, name: '동방미인', type: '녹차' } }),
+      makeSession({ id: 1, tea: { id: 1, name: '동방미인', type: '녹차', averageRating: 0, reviewCount: 0 } }),
     ]);
 
     renderWithRouter(<SessionHistory />);

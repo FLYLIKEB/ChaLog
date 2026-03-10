@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -6,6 +6,7 @@ import { PostCard } from '../components/PostCard';
 import { EmptyState } from '../components/EmptyState';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
+import { Button } from '../components/ui/button';
 import { notesApi, postsApi } from '../lib/api';
 import { Note, Post } from '../types';
 import { logger } from '../lib/logger';
@@ -15,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../components/ui/utils';
 
 type SavedTab = 'notes' | 'posts';
+const PAGE_SIZE = 20;
 
 export function Saved() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -24,6 +26,18 @@ export function Saved() {
   const [bookmarkedPosts, setBookmarkedPosts] = useState<Post[]>([]);
   const [isLoadingNotes, setIsLoadingNotes] = useState(true);
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
+  // 노트: 클라이언트 표시 제한
+  const [notesDisplayCount, setNotesDisplayCount] = useState(PAGE_SIZE);
+  // 게시글: 서버 페이지네이션
+  const [postsPage, setPostsPage] = useState(1);
+  const [postsHasMore, setPostsHasMore] = useState(true);
+  const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
+
+  const displayedNotes = useMemo(
+    () => bookmarkedNotes.slice(0, notesDisplayCount),
+    [bookmarkedNotes, notesDisplayCount],
+  );
+  const notesHasMore = notesDisplayCount < bookmarkedNotes.length;
 
   const fetchBookmarkedNotes = useCallback(async () => {
     if (!user) return;
@@ -32,6 +46,7 @@ export function Saved() {
       const notes = await notesApi.getAll(undefined, undefined, undefined, true);
       const notesArray = Array.isArray(notes) ? notes : [];
       setBookmarkedNotes(notesArray as Note[]);
+      setNotesDisplayCount(PAGE_SIZE);
     } catch (error) {
       logger.error('Failed to fetch bookmarked notes:', error);
       toast.error('저장한 차록을 불러오는데 실패했습니다.');
@@ -44,8 +59,10 @@ export function Saved() {
     if (!user) return;
     try {
       setIsLoadingPosts(true);
-      const posts = await postsApi.getAll(undefined, 1, 20, undefined, true);
+      setPostsPage(1);
+      const posts = await postsApi.getAll(undefined, 1, PAGE_SIZE, undefined, true);
       setBookmarkedPosts(Array.isArray(posts) ? posts : []);
+      setPostsHasMore(Array.isArray(posts) && posts.length === PAGE_SIZE);
     } catch (error) {
       logger.error('Failed to fetch bookmarked posts:', error);
       toast.error('저장한 게시글을 불러오는데 실패했습니다.');
@@ -53,6 +70,23 @@ export function Saved() {
       setIsLoadingPosts(false);
     }
   }, [user]);
+
+  const handleLoadMorePosts = useCallback(async () => {
+    if (!user) return;
+    const nextPage = postsPage + 1;
+    setIsLoadingMorePosts(true);
+    try {
+      const morePosts = await postsApi.getAll(undefined, nextPage, PAGE_SIZE, undefined, true);
+      setBookmarkedPosts((prev) => [...prev, ...(Array.isArray(morePosts) ? morePosts : [])]);
+      setPostsPage(nextPage);
+      setPostsHasMore(Array.isArray(morePosts) && morePosts.length === PAGE_SIZE);
+    } catch (error) {
+      logger.error('Failed to load more bookmarked posts:', error);
+      toast.error('게시글을 더 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingMorePosts(false);
+    }
+  }, [user, postsPage]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -133,18 +167,32 @@ export function Saved() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
               </div>
             ) : bookmarkedNotes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {bookmarkedNotes.map(note => (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    showTeaName
-                    onBookmarkToggle={(isBookmarked) => {
-                      if (!isBookmarked) handleNoteBookmarkRemoved(note.id);
-                    }}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {displayedNotes.map(note => (
+                    <NoteCard
+                      key={note.id}
+                      note={note}
+                      showTeaName
+                      onBookmarkToggle={(isBookmarked) => {
+                        if (!isBookmarked) handleNoteBookmarkRemoved(note.id);
+                      }}
+                    />
+                  ))}
+                </div>
+                {notesHasMore && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNotesDisplayCount((prev) => prev + PAGE_SIZE)}
+                      className="w-full max-w-xs"
+                    >
+                      더 보기
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 type="notes"
@@ -162,17 +210,33 @@ export function Saved() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
               </div>
             ) : bookmarkedPosts.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
-                {bookmarkedPosts.map(post => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    onBookmarkToggle={(isBookmarked) => {
-                      if (!isBookmarked) handlePostBookmarkRemoved(post.id);
-                    }}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
+                  {bookmarkedPosts.map(post => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onBookmarkToggle={(isBookmarked) => {
+                        if (!isBookmarked) handlePostBookmarkRemoved(post.id);
+                      }}
+                    />
+                  ))}
+                </div>
+                {postsHasMore && (
+                  <div className="flex justify-center pt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLoadMorePosts}
+                      disabled={isLoadingMorePosts}
+                      className="w-full max-w-xs"
+                    >
+                      {isLoadingMorePosts ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      더 보기
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyState
                 type="feed"

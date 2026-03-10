@@ -35,6 +35,7 @@ describe('NewPost 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),
@@ -54,7 +55,7 @@ describe('NewPost 페이지', () => {
     renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     expect(screen.getByPlaceholderText('제목을 입력하세요')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('내용을 입력하세요')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/내용을 입력하세요/)).toBeInTheDocument();
     expect(screen.getByText('광고/협찬 게시글')).toBeInTheDocument();
   });
 
@@ -82,7 +83,7 @@ describe('NewPost 페이지', () => {
     fireEvent.change(screen.getByPlaceholderText('제목을 입력하세요'), {
       target: { value: '제목 입력' },
     });
-    fireEvent.change(screen.getByPlaceholderText('내용을 입력하세요'), {
+    fireEvent.change(screen.getByPlaceholderText(/내용을 입력하세요/), {
       target: { value: '내용 입력' },
     });
 
@@ -94,6 +95,7 @@ describe('NewPost 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),
@@ -142,7 +144,7 @@ describe('NewPost 페이지', () => {
     fireEvent.change(screen.getByPlaceholderText('제목을 입력하세요'), {
       target: { value: '제목 입력' },
     });
-    fireEvent.change(screen.getByPlaceholderText('내용을 입력하세요'), {
+    fireEvent.change(screen.getByPlaceholderText(/내용을 입력하세요/), {
       target: { value: '내용 입력' },
     });
 

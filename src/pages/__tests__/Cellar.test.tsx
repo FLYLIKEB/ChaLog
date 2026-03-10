@@ -156,8 +156,14 @@ describe('Cellar 페이지', () => {
 
     renderCellar();
 
-    const noteBtn = await screen.findByRole('button', { name: /차록 작성/ });
-    await userEvent.click(noteBtn);
+    // CellarCard 내의 "차록" 버튼 찾기 (BottomNav의 "내 차록" 버튼과 구별)
+    await waitFor(() => {
+      expect(screen.getByText('테스트 차')).toBeInTheDocument();
+    });
+    const cardButtons = screen.getAllByRole('button', { name: /차록/ });
+    const noteBtn = cardButtons.find((btn) => btn.textContent?.trim() === '차록');
+    expect(noteBtn).toBeDefined();
+    await userEvent.click(noteBtn!);
 
     expect(mockNavigate).toHaveBeenCalledWith('/note/new?teaId=5');
   });

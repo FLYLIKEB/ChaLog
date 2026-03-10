@@ -168,12 +168,15 @@ function CellarCard({
   );
 }
 
+const CELLAR_PAGE_SIZE = 20;
+
 export function Cellar() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [items, setItems] = useState<CellarItem[]>([]);
   const [reminders, setReminders] = useState<CellarItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [displayCount, setDisplayCount] = useState(CELLAR_PAGE_SIZE);
 
   // 필터·정렬 상태
   const [activeType, setActiveType] = useState<'all' | string>('all');
@@ -290,6 +293,11 @@ export function Cellar() {
       return sortDir === 'asc' ? result : -result;
     });
   }, [activeItems, activeType, sortKey, sortDir]);
+
+  // 필터/정렬 변경 시 표시 수 리셋
+  useEffect(() => {
+    setDisplayCount(CELLAR_PAGE_SIZE);
+  }, [activeType, sortKey, sortDir]);
 
   const handleSortChange = (key: SortKey) => {
     if (key === sortKey) {
@@ -597,23 +605,37 @@ export function Cellar() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {displayedItems.map((item, i) => (
-                <div
-                  key={item.id}
-                  className="animate-fade-in-up opacity-0"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <CellarCard
-                    item={item}
-                    onDelete={handleDelete}
-                    onEdit={handleEdit}
-                    onNoteClick={handleNoteClick}
-                    onSessionClick={handleSessionClick}
-                  />
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {displayedItems.slice(0, displayCount).map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="animate-fade-in-up opacity-0"
+                    style={{ animationDelay: `${Math.min(i, 5) * 50}ms` }}
+                  >
+                    <CellarCard
+                      item={item}
+                      onDelete={handleDelete}
+                      onEdit={handleEdit}
+                      onNoteClick={handleNoteClick}
+                      onSessionClick={handleSessionClick}
+                    />
+                  </div>
+                ))}
+              </div>
+              {displayCount < displayedItems.length && (
+                <div className="flex justify-center pt-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDisplayCount((prev) => prev + CELLAR_PAGE_SIZE)}
+                    className="w-full max-w-xs"
+                  >
+                    {`더 보기 (${displayedItems.length - displayCount}개 남음)`}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
 
           {/* 다 마신 차 목록 */}

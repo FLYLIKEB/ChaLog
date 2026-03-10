@@ -3,6 +3,7 @@ import { screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, vi, describe, it, expect } from 'vitest';
 import { PostImageUploader } from '../PostImageUploader';
+import { PostImageItem } from '../../types';
 import { renderWithRouter } from '../../test/renderWithRouter';
 import { useAuth } from '../../contexts/AuthContext';
 import { postsApi } from '../../lib/api';
@@ -99,9 +100,9 @@ describe('PostImageUploader', () => {
 
   it('caption 입력 시 onChange를 호출한다', async () => {
     const user = userEvent.setup();
-    const initialImages = [{ url: 'https://example.com/1.jpg', caption: '' }];
+    const initialImages: PostImageItem[] = [{ url: 'https://example.com/1.jpg', caption: '' }];
     const Wrapper = () => {
-      const [imgs, setImgs] = React.useState(initialImages);
+      const [imgs, setImgs] = React.useState<PostImageItem[]>(initialImages);
       return (
         <PostImageUploader
           images={imgs}

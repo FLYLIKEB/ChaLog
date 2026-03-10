@@ -76,6 +76,7 @@ describe('PostDetail 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),

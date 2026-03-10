@@ -17,6 +17,7 @@ const mockNavigate = vi.fn();
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({
     isAuthenticated: true,
+    isAdmin: false,
     user: { id: 1, name: '테스트 사용자', email: 'test@example.com' },
     token: 'mock-token',
     isLoading: false,
@@ -25,6 +26,9 @@ vi.mock('../../contexts/AuthContext', () => ({
     loginWithKakao: vi.fn(),
       loginWithGoogle: vi.fn(),
     logout: vi.fn(),
+    hasCompletedOnboarding: true,
+    isOnboardingLoading: false,
+    refreshOnboardingStatus: vi.fn(),
   })),
 }));
 
@@ -225,6 +229,7 @@ describe('ImageUploader 컴포넌트', () => {
       const { useAuth } = await import('../../contexts/AuthContext');
       vi.mocked(useAuth).mockReturnValue({
         isAuthenticated: false,
+        isAdmin: false,
         user: null,
         token: null,
         isLoading: false,

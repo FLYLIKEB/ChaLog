@@ -45,7 +45,7 @@ export function AdminMonitoring() {
     Promise.all([adminApi.getMetrics(), adminApi.getLogs({ level, limit: 50 })])
       .then(([m, l]) => {
         setMetrics(m);
-        setLogData(l);
+        setLogData(l as { logs: any[]; errorCount: number; warnCount: number; totalCount: number });
       })
       .catch((e: any) => setError(e?.message || '로딩에 실패했습니다.'))
       .finally(() => setLoading(false));

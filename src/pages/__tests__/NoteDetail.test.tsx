@@ -76,7 +76,7 @@ describe('NoteDetail - 이미지 가운데 정렬', () => {
 
     await waitFor(() => {
       const imageGallery = screen.getByText('사진').nextElementSibling;
-      expect(imageGallery).toHaveClass('grid', 'grid-cols-1', 'sm:grid-cols-2', 'gap-3', 'justify-items-center');
+      expect(imageGallery).toHaveClass('grid', 'grid-cols-1', 'sm:grid-cols-2', 'lg:grid-cols-3', 'gap-3');
     });
   });
 
@@ -91,7 +91,7 @@ describe('NoteDetail - 이미지 가운데 정렬', () => {
       const imageContainers = screen.getAllByAltText(/Note image/);
       imageContainers.forEach((img) => {
         const container = img.parentElement;
-        expect(container).toHaveClass('max-w-xs');
+        expect(container).toHaveClass('aspect-square', 'rounded-lg', 'overflow-hidden', 'bg-muted', 'w-full');
       });
     });
   });

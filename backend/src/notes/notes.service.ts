@@ -123,7 +123,7 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string): Promise<any[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string, sort: 'latest' | 'rating' = 'latest'): Promise<any[]> {
     try {
       // following 피드: 팔로잉한 유저의 공개 노트만 조회
       if (feed === 'following') {
@@ -255,8 +255,17 @@ export class NotesService {
         .leftJoinAndSelect('note.noteTags', 'noteTags')
         .leftJoinAndSelect('noteTags.tag', 'tag')
         .leftJoinAndSelect('note.axisValues', 'axisValues')
-        .leftJoinAndSelect('axisValues.axis', 'axis')
-        .orderBy('note.createdAt', 'DESC');
+        .leftJoinAndSelect('axisValues.axis', 'axis');
+
+      if (sort === 'rating') {
+        // MySQL에서 NULL을 마지막으로 정렬: IS NULL 오름차순 → NULL이 아닌 값이 먼저
+        queryBuilder
+          .orderBy('note.overallRating IS NULL', 'ASC')
+          .addOrderBy('note.overallRating', 'DESC')
+          .addOrderBy('note.createdAt', 'DESC');
+      } else {
+        queryBuilder.orderBy('note.createdAt', 'DESC');
+      }
 
       const conditions: string[] = [];
       const params: Record<string, any> = {};
