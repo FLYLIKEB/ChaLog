@@ -123,25 +123,38 @@ export function UserProfile() {
 
   const hasMore = notes.length < noteTotal;
 
-  // 무한 스크롤: 마지막 노트 카드 감지
+  // 무한 스크롤용 ref
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const isLoadingMoreRef = useRef(false);
+  const notePageRef = useRef(notePage);
+  notePageRef.current = notePage;
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMoreRef.current || !hasMore) return;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      await fetchNotes(sort, notePageRef.current + 1, true);
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [hasMore, sort, fetchNotes]);
 
   useEffect(() => {
-    if (!hasMore || isLoadingMore) return;
     const el = loadMoreRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setIsLoadingMore(true);
-          fetchNotes(sort, notePage + 1, true).finally(() => setIsLoadingMore(false));
+          loadMore();
         }
       },
       { threshold: 0.1 },
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, sort, notePage, fetchNotes]);
+  }, [loadMore]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -504,11 +517,14 @@ export function UserProfile() {
                   <NoteCard key={note.id} note={note} showTeaName />
                 ))}
               </div>
-              {hasMore && (
-                <div ref={loadMoreRef} className="flex justify-center py-6">
-                  {isLoadingMore && <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />}
-                </div>
-              )}
+              <div ref={loadMoreRef} className="flex justify-center py-4">
+                {isLoadingMore && (
+                  <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    불러오는 중...
+                  </span>
+                )}
+              </div>
             </>
           ) : (
             <EmptyState
