@@ -1204,13 +1204,14 @@ export const notesApi = {
     apiClient.post<RatingSchema>('/notes/schemas', data),
   toggleSchemaPin: (schemaId: number) =>
     apiClient.post<{ pinned: boolean }>(`/notes/schemas/${schemaId}/pin`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags') => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags', sort?: 'latest' | 'rating') => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
     if (teaId !== undefined) params.append('teaId', String(teaId));
     if (bookmarked !== undefined) params.append('bookmarked', String(bookmarked));
     if (feed !== undefined) params.append('feed', feed);
+    if (sort !== undefined) params.append('sort', sort);
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },

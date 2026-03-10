@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -48,6 +48,16 @@ export function UserProfile() {
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
 
+  const initialLoadDone = useRef(false);
+
+  const fetchNotes = useCallback(async (sortType: SortType) => {
+    if (isNaN(userId)) return;
+    const isPublicFilter = isOwnProfile ? undefined : true;
+    const notesData = await notesApi.getAll(userId, isPublicFilter, undefined, undefined, undefined, sortType);
+    const notesArray = Array.isArray(notesData) ? notesData : [];
+    setNotes(notesArray as Note[]);
+  }, [userId, isOwnProfile]);
+
   const fetchData = useCallback(async () => {
     if (isNaN(userId)) {
       toast.error('유효하지 않은 사용자 ID입니다.');
@@ -57,14 +67,11 @@ export function UserProfile() {
     try {
       setIsLoading(true);
       setOnboardingPreference(null);
-      const isPublicFilter = isOwnProfile ? undefined : true;
-      const [userData, notesData] = await Promise.all([
+      const [userData] = await Promise.all([
         usersApi.getById(userId),
-        notesApi.getAll(userId, isPublicFilter),
+        fetchNotes(sort),
       ]);
       setUser(userData as User);
-      const notesArray = Array.isArray(notesData) ? notesData : [];
-      setNotes(notesArray as Note[]);
       if (isOwnProfile) {
         try {
           const pref = await usersApi.getOnboardingPreference(userId);
@@ -76,6 +83,7 @@ export function UserProfile() {
           }
         }
       }
+      initialLoadDone.current = true;
     } catch (error: unknown) {
       logger.error('Failed to fetch user profile:', error);
       const statusCode = (error as { statusCode?: number })?.statusCode;
@@ -87,12 +95,18 @@ export function UserProfile() {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, isOwnProfile]);
+  }, [userId, isOwnProfile, sort, fetchNotes]);
 
   useEffect(() => {
     if (authLoading) return;
     fetchData();
   }, [authLoading, fetchData]);
+
+  // 정렬 변경 시 노트만 다시 가져오기 (초기 로드 이후)
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    fetchNotes(sort);
+  }, [sort, fetchNotes]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -162,15 +176,8 @@ export function UserProfile() {
     };
   }, [notes]);
 
-  const sortedNotes = useMemo(() => {
-    return [...notes].sort((a, b) => {
-      if (sort === 'latest') {
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      } else {
-        return (b.overallRating || 0) - (a.overallRating || 0);
-      }
-    });
-  }, [notes, sort]);
+  // 서버에서 정렬된 상태로 반환되므로 클라이언트 정렬 불필요
+  const sortedNotes = notes;
 
   const handleProfileImageUpdate = (imageUrl: string) => {
     if (user) {

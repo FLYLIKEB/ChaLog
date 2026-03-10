@@ -127,13 +127,15 @@ export class NotesController {
     @Query('teaId') teaId?: string,
     @Query('bookmarked') bookmarked?: string,
     @Query('feed') feed?: string,
+    @Query('sort') sort?: string,
     @Request() req?: any,
   ) {
     const publicFilter = isPublic === 'true' ? true : isPublic === 'false' ? false : undefined;
     const userIdNum = userId ? parseInt(userId, 10) : undefined;
     const teaIdNum = teaId ? parseInt(teaId, 10) : undefined;
     const bookmarkedFilter = bookmarked === 'true' ? true : bookmarked === 'false' ? false : undefined;
-    
+    const sortFilter = sort === 'rating' ? 'rating' as const : 'latest' as const;
+
     let currentUserId: number | undefined;
     if (req?.user?.userId) {
       const parsedUserId = parseInt(req.user.userId, 10);
@@ -141,8 +143,8 @@ export class NotesController {
         currentUserId = parsedUserId;
       }
     }
-    
-    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId, bookmarkedFilter, feed);
+
+    return this.notesService.findAll(userIdNum, publicFilter, teaIdNum, currentUserId, bookmarkedFilter, feed, sortFilter);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

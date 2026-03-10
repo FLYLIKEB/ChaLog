@@ -289,8 +289,8 @@ describe('UserProfile', () => {
     );
 
     await waitFor(() => {
-      // 내 프로필이면 undefined (모든 노트 조회)
-      expect(notesApi.getAll).toHaveBeenCalledWith(1, undefined);
+      // 내 프로필이면 undefined (모든 노트 조회), 기본 정렬은 'latest'
+      expect(notesApi.getAll).toHaveBeenCalledWith(1, undefined, undefined, undefined, undefined, 'latest');
     }, { timeout: 3000 });
   });
 
@@ -308,8 +308,8 @@ describe('UserProfile', () => {
     );
 
     await waitFor(() => {
-      // 다른 사용자면 true (공개 노트만 조회)
-      expect(notesApi.getAll).toHaveBeenCalledWith(2, true);
+      // 다른 사용자면 true (공개 노트만 조회), 기본 정렬은 'latest'
+      expect(notesApi.getAll).toHaveBeenCalledWith(2, true, undefined, undefined, undefined, 'latest');
     }, { timeout: 3000 });
   });
 
