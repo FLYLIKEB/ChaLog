@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Plus, Copy, X } from 'lucide-react';
+import { Loader2, Plus, Copy, X, History } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -157,6 +157,15 @@ export function BlindSessionNew() {
       <Header showBack title="블라인드 테이스팅" showProfile showLogo />
 
       <div className="p-4 pb-24 space-y-6">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground"
+          onClick={() => navigate('/sessions')}
+        >
+          <History className="w-4 h-4 mr-2" />
+          이전 세션 기록 보기
+        </Button>
+
         <section className="bg-card rounded-lg p-3">
           <Label className="mb-1.5 block text-sm">차 선택 (참가자에게 숨김, 최대 10개)</Label>
           <Input

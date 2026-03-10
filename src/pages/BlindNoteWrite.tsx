@@ -212,9 +212,9 @@ export function BlindNoteWrite() {
       <Header showBack title={roundLabel} showProfile showLogo />
 
       <div className="p-4 pb-24 space-y-6">
-        <div className="bg-card rounded-lg p-3 border border-dashed border-muted-foreground/30">
-          <p className="text-sm font-medium text-muted-foreground">블라인드 샘플</p>
-          <p className="text-xs text-muted-foreground mt-1">
+        <div className="px-1 py-2">
+          <p className="text-sm font-semibold text-foreground">블라인드 샘플</p>
+          <p className="text-xs text-foreground/70 mt-1">
             차 정보 없이 맛과 향을 기록하세요. 세션 종료 후 결과를 비교할 수 있습니다.
           </p>
         </div>

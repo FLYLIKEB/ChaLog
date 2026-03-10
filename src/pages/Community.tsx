@@ -166,9 +166,9 @@ export function Community() {
               {[1, 2, 3].map((i) => <PostCardSkeleton key={i} />)}
             </div>
             {/* 데스크톱: 게시판별 스켈레톤 */}
-            <div className="hidden md:grid md:grid-cols-2 gap-6 pt-4">
+            <div className="hidden md:grid md:grid-cols-2 gap-8 pt-4">
               {DESKTOP_BOARDS.map((board) => (
-                <div key={board.key} className="space-y-3">
+                <div key={board.key} className="rounded-xl border border-border/60 bg-card p-4 space-y-3">
                   <div className="h-6 w-24 rounded bg-muted animate-pulse" />
                   {[1, 2, 3].map((i) => <PostCardSkeleton key={i} />)}
                 </div>
@@ -208,13 +208,13 @@ export function Community() {
             {/* 데스크톱: selectedGroup === 'all' → 게시판별 분리 / 특정 그룹 → 단일 게시판 뷰 */}
             <div className="hidden md:block pt-4">
               {selectedGroup === 'all' ? (
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-2 gap-8">
                   {DESKTOP_BOARDS.map((board) => {
                     const boardPosts = allPosts.filter((p) =>
                       board.categories.includes(p.category as PostCategory)
                     ).slice(0, 5);
                     return (
-                      <section key={board.key} className="space-y-2">
+                      <section key={board.key} className="rounded-xl border border-border/60 bg-card p-4 space-y-2">
                         <div className="flex items-center justify-between pb-2 border-b border-border/50">
                           <h2 className="font-semibold text-foreground">{board.label}</h2>
                           <button
