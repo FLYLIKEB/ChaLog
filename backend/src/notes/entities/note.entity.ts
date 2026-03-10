@@ -38,6 +38,9 @@ export class Note {
   @Column({ type: 'boolean', default: true })
   isRatingIncluded: boolean;
 
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  appearance: string | null;
+
   @Column({ type: 'text', nullable: true })
   memo: string | null;
 

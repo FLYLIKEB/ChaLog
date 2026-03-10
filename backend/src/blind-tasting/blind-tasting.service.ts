@@ -356,6 +356,7 @@ export class BlindTastingService {
       overallRating: dto.overallRating,
       isRatingIncluded: dto.isRatingIncluded ?? true,
       axisValues: dto.axisValues ?? [],
+      appearance: dto.appearance,
       memo: dto.memo,
       images: dto.images,
       imageThumbnails: dto.imageThumbnails,

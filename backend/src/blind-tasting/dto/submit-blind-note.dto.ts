@@ -55,6 +55,11 @@ export class SubmitBlindNoteDto {
   @IsOptional()
   @Transform(({ value }) => (value === null ? null : value))
   @IsString()
+  appearance?: string | null;
+
+  @IsOptional()
+  @Transform(({ value }) => (value === null ? null : value))
+  @IsString()
   memo?: string | null;
 
   @IsOptional()

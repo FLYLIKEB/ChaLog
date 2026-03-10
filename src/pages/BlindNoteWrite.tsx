@@ -9,6 +9,7 @@ import { TemplateSelect } from '../components/TemplateSelect';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
+import { BrewColorPicker, BrewColor } from '../components/BrewColorPicker';
 import { blindSessionsApi, notesApi } from '../lib/api';
 import { RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export function BlindNoteWrite() {
   const [axes, setAxes] = useState<RatingAxis[]>([]);
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
   const [overallRating, setOverallRating] = useState<number | null>(null);
+  const [brewColor, setBrewColor] = useState<BrewColor | null>(null);
   const [memo, setMemo] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -163,6 +165,7 @@ export function BlindNoteWrite() {
         overallRating,
         isRatingIncluded: true,
         axisValues: axisValuesArray,
+        appearance: brewColor ?? null,
         memo: processedMemo ?? null,
         tags: tags.length > 0 ? tags : undefined,
       });
@@ -225,6 +228,11 @@ export function BlindNoteWrite() {
 
         {overallRating !== null && (
           <>
+            <section className="bg-card rounded-lg p-4">
+              <Label className="mb-3 block text-base font-semibold">수색</Label>
+              <BrewColorPicker value={brewColor} onChange={setBrewColor} />
+            </section>
+
             <section className="bg-card rounded-lg p-4">
               <Label className="mb-2 block text-base font-semibold">테이스팅 템플릿</Label>
               {schemas.length > 0 ? (

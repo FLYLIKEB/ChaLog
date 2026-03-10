@@ -1344,6 +1344,7 @@ export interface SubmitBlindNoteRequest {
   overallRating?: number | null;
   isRatingIncluded?: boolean;
   axisValues: Array<{ axisId: number; value: number }>;
+  appearance?: string | null;
   memo?: string | null;
   images?: string[] | null;
   imageThumbnails?: string[] | null;

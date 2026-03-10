@@ -2,13 +2,23 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, Pause, RotateCcw, Check, Loader2, FileText, ChevronRight } from 'lucide-react';
 import { Header } from '../components/Header';
-import { Input } from '../components/ui/input';
+import { BrewColorPicker, BrewColor, BREW_COLORS } from '../components/BrewColorPicker';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { teaSessionsApi } from '../lib/api';
 import { TeaSession, TeaSessionSteep } from '../types';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
+
+const AROMA_OPTIONS = [
+  '꽃향', '과일향', '풀향', '나무향', '견과향',
+  '달콤한향', '곡물향', '훈연향', '약초향', '해양향',
+] as const;
+
+const BODY_FEELING_OPTIONS = [
+  '따뜻함', '상쾌함', '편안함', '기운남', '나른함',
+  '목넘김부드러움', '텁텁함', '시원함',
+] as const;
 
 export function SessionInProgress() {
   const { id } = useParams<{ id: string }>();
@@ -21,10 +31,10 @@ export function SessionInProgress() {
   const [isRunning, setIsRunning] = useState(false);
   const [showSteepForm, setShowSteepForm] = useState(false);
   const [pendingDuration, setPendingDuration] = useState(0);
-  const [colorNote, setColorNote] = useState('');
-  const [aromaProfile, setAromaProfile] = useState('');
-  const [waterTemp, setWaterTemp] = useState('');
-  const [bodyFeeling, setBodyFeeling] = useState('');
+  const [colorNote, setColorNote] = useState<BrewColor | null>(null);
+  const [selectedAromas, setSelectedAromas] = useState<string[]>([]);
+  const [waterTemp, setWaterTemp] = useState<number | null>(null);
+  const [selectedBodyFeelings, setSelectedBodyFeelings] = useState<string[]>([]);
   const [rating, setRating] = useState<number | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -83,10 +93,10 @@ export function SessionInProgress() {
       setIsSaving(true);
       const data = {
         v: 1 as const,
-        color_note: colorNote.trim() || undefined,
-        aroma_profile: aromaProfile.trim() || undefined,
-        water_temp: waterTemp.trim() || undefined,
-        body_feeling: bodyFeeling.trim() || undefined,
+        color_note: colorNote ?? undefined,
+        aroma_profile: selectedAromas.length > 0 ? selectedAromas.join(', ') : undefined,
+        water_temp: waterTemp != null ? `${waterTemp}°C` : undefined,
+        body_feeling: selectedBodyFeelings.length > 0 ? selectedBodyFeelings.join(', ') : undefined,
         rating: rating ?? undefined,
       };
 
@@ -99,10 +109,10 @@ export function SessionInProgress() {
       const updated = await teaSessionsApi.getById(sessionId);
       setSession(updated);
       setShowSteepForm(false);
-      setColorNote('');
-      setAromaProfile('');
-      setWaterTemp('');
-      setBodyFeeling('');
+      setColorNote(null);
+      setSelectedAromas([]);
+      setWaterTemp(null);
+      setSelectedBodyFeelings([]);
       setRating(null);
       toast.success(`${steepNumber}탕 기록이 저장되었습니다.`);
     } catch (error) {
@@ -160,7 +170,10 @@ export function SessionInProgress() {
         {/* 타이머 - 뷰포트 상하 중앙 정렬 */}
         <div className="flex-1 flex flex-col justify-center min-h-0 py-6">
           <section className="bg-card rounded-xl py-12 px-6 flex flex-col items-center text-center">
-          <p className="text-6xl sm:text-5xl font-mono font-bold tabular-nums mb-8 mx-auto">
+          <p
+            className="text-6xl sm:text-5xl font-bold tabular-nums mb-8 mx-auto tracking-wider"
+            style={{ fontFamily: "'Orbitron', monospace" }}
+          >
             {formatTime(elapsedSeconds)}
           </p>
           <div className="flex gap-6 justify-center items-center">
@@ -208,24 +221,35 @@ export function SessionInProgress() {
               {/* 감각: 수색의 변화와 향의 종류 */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-muted-foreground">감각 · 수색의 변화와 향의 종류</p>
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">수색 변화</Label>
-                    <Input
-                      placeholder="예: 황금색, 진해짐"
-                      value={colorNote}
-                      onChange={(e) => setColorNote(e.target.value)}
-                      className="mt-1"
-                    />
+                    <Label className="text-xs text-muted-foreground mb-2 block">수색 변화</Label>
+                    <BrewColorPicker value={colorNote} onChange={setColorNote} />
                   </div>
                   <div>
-                    <Label className="text-xs text-muted-foreground">향 종류</Label>
-                    <Input
-                      placeholder="예: 꽃향, 과일향"
-                      value={aromaProfile}
-                      onChange={(e) => setAromaProfile(e.target.value)}
-                      className="mt-1"
-                    />
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">향 종류</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {AROMA_OPTIONS.map((aroma) => (
+                        <button
+                          key={aroma}
+                          type="button"
+                          onClick={() =>
+                            setSelectedAromas((prev) =>
+                              prev.includes(aroma)
+                                ? prev.filter((a) => a !== aroma)
+                                : [...prev, aroma]
+                            )
+                          }
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors touch-manipulation ${
+                            selectedAromas.includes(aroma)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          {aroma}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -235,13 +259,22 @@ export function SessionInProgress() {
                 <p className="text-sm font-medium text-muted-foreground">기술 · 물 온도와 우려낸 시간</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   <div>
-                    <Label className="text-xs text-muted-foreground">물 온도</Label>
-                    <Input
-                      placeholder="예: 95°C, 끓는물"
-                      value={waterTemp}
-                      onChange={(e) => setWaterTemp(e.target.value)}
-                      className="mt-1"
-                    />
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">
+                      물 온도 {waterTemp != null && <span className="text-foreground font-semibold">{waterTemp}°C</span>}
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground shrink-0">50</span>
+                      <input
+                        type="range"
+                        min={50}
+                        max={100}
+                        step={5}
+                        value={waterTemp ?? 85}
+                        onChange={(e) => setWaterTemp(parseInt(e.target.value, 10))}
+                        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-primary bg-muted"
+                      />
+                      <span className="text-xs text-muted-foreground shrink-0">100</span>
+                    </div>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">우려낸 시간</Label>
@@ -257,13 +290,29 @@ export function SessionInProgress() {
                 <p className="text-sm font-medium text-muted-foreground">주관 · 몸의 반응 및 해당 탕의 만족도</p>
                 <div className="space-y-2">
                   <div>
-                    <Label className="text-xs text-muted-foreground">몸의 반응</Label>
-                    <Input
-                      placeholder="예: 따뜻함, 상쾌함"
-                      value={bodyFeeling}
-                      onChange={(e) => setBodyFeeling(e.target.value)}
-                      className="mt-1"
-                    />
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">몸의 반응</Label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {BODY_FEELING_OPTIONS.map((feeling) => (
+                        <button
+                          key={feeling}
+                          type="button"
+                          onClick={() =>
+                            setSelectedBodyFeelings((prev) =>
+                              prev.includes(feeling)
+                                ? prev.filter((f) => f !== feeling)
+                                : [...prev, feeling]
+                            )
+                          }
+                          className={`px-2.5 py-1.5 rounded-full text-xs font-medium transition-colors touch-manipulation ${
+                            selectedBodyFeelings.includes(feeling)
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                          }`}
+                        >
+                          {feeling}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                   <div>
                     <Label className="text-xs text-muted-foreground">만족도 (1~5)</Label>
@@ -295,10 +344,10 @@ export function SessionInProgress() {
                   onClick={() => {
                     setShowSteepForm(false);
                     setElapsedSeconds(pendingDuration);
-                    setColorNote('');
-                    setAromaProfile('');
-                    setWaterTemp('');
-                    setBodyFeeling('');
+                    setColorNote(null);
+                    setSelectedAromas([]);
+                    setWaterTemp(null);
+                    setSelectedBodyFeelings([]);
                     setRating(null);
                   }}
                 >
@@ -323,9 +372,22 @@ export function SessionInProgress() {
                     <span className="font-medium">{s.steepNumber}탕</span>
                     <span className="text-muted-foreground ml-2">{s.steepDurationSeconds}초</span>
                     {s.data?.v === 1 && (
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        {s.data.color_note && (() => {
+                          const bc = BREW_COLORS.find((c) => c.value === s.data!.color_note);
+                          return bc ? (
+                            <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                              <span
+                                className="inline-block w-3.5 h-3.5 rounded-full border border-border/50 shrink-0"
+                                style={{ backgroundColor: bc.hex }}
+                              />
+                              {bc.label}
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">수색 {s.data!.color_note}</span>
+                          );
+                        })()}
                         {[
-                          s.data.color_note && `수색 ${s.data.color_note}`,
                           s.data.aroma_profile && `향 ${s.data.aroma_profile}`,
                           s.data.water_temp && `물온도 ${s.data.water_temp}`,
                           s.data.body_feeling && `몸반응 ${s.data.body_feeling}`,
@@ -333,8 +395,12 @@ export function SessionInProgress() {
                           s.data.memo,
                         ]
                           .filter(Boolean)
-                          .join(' · ')}
-                      </p>
+                          .map((text, i) => (
+                            <span key={i} className="text-sm text-muted-foreground">
+                              {i > 0 || s.data!.color_note ? ' · ' : ''}{text}
+                            </span>
+                          ))}
+                      </div>
                     )}
                   </div>
                 </li>
