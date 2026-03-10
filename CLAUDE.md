@@ -36,6 +36,12 @@ cd backend && npm run test:e2e     # Backend E2E tests (requires .env.test)
 ```
 
 ### Database (Backend)
+
+**접속 방식:**
+- **원격 (Lightsail MySQL):** SSH 터널 경유 → `cd backend/scripts && ./start-ssh-tunnel.sh` (로컬 포트 3307 → 원격 3306). `DATABASE_URL` 사용.
+- **로컬 (MySQL):** `LOCAL_DATABASE_URL=mysql://root:<pw>@127.0.0.1:3306/chalog` 직접 접속. 로컬 MySQL 서버 필요.
+- **테스트:** `TEST_DATABASE_URL` (DB명에 반드시 "test" 포함)
+
 ```bash
 cd backend/scripts
 ./start-ssh-tunnel.sh         # Start SSH tunnel to Lightsail MySQL

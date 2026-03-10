@@ -5,6 +5,7 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { QuantityAdjuster } from '../components/QuantityAdjuster';
 import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,8 +13,6 @@ import { toast } from 'sonner';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
-
-const DECREMENT_OPTIONS = [3, 5, 8] as const;
 
 export function NewCellarItem() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -217,22 +216,7 @@ export function NewCellarItem() {
             />
             <span className="flex items-center px-3 text-sm text-muted-foreground">g</span>
           </div>
-          <div className="flex gap-2">
-            {DECREMENT_OPTIONS.map((n) => (
-              <Button
-                key={n}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const current = parseFloat(quantity) || 0;
-                  setQuantity(String(Math.max(0, current - n)));
-                }}
-              >
-                -{n}g
-              </Button>
-            ))}
-          </div>
+          <QuantityAdjuster quantity={quantity} onChange={setQuantity} />
         </div>
 
         {/* 개봉일 */}
