@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -29,7 +29,17 @@ export function BlindNoteWrite() {
   const [memo, setMemo] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [schemasLoading, setSchemasLoading] = useState(false);
   const [sessionValid, setSessionValid] = useState<boolean | null>(null);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (navTimerRef.current !== null) {
+        clearTimeout(navTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -54,6 +64,7 @@ export function BlindNoteWrite() {
     if (overallRating === null) return;
     const fetchSchemas = async () => {
       try {
+        setSchemasLoading(true);
         const res = await notesApi.getActiveSchemas();
         const list = res?.schemas ?? [];
         const pinned = res?.pinnedSchemaIds ?? [];
@@ -67,6 +78,8 @@ export function BlindNoteWrite() {
       } catch (error) {
         logger.error('Failed to fetch schemas:', error);
         toast.error('평가 스키마를 불러오는데 실패했습니다.');
+      } finally {
+        setSchemasLoading(false);
       }
     };
     fetchSchemas();
@@ -140,7 +153,7 @@ export function BlindNoteWrite() {
       });
 
       toast.success('기록이 제출되었습니다.');
-      setTimeout(() => navigate(`/blind/${id}`), NAVIGATION_DELAY);
+      navTimerRef.current = setTimeout(() => navigate(`/blind/${id}`), NAVIGATION_DELAY);
     } catch (error) {
       logger.error('Failed to submit blind note:', error);
       toast.error(error instanceof Error ? error.message : '제출에 실패했습니다.');
@@ -269,7 +282,7 @@ export function BlindNoteWrite() {
         <Button
           onClick={handleSave}
           className="w-full"
-          disabled={isSaving || overallRating === null}
+          disabled={isSaving || schemasLoading || overallRating === null}
         >
           {isSaving ? (
             <>

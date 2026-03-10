@@ -186,7 +186,7 @@ export class BlindTastingService {
       schemaIds: dto.schemaIds,
       overallRating: dto.overallRating,
       isRatingIncluded: dto.isRatingIncluded ?? true,
-      axisValues: dto.axisValues,
+      axisValues: dto.axisValues ?? [],
       memo: dto.memo,
       images: dto.images,
       imageThumbnails: dto.imageThumbnails,
@@ -241,9 +241,6 @@ export class BlindTastingService {
     }
 
     const participantsWithNotes = (session.participants ?? []).filter((p) => p.noteId);
-    const notes = participantsWithNotes
-      .map((p) => p.note)
-      .filter((n): n is NonNullable<typeof n> => n != null);
 
     const participantData = (
       await Promise.all(

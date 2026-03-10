@@ -42,10 +42,11 @@ export class SubmitBlindNoteDto {
   @IsBoolean()
   isRatingIncluded?: boolean;
 
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => AxisValueDto)
-  axisValues: AxisValueDto[];
+  axisValues?: AxisValueDto[];
 
   @IsOptional()
   @Transform(({ value }) => (value === null ? null : value))
