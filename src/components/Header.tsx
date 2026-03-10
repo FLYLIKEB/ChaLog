@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { User, ChevronLeft, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { notificationsApi } from '../lib/api';
 import { ChaLogLogo } from './ChaLogLogo';
-
-const POLL_INTERVAL_MS = 30_000;
+import { useNotificationCount } from '../hooks/useNotificationCount';
 
 interface HeaderProps {
   title?: string;
@@ -20,41 +18,13 @@ interface HeaderProps {
 export function Header({ title, showBack, onBack, showProfile, showLogo }: HeaderProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      setUnreadCount(0);
-      return;
-    }
-
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await notificationsApi.getUnreadCount();
-        setUnreadCount(res.count);
-      } catch {
-        // 폴링 실패는 조용히 무시
-      }
-    };
-
-    fetchUnreadCount();
-    intervalRef.current = setInterval(fetchUnreadCount, POLL_INTERVAL_MS);
-
-    const handleFocus = () => fetchUnreadCount();
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [isAuthenticated]);
+  const unreadCount = useNotificationCount();
 
   const headerHeight = 'var(--header-spacer)';
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-100 bg-card/95 backdrop-blur-md border-b border-black/5 rounded-b-2xl py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-100 bg-card/95 backdrop-blur-md border-b border-black/5 rounded-b-2xl py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))]">
         <div className="max-w-2xl mx-auto flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             {showBack && (
@@ -106,9 +76,9 @@ export function Header({ title, showBack, onBack, showProfile, showLogo }: Heade
         </div>
       </header>
 
-      {/* 고정 헤더 높이만큼 스페이서 - 콘텐츠가 헤더와 겹치지 않도록 */}
+      {/* 고정 헤더 높이만큼 스페이서 - 콘텐츠가 헤더와 겹치지 않도록 (모바일 전용) */}
       <div
-        className="shrink-0 w-full"
+        className="md:hidden shrink-0 w-full"
         style={{ height: headerHeight, minHeight: headerHeight }}
         aria-hidden
       />

@@ -9,6 +9,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FloatingActionButton } from './components/FloatingActionButton';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { AdminLayout } from './components/AdminLayout';
+import { AppSidebar } from './components/AppSidebar';
+import { DesktopHeader } from './components/DesktopHeader';
+import { SidebarProvider } from './contexts/SidebarContext';
 import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
 function CommunityRedirect() {
@@ -182,53 +185,67 @@ function AppContent() {
   }
 
   return (
-    <div className={`max-w-2xl mx-auto h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
-      <OnboardingRouteGuard>
-        <PullToRefreshProvider>
-          <Suspense fallback={<PageFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-            <Route path="/sasaek" element={<Search />} />
-            <Route path="/tea/new" element={<NewTea />} />
-            <Route path="/tea/:id/edit" element={<EditTea />} />
-            <Route path="/tea/:id" element={<TeaDetail />} />
-            <Route path="/note/new" element={<NewNote />} />
-            <Route path="/note/:id/edit" element={<EditNote />} />
-            <Route path="/session/new" element={<SessionNew />} />
-            <Route path="/session/:id" element={<SessionInProgress />} />
-            <Route path="/session/:id/summary" element={<SessionSummary />} />
-            <Route path="/sessions" element={<SessionHistory />} />
-            <Route path="/note/:id" element={<NoteDetail />} />
-            <Route path="/user/:id" element={<UserProfile />} />
-            <Route path="/my-notes" element={<MyNotes />} />
-            <Route path="/saved" element={<Saved />} />
-            <Route path="/cellar" element={<Cellar />} />
-            <Route path="/cellar/new" element={<NewCellarItem />} />
-            <Route path="/cellar/:id/edit" element={<EditCellarItem />} />
-            <Route path="/chadam" element={<Community />} />
-            <Route path="/chadam/new" element={<NewPost />} />
-            <Route path="/chadam/:id" element={<PostDetail />} />
-            <Route path="/chadam/:id/edit" element={<EditPost />} />
-            <Route path="/tag/:name" element={<TagDetail />} />
-            <Route path="/teahouse/new" element={<NewShop />} />
-            <Route path="/teahouse/:name/edit" element={<EditShop />} />
-            <Route path="/teahouse/:name" element={<ShopDetail />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
-            <Route path="/search" element={<Navigate to="/sasaek" replace />} />
-            <Route path="/community/*" element={<CommunityRedirect />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          </Suspense>
-        </PullToRefreshProvider>
-      </OnboardingRouteGuard>
+    <SidebarProvider>
+    <div className={`h-screen flex flex-col md:flex-row overflow-hidden ${PAGE_BG_GRADIENT}`}>
+      {/* 데스크톱 사이드바 (md 이상에서만 표시) */}
+      <AppSidebar />
+
+      {/* 메인 콘텐츠 영역 */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* 데스크톱 헤더 (md 이상에서만 표시) */}
+        <DesktopHeader />
+
+        <OnboardingRouteGuard>
+          <PullToRefreshProvider>
+            <Suspense fallback={<PageFallback />}>
+            <main className="flex-1 overflow-y-auto max-w-2xl md:max-w-5xl lg:max-w-6xl mx-auto w-full">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
+                <Route path="/sasaek" element={<Search />} />
+                <Route path="/tea/new" element={<NewTea />} />
+                <Route path="/tea/:id/edit" element={<EditTea />} />
+                <Route path="/tea/:id" element={<TeaDetail />} />
+                <Route path="/note/new" element={<NewNote />} />
+                <Route path="/note/:id/edit" element={<EditNote />} />
+                <Route path="/session/new" element={<SessionNew />} />
+                <Route path="/session/:id" element={<SessionInProgress />} />
+                <Route path="/session/:id/summary" element={<SessionSummary />} />
+                <Route path="/sessions" element={<SessionHistory />} />
+                <Route path="/note/:id" element={<NoteDetail />} />
+                <Route path="/user/:id" element={<UserProfile />} />
+                <Route path="/my-notes" element={<MyNotes />} />
+                <Route path="/saved" element={<Saved />} />
+                <Route path="/cellar" element={<Cellar />} />
+                <Route path="/cellar/new" element={<NewCellarItem />} />
+                <Route path="/cellar/:id/edit" element={<EditCellarItem />} />
+                <Route path="/chadam" element={<Community />} />
+                <Route path="/chadam/new" element={<NewPost />} />
+                <Route path="/chadam/:id" element={<PostDetail />} />
+                <Route path="/chadam/:id/edit" element={<EditPost />} />
+                <Route path="/tag/:name" element={<TagDetail />} />
+                <Route path="/teahouse/new" element={<NewShop />} />
+                <Route path="/teahouse/:name/edit" element={<EditShop />} />
+                <Route path="/teahouse/:name" element={<ShopDetail />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
+                <Route path="/search" element={<Navigate to="/sasaek" replace />} />
+                <Route path="/community/*" element={<CommunityRedirect />} />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </main>
+            </Suspense>
+          </PullToRefreshProvider>
+        </OnboardingRouteGuard>
+      </div>
+
       <FloatingActionButtonSwitcher />
     </div>
+    </SidebarProvider>
   );
 }
 

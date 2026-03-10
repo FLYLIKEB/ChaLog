@@ -441,8 +441,8 @@ export function Cellar() {
               )}
             </button>
 
-            {/* 각 차 종류 칩 */}
-            {TEA_TYPES.map((type) => {
+            {/* 각 차 종류 칩 - 차가 있는 종류 먼저 */}
+            {[...TEA_TYPES].sort((a, b) => (typeCounts[b] ?? 0) - (typeCounts[a] ?? 0)).map((type) => {
               const count = typeCounts[type] ?? 0;
               const grams = typeGramsMap[type] ?? 0;
               const isActive = activeType === type;
@@ -580,7 +580,7 @@ export function Cellar() {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {displayedItems.map((item, i) => (
                 <div
                   key={item.id}
@@ -616,7 +616,7 @@ export function Cellar() {
                 )}
               </button>
               {finishedOpen && (
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {finishedItems.map((item) => (
                     <CellarCard
                       key={item.id}

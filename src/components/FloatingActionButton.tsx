@@ -11,7 +11,7 @@ type FloatingActionButtonProps = {
 
 const positionClasses: Record<NonNullable<FloatingActionButtonProps['position']>, string> = {
   default: 'bottom-6', // 1.5rem = 24px
-  aboveNav: 'bottom-20', // 5rem = 80px
+  aboveNav: 'bottom-20 md:bottom-6', // 모바일: 80px (BottomNav 위), 데스크톱: 24px (BottomNav 없음)
 };
 
 export function FloatingActionButton({

@@ -133,7 +133,7 @@ export function Saved() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
               </div>
             ) : bookmarkedNotes.length > 0 ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {bookmarkedNotes.map(note => (
                   <NoteCard
                     key={note.id}
@@ -162,7 +162,7 @@ export function Saved() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
               </div>
             ) : bookmarkedPosts.length > 0 ? (
-              <div className="space-y-0 -mx-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
                 {bookmarkedPosts.map(post => (
                   <PostCard
                     key={post.id}
