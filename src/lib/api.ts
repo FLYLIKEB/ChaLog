@@ -1178,6 +1178,11 @@ export const teasApi = {
     const params = limit != null ? `?limit=${limit}` : '';
     return apiClient.get<Tea[]>(`/teas/${id}/similar-by-tags${params}`);
   },
+  toggleWishlist: (id: number) =>
+    apiClient.post<{ wishlisted: boolean }>(`/teas/${id}/wishlist`),
+  isWishlisted: (id: number) =>
+    apiClient.get<{ wishlisted: boolean }>(`/teas/${id}/wishlist`),
+  getWishlisted: () => apiClient.get<Tea[]>('/teas/wishlist/me'),
 };
 
 export interface CreateRatingSchemaRequest {

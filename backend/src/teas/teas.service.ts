@@ -2,9 +2,10 @@ import { Injectable, Logger, NotFoundException, ConflictException, Inject } from
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, QueryFailedError } from 'typeorm';
 import { Tea } from './entities/tea.entity';
 import { Seller } from './entities/seller.entity';
+import { TeaWishlist } from './entities/tea-wishlist.entity';
 import { CreateTeaDto } from './dto/create-tea.dto';
 import { UpdateTeaDto } from './dto/update-tea.dto';
 import { PopularTagDto, PopularTagsResponseDto } from './dto/popular-tag.dto';
@@ -19,6 +20,8 @@ export class TeasService {
     private teasRepository: Repository<Tea>,
     @InjectRepository(Seller)
     private sellerRepository: Repository<Seller>,
+    @InjectRepository(TeaWishlist)
+    private teaWishlistRepository: Repository<TeaWishlist>,
     @InjectDataSource()
     private dataSource: DataSource,
     @Inject(CACHE_MANAGER)
@@ -639,5 +642,46 @@ export class TeasService {
       throw new NotFoundException('차를 찾을 수 없습니다.');
     }
     return tea;
+  }
+
+  async toggleWishlist(teaId: number, userId: number): Promise<{ wishlisted: boolean }> {
+    return await this.dataSource.transaction(async (manager) => {
+      await this.assertTeaExists(teaId);
+
+      const existing = await manager.findOne(TeaWishlist, { where: { teaId, userId } });
+
+      if (existing) {
+        await manager.remove(TeaWishlist, existing);
+        return { wishlisted: false };
+      }
+
+      try {
+        const newWishlist = manager.create(TeaWishlist, { teaId, userId });
+        await manager.save(TeaWishlist, newWishlist);
+      } catch (error) {
+        if (error instanceof QueryFailedError && (error as any).code === 'ER_DUP_ENTRY') {
+          this.logger.warn(`Duplicate wishlist detected for teaId: ${teaId}, userId: ${userId}`);
+        } else {
+          throw error;
+        }
+      }
+
+      return { wishlisted: true };
+    });
+  }
+
+  async isWishlistedByUser(teaId: number, userId?: number): Promise<boolean> {
+    if (!userId) return false;
+    const item = await this.teaWishlistRepository.findOne({ where: { teaId, userId } });
+    return !!item;
+  }
+
+  async findWishlisted(userId: number): Promise<Tea[]> {
+    const items = await this.teaWishlistRepository.find({
+      where: { userId },
+      relations: ['tea', 'tea.seller'],
+      order: { createdAt: 'DESC' },
+    });
+    return items.map((item) => item.tea);
   }
 }

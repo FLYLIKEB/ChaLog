@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Loader2, Pencil } from 'lucide-react';
+import { Star, Loader2, Pencil, Heart } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { TeaCard } from '../components/TeaCard';
@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
 import { teasApi, notesApi } from '../lib/api';
+import { cn } from '../components/ui/utils';
 import { Tea, Note, PopularTag } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
@@ -50,6 +51,28 @@ export function TeaDetail() {
   const [topReviews, setTopReviews] = useState<Note[]>([]);
   const [similarTeas, setSimilarTeas] = useState<Tea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+  const handleWishlistToggle = useCallback(async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (!tea) return;
+    const prev = isWishlisted;
+    setIsWishlisted(!prev);
+    setIsWishlistLoading(true);
+    try {
+      const result = await teasApi.toggleWishlist(tea.id);
+      setIsWishlisted(result.wishlisted);
+    } catch {
+      setIsWishlisted(prev);
+      toast.error('찜하기에 실패했습니다.');
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  }, [user, tea, isWishlisted, navigate]);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
@@ -66,6 +89,10 @@ export function TeaDetail() {
         teasApi.getById(teaId),
         notesApi.getAll(undefined, true, teaId),
       ]);
+
+      if (user) {
+        teasApi.isWishlisted(teaId).then((r) => setIsWishlisted(r.wishlisted)).catch(() => {})
+      }
 
       const [tagsResult, reviewsResult, similarResult] = await Promise.allSettled([
         teasApi.getPopularTags(teaId),
@@ -137,18 +164,33 @@ export function TeaDetail() {
         <section className="bg-card rounded-lg p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <h1 className="flex-1">{tea.name}</h1>
-            {user && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/tea/${tea.id}/edit`)}
-                className="shrink-0"
-                aria-label="차 정보 수정"
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleWishlistToggle}
+                disabled={isWishlistLoading}
+                aria-label={isWishlisted ? '찜 취소' : '찜하기'}
+                className="p-1.5 rounded-full hover:bg-muted/60 transition-colors"
               >
-                <Pencil className="w-4 h-4 mr-1" />
-                수정
-              </Button>
-            )}
+                <Heart
+                  className={cn(
+                    'w-5 h-5 transition-colors',
+                    isWishlisted ? 'fill-red-500 text-red-500' : 'text-muted-foreground',
+                  )}
+                />
+              </button>
+              {user && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/tea/${tea.id}/edit`)}
+                  aria-label="차 정보 수정"
+                >
+                  <Pencil className="w-4 h-4 mr-1" />
+                  수정
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
