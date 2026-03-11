@@ -7,6 +7,7 @@ import { Toaster } from './components/ui/sonner';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { FloatingActionButton } from './components/FloatingActionButton';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { AdminLayout } from './components/AdminLayout';
 import { AppSidebar } from './components/AppSidebar';
@@ -261,6 +262,7 @@ function AppContent() {
       </div>
 
       <FloatingActionButtonSwitcher />
+      <PWAInstallBanner />
     </div>
     </SidebarProvider>
   );
