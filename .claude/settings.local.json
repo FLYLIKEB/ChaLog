@@ -14,7 +14,14 @@
       "Bash(sudo rm:*)",
       "Bash(brew install:*)",
       "mcp__github__get_issue",
-      "mcp__github__create_issue"
+      "mcp__github__create_issue",
+      "Bash(git clone:*)",
+      "Bash(node /tmp/oh-my-claudecode/bridge/cli.cjs --help 2>&1 | head -30)",
+      "Bash(node /tmp/oh-my-claudecode/bridge/cli.cjs install 2>&1)",
+      "Bash(node /tmp/oh-my-claudecode/bridge/cli.cjs install --force 2>&1)",
+      "Bash(mkdir -p ~/.claude/plugins/marketplaces/omc && cp -r /tmp/oh-my-claudecode/. ~/.claude/plugins/marketplaces/omc/ 2>&1 && echo \"done\")",
+      "Bash(rsync -a --exclude=node_modules /tmp/oh-my-claudecode/ ~/.claude/plugins/marketplaces/omc/ && echo \"done\")",
+      "Bash(node /tmp/oh-my-claudecode/bridge/cli.cjs setup 2>&1 | tail -20)"
     ]
   }
 }

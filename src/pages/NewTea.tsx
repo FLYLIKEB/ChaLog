@@ -168,12 +168,12 @@ export function NewTea() {
       // returnTo 파라미터가 있으면 해당 페이지로 이동하고 teaId 전달
       if (returnTo) {
         setTimeout(() => {
-          navigate(`${returnTo}?teaId=${teaId}`);
+          navigate(`${returnTo}?teaId=${teaId}`, { replace: true });
         }, NAVIGATION_DELAY);
       } else {
         // 기본적으로 차 상세 페이지로 이동
         setTimeout(() => {
-          navigate(`/tea/${teaId}`);
+          navigate(`/tea/${teaId}`, { replace: true });
         }, NAVIGATION_DELAY);
       }
     } catch (error) {
