@@ -148,8 +148,8 @@ describe('NewNote 페이지', () => {
     const option = await screen.findByRole('button', { name: /정산소종/ });
     await user.click(option);
 
-    // 1-5 평점 선택 (4점) - 평점 선택 후 아래 컴포넌트들이 로드됨
-    const star4 = screen.getByRole('button', { name: '4점' });
+    // 0.5-5 평점 선택 (4점) - 평점 선택 후 아래 컴포넌트들이 로드됨
+    const star4 = screen.getByRole('button', { name: '3.5~4점' });
     await user.click(star4);
 
     await waitFor(() => {

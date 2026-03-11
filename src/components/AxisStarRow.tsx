@@ -10,7 +10,7 @@ import { cn } from './ui/utils';
 
 const MIN = 1;
 const MAX = 5;
-const STEP = 0.25;
+const STEP = 0.5;
 const STAR_COLOR = 'var(--rating)';
 
 /** 5점 척도 → 10점 환산 (value × 10/max, 예: 5점→10점) */
