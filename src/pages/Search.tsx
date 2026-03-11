@@ -346,7 +346,6 @@ export function Search() {
     setSearchParams({});
     setSearchQuery('');
     setHasSearched(false);
-    setActiveTab('explore');
   }, [setSearchParams]);
 
   const handleTagClick = useCallback(
@@ -389,37 +388,35 @@ export function Search() {
         </div>
 
         {/* 검색/탐색 탭 */}
-        {!showResults && (
-          <div className="flex gap-1 p-1 bg-muted rounded-lg">
-            <button
-              type="button"
-              onClick={() => setActiveTab('search')}
-              className={cn(
-                'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
-                activeTab === 'search'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              검색
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('explore')}
-              className={cn(
-                'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
-                activeTab === 'explore'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              탐색
-            </button>
-          </div>
-        )}
+        <div className="flex gap-1 p-1 bg-muted rounded-lg">
+          <button
+            type="button"
+            onClick={() => setActiveTab('search')}
+            className={cn(
+              'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
+              activeTab === 'search'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            검색
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('explore')}
+            className={cn(
+              'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
+              activeTab === 'explore'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            탐색
+          </button>
+        </div>
 
         {/* 필터 패널 */}
-        {showResults && (
+        {activeTab === 'search' && (
           <div className="space-y-3 pb-2 border-b border-border/60">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Filter className="w-4 h-4" />
@@ -515,7 +512,7 @@ export function Search() {
         )}
 
         {/* 검색/필터 결과 */}
-        {showResults && (
+        {showResults && activeTab === 'search' && (
           <>
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -554,7 +551,7 @@ export function Search() {
           </>
         )}
 
-        {/* 검색 탭 - 쿼리 없을 때 추천/최근 검색어 인라인 표시 */}
+        {/* 검색 탭 - 쿼리/필터 없을 때 최근 검색어 표시 */}
         {!showResults && activeTab === 'search' && searchQuery.trim().length === 0 && (
           <div className="space-y-4">
             {recentSearches.length > 0 && (
@@ -593,34 +590,17 @@ export function Search() {
                 </ul>
               </div>
             )}
-            {popularTags.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">추천 검색어</p>
-                <div className="flex flex-wrap gap-2">
-                  {popularTags.slice(0, 8).map((tag) => (
-                    <button
-                      key={tag.name}
-                      type="button"
-                      onClick={() => { setSearchQuery(tag.name); handleSearch(tag.name); }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-border/60 bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      #{tag.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {recentSearches.length === 0 && popularTags.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
+            {recentSearches.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
                 <SearchIcon className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색해보세요</p>
+                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색하거나<br />아래 필터를 활용해보세요</p>
               </div>
             )}
           </div>
         )}
 
         {/* 탐색 섹션 (탐색 탭) */}
-        {!showResults && activeTab === 'explore' && (
+        {activeTab === 'explore' && (
           <>
             {sectionsLoading ? (
               <div className="space-y-8">
