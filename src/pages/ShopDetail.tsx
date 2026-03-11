@@ -67,7 +67,7 @@ export function ShopDetail() {
         <EmptyState
           type="search"
           message="찻집을 찾을 수 없어요."
-          action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+          action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
         />
         <BottomNav />
       </div>
@@ -165,7 +165,7 @@ export function ShopDetail() {
               <EmptyState
                 type="search"
                 message="이 찻집에 등록된 차가 없어요."
-                action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+                action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </>

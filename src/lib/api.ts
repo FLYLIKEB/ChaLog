@@ -1117,6 +1117,10 @@ export const authApi = {
     apiClient.post<null>('/auth/link/kakao', { accessToken }),
   linkGoogle: (accessToken: string) =>
     apiClient.post<null>('/auth/link/google', { accessToken }),
+  forgotPassword: (email: string) =>
+    apiClient.post<{ message: string }>('/auth/forgot-password', { email }),
+  resetPassword: (token: string, newPassword: string) =>
+    apiClient.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
 };
 
 export const teasApi = {
@@ -1178,6 +1182,11 @@ export const teasApi = {
     const params = limit != null ? `?limit=${limit}` : '';
     return apiClient.get<Tea[]>(`/teas/${id}/similar-by-tags${params}`);
   },
+  toggleWishlist: (id: number) =>
+    apiClient.post<{ wishlisted: boolean }>(`/teas/${id}/wishlist`),
+  isWishlisted: (id: number) =>
+    apiClient.get<{ wishlisted: boolean }>(`/teas/${id}/wishlist`),
+  getWishlisted: () => apiClient.get<Tea[]>('/teas/wishlist/me'),
 };
 
 export interface CreateRatingSchemaRequest {

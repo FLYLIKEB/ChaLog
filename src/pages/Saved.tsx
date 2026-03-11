@@ -197,7 +197,7 @@ export function Saved() {
               <EmptyState
                 type="notes"
                 message="아직 저장한 차록이 없어요."
-                action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+                action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </Section>

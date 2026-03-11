@@ -126,10 +126,30 @@ export class TeasController {
     });
   }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('wishlist/me')
+  async getMyWishlist(@Request() req) {
+    const teas = await this.teasService.findWishlisted(req.user.userId);
+    return teas.map(mapTeaToResponse);
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const tea = await this.teasService.findOne(parseTeaId(id));
     return mapTeaToResponse(tea);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get(':id/wishlist')
+  async getWishlistStatus(@Param('id') id: string, @Request() req) {
+    const wishlisted = await this.teasService.isWishlistedByUser(parseTeaId(id), req.user.userId);
+    return { wishlisted };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post(':id/wishlist')
+  async toggleWishlist(@Param('id') id: string, @Request() req) {
+    return this.teasService.toggleWishlist(parseTeaId(id), req.user.userId);
   }
 
   @UseGuards(AuthGuard('jwt'))

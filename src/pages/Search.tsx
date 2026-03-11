@@ -162,7 +162,7 @@ export function Search() {
       curationRes.status === 'rejected' ||
       sellersRes.status === 'rejected';
     if (anyFailed) {
-      toast.error('사색 데이터를 불러오는데 실패했습니다.');
+      toast.error('탐색 데이터를 불러오는데 실패했습니다.');
     }
     setSectionsLoading(false);
   }, []);
@@ -342,7 +342,7 @@ export function Search() {
         ? `🔍 #${urlTags.join(', #')} 추천`
         : searchQuery.trim()
           ? '🔍 검색 결과'
-          : '🔍 차 사색';
+          : '🔍 차 탐색';
 
   const goBackToExplore = useCallback(() => {
     setSearchParams({});
@@ -370,7 +370,7 @@ export function Search() {
   return (
     <div className="min-h-screen pb-20 flex flex-col overflow-hidden">
       <Header
-        title={showResults ? resultsTitle : '차 사색'}
+        title={showResults ? resultsTitle : '차 탐색'}
         showBack={showResults}
         onBack={showResults ? goBackToExplore : undefined}
         showLogo

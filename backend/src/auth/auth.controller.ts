@@ -5,6 +5,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { KakaoLoginDto } from './dto/kakao-login.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
@@ -85,5 +87,18 @@ export class AuthController {
       throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     }
     await this.authService.linkGoogle(userId, googleLoginDto.accessToken);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 600000 } })
+  @Post('forgot-password')
+  async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ message: string }> {
+    await this.authService.forgotPassword(dto.email);
+    return { message: '비밀번호 재설정 이메일을 발송했습니다. 이메일을 확인해주세요.' };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return { message: '비밀번호가 성공적으로 변경되었습니다.' };
   }
 }
