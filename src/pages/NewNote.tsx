@@ -207,7 +207,7 @@ export function NewNote() {
     }
 
     if (overallRating === null) {
-      toast.error('1~5점 평점을 선택해주세요.');
+      toast.error('0.5~5점 평점을 선택해주세요.');
       return;
     }
 
@@ -434,7 +434,7 @@ export function NewNote() {
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  1 ~ 5점
+                  0.5 ~ 5점
                 </span>
                 <RatingGuideModal
                   trigger={
