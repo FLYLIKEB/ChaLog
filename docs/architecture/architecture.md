@@ -4,67 +4,45 @@ ChaLog App Structure용 코드 번들입니다. 원본 프로젝트는 https://w
 
 ## 전체 구조
 - Vite+React 18 SPA로 `src/main.tsx` → `src/App.tsx` 경로를 통해 부트스트랩합니다. `BrowserRouter`와 라우트 테이블, 글로벌 FAB, `sonner` 알림이 최상위에 묶여 있어 모든 화면이 동일한 쉘(`max-w-2xl` 모바일 뷰)에 렌더링됩니다.  
-```93:124:src/App.tsx
+```53:71:src/App.tsx
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <div className="max-w-2xl mx-auto bg-white min-h-screen px-4 sm:px-6">
-          <OnboardingRouteGuard>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
-              <Route path="/search" element={<Search />} />
-              <Route path="/tea/new" element={<NewTea />} />
-              <Route path="/tea/:id" element={<TeaDetail />} />
-              <Route path="/note/new" element={<NewNote />} />
-              <Route path="/note/:id/edit" element={<EditNote />} />
-              <Route path="/note/:id" element={<NoteDetail />} />
-              <Route path="/user/:id" element={<UserProfile />} />
-              <Route path="/my-notes" element={<MyNotes />} />
-              <Route path="/saved" element={<Saved />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </OnboardingRouteGuard>
-          <FloatingActionButtonSwitcher />
-          <Toaster />
-        </div>
-      </BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <div className="max-w-2xl mx-auto bg-white min-h-screen">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
+          <Route path="/search" element={<Search />} />
+          <Route path="/tea/:id" element={<TeaDetail />} />
+          <Route path="/note/new" element={<NewNote />} />
+          <Route path="/note/:id" element={<NoteDetail />} />
+          <Route path="/my-notes" element={<MyNotes />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <FloatingActionButtonSwitcher />
+        <Toaster />
+      </div>
+    </BrowserRouter>
   );
 }
 ```
 - 라우트별 FAB 동작은 스위처가 제어합니다. 기본적으로 “새 노트 작성”으로 이동하고, 향후 경로별 숨김·위치 오버라이드를 쉽게 덮어쓰도록 설계했습니다.  
-```33:71:src/App.tsx
+```20:48:src/App.tsx
 const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = {
   '/my-notes': { position: 'aboveNav' },
-  '/note/new': { hidden: true },
-  '/note/:id/edit': { hidden: true },
-  '/tea/new': { hidden: true },
-  '/onboarding': { hidden: true },
 };
 
 function FloatingActionButtonSwitcher() {
   const location = useLocation();
   const navigate = useNavigate();
-
-  const shouldHide =
-    location.pathname === '/note/new' ||
-    location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
-    location.pathname === '/tea/new' ||
-    location.pathname === '/onboarding';
-
   const override = floatingActionRouteOverrides[location.pathname];
   const config = {
     ...DEFAULT_FLOATING_ACTION_CONFIG,
     ...override,
   };
 
-  if (config.hidden || shouldHide) {
+  if (config.hidden) {
     return null;
   }
 
@@ -81,7 +59,7 @@ function FloatingActionButtonSwitcher() {
 ```
 
 ## 주요 화면
-- **홈(`src/pages/Home.tsx`)**: 백엔드 API(`teasApi.getAll()`, `notesApi.getAll()`)에서 “오늘의 차”와 공개 노트 피드를 가져와 뿌리고, 하단 고정 내비게이션으로 홈/검색/내 노트를 이동합니다.  
+- **홈(`src/pages/Home.tsx`)**: mock 데이터에서 랜덤 “오늘의 차”와 공개 노트 피드를 뿌리고, 하단 고정 내비게이션으로 홈/검색/내 노트를 이동합니다.  
 ```12:66:src/pages/Home.tsx
   const todayTea = mockTeas[Math.floor(Math.random() * mockTeas.length)];
   const publicNotes = mockNotes.filter(note => note.isPublic);
@@ -252,31 +230,6 @@ function FloatingActionButtonSwitcher() {
   });
 ```
 - **설정(`src/pages/Settings.tsx`)**: 현재 사용자 프로필, 약관 버튼, 로그아웃 토스트만 있는 정적 페이지로 확장 여지를 남겨둡니다.
-- **로그인/회원가입(`src/pages/Login.tsx`, `Register.tsx`)**: 이메일/비밀번호 및 카카오 OAuth 인증 폼을 제공합니다.
-- **온보딩(`src/pages/Onboarding.tsx`)**: 신규 사용자가 선호 차 종류·플레이버를 설정하는 초기 설정 화면입니다. 완료 전까지 `OnboardingRouteGuard`가 다른 페이지 접근을 차단합니다.
-- **차 등록(`src/pages/NewTea.tsx`)**: 새로운 차 정보를 등록하는 폼 페이지입니다.
-- **노트 수정(`src/pages/EditNote.tsx`)**: 기존 노트를 수정하는 폼 페이지입니다. (`/note/:id/edit`)
-- **사용자 프로필(`src/pages/UserProfile.tsx`)**: 특정 사용자의 공개 프로필과 공개 노트 목록을 표시합니다. (`/user/:id`)
-- **저장됨(`src/pages/Saved.tsx`)**: 북마크한 노트 목록을 보여주는 페이지입니다.
-
-## 운영자 콘솔 (Admin)
-
-- **접근**: `/admin` 경로. `AdminRouteGuard`가 `User.role === 'admin'`인 사용자만 접근을 허용합니다.
-- **라우트 구조** (`src/App.tsx`): `location.pathname.startsWith('/admin')`일 때 별도 레이아웃 적용.
-
-| 경로 | 컴포넌트 | 설명 |
-|------|----------|------|
-| `/admin` | AdminDashboard | 대시보드 (핵심 지표, 미처리 신고) |
-| `/admin/reports` | AdminReports | 신고 관리 (차록/게시글) |
-| `/admin/users`, `/admin/users/:id` | AdminUsers | 사용자 목록/상세 |
-| `/admin/notes` | AdminNotes | 차록 관리 |
-| `/admin/posts`, `/admin/posts/:id` | AdminPosts | 게시글 관리 |
-| `/admin/master` | AdminMaster | 마스터 데이터 (차/찻집/태그) |
-| `/admin/monitoring` | AdminMonitoring | 모니터링 및 로그 |
-| `/admin/audit` | AdminAudit | 감사 로그 |
-
-- **AdminRouteGuard**: JWT 인증 후 `role`이 `admin`이 아니면 접근 거부.
-- **AdminLayout**: 사이드바 네비게이션 + `Outlet`으로 하위 라우트 렌더링.
 
 ## 재사용 컴포넌트 · 상태
 - FAB는 위치 프리셋(`default`/`aboveNav`)과 접근성 속성을 추상화한 독립 컴포넌트입니다.  
@@ -360,7 +313,7 @@ export function cn(...inputs: ClassValue[]) {
   --sidebar-ring: oklch(0.708 0 0);
 }
 ```
-- `dist/`에는 `vite build` 결과물이 들어 있어 배포 시 그대로 활용 가능하며, 루트 `README.md`는 `npm i`, `npm run dev`만 안내합니다.
+- `build/`에는 `vite build` 결과물이 들어 있어 배포 시 그대로 활용 가능하며, 루트 `README.md`는 `npm i`, `npm run dev`만 안내합니다.
 
 이 구조를 기반으로 상태 관리, 인증 등을 추가하면 곧바로 프로덕션 수준으로 확장할 수 있습니다.
 
