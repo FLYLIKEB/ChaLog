@@ -218,7 +218,7 @@ export function PostDetail() {
                 className={cn(
                   'hover:underline',
                   post.user?.role === 'admin'
-                    ? 'font-semibold text-amber-700 hover:text-amber-800'
+                    ? 'font-semibold text-green-600 hover:text-green-700'
                     : 'font-medium text-foreground',
                 )}
                 aria-label="작성자 프로필 보기"
@@ -226,7 +226,7 @@ export function PostDetail() {
                 {post.user?.name}
               </button>
               {post.user?.role === 'admin' && (
-                <Shield className="w-3.5 h-3.5 text-amber-700 shrink-0" aria-label="관리자" />
+                <Shield className="w-3.5 h-3.5 text-green-600 shrink-0" aria-label="관리자" />
               )}
             </span>
           )}

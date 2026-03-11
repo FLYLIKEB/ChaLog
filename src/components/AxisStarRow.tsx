@@ -111,7 +111,7 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
                   }}
                   className={cn(
                     'relative p-0.5 rounded transition-all duration-150',
-                    'focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-1',
+                    'focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:ring-offset-1',
                     'hover:scale-110 active:scale-95 cursor-pointer'
                   )}
                   aria-label={`${starValue - 0.5}~${starValue}점`}
