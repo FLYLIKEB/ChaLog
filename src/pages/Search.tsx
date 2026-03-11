@@ -21,6 +21,7 @@ import { logger } from '../lib/logger';
 import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS, CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES, CARD_SKELETON_CONTAINER_CLASSES } from '../constants';
 import { cn } from '../components/ui/utils';
 import { useRecentSearches } from '../hooks/useRecentSearches';
+import { useAuth } from '../contexts/AuthContext';
 
 const SORT_OPTIONS = [
   { key: 'popular' as const, label: '인기순' },
@@ -63,6 +64,7 @@ export function Search() {
   );
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
+  const { user } = useAuth();
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
   const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -247,11 +249,19 @@ export function Search() {
     setCategoryLoading(true);
     const q = searchQuery.trim().toLowerCase();
     if (searchCategory === 'note') {
-      notesApi.getAll(undefined, true, undefined, undefined, undefined, 'latest', 1, 50)
+      notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, 'latest', 1, 200)
         .then((data: unknown) => {
           const notes: Note[] = Array.isArray(data) ? data : (data as { notes?: Note[] })?.notes ?? [];
           setAllNotes(notes);
-          setNoteResults(q ? notes.filter((n) => n.teaName?.toLowerCase().includes(q)) : notes);
+          setNoteResults(
+            q
+              ? notes.filter(
+                  (n) =>
+                    n.teaName?.toLowerCase().includes(q) ||
+                    n.memo?.toLowerCase().includes(q),
+                )
+              : notes,
+          );
         })
         .catch(() => { setAllNotes([]); setNoteResults([]); })
         .finally(() => setCategoryLoading(false));
@@ -273,7 +283,7 @@ export function Search() {
         .catch(() => { setAllCellar([]); setCellarResults([]); })
         .finally(() => setCategoryLoading(false));
     }
-  }, [searchCategory, activeTab]);
+  }, [searchCategory, activeTab, user?.id]);
 
   // 찻집 검색 (서버 사이드, debounce)
   useEffect(() => {
@@ -294,7 +304,15 @@ export function Search() {
     if (activeTab !== 'search') return;
     const q = searchQuery.trim().toLowerCase();
     if (searchCategory === 'note') {
-      setNoteResults(q ? allNotes.filter((n) => n.teaName?.toLowerCase().includes(q)) : allNotes);
+      setNoteResults(
+        q
+          ? allNotes.filter(
+              (n) =>
+                n.teaName?.toLowerCase().includes(q) ||
+                n.memo?.toLowerCase().includes(q),
+            )
+          : allNotes,
+      );
     } else if (searchCategory === 'cellar') {
       setCellarResults(q ? allCellar.filter((c) => c.tea?.name?.toLowerCase().includes(q)) : allCellar);
     } else if (searchCategory === 'tag') {
