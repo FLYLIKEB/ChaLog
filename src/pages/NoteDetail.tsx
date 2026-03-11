@@ -33,7 +33,7 @@ export function NoteDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const noteId = id ? parseInt(id, 10) : NaN;
-  const { user } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
   const [tea, setTea] = useState<Tea | null>(null);
@@ -482,7 +482,7 @@ export function NoteDetail() {
         )}
 
         {/* 내 노트일 때만 노출되는 액션 */}
-        {isMyNote && (
+        {isMyNote && !isAuthLoading && (
           <section className="flex flex-col sm:flex-row gap-3">
             <Button
               variant="outline"
@@ -508,6 +508,7 @@ export function NoteDetail() {
               variant="outline"
               onClick={() => setShowDeleteDialog(true)}
               className="min-h-[44px] min-w-[44px] px-4"
+              aria-label="삭제"
             >
               <Trash2 className="w-5 h-5 text-red-600" />
             </Button>

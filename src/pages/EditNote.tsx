@@ -27,7 +27,7 @@ export function EditNote() {
   const navigate = useNavigate();
   const { id } = useParams();
   const noteId = id ? parseInt(id, 10) : NaN;
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
   const [searchParams] = useSearchParams();
   const preselectedTeaId = searchParams.get('teaId');
   const teasRef = useRef<Tea[]>([]);
@@ -225,13 +225,14 @@ export function EditNote() {
       }
     };
 
+    if (isAuthLoading) return;
     if (isAuthenticated && user) {
       fetchNote();
     } else {
       toast.error('로그인이 필요합니다.');
       navigate('/login');
     }
-  }, [noteId, isAuthenticated, user, navigate]);
+  }, [noteId, isAuthenticated, user, isAuthLoading, navigate]);
 
   // 선택된 스키마 변경 시 축 정보 가져오기 (템플릿 변경 시에만, 초기 로드는 fetchNote에서 처리)
   const initialSchemaSet = useRef(false);
