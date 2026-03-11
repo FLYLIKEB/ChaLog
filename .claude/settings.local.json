@@ -8,7 +8,13 @@
       "Bash(npx tsc:*)",
       "Bash(git push:*)",
       "Bash(gh pr:*)",
-      "Bash(gh api:*)"
+      "Bash(gh api:*)",
+      "Bash(brew list:*)",
+      "Bash(osascript -e 'quit app \"Tailscale\"' 2>/dev/null; echo \"Tailscale app quit\")",
+      "Bash(sudo rm:*)",
+      "Bash(brew install:*)",
+      "mcp__github__get_issue",
+      "mcp__github__create_issue"
     ]
   }
 }
