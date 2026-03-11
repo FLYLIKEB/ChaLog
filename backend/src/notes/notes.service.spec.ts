@@ -34,9 +34,13 @@ describe('NotesService', () => {
 
   const mockQueryBuilder = {
     leftJoinAndSelect: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    addSelect: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
     getMany: jest.fn(),
+    getRawOne: jest.fn(),
   };
 
   const mockNotesRepository = {
@@ -593,49 +597,18 @@ describe('NotesService', () => {
     const teaId = 1;
 
     it('isRatingIncluded가 true인 노트만 평점 계산에 포함해야 함', async () => {
-      // DB 레벨에서 필터링된 것처럼 isRatingIncluded가 true인 노트만 반환
-      const filteredNotes = [
-        {
-          id: 1,
-          teaId,
-          overallRating: 4.0,
-          isRatingIncluded: true,
-        },
-        {
-          id: 3,
-          teaId,
-          overallRating: 3.0,
-          isRatingIncluded: true,
-        },
-      ];
-      mockNotesRepository.find.mockResolvedValue(filteredNotes);
+      mockQueryBuilder.getRawOne.mockResolvedValue({ avg: '3.5', count: '2' });
       mockTeasService.updateRating.mockResolvedValue(undefined);
 
       await service['updateTeaRating'](teaId);
 
-      expect(mockNotesRepository.find).toHaveBeenCalledWith({
-        where: { teaId, isRatingIncluded: true },
-      });
-      expect(mockTeasService.updateRating).toHaveBeenCalledWith(teaId, 3.5, 2); // (4.0 + 3.0) / 2
+      expect(mockNotesRepository.createQueryBuilder).toHaveBeenCalledWith('note');
+      expect(mockTeasService.updateRating).toHaveBeenCalledWith(teaId, 3.5, 2);
     });
 
-    it('overallRating이 null인 노트는 평점 계산에서 제외해야 함', async () => {
-      const notes = [
-        {
-          id: 1,
-          teaId,
-          overallRating: 4.0,
-          isRatingIncluded: true,
-        },
-        {
-          id: 2,
-          teaId,
-          overallRating: null,
-          isRatingIncluded: true,
-        },
-      ];
-
-      mockNotesRepository.find.mockResolvedValue(notes);
+    it('overallRating이 null인 노트는 평점 계산에서 제외해야 함 (DB IS NOT NULL 필터)', async () => {
+      // DB의 IS NOT NULL 조건으로 null 노트는 제외되고 집계 결과만 반환
+      mockQueryBuilder.getRawOne.mockResolvedValue({ avg: '4.0', count: '1' });
       mockTeasService.updateRating.mockResolvedValue(undefined);
 
       await service['updateTeaRating'](teaId);
@@ -644,7 +617,7 @@ describe('NotesService', () => {
     });
 
     it('평점이 포함된 노트가 없으면 평점을 0으로 설정해야 함', async () => {
-      mockNotesRepository.find.mockResolvedValue([]);
+      mockQueryBuilder.getRawOne.mockResolvedValue({ avg: null, count: '0' });
       mockTeasService.updateRating.mockResolvedValue(undefined);
 
       await service['updateTeaRating'](teaId);
