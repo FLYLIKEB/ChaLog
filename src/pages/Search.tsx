@@ -344,25 +344,7 @@ export function Search() {
 
   const { user } = useAuth();
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
-  const filters = useSearchFilters();
-  const {
-    filterType, filterMinRating, filterPriceRange, filterSellerName,
-    filterSort, noteSort, setNoteSort,
-    filterOpen, setFilterOpen, activeFilterCount,
-    urlTags, hasTagParams, hasFilterParams,
-    handleTagClick, applyFilters, fetchWithFilters,
-  } = filters;
-
-  const [cellarSort, setCellarSort] = useState<'name' | 'quantity' | 'recent'>('recent');
   const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
-  const [searchCategory, setSearchCategory] = useState<SearchCategory>('tea');
-  const [categoryLoading, setCategoryLoading] = useState(false);
-  const [noteResults, setNoteResults] = useState<Note[]>([]);
-  const [allNotes, setAllNotes] = useState<Note[]>([]);
-  const [sellerResults, setSellerResults] = useState<Seller[]>([]);
-  const [tagResults, setTagResults] = useState<{ name: string; noteCount: number }[]>([]);
-  const [cellarResults, setCellarResults] = useState<CellarItem[]>([]);
-  const [allCellar, setAllCellar] = useState<CellarItem[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [teas, setTeas] = useState<Tea[]>([]);
@@ -741,23 +723,8 @@ export function Search() {
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn('pl-10 rounded-full transition-all', searchQuery ? 'pr-10' : '')}
+            className="pl-10 rounded-full"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-              aria-label="검색어 지우기"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-          {searchQuery.trim().length === 1 && (
-            <p className="absolute -bottom-5 left-4 text-xs text-muted-foreground animate-fade-in">
-              한 글자 더 입력하면 검색됩니다
-            </p>
-          )}
         </div>
 
         {/* 검색/탐색 탭 */}
@@ -1054,6 +1021,70 @@ export function Search() {
           </>
         )}
 
+        {/* 검색 탭 - 쿼리 없을 때 추천/최근 검색어 인라인 표시 */}
+        {!showResults && activeTab === 'search' && searchQuery.trim().length === 0 && (
+          <div className="space-y-4">
+            {recentSearches.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    전체 삭제
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {recentSearches.map((term) => (
+                    <li key={term} className="flex items-center gap-2 py-2">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => { setSearchQuery(term); handleSearch(term); }}
+                        className="flex-1 text-left text-sm truncate"
+                      >
+                        {term}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSearch(term)}
+                        className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={`${term} 삭제`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {popularTags.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">추천 검색어</p>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.slice(0, 8).map((tag) => (
+                    <button
+                      key={tag.name}
+                      type="button"
+                      onClick={() => { setSearchQuery(tag.name); handleSearch(tag.name); }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-border/60 bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      #{tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {recentSearches.length === 0 && popularTags.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <SearchIcon className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색해보세요</p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 탐색 섹션 (탐색 탭) */}
         {activeTab === 'explore' && (
