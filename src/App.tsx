@@ -59,6 +59,7 @@ const ShopDetail = lazy(() => import('./pages/ShopDetail').then((m) => ({ defaul
 const NewShop = lazy(() => import('./pages/NewShop').then((m) => ({ default: m.NewShop })));
 const EditShop = lazy(() => import('./pages/EditShop').then((m) => ({ default: m.EditShop })));
 const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ default: m.Notifications })));
+const Report = lazy(() => import('./pages/Report').then((m) => ({ default: m.Report })));
 const SessionNew = lazy(() => import('./pages/SessionNew').then((m) => ({ default: m.SessionNew })));
 const SessionInProgress = lazy(() => import('./pages/SessionInProgress').then((m) => ({ default: m.SessionInProgress })));
 const SessionSummary = lazy(() => import('./pages/SessionSummary').then((m) => ({ default: m.SessionSummary })));
@@ -252,6 +253,7 @@ function AppContent() {
                 <Route path="/teahouse/:name/edit" element={<EditShop />} />
                 <Route path="/teahouse/:name" element={<ShopDetail />} />
                 <Route path="/notifications" element={<Notifications />} />
+                <Route path="/report" element={<Report />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />

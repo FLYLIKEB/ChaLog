@@ -15,7 +15,7 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi, teasApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference, Tea, UserLevel } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark, BookHeart } from 'lucide-react';
+import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark, BarChart2 } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { StatCard } from '../components/ui/StatCard';
@@ -592,15 +592,26 @@ export function UserProfile() {
           spacing="lg"
           headerAction={
             isOwnProfile ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/saved')}
-                className="text-muted-foreground hover:text-foreground gap-1.5"
-              >
-                <Bookmark className="w-4 h-4" />
-                저장함
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/report')}
+                  className="text-muted-foreground hover:text-foreground gap-1.5"
+                >
+                  <BarChart2 className="w-4 h-4" />
+                  레포트
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/saved')}
+                  className="text-muted-foreground hover:text-foreground gap-1.5"
+                >
+                  <Bookmark className="w-4 h-4" />
+                  저장함
+                </Button>
+              </div>
             ) : undefined
           }
         >
