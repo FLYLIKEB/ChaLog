@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
-import { Search as SearchIcon, Plus, Loader2, Store, Filter } from 'lucide-react';
+import { Search as SearchIcon, Plus, Loader2, Store, Filter, Clock, X } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS, CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES, CARD_SKELETON_CONTAINER_CLASSES } from '../constants';
 import { cn } from '../components/ui/utils';
+import { useRecentSearches } from '../hooks/useRecentSearches';
 
 const SORT_OPTIONS = [
   { key: 'popular' as const, label: '인기순' },
@@ -49,6 +50,9 @@ export function Search() {
     [urlTagsStr],
   );
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
+
+  const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [teas, setTeas] = useState<Tea[]>([]);
@@ -179,6 +183,9 @@ export function Search() {
   const handleSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return;
 
+    addSearch(query.trim());
+    setShowRecentSearches(false);
+
     try {
       setIsLoading(true);
       setHasSearched(true);
@@ -190,7 +197,7 @@ export function Search() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [addSearch]);
 
   const fetchWithFilters = useCallback(
     async (params: { q?: string; type?: string; minRating?: number; sort?: string; tags?: string[] }) => {
@@ -377,8 +384,53 @@ export function Search() {
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => setShowRecentSearches(true)}
+            onBlur={() => setTimeout(() => setShowRecentSearches(false), 150)}
             className="pl-10 rounded-full"
           />
+          {/* 최근 검색어 드롭다운 */}
+          {showRecentSearches && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
+            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-xl shadow-lg overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
+                <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={clearAll}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  전체 삭제
+                </button>
+              </div>
+              <ul>
+                {recentSearches.map((term) => (
+                  <li key={term} className="flex items-center gap-2 px-4 py-2.5 hover:bg-muted/50 transition-colors">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        setSearchQuery(term);
+                        handleSearch(term);
+                      }}
+                      className="flex-1 text-left text-sm truncate"
+                    >
+                      {term}
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => removeSearch(term)}
+                      className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={`${term} 삭제`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* 필터 패널 */}

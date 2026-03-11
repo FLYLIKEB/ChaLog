@@ -5,6 +5,10 @@
 // API 관련 상수
 export const API_TIMEOUT = 30000; // 30초
 
+// 최근 검색어 관련 상수
+export const RECENT_SEARCHES_KEY = 'chalog_recent_searches';
+export const MAX_RECENT_SEARCHES = 10;
+
 // 평점 관련 상수
 export const RATING_DEFAULT = 3;
 export const RATING_MIN = 1;
