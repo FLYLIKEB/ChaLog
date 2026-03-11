@@ -54,6 +54,7 @@ export function UserProfile() {
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
   const [wishlistedTeas, setWishlistedTeas] = useState<Tea[]>([]);
+  const [isPrivateProfile, setIsPrivateProfile] = useState(false);
 
   const initialLoadDone = useRef(false);
 
@@ -105,7 +106,9 @@ export function UserProfile() {
     } catch (error: unknown) {
       logger.error('Failed to fetch user profile:', error);
       const statusCode = (error as { statusCode?: number })?.statusCode;
-      if (statusCode === 404) {
+      if (statusCode === 403) {
+        setIsPrivateProfile(true);
+      } else if (statusCode === 404) {
         toast.error('사용자를 찾을 수 없습니다.');
       } else {
         toast.error('사용자를 불러오는데 실패했습니다.');
@@ -263,6 +266,22 @@ export function UserProfile() {
               <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (isPrivateProfile) {
+    return (
+      <div className="min-h-screen pb-20">
+        <Header showBack title="사용자 프로필" showProfile />
+        <div className="p-4">
+          <EmptyState
+            type="notes"
+            message="비공개 프로필입니다."
+            action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
+          />
         </div>
         <BottomNav />
       </div>
