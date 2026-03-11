@@ -231,6 +231,12 @@ export function Login() {
                 '로그인'
               )}
             </Button>
+
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-sm text-emerald-600 hover:underline">
+                비밀번호 찾기
+              </Link>
+            </div>
           </form>
 
           <div className="relative">

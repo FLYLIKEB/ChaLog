@@ -1,8 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, IsNull } from 'typeorm';
+import { randomBytes, createHash } from 'crypto';
+import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
-import { AuthProvider } from '../users/entities/user-authentication.entity';
+import { AuthProvider, UserAuthentication } from '../users/entities/user-authentication.entity';
+import { PasswordReset } from '../users/entities/password-reset.entity';
+import { MailService } from '../mail/mail.service';
 import axios from 'axios';
 
 @Injectable()
@@ -10,6 +16,11 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    @InjectRepository(UserAuthentication)
+    private userAuthRepository: Repository<UserAuthentication>,
+    @InjectRepository(PasswordReset)
+    private passwordResetRepository: Repository<PasswordReset>,
+    private mailService: MailService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
@@ -168,5 +179,56 @@ export class AuthService {
       googleUserInfo.id,
       googleUserInfo.email || null,
     );
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) return;
+
+    const auth = await this.userAuthRepository.findOne({
+      where: { userId: user.id, provider: AuthProvider.EMAIL },
+    });
+    if (!auth) return;
+
+    // 기존 미사용 토큰 무효화
+    await this.passwordResetRepository.update(
+      { userId: user.id, usedAt: IsNull() },
+      { usedAt: new Date() },
+    );
+
+    // 새 토큰 생성 (32바이트 랜덤 -> SHA-256 해시)
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분
+
+    await this.passwordResetRepository.save({
+      userId: user.id,
+      tokenHash,
+      expiresAt,
+      usedAt: null,
+    });
+
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password?token=${rawToken}`;
+    await this.mailService.sendPasswordResetEmail(email, resetUrl);
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const reset = await this.passwordResetRepository.findOne({
+      where: { tokenHash },
+    });
+
+    if (!reset) throw new BadRequestException('유효하지 않은 재설정 링크입니다.');
+    if (reset.usedAt) throw new BadRequestException('이미 사용된 재설정 링크입니다.');
+    if (reset.expiresAt < new Date()) throw new BadRequestException('만료된 재설정 링크입니다.');
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.userAuthRepository.update(
+      { userId: reset.userId, provider: AuthProvider.EMAIL },
+      { credential: hashed },
+    );
+    await this.passwordResetRepository.update({ id: reset.id }, { usedAt: new Date() });
   }
 }
