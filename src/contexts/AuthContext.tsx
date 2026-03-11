@@ -590,6 +590,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (hasAuthorize) {
         logger.info('[6/7] 카카오 로그인 요청 시작 (authorize 방식)', loginRequestInfo);
         const redirectUri = `${window.location.origin}/login`;
+
+        // PWA standalone 모드에서는 외부 브라우저로 열기 (카카오 인증 후 돌아오기 위해)
+        const isStandalone =
+          window.matchMedia('(display-mode: standalone)').matches ||
+          ('standalone' in window.navigator && (navigator as unknown as { standalone: boolean }).standalone);
+
+        if (isStandalone) {
+          const kakaoAuthUrl =
+            `https://kauth.kakao.com/oauth/authorize` +
+            `?client_id=${kakaoAppKey}` +
+            `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+            `&response_type=code` +
+            `&scope=profile_nickname,account_email`;
+          window.location.href = kakaoAuthUrl;
+          return null;
+        }
+
         window.Kakao.Auth.authorize({
           redirectUri,
           scope: 'profile_nickname,account_email',
