@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsNumber, IsOptional, IsObject } from 'class-validator';
 
 export class CreateSessionSteepDto {
   @IsNumber()
@@ -8,21 +8,6 @@ export class CreateSessionSteepDto {
   steepDurationSeconds: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  aroma?: string | null;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  taste?: string | null;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(255)
-  color?: string | null;
-
-  @IsOptional()
-  @IsString()
-  memo?: string | null;
+  @IsObject()
+  data?: Record<string, unknown> | null;
 }

@@ -18,9 +18,8 @@ import { teasApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
-import { NAVIGATION_DELAY, CURRENT_YEAR, YEAR_OPTIONS, getOriginsForTeaType, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean } from '../constants';
+import { NAVIGATION_DELAY, CURRENT_YEAR, YEAR_OPTIONS, getOriginsForTeaType, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean, guessTeaTypeFromName } from '../constants';
 
 export function NewTea() {
   const navigate = useNavigate();
@@ -51,6 +50,17 @@ export function NewTea() {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  // 이름 기반 차 종류 자동 선택 (사용자가 직접 선택하지 않은 경우에만)
+  useEffect(() => {
+    if (typeTouched) return;
+    const guessed = guessTeaTypeFromName(name);
+    if (guessed) {
+      setType(guessed);
+    } else {
+      setType('');
+    }
+  }, [name, typeTouched]);
 
   // 중복 확인 (debounce 500ms)
   useEffect(() => {
@@ -88,12 +98,6 @@ export function NewTea() {
 
     return () => clearTimeout(timeoutId);
   }, [name]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

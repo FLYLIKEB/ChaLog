@@ -57,9 +57,8 @@ vi.mock('../../contexts/AuthContext', async () => {
 });
 
 vi.mock('../../lib/api', () => ({
-  notesApi: {
-    getAll: vi.fn(),
-  },
+  notesApi: { getAll: vi.fn() },
+  postsApi: { getAll: vi.fn().mockResolvedValue([]) },
 }));
 
 const mockNavigate = vi.fn();
@@ -88,6 +87,7 @@ describe('Saved 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),
@@ -111,6 +111,7 @@ describe('Saved 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),
@@ -187,6 +188,7 @@ describe('Saved 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: true,
       token: null,
       login: vi.fn(),

@@ -8,7 +8,7 @@ const mockTeas = [
   {
     id: 1,
     name: '무이암차',
-    type: '우롱차',
+    type: '청차/우롱차',
     seller: '티하우스',
     averageRating: 4.7,
     reviewCount: 15,

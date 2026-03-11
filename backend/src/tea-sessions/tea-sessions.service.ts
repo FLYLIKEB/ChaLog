@@ -15,6 +15,7 @@ import { PublishSessionToNoteDto } from './dto/publish-session-to-note.dto';
 import { TeasService } from '../teas/teas.service';
 import { NotesService } from '../notes/notes.service';
 import { CreateNoteDto } from '../notes/dto/create-note.dto';
+import { SteepDataV1 } from './types/steep-data';
 
 @Injectable()
 export class TeaSessionsService {
@@ -98,14 +99,15 @@ export class TeaSessionsService {
       throw new BadRequestException('이미 노트로 발행된 세션에는 탕을 추가할 수 없습니다.');
     }
 
+    const data: SteepDataV1 | null = dto.data
+      ? { v: 1, ...(dto.data as Omit<SteepDataV1, 'v'>) }
+      : null;
+
     const steep = this.teaSessionSteepsRepository.create({
       sessionId,
       steepNumber: dto.steepNumber,
       steepDurationSeconds: dto.steepDurationSeconds,
-      aroma: dto.aroma ?? null,
-      taste: dto.taste ?? null,
-      color: dto.color ?? null,
-      memo: dto.memo ?? null,
+      data,
     });
 
     return this.teaSessionSteepsRepository.save(steep);
@@ -134,10 +136,11 @@ export class TeaSessionsService {
     if (dto.steepNumber !== undefined) steep.steepNumber = dto.steepNumber;
     if (dto.steepDurationSeconds !== undefined)
       steep.steepDurationSeconds = dto.steepDurationSeconds;
-    if (dto.aroma !== undefined) steep.aroma = dto.aroma;
-    if (dto.taste !== undefined) steep.taste = dto.taste;
-    if (dto.color !== undefined) steep.color = dto.color;
-    if (dto.memo !== undefined) steep.memo = dto.memo;
+    if (dto.data !== undefined) {
+      steep.data = dto.data
+        ? { v: 1, ...(dto.data as Omit<SteepDataV1, 'v'>) }
+        : null;
+    }
 
     return this.teaSessionSteepsRepository.save(steep);
   }
@@ -205,15 +208,30 @@ export class TeaSessionsService {
     }
 
     const sorted = [...steeps].sort((a, b) => a.steepNumber - b.steepNumber);
-    const lines = sorted.map((s) => {
-      const parts = [`${s.steepNumber}탕 ${s.steepDurationSeconds}초`];
-      if (s.aroma) parts.push(`향: ${s.aroma}`);
-      if (s.taste) parts.push(`맛: ${s.taste}`);
-      if (s.color) parts.push(`색: ${s.color}`);
-      if (s.memo) parts.push(s.memo);
-      return parts.join(' | ');
+
+    const escapeCell = (s: string | null | undefined): string => {
+      if (s == null || s === '') return '-';
+      return String(s).replace(/\|/g, '·').replace(/\n/g, ' ');
+    };
+
+    const title = '### 다회모드로 작성됨 🔄\n\n';
+    const header = '| 탕 | 시간 | 수색 | 향 | 물온도 | 몸반응 | 만족도 | 메모 |';
+    const separator = '|:---|:---|:---|:---|:---|:---|:---|:---|';
+    const rows = sorted.map((s) => {
+      const d = s.data as SteepDataV1 | null;
+      const parts = [
+        `${s.steepNumber}탕`,
+        `${s.steepDurationSeconds}초`,
+        escapeCell(d?.v === 1 ? d.color_note : null),
+        escapeCell(d?.v === 1 ? d.aroma_profile : null),
+        escapeCell(d?.v === 1 ? d.water_temp : null),
+        escapeCell(d?.v === 1 ? d.body_feeling : null),
+        d?.v === 1 && d.rating != null ? `${d.rating}/5` : '-',
+        escapeCell(d?.v === 1 ? d.memo : null),
+      ];
+      return '| ' + parts.join(' | ') + ' |';
     });
 
-    return lines.join('\n');
+    return title + [header, separator, ...rows].join('\n');
   }
 }

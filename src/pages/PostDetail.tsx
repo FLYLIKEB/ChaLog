@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Loader2,
   Heart,
@@ -10,6 +12,8 @@ import {
   MoreVertical,
   Megaphone,
   Eye,
+  Pin,
+  Shield,
 } from 'lucide-react';
 import { Post, Comment, POST_CATEGORY_LABELS } from '../types';
 import { postsApi, commentsApi } from '../lib/api';
@@ -18,7 +22,6 @@ import { BottomNav } from '../components/BottomNav';
 import { CommentList } from '../components/CommentList';
 import { PostReportModal } from '../components/PostReportModal';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 import {
@@ -72,12 +75,6 @@ export function PostDetail() {
     }
     fetchData();
   }, [postId, navigate, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchData);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData]);
 
   const handleToggleLike = async () => {
     if (!user) {
@@ -142,18 +139,24 @@ export function PostDetail() {
     <div className="min-h-screen pb-20">
       <Header showBack title="게시글" showProfile />
 
-      <div className="px-4 py-4 flex flex-col gap-5">
+      <div
+        className={cn(
+          'px-5 py-5 flex flex-col gap-5',
+          post.isPinned && 'relative border-l-2 border-l-primary/60 pl-6 pr-5 py-4 my-2 bg-primary/4 rounded-lg',
+        )}
+      >
         {/* 카테고리 + 공지 + 협찬 뱃지 */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              {POST_CATEGORY_LABELS[post.category]}
-            </span>
             {post.isPinned && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
+                <Pin className="w-3 h-3 fill-muted-foreground" />
                 공지
               </span>
             )}
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
+              {POST_CATEGORY_LABELS[post.category]}
+            </span>
             {post.isSponsored && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium flex items-center gap-1">
                 <Megaphone className="w-3 h-3" />
@@ -208,21 +211,24 @@ export function PostDetail() {
           {post.isAnonymous ? (
             <span className="font-medium text-foreground">익명</span>
           ) : (
-            <>
+            <span className="inline-flex items-center gap-0.5">
               <button
                 type="button"
                 onClick={() => post.user?.id && navigate(`/user/${post.user.id}`)}
-                className="font-medium text-foreground hover:underline"
+                className={cn(
+                  'hover:underline',
+                  post.user?.role === 'admin'
+                    ? 'font-semibold text-green-600 hover:text-green-700'
+                    : 'font-medium text-foreground',
+                )}
                 aria-label="작성자 프로필 보기"
               >
                 {post.user?.name}
               </button>
               {post.user?.role === 'admin' && (
-                <span className="text-xs px-1.5 py-0.5 rounded bg-primary/20 text-primary font-medium">
-                  관리자
-                </span>
+                <Shield className="w-3.5 h-3.5 text-green-600 shrink-0" aria-label="관리자" />
               )}
-            </>
+            </span>
           )}
           <span>·</span>
           <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
@@ -234,8 +240,8 @@ export function PostDetail() {
         </div>
 
         {/* 본문 */}
-        <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap border-t border-b border-border/50 py-4">
-          {post.content}
+        <div className="post-content-markdown text-sm text-foreground leading-relaxed border-t border-b border-border/50 py-4 [&_p]:whitespace-pre-wrap [&_p]:my-1 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:my-0.5 [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded [&_code]:text-sm [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-2 [&_a]:text-primary [&_a]:underline [&_a]:hover:opacity-80 [&_blockquote]:border-l-4 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-sm [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-sm">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
         </div>
 
         {/* 이미지 */}

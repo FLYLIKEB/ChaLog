@@ -6,7 +6,6 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 
 export function Register() {
@@ -47,12 +46,6 @@ export function Register() {
       setIsLoading(false);
     }
   };
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   return (
     <div className="min-h-screen">

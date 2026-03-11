@@ -29,10 +29,10 @@ const PHRASES = [
   '처럼 담백하게 내려볼까요',
   '한 잔에 마음을 가라앉히며',
   '이 펼쳐지는 향을 느껴보세요',
-  '처럼 은은하게 우려내는 중',
+  '처럼 은은하게 우림하는 중',
   '의 깊은 맛을 새로고침합니다',
   '처럼 청아하게~',
-  '한 잔 우려드릴까요',
+  '한 잔 우림해드릴까요',
   '이 피어오르는 향기와 함께',
   '처럼 여유롭게 한 수',
   '의 진한 여운을 새로고침',
@@ -47,15 +47,25 @@ function pickRandomRefreshMessage() {
   return { tea, phrase };
 }
 
-function hapticLight() {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate(10);
+function hapticLight(allow = true) {
+  if (!allow) return;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  } catch {
+    /* ignore */
   }
 }
 
-function hapticSuccess() {
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    navigator.vibrate([8, 40, 8]);
+function hapticSuccess(allow = true) {
+  if (!allow) return;
+  try {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate([8, 40, 8]);
+    }
+  } catch {
+    /* ignore */
   }
 }
 
@@ -69,13 +79,15 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
   const lastRefreshAtRef = useRef(0);
   const isPointerDownRef = useRef(false);
   const capturedPointerIdRef = useRef<number | null>(null);
+  const hasTappedRef = useRef(false);
 
   const handleRefresh = useCallback(async () => {
     const now = Date.now();
     if (now - lastRefreshAtRef.current < REFRESH_COOLDOWN_MS) return;
     lastRefreshAtRef.current = now;
 
-    hapticLight();
+    const allowHaptic = hasTappedRef.current;
+    hapticLight(allowHaptic);
     const startedAt = Date.now();
     setIsRefreshing(true);
     setRefreshMessage(pickRandomRefreshMessage());
@@ -84,8 +96,9 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
     } finally {
       const elapsed = Date.now() - startedAt;
       const remaining = Math.max(0, MIN_LOADING_DURATION_MS - elapsed);
+      const allowHaptic = hasTappedRef.current;
       setTimeout(() => {
-        hapticSuccess();
+        hapticSuccess(allowHaptic);
         setIsRefreshing(false);
         setPullDistance(0);
         pullDistanceRef.current = 0;
@@ -158,11 +171,20 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
 
     const handleTouchStart = (e: TouchEvent) => {
       if (disabled) return;
+      hasTappedRef.current = true;
       touchStartY.current = e.touches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (disabled || isRefreshing) return;
+      // 두 손가락 이상(핀치 줌 등)이면 브라우저 기본 동작 허용
+      if (e.touches.length > 1) return;
+      // input/textarea 내부 터치 시 preventDefault 하지 않음 → 텍스트 선택(드래그) 허용
+      const target = e.target as Node;
+      if (target && el.contains(target)) {
+        const editable = (target as Element).closest?.('input, textarea, [contenteditable="true"]');
+        if (editable) return;
+      }
       if (el.scrollTop > 0) {
         if (pullDistanceRef.current > 0) {
           touchStartY.current = e.touches[0].clientY;
@@ -182,6 +204,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void>, disabled = fals
     // pointer capture는 실제 당김 동작이 감지된 후에만 적용 (헤더/하단바 클릭 방해 방지)
     const handlePointerDown = (e: PointerEvent) => {
       if (disabled) return;
+      hasTappedRef.current = true;
       if (e.pointerType === 'mouse') {
         isPointerDownRef.current = true;
         touchStartY.current = e.clientY;

@@ -83,16 +83,16 @@ describe('SessionInProgress', () => {
     expect(screen.getByText('동방미인')).toBeInTheDocument();
   });
 
-  it('세션 요약으로 이동 버튼 클릭 시 /session/:id/summary로 이동한다', async () => {
+  it('세션 마무리 버튼 클릭 시 /session/:id/summary로 이동한다', async () => {
     vi.mocked(teaSessionsApi.getById).mockResolvedValue(makeSession() as any);
 
     renderWithRouter(1);
 
     await waitFor(() => {
-      expect(screen.getByText('세션 요약으로 이동')).toBeInTheDocument();
+      expect(screen.getByText('세션 마무리하고 차록 쓰기')).toBeInTheDocument();
     });
 
-    await userEvent.click(screen.getByText('세션 요약으로 이동'));
+    await userEvent.click(screen.getByText('세션 마무리하고 차록 쓰기'));
 
     expect(mockNavigate).toHaveBeenCalledWith('/session/1/summary');
   });

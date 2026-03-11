@@ -9,6 +9,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
+import { BREW_COLORS } from '../components/BrewColorPicker';
 import { teaSessionsApi, notesApi } from '../lib/api';
 import { TeaSession, TeaSessionSteep, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
@@ -65,7 +66,7 @@ export function SessionSummary() {
         if (list.length > 0) {
           setSchemas(list);
           setPinnedSchemaIds(pinned);
-          setSelectedSchemaId(pinned[0] ?? list[0]?.id ?? null);
+          // 선택사항이므로 기본 선택하지 않음 (사용자가 원하면 선택)
         }
       } catch (error) {
         logger.error('Failed to fetch schemas:', error);
@@ -113,9 +114,10 @@ export function SessionSummary() {
       return;
     }
 
-    const schemaId = selectedSchemaId;
+    // 선택 없으면 첫 번째 기본 스키마 사용 (축 값 없이 탕 기록만으로 발행)
+    const schemaId = selectedSchemaId ?? (pinnedSchemaIds[0] ?? schemas[0]?.id) ?? null;
     if (!schemaId) {
-      toast.error('평가 스키마를 선택해주세요.');
+      toast.error('사용 가능한 템플릿이 없습니다. 관리자에게 문의해주세요.');
       return;
     }
 
@@ -188,21 +190,49 @@ export function SessionSummary() {
         <section className="bg-card rounded-lg p-4">
           <h3 className="font-semibold mb-3">탕 기록 ({sortedSteeps.length}탕)</h3>
           <ul className="space-y-2">
-            {sortedSteeps.map((s: TeaSessionSteep) => (
-              <li
-                key={s.id}
-                className="py-2 border-b border-border last:border-0 text-sm"
-              >
-                <span className="font-medium">{s.steepNumber}탕</span>
-                <span className="text-muted-foreground ml-2">{s.steepDurationSeconds}초</span>
-                {(s.aroma || s.taste || s.color) && (
-                  <p className="text-muted-foreground mt-1">
-                    {[s.aroma, s.taste, s.color].filter(Boolean).join(' · ')}
-                  </p>
-                )}
-                {s.memo && <p className="text-muted-foreground mt-0.5">{s.memo}</p>}
-              </li>
-            ))}
+            {sortedSteeps.map((s: TeaSessionSteep) => {
+              const bc = s.data?.v === 1 && s.data.color_note
+                ? BREW_COLORS.find((c) => c.value === s.data!.color_note)
+                : null;
+              return (
+                <li
+                  key={s.id}
+                  className="py-2 border-b border-border last:border-0 text-sm"
+                >
+                  <span className="font-medium">{s.steepNumber}탕</span>
+                  <span className="text-muted-foreground ml-2">{s.steepDurationSeconds}초</span>
+                  {s.data?.v === 1 && (
+                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                      {bc && (
+                        <span className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                          <span
+                            className="inline-block w-3.5 h-3.5 rounded-full border border-border/50 shrink-0"
+                            style={{ backgroundColor: bc.hex }}
+                          />
+                          {bc.label}
+                        </span>
+                      )}
+                      {!bc && s.data.color_note && (
+                        <span className="text-sm text-muted-foreground">수색 {s.data.color_note}</span>
+                      )}
+                      {[
+                        s.data.aroma_profile && `향 ${s.data.aroma_profile}`,
+                        s.data.water_temp && `물온도 ${s.data.water_temp}`,
+                        s.data.body_feeling && `몸반응 ${s.data.body_feeling}`,
+                        s.data.rating != null && `★${s.data.rating}`,
+                        s.data.memo,
+                      ]
+                        .filter(Boolean)
+                        .map((text, i) => (
+                          <span key={i} className="text-sm text-muted-foreground">
+                            {i > 0 || s.data!.color_note ? ' · ' : ''}{text}
+                          </span>
+                        ))}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
 
@@ -219,14 +249,20 @@ export function SessionSummary() {
 
         {/* 스키마 선택 */}
         <section className="bg-card rounded-lg p-4">
-          <Label className="mb-2 block text-base font-semibold">테이스팅 템플릿</Label>
+          <div className="flex items-center gap-2 mb-2">
+            <Label className="text-base font-semibold">테이스팅 템플릿</Label>
+            <span className="text-xs text-muted-foreground font-normal">(선택사항)</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-2">
+            템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 선택하지 않아도 탕 기록만으로 발행할 수 있습니다.
+          </p>
           {schemas.length > 0 ? (
             <TemplateSelect
               schemas={schemas}
               pinnedSchemaIds={pinnedSchemaIds}
               onPinnedChange={setPinnedSchemaIds}
               value={selectedSchemaId}
-              onChange={setSelectedSchemaId}
+              onChange={(v) => { if (!Array.isArray(v)) setSelectedSchemaId(v); }}
               isAuthenticated={isAuthenticated}
             />
           ) : (

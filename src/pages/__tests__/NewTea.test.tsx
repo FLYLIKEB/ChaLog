@@ -375,12 +375,11 @@ describe('NewTea 페이지', () => {
     
     expect(screen.getByRole('button', { name: '녹차' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '홍차' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '우롱차' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '청차/우롱차' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '백차' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '흑차' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '흑차/보이차' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '대용차' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '황차' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '보이차' })).toBeInTheDocument();
   });
 });
 

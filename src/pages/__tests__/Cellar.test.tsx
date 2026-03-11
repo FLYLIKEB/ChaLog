@@ -156,8 +156,14 @@ describe('Cellar 페이지', () => {
 
     renderCellar();
 
-    const noteBtn = await screen.findByRole('button', { name: /차록 작성/ });
-    await userEvent.click(noteBtn);
+    // CellarCard 내의 "차록" 버튼 찾기 (BottomNav의 "내 차록" 버튼과 구별)
+    await waitFor(() => {
+      expect(screen.getByText('테스트 차')).toBeInTheDocument();
+    });
+    const cardButtons = screen.getAllByRole('button', { name: /차록/ });
+    const noteBtn = cardButtons.find((btn) => btn.textContent?.trim() === '차록');
+    expect(noteBtn).toBeDefined();
+    await userEvent.click(noteBtn!);
 
     expect(mockNavigate).toHaveBeenCalledWith('/note/new?teaId=5');
   });
@@ -202,7 +208,7 @@ describe('Cellar 페이지', () => {
 
   it('아이템이 있으면 차 종류 필터 칩이 렌더링된다', async () => {
     const items = [
-      makeItem({ id: 1, tea: makeTea(1, '동방미인', '우롱차') as any }),
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '청차/우롱차') as any }),
       makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any }),
     ];
     vi.mocked(cellarApi.getAll).mockResolvedValue(items);
@@ -219,7 +225,7 @@ describe('Cellar 페이지', () => {
 
   it('종류 칩 클릭 시 해당 종류 아이템만 표시된다', async () => {
     const items = [
-      makeItem({ id: 1, tea: makeTea(1, '동방미인', '우롱차') as any }),
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '청차/우롱차') as any }),
       makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any }),
     ];
     vi.mocked(cellarApi.getAll).mockResolvedValue(items);
@@ -237,7 +243,7 @@ describe('Cellar 페이지', () => {
 
   it('전체 칩 클릭 시 모든 아이템이 다시 표시된다', async () => {
     const items = [
-      makeItem({ id: 1, tea: makeTea(1, '동방미인', '우롱차') as any }),
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '청차/우롱차') as any }),
       makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any }),
     ];
     vi.mocked(cellarApi.getAll).mockResolvedValue(items);

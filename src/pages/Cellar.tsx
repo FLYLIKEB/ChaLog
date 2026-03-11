@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2 } from 'lucide-react';
+import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2, Coffee, ChevronRight, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
@@ -9,7 +9,6 @@ import { FloatingActionButton } from '../components/FloatingActionButton';
 import { cellarApi } from '../lib/api';
 import { CellarItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { CellarCardSkeleton } from '../components/CellarCardSkeleton';
@@ -17,6 +16,7 @@ import { logger } from '../lib/logger';
 import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 import { cn } from '../components/ui/utils';
+import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 
 const UNIT_LABELS: Record<string, string> = {
   g: 'g',
@@ -48,11 +48,13 @@ function CellarCard({
   onDelete,
   onEdit,
   onNoteClick,
+  onSessionClick,
 }: {
   item: CellarItem;
   onDelete: (id: number) => void;
   onEdit: (id: number) => void;
   onNoteClick: (teaId: number) => void;
+  onSessionClick: (teaId: number) => void;
 }) {
   const [deleting, setDeleting] = useState(false);
 
@@ -144,20 +146,31 @@ function CellarCard({
         <p className="text-sm text-foreground/80 line-clamp-2">{item.memo}</p>
       )}
 
-      <div className="flex gap-2 pt-1">
-        <Button
-          variant="outline"
-          size="sm"
-          className="flex-1 gap-1 text-xs"
+      <div className="flex gap-0 pt-1 overflow-hidden rounded-lg border border-border">
+        <button
+          type="button"
           onClick={() => onNoteClick(item.teaId)}
+          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 text-xs font-medium border-r border-border bg-background hover:bg-muted/50 transition-colors"
         >
-          <FileText className="w-3.5 h-3.5" />
-          차록 작성
-        </Button>
+          <FileText className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">차록</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onSessionClick(item.teaId)}
+          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 text-xs font-medium bg-background hover:bg-muted/50 transition-colors"
+          title="다회 모드"
+        >
+          <Coffee className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">다회</span>
+        </button>
       </div>
     </div>
   );
 }
+
+
+const CELLAR_PAGE_SIZE = 20;
 
 export function Cellar() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -165,6 +178,7 @@ export function Cellar() {
   const [items, setItems] = useState<CellarItem[]>([]);
   const [reminders, setReminders] = useState<CellarItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [displayCount, setDisplayCount] = useState(CELLAR_PAGE_SIZE);
 
   // 필터·정렬 상태
   const [activeType, setActiveType] = useState<'all' | string>('all');
@@ -198,16 +212,6 @@ export function Cellar() {
     }
     fetchData();
   }, [isAuthenticated, user, authLoading, navigate, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      registerRefresh(fetchData);
-    } else {
-      registerRefresh(undefined);
-    }
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData, isAuthenticated, user]);
 
   // 잔량 > 0: 찻장 목록, 잔량 = 0: 다 마신 차 목록
   const activeItems = useMemo(
@@ -292,6 +296,11 @@ export function Cellar() {
     });
   }, [activeItems, activeType, sortKey, sortDir]);
 
+  // 필터/정렬 변경 시 표시 수 리셋
+  useEffect(() => {
+    setDisplayCount(CELLAR_PAGE_SIZE);
+  }, [activeType, sortKey, sortDir]);
+
   const handleSortChange = (key: SortKey) => {
     if (key === sortKey) {
       setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -310,6 +319,10 @@ export function Cellar() {
 
   const handleNoteClick = (teaId: number) => {
     navigate(`/note/new?teaId=${teaId}`);
+  };
+
+  const handleSessionClick = (teaId: number) => {
+    navigate(`/session/new?teaId=${teaId}`);
   };
 
   const handleEdit = (id: number) => {
@@ -350,6 +363,40 @@ export function Cellar() {
       <Header showProfile title="📦 내 찻장" showLogo />
 
       <div className="space-y-0">
+        {/* 다회 모드 */}
+        <Link
+          to="/session/new"
+          className="mx-4 mt-4 sm:mx-6 sm:mt-6 flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <Coffee className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">다회 모드</p>
+              <p className="text-xs text-muted-foreground mt-0.5">탕별 타이머·기록, 세션 요약·차록 발행</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </Link>
+
+        {/* 블라인드 테이스팅 */}
+        <Link
+          to="/blind/new"
+          className="mx-4 mt-2 sm:mx-6 flex items-center justify-between p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <EyeOff className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">블라인드 테이스팅</p>
+              <p className="text-xs text-muted-foreground mt-0.5">정보 없이 평가, 참가자별 비교 리포트</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+        </Link>
+
         {/* 리마인더 배너 */}
         {reminders.length > 0 && (
           <div className="mx-4 mt-4 sm:mx-6 flex items-start gap-3 bg-rating/10 border border-rating/30 rounded-xl p-3">
@@ -421,8 +468,8 @@ export function Cellar() {
               )}
             </button>
 
-            {/* 각 차 종류 칩 */}
-            {TEA_TYPES.map((type) => {
+            {/* 각 차 종류 칩 - 차가 있는 종류 먼저 */}
+            {[...TEA_TYPES].sort((a, b) => (typeCounts[b] ?? 0) - (typeCounts[a] ?? 0)).map((type) => {
               const count = typeCounts[type] ?? 0;
               const grams = typeGramsMap[type] ?? 0;
               const isActive = activeType === type;
@@ -487,7 +534,7 @@ export function Cellar() {
                   <ul
                     role="listbox"
                     aria-label="정렬 옵션"
-                    className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-lg py-1 min-w-28 overflow-hidden"
+                    className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-sm py-1 min-w-28 overflow-hidden"
                   >
                     {SORT_OPTIONS.map((opt) => (
                       <li key={opt.key}>
@@ -560,22 +607,31 @@ export function Cellar() {
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
-              {displayedItems.map((item, i) => (
-                <div
-                  key={item.id}
-                  className="animate-fade-in-up opacity-0"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <CellarCard
-                    item={item}
-                    onDelete={handleDelete}
-                    onEdit={handleEdit}
-                    onNoteClick={handleNoteClick}
-                  />
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {displayedItems.slice(0, displayCount).map((item, i) => (
+                  <div
+                    key={item.id}
+                    className="animate-fade-in-up opacity-0"
+                    style={{ animationDelay: `${Math.min(i, 5) * 50}ms` }}
+                  >
+                    <CellarCard
+                      item={item}
+                      onDelete={handleDelete}
+                      onEdit={handleEdit}
+                      onNoteClick={handleNoteClick}
+                      onSessionClick={handleSessionClick}
+                    />
+                  </div>
+                ))}
+              </div>
+              {displayCount < displayedItems.length && (
+                <InfiniteScrollSentinel
+                  onLoadMore={() => setDisplayCount((prev) => prev + CELLAR_PAGE_SIZE)}
+                  loading
+                />
+              )}
+            </>
           )}
 
           {/* 다 마신 차 목록 */}
@@ -595,7 +651,7 @@ export function Cellar() {
                 )}
               </button>
               {finishedOpen && (
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {finishedItems.map((item) => (
                     <CellarCard
                       key={item.id}
@@ -603,6 +659,7 @@ export function Cellar() {
                       onDelete={handleDelete}
                       onEdit={handleEdit}
                       onNoteClick={handleNoteClick}
+                      onSessionClick={handleSessionClick}
                     />
                   ))}
                 </div>

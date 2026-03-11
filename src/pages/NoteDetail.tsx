@@ -19,13 +19,15 @@ import {
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
 import { Link } from 'react-router-dom';
+import { BREW_COLORS } from '../components/BrewColorPicker';
 import { notesApi, teasApi } from '../lib/api';
 import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export function NoteDetail() {
   const { id } = useParams();
@@ -45,6 +47,7 @@ export function NoteDetail() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [use10Scale, setUse10Scale] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (isNaN(noteId)) {
@@ -85,16 +88,6 @@ export function NoteDetail() {
     if (isDeleted) return;
     fetchData();
   }, [noteId, isDeleted, fetchData]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    if (!isDeleted) {
-      registerRefresh(fetchData);
-    } else {
-      registerRefresh(undefined);
-    }
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData, isDeleted]);
 
   if (isLoading) {
     return (
@@ -249,7 +242,14 @@ export function NoteDetail() {
               {note.overallRating !== null && (
                 <div className="flex items-center gap-2">
                   <Star className="w-6 h-6 fill-rating text-rating" />
-                  <span className="text-2xl text-primary">{Number(note.overallRating).toFixed(1)}</span>
+                  <span className="text-2xl text-primary">
+                    {use10Scale
+                      ? (Number(note.overallRating) * 2).toFixed(1)
+                      : Number(note.overallRating).toFixed(1)}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    /{use10Scale ? '10' : '5'}
+                  </span>
                 </div>
               )}
               <Badge variant={note.isPublic ? 'default' : 'secondary'}>
@@ -317,17 +317,118 @@ export function NoteDetail() {
           </p>
 
           {note.axisValues && note.axisValues.length > 0 && (
-            <RatingVisualization axisValues={note.axisValues} />
+            <div className="space-y-4">
+              {((note.schemas?.length ?? 0) > 0 || note.schema) && (
+                <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                  <p className="text-xs font-medium text-muted-foreground mb-0.5">
+                    사용 템플릿{(note.schemas?.length ?? 0) > 1 ? ` (${note.schemas!.length}개)` : ''}
+                  </p>
+                  {(note.schemas?.length ?? 0) > 0 ? (
+                    <div className="space-y-2">
+                      {note.schemas!.map((s) => (
+                        <div key={s.id}>
+                          <p className="text-sm font-medium text-foreground">{s.nameKo}</p>
+                          {s.descriptionKo?.trim() && (
+                            <p className="text-xs text-muted-foreground mt-0.5">{s.descriptionKo}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    note.schema && (
+                      <>
+                        <p className="text-sm font-medium text-foreground">{note.schema.nameKo}</p>
+                        {note.schema.descriptionKo?.trim() && (
+                          <p className="text-xs text-muted-foreground mt-1.5">{note.schema.descriptionKo}</p>
+                        )}
+                      </>
+                    )
+                  )}
+                </div>
+              )}
+              <div className="flex justify-end">
+                <div
+                  role="group"
+                  aria-label="점수 표시 단위"
+                  className="flex rounded-lg border border-border bg-muted/30 p-0.5"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setUse10Scale(false)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                      !use10Scale
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    5점
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUse10Scale(true)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                      use10Scale
+                        ? 'bg-background text-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    10점
+                  </button>
+                </div>
+              </div>
+              <RatingVisualization axisValues={note.axisValues} use10Scale={use10Scale} />
+              <details className="group rounded-lg border border-border/60">
+                <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors [&::-webkit-details-marker]:hidden">
+                  <span className="flex items-center gap-2">
+                    각 축의 의미
+                    <span className="text-muted-foreground text-xs font-normal">(클릭하여 펼치기)</span>
+                  </span>
+                </summary>
+                <div className="px-3 pb-3 pt-3 space-y-2 border-t border-border/40">
+                  {[...note.axisValues]
+                    .sort((a, b) => (a.axis?.displayOrder ?? 0) - (b.axis?.displayOrder ?? 0))
+                    .map((av) => (
+                      <div key={av.axisId} className="text-sm">
+                        <p className="font-medium text-foreground">{av.axis?.nameKo ?? `축 ${av.axisId}`}</p>
+                        {av.axis?.descriptionKo?.trim() ? (
+                          <p className="text-xs text-muted-foreground mt-0.5">{av.axis.descriptionKo}</p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground/70 mt-0.5 italic">설명 없음</p>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </details>
+            </div>
           )}
         </section>
+
+        {/* 수색 */}
+        {note.appearance && (() => {
+          const bc = BREW_COLORS.find((c) => c.value === note.appearance);
+          return (
+            <section className="bg-card rounded-lg p-4">
+              <h3 className="mb-3 text-primary">수색</h3>
+              <div className="flex items-center gap-3">
+                <span
+                  className="inline-block w-8 h-8 rounded-full border border-border/50 shadow-sm"
+                  style={{ backgroundColor: bc?.hex ?? '#ccc' }}
+                />
+                <span className="text-sm font-medium">
+                  {bc?.label ?? note.appearance}
+                </span>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* 이미지 갤러리 */}
         {note.images && note.images.length > 0 && (
           <section className="bg-card rounded-lg p-4">
             <h3 className="mb-3 text-primary">사진</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 justify-items-center">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {note.images.map((imageUrl, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full max-w-xs">
+                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full">
                   <ImageWithFallback
                     src={imageUrl}
                     alt={`Note image ${index + 1}`}
@@ -359,7 +460,9 @@ export function NoteDetail() {
         {note.memo && (
           <section className="bg-card rounded-lg p-4">
             <h3 className="mb-3 text-primary">메모</h3>
-            <p className="text-foreground whitespace-pre-wrap">{note.memo}</p>
+            <div className="note-memo-markdown text-foreground [&_p]:whitespace-pre-wrap [&_p]:my-1 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:my-0.5 [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded [&_code]:text-sm [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-2 [&_a]:text-primary [&_a]:underline [&_a]:hover:opacity-80 [&_blockquote]:border-l-4 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-sm [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-sm">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.memo}</ReactMarkdown>
+            </div>
           </section>
         )}
 

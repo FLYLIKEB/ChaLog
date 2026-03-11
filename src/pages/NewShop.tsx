@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, Store } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { teasApi } from '../lib/api';
 import { logger } from '../lib/logger';
 import { toast } from 'sonner';
@@ -33,11 +33,6 @@ export function NewShop() {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -179,14 +174,14 @@ export function NewShop() {
 
             <div className="space-y-2">
               <Label htmlFor="description">소개 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <textarea
+              <Textarea
                 id="description"
                 placeholder="찻집 소개를 입력해주세요"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isLoading}
                 rows={3}
-                className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-[80px]"
               />
             </div>
 

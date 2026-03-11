@@ -53,10 +53,12 @@ describe('Settings 페이지', () => {
       theme: 'system',
       setTheme: mockSetTheme,
       resolvedTheme: 'light',
+      themes: ['light', 'dark', 'system'],
     } as ReturnType<typeof useTheme>);
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),
@@ -103,6 +105,7 @@ describe('Settings 페이지', () => {
           theme: 'light',
           setTheme: mockSetTheme,
           resolvedTheme: 'light',
+          themes: ['light', 'dark', 'system'],
         } as ReturnType<typeof useTheme>);
       });
 

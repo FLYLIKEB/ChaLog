@@ -16,7 +16,7 @@ const mockTeas = [
   {
     id: 2,
     name: '무이암차',
-    type: '우롱차',
+    type: '청차/우롱차',
     averageRating: 4.8,
     reviewCount: 12,
   },

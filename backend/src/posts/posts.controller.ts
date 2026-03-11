@@ -115,17 +115,36 @@ export class PostsController {
   @Get()
   findAll(
     @Query('category') category?: string,
+    @Query('categories') categories?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('sort') sort?: string,
+    @Query('bookmarked') bookmarked?: string,
     @Request() req?: any,
   ) {
-    const categoryEnum = Object.values(PostCategory).includes(category as PostCategory)
-      ? (category as PostCategory)
-      : undefined;
+    const validCategories = Object.values(PostCategory) as string[];
+    let categoryFilter: PostCategory | PostCategory[] | undefined;
+    if (categories) {
+      const parsed = categories.split(',').map((c) => c.trim()).filter(Boolean);
+      const valid = parsed.filter((c) => validCategories.includes(c));
+      categoryFilter = valid.length > 0 ? (valid as PostCategory[]) : undefined;
+    } else if (category && validCategories.includes(category)) {
+      categoryFilter = category as PostCategory;
+    }
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? Math.min(parseInt(limit, 10), 50) : 20;
+    const sortVal: 'latest' | 'popular' | 'commented' =
+      sort === 'popular' || sort === 'commented' ? sort : 'latest';
+    const bookmarkedFilter = bookmarked === 'true';
     const currentUserId = req?.user?.userId ? parseInt(req.user.userId, 10) : undefined;
-    return this.postsService.findAll(categoryEnum, pageNum, limitNum, currentUserId);
+    return this.postsService.findAll(
+      categoryFilter,
+      pageNum,
+      limitNum,
+      sortVal,
+      currentUserId,
+      bookmarkedFilter,
+    );
   }
 
   @UseGuards(OptionalJwtAuthGuard)

@@ -13,7 +13,7 @@ export function ChadamBanner({ className }: ChadamBannerProps) {
         '-mx-4 -mt-4',
         'rounded-b-2xl',
         'bg-linear-to-br from-primary/15 via-primary/10 to-primary/5',
-        'px-5 py-6 sm:px-6 sm:py-7',
+        'px-5 py-4 sm:px-6 sm:py-5',
         className,
       )}
     >
@@ -35,13 +35,21 @@ export function ChadamBanner({ className }: ChadamBannerProps) {
         </svg>
       </div>
 
-      <div className="relative flex flex-col gap-2">
-        <div className="space-y-1.5">
+      {/* 배경 로고 - 글자와 겹침 */}
+      <div
+        className="absolute right-4 top-1/2 -translate-y-1/2 w-48 h-48 sm:w-64 sm:h-64 opacity-[0.12] pointer-events-none"
+        aria-hidden
+      >
+        <img src="/logo.png" alt="" className="w-full h-full object-contain" />
+      </div>
+
+      <div className="relative flex flex-col gap-1.5">
+        <div className="space-y-1">
           <p className="text-sm sm:text-base text-foreground/90 font-medium leading-snug">
             차를 사랑하는 사람들의 이야기
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-md">
-            차 추천, 우리다 방법, 다실 후기 등 다양한 이야기를 나눠보세요.
+            차 추천, 차를 우리는 방법, 다실 후기 등 다양한 이야기를 나눠보세요.
           </p>
         </div>
       </div>

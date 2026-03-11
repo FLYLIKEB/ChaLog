@@ -10,6 +10,7 @@ import {
   PopularTag,
   Note,
   RatingSchema,
+  SteepDataV1,
 } from '../types';
 import { logger } from './logger';
 
@@ -265,11 +266,16 @@ function normalizeNote(note: BackendNote): NormalizedNote {
 /**
  * Note 배열 또는 단일 Note를 정규화
  */
-function normalizeNotes<T extends BackendNote | BackendNote[]>(data: T): T extends BackendNote[] ? NormalizedNote[] : NormalizedNote {
-  if (Array.isArray(data)) {
-    return data.map(normalizeNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
+function normalizeNotes(data: unknown): unknown {
+  // 페이지네이션 응답 { data, total, page, limit }
+  if (data && typeof data === 'object' && 'data' in data && 'total' in data && Array.isArray((data as Record<string, unknown>).data)) {
+    const paged = data as { data: BackendNote[]; total: number; page: number; limit: number };
+    return { ...paged, data: paged.data.map(normalizeNote) };
   }
-  return normalizeNote(data as BackendNote) as T extends BackendNote[] ? NormalizedNote[] : NormalizedNote;
+  if (Array.isArray(data)) {
+    return data.map(normalizeNote);
+  }
+  return normalizeNote(data as BackendNote);
 }
 
 /**
@@ -1203,13 +1209,16 @@ export const notesApi = {
     apiClient.post<RatingSchema>('/notes/schemas', data),
   toggleSchemaPin: (schemaId: number) =>
     apiClient.post<{ pinned: boolean }>(`/notes/schemas/${schemaId}/pin`),
-  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags') => {
+  getAll: (userId?: number, isPublic?: boolean, teaId?: number, bookmarked?: boolean, feed?: 'following' | 'tags', sort?: 'latest' | 'rating', page?: number, limit?: number) => {
     const params = new URLSearchParams();
     if (userId !== undefined) params.append('userId', String(userId));
     if (isPublic !== undefined) params.append('public', String(isPublic));
     if (teaId !== undefined) params.append('teaId', String(teaId));
     if (bookmarked !== undefined) params.append('bookmarked', String(bookmarked));
     if (feed !== undefined) params.append('feed', feed);
+    if (sort !== undefined) params.append('sort', sort);
+    if (page !== undefined) params.append('page', String(page));
+    if (limit !== undefined) params.append('limit', String(limit));
     const query = params.toString();
     return apiClient.get(`/notes${query ? `?${query}` : ''}`);
   },
@@ -1296,10 +1305,7 @@ export interface CreateTeaSessionRequest {
 export interface CreateSessionSteepRequest {
   steepNumber: number;
   steepDurationSeconds: number;
-  aroma?: string | null;
-  taste?: string | null;
-  color?: string | null;
-  memo?: string | null;
+  data?: SteepDataV1 | null;
 }
 
 export interface PublishSessionToNoteRequest {
@@ -1335,6 +1341,95 @@ export const teaSessionsApi = {
     apiClient.post<{ noteId: number }>(`/tea-sessions/${sessionId}/publish`, data),
 };
 
+export interface CreateBlindSessionRequest {
+  teaIds: number[];
+}
+
+export interface SubmitBlindNoteRequest {
+  roundId: number;
+  schemaId?: number;
+  schemaIds?: number[];
+  overallRating?: number | null;
+  isRatingIncluded?: boolean;
+  axisValues: Array<{ axisId: number; value: number }>;
+  appearance?: string | null;
+  memo?: string | null;
+  images?: string[] | null;
+  imageThumbnails?: string[] | null;
+  tags?: string[];
+}
+
+export const blindSessionsApi = {
+  create: (data: CreateBlindSessionRequest) =>
+    apiClient.post<{ id: number; inviteCode: string; status: string; rounds: Array<{ id: number; roundOrder: number; status: string }> }>('/blind-sessions', data),
+  getByInviteCode: (inviteCode: string) =>
+    apiClient.get<{ id: number; inviteCode: string; status: string; hostName: string; participantCount: number; hostId: number }>(
+      `/blind-sessions/join/${encodeURIComponent(inviteCode)}`,
+    ),
+  join: (inviteCode: string) =>
+    apiClient.post<{ id: number; sessionId: number; userId: number }>('/blind-sessions/join', { inviteCode }),
+  getById: (id: number) =>
+    apiClient.get<{
+      id: number;
+      inviteCode: string;
+      status: string;
+      hostName: string;
+      participantCount: number;
+      isHost: boolean;
+      totalRounds: number;
+      currentRoundOrder: number | null;
+      currentRoundId: number | null;
+      participants: Array<{ userId: number; userName: string; hasNote: boolean; completedRounds: number[] }>;
+      rounds: Array<{ id: number; roundOrder: number; status: string; tea?: { id: number; name: string; type: string; year?: number } | null }>;
+      myCompletedRounds: number[];
+      tea?: { id: number; name: string; type: string; year?: number } | null;
+    }>(`/blind-sessions/${id}`),
+  getRounds: (sessionId: number) =>
+    apiClient.get<Array<{ id: number; roundOrder: number; status: string; tea?: { id: number; name: string; type: string; year?: number } | null }>>(`/blind-sessions/${sessionId}/rounds`),
+  nextRound: (sessionId: number) =>
+    apiClient.post<{ completedRound: { id: number; roundOrder: number }; currentRound: { id: number; roundOrder: number; status: string } | null; isLastRound: boolean }>(`/blind-sessions/${sessionId}/next-round`, {}),
+  submitNote: (sessionId: number, data: SubmitBlindNoteRequest) =>
+    apiClient.post<{ noteId: number }>(`/blind-sessions/${sessionId}/notes`, data),
+  endSession: (sessionId: number) =>
+    apiClient.post<{ id: number; status: string }>(`/blind-sessions/${sessionId}/end`, {}),
+  getReport: (sessionId: number) =>
+    apiClient.get<{
+      rounds: Array<{
+        roundId: number;
+        roundOrder: number;
+        tea: { id: number; name: string; type: string; year?: number } | null;
+        participants: Array<{
+          userId: number;
+          userName: string;
+          overallRating: number | null;
+          axisValues: Array<{ axisId: number; valueNumeric: number; axis?: { nameKo: string } }>;
+          tags: string[];
+          memo: string | null;
+        }>;
+        stats: {
+          avgOverallRating: number | null;
+          axisAverages: Array<{ axisName: string; avg: number; count: number }>;
+          tagDistribution: Array<{ name: string; count: number }>;
+        };
+      }>;
+    }>(`/blind-sessions/${sessionId}/report`),
+  getMySessions: () =>
+    apiClient.get<BlindSessionSummary[]>('/blind-sessions/my'),
+};
+
+export interface BlindSessionSummary {
+  id: number;
+  status: string;
+  createdAt: string;
+  endedAt: string | null;
+  teaName: string | null;
+  teaType: string | null;
+  hostName: string;
+  participantCount: number;
+  isHost: boolean;
+}
+
+
 export const cellarApi = {
   getAll: () => apiClient.get<CellarItem[]>('/cellar'),
   getById: (id: number) => apiClient.get<CellarItem>(`/cellar/${id}`),
@@ -1363,14 +1458,28 @@ export interface CreatePostRequest {
 
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
 
+export type PostSort = 'latest' | 'popular' | 'commented';
+
 export const postsApi = {
   uploadImage: (file: File) =>
     apiClient.uploadFile<{ url: string; thumbnailUrl: string }>('/posts/images', file),
-  getAll: (category?: import('../types').PostCategory, page = 1, limit = 20) => {
+  getAll: (
+    category?: import('../types').PostCategory | import('../types').PostCategory[],
+    page = 1,
+    limit = 20,
+    sort?: PostSort,
+    bookmarked?: boolean,
+  ) => {
     const params = new URLSearchParams();
-    if (category) params.append('category', category);
+    if (Array.isArray(category) && category.length > 0) {
+      params.append('categories', category.join(','));
+    } else if (category && !Array.isArray(category)) {
+      params.append('category', category);
+    }
     params.append('page', String(page));
     params.append('limit', String(limit));
+    if (sort && sort !== 'latest') params.append('sort', sort);
+    if (bookmarked) params.append('bookmarked', 'true');
     return apiClient.get<import('../types').Post[]>(`/posts?${params.toString()}`);
   },
   getById: (id: number) => apiClient.get<import('../types').Post>(`/posts/${id}`),

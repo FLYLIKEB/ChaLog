@@ -24,7 +24,7 @@ export const TeaRankingCard: FC<TeaRankingCardProps> = ({ tea, rank }) => {
   return (
     <Card
       onClick={() => navigate(`/tea/${tea.id}`)}
-      className="w-full text-left p-3 h-[120px] flex flex-col gap-2 overflow-hidden hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)] transition-shadow cursor-pointer"
+      className="w-full h-full text-left p-3 min-h-[120px] flex flex-col gap-2 overflow-hidden card-appearance-hover transition-shadow cursor-pointer"
     >
       <div className="flex items-center gap-2">
         <div

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, Loader2, Plus } from 'lucide-react';
+import { Check, Loader2, Plus, History } from 'lucide-react';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
@@ -212,6 +212,15 @@ export function SessionNew() {
             '세션 시작'
           )}
         </Button>
+
+        <button
+          type="button"
+          onClick={() => navigate('/sessions')}
+          className="w-full flex items-center justify-center gap-2 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <History className="w-4 h-4" />
+          이전 세션
+        </button>
       </div>
     </div>
   );

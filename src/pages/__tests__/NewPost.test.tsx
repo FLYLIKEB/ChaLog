@@ -35,6 +35,7 @@ describe('NewPost 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),
@@ -54,17 +55,21 @@ describe('NewPost 페이지', () => {
     renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
     expect(screen.getByPlaceholderText('제목을 입력하세요')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('내용을 입력하세요')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/내용을 입력하세요/)).toBeInTheDocument();
     expect(screen.getByText('광고/협찬 게시글')).toBeInTheDocument();
   });
 
   it('카테고리 버튼들을 표시한다', () => {
     renderWithRouter(<NewPost />, { route: '/chadam/new' });
 
+    // 그룹 라벨
+    expect(screen.getByText('질문·토론')).toBeInTheDocument();
+    expect(screen.getByText('리뷰')).toBeInTheDocument();
+    expect(screen.getByText('제보')).toBeInTheDocument();
+    // 기본 그룹(질문·토론)의 세부 카테고리
     expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('맞춤차')).toBeInTheDocument();
-    expect(screen.getByText('도구')).toBeInTheDocument();
-    expect(screen.getByText('찻집 후기')).toBeInTheDocument();
+    expect(screen.getByText('맞춤 추천')).toBeInTheDocument();
+    expect(screen.getByText('자유 토론')).toBeInTheDocument();
   });
 
   it('제목/내용이 비어 있으면 제출 버튼이 비활성화된다', () => {
@@ -80,7 +85,7 @@ describe('NewPost 페이지', () => {
     fireEvent.change(screen.getByPlaceholderText('제목을 입력하세요'), {
       target: { value: '제목 입력' },
     });
-    fireEvent.change(screen.getByPlaceholderText('내용을 입력하세요'), {
+    fireEvent.change(screen.getByPlaceholderText(/내용을 입력하세요/), {
       target: { value: '내용 입력' },
     });
 
@@ -92,6 +97,7 @@ describe('NewPost 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),
@@ -140,7 +146,7 @@ describe('NewPost 페이지', () => {
     fireEvent.change(screen.getByPlaceholderText('제목을 입력하세요'), {
       target: { value: '제목 입력' },
     });
-    fireEvent.change(screen.getByPlaceholderText('내용을 입력하세요'), {
+    fireEvent.change(screen.getByPlaceholderText(/내용을 입력하세요/), {
       target: { value: '내용 입력' },
     });
 

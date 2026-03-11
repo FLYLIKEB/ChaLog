@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -22,12 +22,13 @@ import { Card } from '../components/ui/card';
 import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
+import { OnboardingPreferenceEditModal } from '../components/OnboardingPreferenceEditModal';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { cn } from '../components/ui/utils';
+import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 
 type SortType = 'latest' | 'rating';
 
@@ -40,12 +41,35 @@ export function UserProfile() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sort, setSort] = useState<SortType>('latest');
+  const [notePage, setNotePage] = useState(1);
+  const [noteTotal, setNoteTotal] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const NOTE_LIMIT = 20;
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isProfileEditModalOpen, setIsProfileEditModalOpen] = useState(false);
+  const [isOnboardingEditModalOpen, setIsOnboardingEditModalOpen] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
+
+  const initialLoadDone = useRef(false);
+
+  const fetchNotes = useCallback(async (sortType: SortType, pageNum = 1, append = false) => {
+    if (isNaN(userId)) return;
+    const isPublicFilter = isOwnProfile ? undefined : true;
+    const result = await notesApi.getAll(userId, isPublicFilter, undefined, undefined, undefined, sortType, pageNum, NOTE_LIMIT);
+    if (result && typeof result === 'object' && 'data' in result) {
+      const paged = result as { data: Note[]; total: number; page: number; limit: number };
+      setNotes(prev => append ? [...prev, ...paged.data] : paged.data);
+      setNoteTotal(paged.total);
+      setNotePage(paged.page);
+    } else {
+      const notesArray = Array.isArray(result) ? result : [];
+      setNotes(append ? prev => [...prev, ...(notesArray as Note[])] : notesArray as Note[]);
+      setNoteTotal(notesArray.length);
+    }
+  }, [userId, isOwnProfile]);
 
   const fetchData = useCallback(async () => {
     if (isNaN(userId)) {
@@ -56,25 +80,22 @@ export function UserProfile() {
     try {
       setIsLoading(true);
       setOnboardingPreference(null);
-      const isPublicFilter = isOwnProfile ? undefined : true;
-      const [userData, notesData] = await Promise.all([
+      const promises: [Promise<unknown>, Promise<void>, Promise<UserOnboardingPreference | null>] = [
         usersApi.getById(userId),
-        notesApi.getAll(userId, isPublicFilter),
-      ]);
+        fetchNotes(sort),
+        isOwnProfile
+          ? usersApi.getOnboardingPreference(userId).catch((error) => {
+              if ((error as { statusCode?: number })?.statusCode !== 404) {
+                logger.warn('Failed to fetch onboarding preference:', error);
+              }
+              return null;
+            })
+          : Promise.resolve(null),
+      ];
+      const [userData, , pref] = await Promise.all(promises);
       setUser(userData as User);
-      const notesArray = Array.isArray(notesData) ? notesData : [];
-      setNotes(notesArray as Note[]);
-      if (isOwnProfile) {
-        try {
-          const pref = await usersApi.getOnboardingPreference(userId);
-          setOnboardingPreference(pref);
-        } catch (error) {
-          setOnboardingPreference(null);
-          if ((error as { statusCode?: number })?.statusCode !== 404) {
-            logger.warn('Failed to fetch onboarding preference:', error);
-          }
-        }
-      }
+      setOnboardingPreference(pref);
+      initialLoadDone.current = true;
     } catch (error: unknown) {
       logger.error('Failed to fetch user profile:', error);
       const statusCode = (error as { statusCode?: number })?.statusCode;
@@ -86,18 +107,37 @@ export function UserProfile() {
     } finally {
       setIsLoading(false);
     }
-  }, [userId, isOwnProfile]);
+  }, [userId, isOwnProfile, sort, fetchNotes]);
 
   useEffect(() => {
     if (authLoading) return;
     fetchData();
   }, [authLoading, fetchData]);
 
-  const registerRefresh = useRegisterRefresh();
+  // 정렬 변경 시 노트만 다시 가져오기 (초기 로드 이후)
   useEffect(() => {
-    registerRefresh(fetchData);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchData]);
+    if (!initialLoadDone.current) return;
+    setNotePage(1);
+    fetchNotes(sort, 1);
+  }, [sort, fetchNotes]);
+
+  const hasMore = notes.length < noteTotal;
+
+  const isLoadingMoreRef = useRef(false);
+  const notePageRef = useRef(notePage);
+  notePageRef.current = notePage;
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMoreRef.current || !hasMore) return;
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      await fetchNotes(sort, notePageRef.current + 1, true);
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [hasMore, sort, fetchNotes]);
 
   const handleFollowToggle = async () => {
     if (!currentUser) {
@@ -163,19 +203,12 @@ export function UserProfile() {
     return {
       averageRating: safeAverageRating,
       totalLikes,
-      noteCount: notes.length,
+      noteCount: noteTotal || notes.length,
     };
-  }, [notes]);
+  }, [notes, noteTotal]);
 
-  const sortedNotes = useMemo(() => {
-    return [...notes].sort((a, b) => {
-      if (sort === 'latest') {
-        return b.createdAt.getTime() - a.createdAt.getTime();
-      } else {
-        return (b.overallRating || 0) - (a.overallRating || 0);
-      }
-    });
-  }, [notes, sort]);
+  // 서버에서 정렬된 상태로 반환되므로 클라이언트 정렬 불필요
+  const sortedNotes = notes;
 
   const handleProfileImageUpdate = (imageUrl: string) => {
     if (user) {
@@ -191,8 +224,41 @@ export function UserProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen pb-20 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
+      <div className="min-h-screen pb-20">
+        <Header
+          showBack={!isOwnProfile}
+          showProfile={isOwnProfile}
+          showLogo={isOwnProfile}
+          title={isOwnProfile ? '내 차록' : '사용자 프로필'}
+        />
+        <div className="p-6 space-y-6">
+          {/* 프로필 카드 스켈레톤 */}
+          <Card className="p-4 sm:p-6 md:p-8">
+            <div className="flex flex-col items-center gap-3 mb-6">
+              <div className="w-20 h-20 rounded-full bg-muted animate-pulse" />
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-6 w-24 rounded bg-muted animate-pulse" />
+                <div className="h-4 w-36 rounded bg-muted animate-pulse" />
+              </div>
+            </div>
+          </Card>
+          {/* 통계 스켈레톤 */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-3 flex flex-col items-center gap-1">
+                <div className="h-5 w-8 rounded bg-muted animate-pulse" />
+                <div className="h-3 w-12 rounded bg-muted animate-pulse" />
+              </Card>
+            ))}
+          </div>
+          {/* 노트 리스트 스켈레톤 */}
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
+            ))}
+          </div>
+        </div>
+        <BottomNav />
       </div>
     );
   }
@@ -352,53 +418,83 @@ export function UserProfile() {
           />
         </div>
 
-        {/* 취향 정보 섹션 */}
-        {isOwnProfile && onboardingPreference?.hasCompletedOnboarding && (
-          (onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0) && (
-            <Card className="p-4 sm:p-6 space-y-4">
-              {onboardingPreference.preferredTeaTypes?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[...onboardingPreference.preferredTeaTypes]
-                      .sort((a, b) => {
-                        const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
-                        const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
-                        return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-                      })
-                      .map((tag) => {
-                        const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
-                        return (
-                          <span key={tag} className="inline-flex items-center gap-1.5">
-                            {colorClass && (
-                              <span className={cn('w-1.5 h-4 rounded-full shrink-0', colorClass)} aria-hidden />
-                            )}
-                            <Badge variant="secondary">{tag}</Badge>
-                          </span>
-                        );
-                      })}
+        {/* 취향 정보 섹션 - 내 프로필에서만 표시 */}
+        {isOwnProfile && onboardingPreference && (
+          <Card className="p-4 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">취향</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsOnboardingEditModalOpen(true)}
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+                aria-label="취향 수정"
+              >
+                <Pencil className="w-3 h-3" />
+                {onboardingPreference.preferredTeaTypes?.length || onboardingPreference.preferredFlavorTags?.length
+                  ? '수정'
+                  : '설정'}
+              </Button>
+            </div>
+            {onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0 ? (
+              <>
+                {onboardingPreference.preferredTeaTypes?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[...new Set(onboardingPreference.preferredTeaTypes)]
+                        .sort((a, b) => {
+                          const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
+                          const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
+                          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                        })
+                        .map((tag) => {
+                          const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
+                          return (
+                            <span key={tag} className="inline-flex items-center gap-1.5">
+                              {colorClass && (
+                                <span className={cn('w-1.5 h-4 rounded-full shrink-0', colorClass)} aria-hidden />
+                              )}
+                              <Badge variant="secondary">{tag}</Badge>
+                            </span>
+                          );
+                        })}
+                    </div>
                   </div>
-                </div>
-              )}
-              {onboardingPreference.preferredFlavorTags?.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {onboardingPreference.preferredFlavorTags.map(tag => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
-                    ))}
+                )}
+                {onboardingPreference.preferredFlavorTags?.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {onboardingPreference.preferredFlavorTags.map(tag => (
+                        <Badge key={tag} variant="outline">{tag}</Badge>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </Card>
-          )
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">관심 차종과 향미를 설정해주세요.</p>
+            )}
+          </Card>
+        )}
+
+        {/* 취향 수정 모달 */}
+        {isOwnProfile && user && (
+          <OnboardingPreferenceEditModal
+            open={isOnboardingEditModalOpen}
+            onOpenChange={setIsOnboardingEditModalOpen}
+            userId={user.id}
+            preference={onboardingPreference}
+            onSuccess={setOnboardingPreference}
+          />
         )}
 
         {/* 정렬 드롭다운 */}
         {notes.length > 0 && (
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              총 {sortedNotes.length}개
+              총 {noteTotal}개
             </span>
             <Select value={sort} onValueChange={(v) => setSort(v as SortType)}>
               <SelectTrigger className="w-32">
@@ -431,11 +527,18 @@ export function UserProfile() {
           }
         >
           {sortedNotes.length > 0 ? (
-            <div className="space-y-3">
-              {sortedNotes.map(note => (
-                <NoteCard key={note.id} note={note} showTeaName />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {sortedNotes.map(note => (
+                  <NoteCard key={note.id} note={note} showTeaName />
+                ))}
+              </div>
+              <InfiniteScrollSentinel
+                onLoadMore={loadMore}
+                loading={isLoadingMore}
+                hasMore={hasMore}
+              />
+            </>
           ) : (
             <EmptyState
               type="notes"

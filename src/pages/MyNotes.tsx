@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { Loader2 } from 'lucide-react';
 
 export function MyNotes() {
@@ -15,12 +14,6 @@ export function MyNotes() {
     }
     navigate(`/user/${user.id}`, { replace: true });
   }, [isAuthenticated, user, navigate]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   // 리다이렉트 중 로딩 표시
   return (

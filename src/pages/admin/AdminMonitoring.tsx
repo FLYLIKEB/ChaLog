@@ -45,7 +45,7 @@ export function AdminMonitoring() {
     Promise.all([adminApi.getMetrics(), adminApi.getLogs({ level, limit: 50 })])
       .then(([m, l]) => {
         setMetrics(m);
-        setLogData(l);
+        setLogData(l as { logs: any[]; errorCount: number; warnCount: number; totalCount: number });
       })
       .catch((e: any) => setError(e?.message || '로딩에 실패했습니다.'))
       .finally(() => setLoading(false));
@@ -66,12 +66,12 @@ export function AdminMonitoring() {
   return (
     <div className="space-y-6">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2 text-foreground">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2 text-foreground">
           <Activity className="w-7 h-7 text-primary" />
           모니터링
         </h1>
-        <Button variant="secondary" onClick={fetchAll} disabled={loading}>
+        <Button variant="secondary" onClick={fetchAll} disabled={loading} className="self-start sm:self-auto">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           새로고침
         </Button>

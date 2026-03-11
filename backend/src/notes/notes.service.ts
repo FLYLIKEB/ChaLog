@@ -123,7 +123,7 @@ export class NotesService {
     return this.findOne(savedNote.id, userId);
   }
 
-  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string): Promise<any[]> {
+  async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string, sort: 'latest' | 'rating' = 'latest', page?: number, limit?: number): Promise<any[] | { data: any[]; total: number; page: number; limit: number }> {
     try {
       // following 피드: 팔로잉한 유저의 공개 노트만 조회
       if (feed === 'following') {
@@ -255,8 +255,17 @@ export class NotesService {
         .leftJoinAndSelect('note.noteTags', 'noteTags')
         .leftJoinAndSelect('noteTags.tag', 'tag')
         .leftJoinAndSelect('note.axisValues', 'axisValues')
-        .leftJoinAndSelect('axisValues.axis', 'axis')
-        .orderBy('note.createdAt', 'DESC');
+        .leftJoinAndSelect('axisValues.axis', 'axis');
+
+      if (sort === 'rating') {
+        // MySQL에서 NULL을 마지막으로 정렬: IS NULL 오름차순 → NULL이 아닌 값이 먼저
+        queryBuilder
+          .orderBy('note.overallRating IS NULL', 'ASC')
+          .addOrderBy('note.overallRating', 'DESC')
+          .addOrderBy('note.createdAt', 'DESC');
+      } else {
+        queryBuilder.orderBy('note.createdAt', 'DESC');
+      }
 
       const conditions: string[] = [];
       const params: Record<string, any> = {};
@@ -280,8 +289,18 @@ export class NotesService {
         queryBuilder.where(conditions.join(' AND '), params);
       }
 
+      // 페이지네이션 적용
+      if (page != null && limit != null) {
+        const [notes, total] = await queryBuilder
+          .skip((page - 1) * limit)
+          .take(limit)
+          .getManyAndCount();
+        const data = await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+        return { data, total, page, limit };
+      }
+
       const notes = await queryBuilder.getMany();
-      
+
       // 좋아요 및 북마크 정보 추가
       return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
     } catch (error) {
@@ -306,22 +325,43 @@ export class NotesService {
 
     const enrichedNotes = await this.enrichNotesWithLikesAndBookmarks([note], userId);
     const result = enrichedNotes[0];
-    // schemaIds: note_schemas에서 추출 (없으면 [schemaId]로 하위 호환)
-    result.schemaIds = (note as any).noteSchemas?.length > 0
-      ? (note as any).noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b)
-      : note.schemaId != null ? [note.schemaId] : [];
+    // schemaIds, schemas: note_schemas에서 추출 (없으면 [schemaId]/schema로 하위 호환)
+    const noteSchemas = (note as any).noteSchemas;
+    if (noteSchemas?.length > 0) {
+      result.schemaIds = noteSchemas.map((ns: NoteSchema) => ns.schemaId).sort((a: number, b: number) => a - b);
+      result.schemas = noteSchemas
+        .map((ns: NoteSchema) => (ns as any).schema)
+        .filter(Boolean)
+        .sort((a: { id: number }, b: { id: number }) => a.id - b.id);
+    } else if (note.schemaId != null) {
+      result.schemaIds = [note.schemaId];
+      result.schemas = note.schema ? [note.schema] : [];
+    } else {
+      result.schemaIds = [];
+      result.schemas = [];
+    }
     return result;
   }
 
   async update(id: number, userId: number, updateNoteDto: UpdateNoteDto): Promise<Note> {
-    const note = await this.findOne(id, userId);
-
+    // noteSchemas를 로드하지 않음 → notesRepository.save 시 cascade로 중복 저장되어 UQ_note_schemas 위반 방지
+    const note = await this.notesRepository.findOne({
+      where: { id },
+      relations: ['user', 'tea', 'schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
+    });
+    if (!note) {
+      throw new NotFoundException('노트를 찾을 수 없습니다.');
+    }
+    if (!note.isPublic && note.userId !== userId) {
+      throw new ForbiddenException('이 노트를 볼 권한이 없습니다.');
+    }
     if (note.userId !== userId) {
       throw new ForbiddenException('이 노트를 수정할 권한이 없습니다.');
     }
 
-    // schemaIds 또는 schemaId 변경 시 스키마 존재 확인
-    const updateSchemaIds = (updateNoteDto as any).schemaIds ?? (updateNoteDto.schemaId !== undefined ? [updateNoteDto.schemaId] : null);
+    // schemaIds 또는 schemaId 변경 시 스키마 존재 확인 (중복 제거하여 UQ_note_schemas 위반 방지)
+    const rawSchemaIds = (updateNoteDto as any).schemaIds ?? (updateNoteDto.schemaId !== undefined ? [updateNoteDto.schemaId] : null);
+    const updateSchemaIds = rawSchemaIds != null ? [...new Set(rawSchemaIds)] : null;
     if (updateSchemaIds != null && updateSchemaIds.length > 0) {
       const schemas = await this.ratingSchemaRepository.find({ where: { id: In(updateSchemaIds) } });
       if (schemas.length !== updateSchemaIds.length) {
@@ -675,23 +715,33 @@ export class NotesService {
         });
       }
 
-      // 좋아요 수 조회
-      const likeCounts = await this.noteLikesRepository
-        .createQueryBuilder('like')
-        .select('like.noteId', 'noteId')
-        .addSelect('COUNT(like.id)', 'count')
-        .where('like.noteId IN (:...noteIds)', { noteIds })
-        .groupBy('like.noteId')
-        .getRawMany();
+      // 좋아요 수, 사용자 좋아요/북마크 여부를 병렬로 조회
+      const [likeCounts, userLikes, userBookmarks] = await Promise.all([
+        this.noteLikesRepository
+          .createQueryBuilder('like')
+          .select('like.noteId', 'noteId')
+          .addSelect('COUNT(like.id)', 'count')
+          .where('like.noteId IN (:...noteIds)', { noteIds })
+          .groupBy('like.noteId')
+          .getRawMany(),
+        currentUserId && noteIds.length > 0
+          ? this.noteLikesRepository.find({
+              where: { noteId: In(noteIds), userId: currentUserId },
+            })
+          : Promise.resolve([] as NoteLike[]),
+        currentUserId && noteIds.length > 0
+          ? this.noteBookmarksRepository.find({
+              where: { noteId: In(noteIds), userId: currentUserId },
+            })
+          : Promise.resolve([] as NoteBookmark[]),
+      ]);
 
       const likeCountMap = new Map<number, number>();
       likeCounts.forEach((item) => {
         try {
-          // TypeORM의 getRawMany()는 alias를 사용할 때 지정한 alias를 키로 사용
-          // 하지만 때때로 다른 형식으로 반환될 수 있으므로 안전하게 처리
           const noteId = item.noteId ?? item.like_noteId ?? item.note_id;
           const count = item.count ?? item.COUNT_like_id;
-          
+
           if (noteId !== undefined && count !== undefined) {
             const parsedCount = typeof count === 'string' ? parseInt(count, 10) : Number(count);
             const parsedNoteId = typeof noteId === 'string' ? parseInt(noteId, 10) : Number(noteId);
@@ -704,22 +754,7 @@ export class NotesService {
         }
       });
 
-      // 현재 사용자의 좋아요 여부 조회
-      let userLikes: NoteLike[] = [];
-      if (currentUserId && noteIds.length > 0) {
-        userLikes = await this.noteLikesRepository.find({
-          where: { noteId: In(noteIds), userId: currentUserId },
-        });
-      }
       const userLikedNoteIds = new Set(userLikes.map((like) => like.noteId));
-
-      // 현재 사용자의 북마크 여부 조회
-      let userBookmarks: NoteBookmark[] = [];
-      if (currentUserId && noteIds.length > 0) {
-        userBookmarks = await this.noteBookmarksRepository.find({
-          where: { noteId: In(noteIds), userId: currentUserId },
-        });
-      }
       const userBookmarkedNoteIds = new Set(userBookmarks.map((bookmark) => bookmark.noteId));
 
       // 노트에 좋아요, 북마크, schemaIds 추가

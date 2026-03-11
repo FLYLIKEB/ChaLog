@@ -19,7 +19,7 @@ export const CreatorCard: FC<CreatorCardProps> = ({ user, followerCount }) => {
   return (
     <Card
       onClick={() => navigate(`/user/${user.id}`)}
-      className="w-full text-center p-4 hover:shadow-md transition-shadow cursor-pointer flex flex-col items-center gap-3"
+      className="w-full h-full text-center p-4 card-appearance-hover transition-shadow duration-200 cursor-pointer flex flex-col items-center gap-3"
     >
       <UserAvatar
         name={user.name}

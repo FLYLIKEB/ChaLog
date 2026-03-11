@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { Search as SearchIcon, Plus, Loader2, Store, Filter } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -16,7 +16,7 @@ import { teasApi, tagsApi } from '../lib/api';
 import { Tea, Seller } from '../types';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
-import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
+import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS, CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES, CARD_SKELETON_CONTAINER_CLASSES } from '../constants';
 import { cn } from '../components/ui/utils';
 
 const SORT_OPTIONS = [
@@ -43,8 +43,11 @@ export function Search() {
   const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | 'match' | 'recent' | null;
   const urlType = searchParams.get('type');
   const urlMinRating = searchParams.get('minRating');
-  const urlTags = searchParams.get('tags')?.split(',').map((t) => t.trim()).filter(Boolean) ?? [];
-  const urlTagsStr = urlTags.join(',');
+  const urlTagsStr = searchParams.get('tags') ?? '';
+  const urlTags = useMemo(
+    () => urlTagsStr.split(',').map((t) => t.trim()).filter(Boolean),
+    [urlTagsStr],
+  );
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,6 +67,45 @@ export function Search() {
     if (urlMinRating !== null) setFilterMinRating(parseFloat(urlMinRating));
     if (urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort)) setFilterSort(urlSort);
   }, [urlType, urlMinRating, urlSort]);
+
+  const [selectedFlavorTag, setSelectedFlavorTag] = useState<string | null>(null);
+  const [flavorTeas, setFlavorTeas] = useState<Tea[]>([]);
+  const [isFlavorLoading, setIsFlavorLoading] = useState(false);
+  const flavorRequestRef = useRef<number | null>(null);
+
+  const handleFlavorTagClick = useCallback(
+    async (tagName: string) => {
+      if (selectedFlavorTag === tagName) {
+        setSelectedFlavorTag(null);
+        setFlavorTeas([]);
+        flavorRequestRef.current = null;
+        setIsFlavorLoading(false);
+        return;
+      }
+
+      setSelectedFlavorTag(tagName);
+      setIsFlavorLoading(true);
+
+      const requestId = (flavorRequestRef.current ?? 0) + 1;
+      flavorRequestRef.current = requestId;
+
+      try {
+        const data = await teasApi.getByTags([tagName], 'match', 20);
+        if (flavorRequestRef.current === requestId) {
+          setFlavorTeas(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        if (flavorRequestRef.current === requestId) {
+          setFlavorTeas([]);
+        }
+      } finally {
+        if (flavorRequestRef.current === requestId) {
+          setIsFlavorLoading(false);
+        }
+      }
+    },
+    [selectedFlavorTag],
+  );
 
   const [popularTeas, setPopularTeas] = useState<Tea[]>([]);
   const [newTeas, setNewTeas] = useState<Tea[]>([]);
@@ -180,7 +222,7 @@ export function Search() {
   );
 
   const hasTagParams = urlTags.length > 0;
-  const hasFilterParams = urlSort || urlType || urlMinRating || hasTagParams;
+  const hasFilterParams = !!(urlSort || urlType || urlMinRating || hasTagParams);
   const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
   const handleRefresh = useCallback(async () => {
     if (showResults) {
@@ -202,11 +244,7 @@ export function Search() {
     }
   }, [showResults, hasTagParams, urlTagsStr, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters]);
 
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(handleRefresh);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, handleRefresh]);
+  usePullToRefreshForPage(handleRefresh, '/sasaek');
 
   useEffect(() => {
     const trimmedQuery = searchQuery.trim();
@@ -443,13 +481,13 @@ export function Search() {
         {showResults && (
           <>
             {isLoading ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <TeaCardSkeleton key={i} />
                 ))}
               </div>
             ) : teas.length > 0 ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 {teas.map((tea, i) => (
                 <div
                   key={tea.id}
@@ -485,25 +523,29 @@ export function Search() {
             {sectionsLoading ? (
               <div className="space-y-8">
                 <Section title="🏆 사랑받는 차" spacing="lg">
-                  <div className="flex gap-3 overflow-x-hidden">
+                  <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="shrink-0 w-[200px]">
+                      <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
                         <TeaCardSkeleton />
                       </div>
                     ))}
                   </div>
                 </Section>
                 <Section title="🆕 신규 차" spacing="lg">
-                  <div className="space-y-2">
+                  <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                     {[1, 2, 3].map((i) => (
-                      <TeaCardSkeleton key={i} />
+                      <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
+                        <TeaCardSkeleton />
+                      </div>
                     ))}
                   </div>
                 </Section>
                 <Section title="✨ 맞춤차" spacing="lg">
-                  <div className="space-y-3">
+                  <div className={CARD_SKELETON_CONTAINER_CLASSES}>
                     {[1, 2, 3].map((i) => (
-                      <TeaCardSkeleton key={i} />
+                      <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
+                        <TeaCardSkeleton />
+                      </div>
                     ))}
                   </div>
                 </Section>
@@ -516,9 +558,9 @@ export function Search() {
                   spacing="lg"
                 >
                   {popularTeas.length > 0 ? (
-                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
+                    <div className={CARD_CONTAINER_CLASSES}>
                       {popularTeas.slice(0, 10).map((tea, index) => (
-                        <div key={tea.id} className="shrink-0 w-[200px]">
+                        <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                           <TeaRankingCard tea={tea} rank={index + 1} />
                         </div>
                       ))}
@@ -534,9 +576,11 @@ export function Search() {
                   spacing="lg"
                 >
                   {newTeas.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className={CARD_CONTAINER_CLASSES}>
                       {newTeas.slice(0, 3).map((tea) => (
-                        <TeaNewCard key={tea.id} tea={tea} />
+                        <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                          <TeaNewCard tea={tea} />
+                        </div>
                       ))}
                     </div>
                   ) : (
@@ -550,24 +594,51 @@ export function Search() {
                   spacing="lg"
                 >
                   {popularTags.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {popularTags.slice(0, 15).map((tag) => (
-                        <button
-                          key={tag.name}
-                          type="button"
-                          onClick={() => {
-                            setSearchParams({ tags: tag.name, sort: 'match' });
-                            setHasSearched(true);
-                          }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-border/60 bg-background hover:bg-muted/80 transition-colors"
-                        >
-                          #{tag.name}
-                          {tag.noteCount > 0 && (
-                            <span className="text-xs text-muted-foreground">({tag.noteCount})</span>
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {popularTags.slice(0, 15).map((tag) => (
+                          <button
+                            key={tag.name}
+                            type="button"
+                            onClick={() => handleFlavorTagClick(tag.name)}
+                            className={cn(
+                              'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
+                              selectedFlavorTag === tag.name
+                                ? 'bg-primary text-primary-foreground border-primary'
+                                : 'border-border/60 bg-background hover:bg-muted/80',
+                            )}
+                          >
+                            #{tag.name}
+                            {tag.noteCount > 0 && (
+                              <span className="text-xs opacity-70">({tag.noteCount})</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedFlavorTag && (
+                        <div className="mt-4">
+                          {isFlavorLoading ? (
+                            <div className={CARD_SKELETON_CONTAINER_CLASSES}>
+                              {[1, 2, 3].map((i) => (
+                                <div key={i} className={cn('shrink-0', CARD_WIDTH.WIDE)}>
+                                  <TeaCardSkeleton />
+                                </div>
+                              ))}
+                            </div>
+                          ) : flavorTeas.length > 0 ? (
+                            <div className={CARD_CONTAINER_CLASSES}>
+                              {flavorTeas.map((tea) => (
+                                <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                                  <TeaCard tea={tea} />
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-muted-foreground py-3">#{selectedFlavorTag} 향미의 차가 없습니다.</p>
                           )}
-                        </button>
-                      ))}
-                    </div>
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">인기 향미를 불러오는 중...</p>
                   )}
@@ -579,9 +650,11 @@ export function Search() {
                   spacing="lg"
                 >
                   {curationTeas.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className={CARD_CONTAINER_CLASSES}>
                       {curationTeas.slice(0, 3).map((tea) => (
-                        <TeaCard key={tea.id} tea={tea} />
+                        <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                          <TeaCard tea={tea} />
+                        </div>
                       ))}
                     </div>
                   ) : (

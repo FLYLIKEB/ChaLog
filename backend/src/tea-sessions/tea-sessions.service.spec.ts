@@ -35,10 +35,7 @@ describe('TeaSessionsService', () => {
       sessionId: 1,
       steepNumber: 1,
       steepDurationSeconds: 30,
-      aroma: null,
-      taste: null,
-      color: null,
-      memo: null,
+      data: null,
       createdAt: new Date(),
       ...overrides,
     } as TeaSessionSteep);
@@ -152,7 +149,7 @@ describe('TeaSessionsService', () => {
   describe('addSteep', () => {
     it('탕을 추가할 수 있어야 한다', async () => {
       const session = mockSession({ noteId: null });
-      const steep = mockSteep();
+      const steep = mockSteep({ data: { v: 1, color_note: '황금색', aroma_profile: '꽃향' } });
       mockTeaSessionsRepository.findOne.mockResolvedValue(session);
       mockTeaSessionSteepsRepository.create.mockReturnValue(steep);
       mockTeaSessionSteepsRepository.save.mockResolvedValue(steep);
@@ -160,9 +157,17 @@ describe('TeaSessionsService', () => {
       const result = await service.addSteep(10, 1, {
         steepNumber: 1,
         steepDurationSeconds: 30,
+        data: { v: 1, color_note: '황금색', aroma_profile: '꽃향' },
       });
 
-      expect(mockTeaSessionSteepsRepository.create).toHaveBeenCalled();
+      expect(mockTeaSessionSteepsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionId: 1,
+          steepNumber: 1,
+          steepDurationSeconds: 30,
+          data: expect.objectContaining({ v: 1, color_note: '황금색', aroma_profile: '꽃향' }),
+        }),
+      );
       expect(mockTeaSessionSteepsRepository.save).toHaveBeenCalled();
       expect(result).toEqual(steep);
     });

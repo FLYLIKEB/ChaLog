@@ -19,7 +19,7 @@ export function AdminAudit() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">감사 로그</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">감사 로그</h1>
       {error && (
         <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 text-destructive">{error}</div>
       )}

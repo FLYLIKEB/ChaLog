@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminApi } from '../../lib/api';
 import { Button } from '../../components/ui/button';
+import { Textarea } from '../../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Loader2, ExternalLink, Check, Trash2 } from 'lucide-react';
@@ -120,9 +121,9 @@ export function AdminReports() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground">신고 관리</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">신고 관리</h1>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-[140px]">
             <SelectValue placeholder="상태 필터" />
@@ -137,7 +138,7 @@ export function AdminReports() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList>
+        <TabsList className="overflow-x-auto max-w-full">
           <TabsTrigger value="notes">차록 신고 ({noteData?.total ?? 0})</TabsTrigger>
           <TabsTrigger value="posts">게시글 신고 ({postData?.total ?? 0})</TabsTrigger>
         </TabsList>
@@ -201,11 +202,11 @@ export function AdminReports() {
               해당 콘텐츠를 삭제합니다. 사유를 입력하세요 (선택).
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <textarea
+          <Textarea
             value={actionReason}
             onChange={(e) => setActionReason(e.target.value)}
             placeholder="조치 사유"
-            className="w-full border rounded p-2 min-h-[80px]"
+            className="min-h-[80px]"
           />
           <AlertDialogFooter>
             <AlertDialogCancel>취소</AlertDialogCancel>

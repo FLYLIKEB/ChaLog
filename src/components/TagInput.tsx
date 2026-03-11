@@ -111,11 +111,10 @@ export function TagInput({ tags, onChange, maxTags = 10 }: TagInputProps) {
     onChange([...tags, trimmedTag]);
     setInputValue('');
     
-    // 입력 필드에 포커스 유지
+    // 입력 필드 값 초기화 (포커스는 이동하지 않음)
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.value = '';
-        inputRef.current.focus();
       }
     }, 0);
   };

@@ -13,14 +13,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
 import { Tea, Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
-import { Loader2, Hash, MessageCircle } from 'lucide-react';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
+import { Loader2, Hash, MessageCircle, ChevronRight } from 'lucide-react';
+import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { TeaCardSkeleton } from '../components/TeaCardSkeleton';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Link } from 'react-router-dom';
+import { cn } from '../components/ui/utils';
+import { CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES } from '../constants';
 
 type FeedTab = 'forYou' | 'following' | 'tags';
 
@@ -138,11 +140,7 @@ export function Home() {
     if (activeTab === 'tags' && currentUser) await fetchTagsFeed();
   }, [fetchForYouFeed, fetchFollowingFeed, fetchTagsFeed, activeTab, currentUser]);
 
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(handleRefresh);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, handleRefresh]);
+  usePullToRefreshForPage(handleRefresh, '/');
 
   const recentContributors = useMemo(() => {
     const seen = new Set<number>();
@@ -161,7 +159,7 @@ export function Home() {
         <Header showProfile showLogo />
         <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
           <HeroSection />
-          <Section title="📝 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
+          <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <NoteCardSkeleton key={i} />
@@ -192,11 +190,11 @@ export function Home() {
         <HeroSection />
 
         {/* 요즘 인기 차 섹션 */}
-        <Section title="🔥 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
+        <Section title="🍵 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
           {trendingTeas.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
+            <div className={CARD_CONTAINER_CLASSES}>
               {trendingTeas.map((tea) => (
-                <div key={tea.id} className="shrink-0 w-[280px]">
+                <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
                   <TeaCard tea={tea} />
                 </div>
               ))}
@@ -207,11 +205,11 @@ export function Home() {
         </Section>
 
         {/* 인기 다우 섹션 */}
-        <Section title="✨ 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
+        <Section title="🌿 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
           {trendingCreators.length > 0 ? (
-            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
+            <div className={CARD_CONTAINER_CLASSES}>
               {trendingCreators.map((creator) => (
-                <div key={creator.id} className="shrink-0 w-[200px]">
+                <div key={creator.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.DEFAULT)}>
                   <CreatorCard user={creator} followerCount={creator.followerCount} />
                 </div>
               ))}
@@ -222,7 +220,7 @@ export function Home() {
         </Section>
 
         {/* 차록 흐름 탭 섹션 */}
-        <Section title="📝 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
+        <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
         <Tabs
           value={activeTab}
           onValueChange={(v) => setActiveTab(v as FeedTab)}
@@ -235,11 +233,11 @@ export function Home() {
 
           <TabsContent value="forYou" className="mt-4">
             {publicNotes.length > 0 ? (
-              <div className="space-y-3">
+              <div className={CARD_CONTAINER_CLASSES}>
                 {publicNotes.map((note, i) => (
                   <div
                     key={note.id}
-                    className="animate-fade-in-up opacity-0"
+                    className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE, 'animate-fade-in-up opacity-0')}
                     style={{ animationDelay: `${i * 50}ms` }}
                   >
                     <NoteCard note={note} showTeaName />
@@ -250,7 +248,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="아직 등록된 차록이 없어요. 첫 차록을 남겨볼까요?"
-                action={{ label: '✍️ 첫 차록 쓰기', onClick: () => navigate('/note/new') }}
+                action={{ label: '첫 차록 쓰기', onClick: () => navigate('/note/new') }}
               />
             )}
           </TabsContent>
@@ -270,16 +268,18 @@ export function Home() {
                 <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : followingNotes.length > 0 ? (
-              <div className="space-y-3">
+              <div className={CARD_CONTAINER_CLASSES}>
                 {followingNotes.map(note => (
-                  <NoteCard key={note.id} note={note} showTeaName />
+                  <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                    <NoteCard note={note} showTeaName />
+                  </div>
                 ))}
               </div>
             ) : (
               <EmptyState
                 type="feed"
                 message="구독한 다우의 차록이 없어요. 다우를 구독해 보세요!"
-                action={{ label: '🔍 사색하기', onClick: () => navigate('/sasaek') }}
+                action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </TabsContent>
@@ -316,9 +316,11 @@ export function Home() {
                   </div>
                 )}
                 {tagNotes.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className={CARD_CONTAINER_CLASSES}>
                     {tagNotes.map(note => (
-                      <NoteCard key={note.id} note={note} showTeaName />
+                      <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                        <NoteCard note={note} showTeaName />
+                      </div>
                     ))}
                   </div>
                 ) : followedTags.length === 0 ? (
@@ -335,7 +337,7 @@ export function Home() {
                   <EmptyState
                     type="feed"
                     message="구독한 테마의 공개 차록이 없어요."
-                    action={{ label: '🔍 테마 사색하기', onClick: () => navigate('/sasaek') }}
+                    action={{ label: '테마 사색하기', onClick: () => navigate('/sasaek') }}
                   />
                 )}
               </>
@@ -365,17 +367,29 @@ export function Home() {
           </div>
         )}
 
-        {/* 하단 푸터 - 오픈톡 + 개발정보 (미니멀) */}
+        {/* 하단 푸터 - 오픈톡 + 개발정보 */}
         <footer className="mt-12 pt-8 pb-6 border-t border-black/5">
           {import.meta.env.VITE_KAKAO_OPEN_CHAT_URL && (
             <a
               href={import.meta.env.VITE_KAKAO_OPEN_CHAT_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full max-w-xs mx-auto py-2.5 px-4 rounded-xl bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-sm font-medium transition-colors mb-5 shadow-[0_2px_12px_rgba(0,0,0,0.04)]"
+              className="group flex items-center justify-between gap-3 w-full max-w-sm mx-auto py-4 px-5 rounded-2xl bg-[#FEE500] hover:bg-[#FEE500]/95 text-[#191919] transition-all duration-200 mb-5 card-shadow hover:shadow-[0_4px_16px_rgba(254,229,0,0.35)] hover:-translate-y-0.5 active:translate-y-0 border border-[#FEE500]/80"
             >
-              <MessageCircle className="w-4 h-4" />
-              카톡 오픈톡방 참여하기
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#191919]/8 flex items-center justify-center shrink-0">
+                  <MessageCircle className="w-5 h-5 text-[#191919]" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-[#191919]">
+                    차에 대해 이야기해요
+                  </p>
+                  <p className="text-xs text-[#191919]/70 mt-0.5">
+                    오픈채팅에서 만나요
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-[#191919]/60 group-hover:text-[#191919] group-hover:translate-x-0.5 transition-all shrink-0" />
             </a>
           )}
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground/80">

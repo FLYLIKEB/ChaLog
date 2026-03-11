@@ -9,7 +9,6 @@ import { Tea } from '../types';
 import { Loader2, Store, MapPin, Globe, Phone, Clock, ExternalLink, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export function ShopDetail() {
@@ -60,12 +59,6 @@ export function ShopDetail() {
   useEffect(() => {
     fetchBySeller();
   }, [fetchBySeller]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(fetchBySeller);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh, fetchBySeller]);
 
   if (!name) {
     return (

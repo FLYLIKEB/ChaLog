@@ -65,7 +65,7 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-foreground">대시보드</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-foreground">대시보드</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {cards.map(({ label, value, icon: Icon }) => (

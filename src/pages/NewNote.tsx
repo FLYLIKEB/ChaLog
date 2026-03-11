@@ -18,7 +18,6 @@ import { teasApi, notesApi } from '../lib/api';
 import { Tea, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
@@ -132,12 +131,6 @@ export function NewNote() {
     };
     fetchAxes();
   }, [selectedSchemaIds.join(',')]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   useEffect(() => {
     if (preselectedTeaId) {

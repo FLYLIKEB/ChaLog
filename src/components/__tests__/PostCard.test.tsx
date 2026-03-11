@@ -56,6 +56,7 @@ describe('PostCard 컴포넌트', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),
@@ -125,6 +126,7 @@ describe('PostCard 컴포넌트', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),

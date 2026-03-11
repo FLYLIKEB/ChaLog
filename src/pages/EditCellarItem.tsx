@@ -5,16 +5,14 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import { QuantityAdjuster } from '../components/QuantityAdjuster';
 import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { useRegisterRefresh } from '../contexts/PullToRefreshContext';
 import { toast } from 'sonner';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
-
-const DECREMENT_OPTIONS = [3, 5, 8] as const;
 
 function toDateInputValue(iso: string | null): string {
   if (!iso) return '';
@@ -84,12 +82,6 @@ export function EditCellarItem() {
 
     load();
   }, [isAuthenticated, authLoading, navigate, itemId]);
-
-  const registerRefresh = useRegisterRefresh();
-  useEffect(() => {
-    registerRefresh(undefined);
-    return () => registerRefresh(undefined);
-  }, [registerRefresh]);
 
   const filteredTeas = teaSearch.trim()
     ? teas.filter(
@@ -237,27 +229,15 @@ export function EditCellarItem() {
             />
             <span className="flex items-center px-3 text-sm text-muted-foreground">g</span>
           </div>
-          <div className="flex gap-2">
-            {DECREMENT_OPTIONS.map((n) => (
-              <Button
-                key={n}
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  const current = parseFloat(quantity) || 0;
-                  setQuantity(String(Math.max(0, current - n)));
-                }}
-              >
-                -{n}g
-              </Button>
-            ))}
-          </div>
+          <QuantityAdjuster quantity={quantity} onChange={setQuantity} />
         </div>
 
         {/* 개봉일 */}
         <div className="space-y-2">
           <Label htmlFor="openedAt">개봉일</Label>
+          <p className="text-xs text-muted-foreground">
+            차 포장을 처음 개봉한 날짜입니다. 신선도·소비 시점 추적에 활용됩니다.
+          </p>
           <Input
             id="openedAt"
             type="date"
@@ -269,6 +249,11 @@ export function EditCellarItem() {
         {/* 리마인더 */}
         <div className="space-y-2">
           <Label htmlFor="remindAt">리마인더 날짜</Label>
+          <p className="text-xs text-muted-foreground">
+            설정한 날짜·시간에 찻장에서 알림 배너로 표시됩니다.
+            <br />
+            (예: 재구매 시점, 유통기한 확인 등)
+          </p>
           <Input
             id="remindAt"
             type="datetime-local"

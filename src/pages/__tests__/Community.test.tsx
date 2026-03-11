@@ -69,6 +69,7 @@ describe('Community 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: mockUser,
       isAuthenticated: true,
+      isAdmin: false,
       isLoading: false,
       token: 'mock-token',
       login: vi.fn(),
@@ -89,18 +90,18 @@ describe('Community 페이지', () => {
     renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
-      expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
-      expect(screen.getByText('엄선 게시글')).toBeInTheDocument();
+      expect(screen.getAllByText('우림 질문입니다').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('엄선 게시글').length).toBeGreaterThanOrEqual(1);
     });
   });
 
-  it('카테고리 탭을 표시한다', () => {
+  it('대분류 탭을 표시한다', () => {
     renderWithRouter(<Community />, { route: '/chadam' });
     expect(screen.getByText('전체')).toBeInTheDocument();
-    expect(screen.getByText('우림 질문')).toBeInTheDocument();
-    expect(screen.getByText('맞춤차')).toBeInTheDocument();
-    expect(screen.getByText('도구')).toBeInTheDocument();
-    expect(screen.getByText('찻집 후기')).toBeInTheDocument();
+    expect(screen.getByText('질문·토론')).toBeInTheDocument();
+    expect(screen.getByText('리뷰')).toBeInTheDocument();
+    expect(screen.getByText('공지')).toBeInTheDocument();
+    expect(screen.getByText('제보')).toBeInTheDocument();
   });
 
   it('게시글이 없을 때 빈 상태를 표시한다', async () => {
@@ -124,6 +125,7 @@ describe('Community 페이지', () => {
     vi.mocked(useAuth).mockReturnValue({
       user: null,
       isAuthenticated: false,
+      isAdmin: false,
       isLoading: false,
       token: null,
       login: vi.fn(),
@@ -140,7 +142,7 @@ describe('Community 페이지', () => {
     renderWithRouter(<Community />, { route: '/chadam' });
 
     await waitFor(() => {
-      expect(screen.getByText('우림 질문입니다')).toBeInTheDocument();
+      expect(screen.getAllByText('우림 질문입니다').length).toBeGreaterThanOrEqual(1);
     });
 
     expect(screen.queryByLabelText('새 게시글 작성')).not.toBeInTheDocument();

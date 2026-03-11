@@ -157,10 +157,6 @@ export class UsersService {
       if (user.bannedAt) {
         throw new UnauthorizedException('정지된 계정입니다.');
       }
-      if (name && user.name !== name) {
-        user.name = name;
-        await this.usersRepository.save(user);
-      }
       if (email) {
         await this.addEmailAuthIfNotExists(user.id, email);
       }

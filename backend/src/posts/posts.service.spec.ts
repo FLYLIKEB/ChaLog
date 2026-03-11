@@ -84,14 +84,23 @@ describe('PostsService', () => {
     mockPostQb.getMany.mockResolvedValue([]);
 
     // create/update use transaction; provide a manager that delegates to repository mocks
+    let lastSavedPost: any = null;
     mockDataSource.transaction.mockImplementation(async (fn) => {
       const manager = {
         create: jest.fn((Entity: any, data: any) => ({ ...data })),
         save: jest.fn().mockImplementation(async (Entity: any, entity: any) => {
-          if (Entity === Post) return { ...entity, id: entity.id ?? 1 };
+          if (Entity === Post) {
+            lastSavedPost = { ...entity, id: entity.id ?? 1 };
+            return lastSavedPost;
+          }
           return Array.isArray(entity) ? entity : { ...entity };
         }),
-        findOne: jest.fn().mockResolvedValue(null),
+        findOne: jest.fn().mockImplementation(async (Entity: any, opts: any) => {
+          if (Entity === Post && lastSavedPost && opts?.where?.id === lastSavedPost.id) {
+            return { ...lastSavedPost, user: { id: 1, name: '테스터' }, images: lastSavedPost.images ?? [] };
+          }
+          return null;
+        }),
         delete: jest.fn().mockResolvedValue(undefined),
       };
       return fn(manager);
@@ -130,18 +139,34 @@ describe('PostsService', () => {
       const savedPost = { id: 1, ...dto, userId: 1, isSponsored: false, sponsorNote: null, images: undefined };
 
       let savedPostImages: any[] = [];
+      let lastSavedPost: any = null;
       mockDataSource.transaction.mockImplementation(async (fn) => {
         const manager = {
           create: jest.fn((Entity: any, data: any) => ({ ...data })),
           save: jest.fn().mockImplementation(async (Entity: any, entity: any) => {
-            if (Entity === Post) return { ...entity, id: 1 };
+            if (Entity === Post) {
+              lastSavedPost = { ...entity, id: 1 };
+              return lastSavedPost;
+            }
             if (Entity === PostImage) {
               savedPostImages = Array.isArray(entity) ? entity : [entity];
               return entity;
             }
             return entity;
           }),
-          findOne: jest.fn().mockResolvedValue(null),
+          findOne: jest.fn().mockImplementation(async (Entity: any, opts: any) => {
+            if (Entity === Post && lastSavedPost && opts?.where?.id === lastSavedPost.id) {
+              return {
+                ...lastSavedPost,
+                user: { id: 1, name: '테스터' },
+                images: [
+                  { url: 'https://example.com/1.jpg', caption: '첫 이미지', sortOrder: 0 },
+                  { url: 'https://example.com/2.jpg', thumbnailUrl: 'https://example.com/thumb.jpg', caption: '두 번째', sortOrder: 1 },
+                ],
+              };
+            }
+            return null;
+          }),
           delete: jest.fn().mockResolvedValue(undefined),
         };
         return fn(manager);
