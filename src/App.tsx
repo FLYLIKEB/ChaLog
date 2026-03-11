@@ -274,7 +274,7 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <AppContent />
-          <Toaster />
+          <Toaster offset={{ bottom: 'calc(var(--bottom-nav-spacer) + 0.5rem)' }} />
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
