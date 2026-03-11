@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
-import { Search as SearchIcon, Plus, Loader2, Store, Filter, Clock, X } from 'lucide-react';
+import { Search as SearchIcon, Plus, Loader2, Store, Filter, Clock, X, ChevronDown } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
@@ -53,6 +53,7 @@ export function Search() {
 
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
   const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [teas, setTeas] = useState<Tea[]>([]);
@@ -415,13 +416,59 @@ export function Search() {
           </button>
         </div>
 
+        {/* 검색 탭 - 최근 검색어 (필터 위) */}
+        {activeTab === 'search' && !showResults && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                전체 삭제
+              </button>
+            </div>
+            <ul className="space-y-1">
+              {recentSearches.map((term) => (
+                <li key={term} className="flex items-center gap-2 py-2">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(term); handleSearch(term); }}
+                    className="flex-1 text-left text-sm truncate"
+                  >
+                    {term}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSearch(term)}
+                    className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={`${term} 삭제`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* 필터 패널 */}
         {activeTab === 'search' && (
-          <div className="space-y-3 pb-2 border-b border-border/60">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Filter className="w-4 h-4" />
-              필터
-            </div>
+          <div className="border border-border/60 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setFilterOpen((v) => !v)}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/40 transition-colors"
+            >
+              <span className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                필터
+              </span>
+              <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', filterOpen && 'rotate-180')} />
+            </button>
+            {filterOpen && <div className="space-y-3 px-4 pb-4 pt-1">
             {/* 향미 태그 선택 */}
             <div>
               <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
@@ -508,6 +555,7 @@ export function Search() {
             <Button size="sm" onClick={applyFilters}>
               적용
             </Button>
+            </div>}
           </div>
         )}
 
@@ -551,53 +599,6 @@ export function Search() {
           </>
         )}
 
-        {/* 검색 탭 - 쿼리/필터 없을 때 최근 검색어 표시 */}
-        {!showResults && activeTab === 'search' && searchQuery.trim().length === 0 && (
-          <div className="space-y-4">
-            {recentSearches.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
-                  <button
-                    type="button"
-                    onClick={clearAll}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    전체 삭제
-                  </button>
-                </div>
-                <ul className="space-y-1">
-                  {recentSearches.map((term) => (
-                    <li key={term} className="flex items-center gap-2 py-2">
-                      <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                      <button
-                        type="button"
-                        onClick={() => { setSearchQuery(term); handleSearch(term); }}
-                        className="flex-1 text-left text-sm truncate"
-                      >
-                        {term}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => removeSearch(term)}
-                        className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label={`${term} 삭제`}
-                      >
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {recentSearches.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <SearchIcon className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색하거나<br />아래 필터를 활용해보세요</p>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* 탐색 섹션 (탐색 탭) */}
         {activeTab === 'explore' && (
