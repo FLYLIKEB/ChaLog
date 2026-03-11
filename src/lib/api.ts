@@ -1121,6 +1121,8 @@ export const authApi = {
     apiClient.post<{ message: string }>('/auth/forgot-password', { email }),
   resetPassword: (token: string, newPassword: string) =>
     apiClient.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
+  findEmail: (name: string) =>
+    apiClient.post<{ maskedEmail: string | null; message: string }>('/auth/find-email', { name }),
 };
 
 export const teasApi = {

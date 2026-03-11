@@ -213,6 +213,23 @@ export class AuthService {
     await this.mailService.sendPasswordResetEmail(email, resetUrl);
   }
 
+  async findEmail(name: string): Promise<{ maskedEmail: string | null }> {
+    const user = await this.usersService.findByName(name);
+    if (!user) return { maskedEmail: null };
+
+    const auth = await this.userAuthRepository.findOne({
+      where: { userId: user.id, provider: AuthProvider.EMAIL },
+    });
+    if (!auth) return { maskedEmail: null };
+
+    const email = auth.providerId;
+    const [local, domain] = email.split('@');
+    const masked = local.length <= 2
+      ? local[0] + '***'
+      : local.slice(0, 2) + '***';
+    return { maskedEmail: `${masked}@${domain}` };
+  }
+
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const tokenHash = createHash('sha256').update(token).digest('hex');
 
