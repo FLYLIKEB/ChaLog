@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
-import { Search as SearchIcon, Plus, Loader2, Store, Filter, Clock, X, ChevronDown } from 'lucide-react';
+import { Search as SearchIcon, Plus, Store, Filter, Clock, X, ChevronDown } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
@@ -167,20 +167,6 @@ export function Search() {
     setSectionsLoading(false);
   }, []);
 
-  const fetchAllTeas = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await teasApi.getAll();
-      setTeas(Array.isArray(data) ? data : []);
-      setHasSearched(false);
-    } catch (error) {
-      logger.error('Failed to fetch teas:', error);
-      toast.error('차 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const handleSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return;
 
@@ -230,6 +216,10 @@ export function Search() {
 
   const hasTagParams = urlTags.length > 0;
   const hasFilterParams = !!(urlSort || urlType || urlMinRating || hasTagParams);
+  const activeFilterCount = [filterType != null, filterMinRating != null, urlTags.length > 0].filter(Boolean).length;
+  useEffect(() => {
+    if (hasFilterParams) setFilterOpen(true);
+  }, [hasFilterParams]);
   const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
   const handleRefresh = useCallback(async () => {
     if (showResults) {
@@ -263,9 +253,10 @@ export function Search() {
       return () => clearTimeout(timeoutId);
     }
     if (trimmedQuery.length === 0) {
-      fetchAllTeas();
+      setHasSearched(false);
+      setTeas([]);
     }
-  }, [searchQuery, fetchAllTeas, handleSearch]);
+  }, [searchQuery, handleSearch]);
 
   useEffect(() => {
     if (hasFilterParams) {
@@ -378,14 +369,29 @@ export function Search() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {/* 검색 입력 영역 */}
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           <Input
             type="text"
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 rounded-full"
+            className={cn('pl-10 rounded-full transition-all', searchQuery ? 'pr-10' : '')}
           />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              aria-label="검색어 지우기"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {searchQuery.trim().length === 1 && (
+            <p className="absolute -bottom-5 left-4 text-xs text-muted-foreground animate-fade-in">
+              한 글자 더 입력하면 검색됩니다
+            </p>
+          )}
         </div>
 
         {/* 검색/탐색 탭 */}
@@ -465,6 +471,11 @@ export function Search() {
               <span className="flex items-center gap-2">
                 <Filter className="w-4 h-4" />
                 필터
+                {activeFilterCount > 0 && (
+                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+                    {activeFilterCount}
+                  </span>
+                )}
               </span>
               <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', filterOpen && 'rotate-180')} />
             </button>
@@ -569,7 +580,9 @@ export function Search() {
                 ))}
               </div>
             ) : teas.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <>
+                <p className="text-xs text-muted-foreground">결과 {teas.length}개</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 {teas.map((tea, i) => (
                 <div
                   key={tea.id}
@@ -580,6 +593,7 @@ export function Search() {
                 </div>
               ))}
               </div>
+              </>
             ) : (
               <EmptyState
                 type="search"
