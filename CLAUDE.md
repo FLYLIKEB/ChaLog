@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 작업 방식
+- 작업 중 선택지나 확인이 필요한 상황에서도 **사용자에게 묻지 말고** 가장 합리적인 방향으로 자체 판단하여 처리
+- 질문 없이 끝까지 완료 후 결과만 보고
+
 ## Project Overview
 
 **ChaLog** is a mobile-first React + Vite SPA for tea logging and discovery. It features home feed (tea recommendations, public notes), tea search with auto-complete, detailed note creation with 5-point rating sliders, note management, and a radar chart for visualization. The backend is NestJS + TypeORM with MySQL on AWS Lightsail. Frontend is deployed to Vercel, backend to EC2.
