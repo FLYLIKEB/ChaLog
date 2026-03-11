@@ -5,6 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 작업 방식
 - 작업 중 선택지나 확인이 필요한 상황에서도 **사용자에게 묻지 말고** 가장 합리적인 방향으로 자체 판단하여 처리
 - 질문 없이 끝까지 완료 후 결과만 보고
+- **작업 시작 전**: `git pull origin <현재 브랜치>` 실행하여 최신 상태 동기화
+- **푸시 전**: `git pull --rebase origin <브랜치>` 실행하여 원격 변경사항 통합 후 푸시
 
 ## Project Overview
 
