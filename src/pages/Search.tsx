@@ -755,92 +755,100 @@ export function Search() {
           </button>
         </div>
 
-        {/* 카테고리 선택 */}
-        {activeTab === 'search' && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 -mx-1 px-1">
-            {SEARCH_CATEGORIES.map((cat) => (
-              <button
-                key={cat.key}
-                type="button"
-                onClick={() => setSearchCategory(cat.key)}
-                className={cn(
-                  'shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors',
-                  searchCategory === cat.key
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
-                )}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* 검색 탭 - 최근 검색어 (필터 위) */}
-        {activeTab === 'search' && !showResults && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
-              <button
-                type="button"
-                onClick={clearAll}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                전체 삭제
-              </button>
-            </div>
-            <ul className="space-y-1">
-              {recentSearches.map((term) => (
-                <li key={term} className="flex items-center gap-2 py-2">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <button
-                    type="button"
-                    onClick={() => { setSearchQuery(term); handleSearch(term); }}
-                    className="flex-1 text-left text-sm truncate"
-                  >
-                    {term}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeSearch(term)}
-                    className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={`${term} 삭제`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* 필터 패널 */}
-        {activeTab === 'search' && (searchCategory === 'tea' || searchCategory === 'note' || searchCategory === 'cellar') && (
-          <FilterPanel
-            category={searchCategory}
-            filterOpen={filterOpen}
-            setFilterOpen={setFilterOpen}
-            activeFilterCount={activeFilterCount}
-            filterType={filterType}
-            setFilterType={filters.setFilterType}
-            filterMinRating={filterMinRating}
-            setFilterMinRating={filters.setFilterMinRating}
-            filterPriceRange={filterPriceRange}
-            setFilterPriceRange={filters.setFilterPriceRange}
-            filterSellerName={filterSellerName}
-            setFilterSellerName={filters.setFilterSellerName}
-            filterSort={filterSort}
-            setFilterSort={filters.setFilterSort}
-            noteSort={noteSort}
-            setNoteSort={setNoteSort}
-            cellarSort={cellarSort}
-            setCellarSort={setCellarSort}
-            hasTagParams={hasTagParams}
-            urlTags={urlTags}
-            popularTags={popularTags}
-            handleTagClick={onTagClick}
-            onApply={handleApplyFilters}
-          />
+        {activeTab === 'search' && (
+          <div className="space-y-3 pb-2 border-b border-border/60">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Filter className="w-4 h-4" />
+              필터
+            </div>
+            {/* 향미 태그 선택 */}
+            <div>
+              <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
+              <div className="flex flex-wrap gap-2">
+                {popularTags.slice(0, 12).map((tag) => (
+                  <button
+                    key={tag.name}
+                    type="button"
+                    onClick={() => handleTagClick(tag.name)}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                      urlTags.includes(tag.name)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 hover:bg-muted/80'
+                    }`}
+                  >
+                    #{tag.name}
+                    {tag.noteCount > 0 && (
+                      <span className="text-xs opacity-70">({tag.noteCount})</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {TEA_TYPES.map((type) => {
+                const isSelected = filterType === type;
+                const colorClass = TEA_TYPE_COLORS[type];
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setFilterType(isSelected ? null : type);
+                    }}
+                    className={cn(
+                      'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 hover:bg-muted/80',
+                    )}
+                  >
+                    {!isSelected && (
+                      <span className={cn('w-1.5 h-5 rounded-full shrink-0', colorClass)} aria-hidden />
+                    )}
+                    {type}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">평점:</span>
+              {MIN_RATING_OPTIONS.map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => setFilterMinRating(opt.value)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    filterMinRating === opt.value
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background border-border/60 hover:bg-muted/80'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm text-muted-foreground">정렬:</span>
+              {(hasTagParams ? SORT_OPTIONS_WITH_MATCH : SORT_OPTIONS).map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setFilterSort(opt.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    filterSort === opt.key
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background border-border/60 hover:bg-muted/80'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <Button size="sm" onClick={applyFilters}>
+              적용
+            </Button>
+          </div>
         )}
 
         {/* 검색/필터 결과 */}
@@ -1021,7 +1029,7 @@ export function Search() {
           </>
         )}
 
-        {/* 검색 탭 - 쿼리 없을 때 추천/최근 검색어 인라인 표시 */}
+        {/* 검색 탭 - 쿼리/필터 없을 때 최근 검색어 표시 */}
         {!showResults && activeTab === 'search' && searchQuery.trim().length === 0 && (
           <div className="space-y-4">
             {recentSearches.length > 0 && (
@@ -1060,27 +1068,10 @@ export function Search() {
                 </ul>
               </div>
             )}
-            {popularTags.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-muted-foreground mb-2">추천 검색어</p>
-                <div className="flex flex-wrap gap-2">
-                  {popularTags.slice(0, 8).map((tag) => (
-                    <button
-                      key={tag.name}
-                      type="button"
-                      onClick={() => { setSearchQuery(tag.name); handleSearch(tag.name); }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-border/60 bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      #{tag.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {recentSearches.length === 0 && popularTags.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
+            {recentSearches.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
                 <SearchIcon className="w-10 h-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색해보세요</p>
+                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색하거나<br />아래 필터를 활용해보세요</p>
               </div>
             )}
           </div>
