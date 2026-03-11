@@ -9,7 +9,7 @@ import {
   Tooltip,
 } from 'recharts';
 
-const CHART_COLOR = 'rgb(34 197 94)'; // green-500 (차록 rating)
+const CHART_COLOR = 'rgb(217 119 6)'; // amber-500 (rating)
 const GRID_COLOR = 'rgb(229 231 235)'; // gray-200
 import {
   Popover,
