@@ -33,8 +33,8 @@ function NotificationIcon({ type }: { type: Notification['type'] }) {
     );
   }
   return (
-    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-100">
-      <UserPlus className="w-4 h-4 text-green-600" />
+    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100">
+      <UserPlus className="w-4 h-4 text-amber-700" />
     </div>
   );
 }

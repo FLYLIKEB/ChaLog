@@ -156,7 +156,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
                   className={cn(
                     'truncate hover:underline text-left',
                     post.user?.role === 'admin'
-                      ? 'font-semibold text-green-600 hover:text-green-700'
+                      ? 'font-semibold text-amber-700 hover:text-amber-800'
                       : 'font-medium hover:text-foreground',
                   )}
                   aria-label="작성자 프로필 보기"
@@ -164,7 +164,7 @@ const PostCardComponent: FC<PostCardProps> = ({ post, commentCount, onBookmarkTo
                   {post.user?.name}
                 </button>
                 {post.user?.role === 'admin' && (
-                  <Shield className="w-3.5 h-3.5 text-green-600 shrink-0" aria-label="관리자" />
+                  <Shield className="w-3.5 h-3.5 text-amber-700 shrink-0" aria-label="관리자" />
                 )}
               </span>
             )}
