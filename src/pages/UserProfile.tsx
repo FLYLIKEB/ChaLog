@@ -55,7 +55,6 @@ export function UserProfile() {
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
   const [wishlistedTeas, setWishlistedTeas] = useState<Tea[]>([]);
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
-  const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
 
   const initialLoadDone = useRef(false);
 
