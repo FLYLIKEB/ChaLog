@@ -39,11 +39,4 @@ your-key.pem
 # SQL Tools session files
 *.session.sql
 chalog-s3-user_accessKeys.csv
-.omc/project-memory.json
-.omc/sessions/296f6087-48ce-477d-96e0-a1d769650316.json
-.omc/sessions/c1ed7131-abb4-41bc-8c17-dbf3a7642b91.json
-.omc/state/hud-state.json
-.omc/state/hud-stdin-cache.json
-.omc/state/idle-notif-cooldown.json
-.omc/state/mission-state.json
-.omc/state/checkpoints/checkpoint-2026-03-11T13-03-44-521Z.json
+.omc
