@@ -1117,6 +1117,10 @@ export const authApi = {
     apiClient.post<null>('/auth/link/kakao', { accessToken }),
   linkGoogle: (accessToken: string) =>
     apiClient.post<null>('/auth/link/google', { accessToken }),
+  forgotPassword: (email: string) =>
+    apiClient.post<{ message: string }>('/auth/forgot-password', { email }),
+  resetPassword: (token: string, newPassword: string) =>
+    apiClient.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
 };
 
 export const teasApi = {

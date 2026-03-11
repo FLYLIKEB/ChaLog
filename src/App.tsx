@@ -50,6 +50,8 @@ const PostDetail = lazy(() => import('./pages/PostDetail').then((m) => ({ defaul
 const NewPost = lazy(() => import('./pages/NewPost').then((m) => ({ default: m.NewPost })));
 const EditPost = lazy(() => import('./pages/EditPost').then((m) => ({ default: m.EditPost })));
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then((m) => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const TagDetail = lazy(() => import('./pages/TagDetail').then((m) => ({ default: m.TagDetail })));
 const ShopDetail = lazy(() => import('./pages/ShopDetail').then((m) => ({ default: m.ShopDetail })));
@@ -125,6 +127,8 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/chadam' ||
     location.pathname.startsWith('/chadam/') ||
     location.pathname === '/onboarding' ||
+    location.pathname === '/forgot-password' ||
+    location.pathname === '/reset-password' ||
     location.pathname.startsWith('/admin');
   
   const override = floatingActionRouteOverrides[location.pathname];
@@ -151,7 +155,7 @@ function FloatingActionButtonSwitcher() {
 function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, isLoading, hasCompletedOnboarding, isOnboardingLoading } = useAuth();
-  const publicPaths = ['/login', '/register', '/onboarding'];
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/onboarding'];
 
   if (isLoading || isOnboardingLoading) {
     return null;
@@ -249,6 +253,8 @@ function AppContent() {
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
                 <Route path="/search" element={<Navigate to="/sasaek" replace />} />
