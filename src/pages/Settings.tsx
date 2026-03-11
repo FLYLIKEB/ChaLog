@@ -55,6 +55,8 @@ export function Settings() {
   const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean | null>(null);
   const [isNotificationLoaded, setIsNotificationLoaded] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
+  const [isProfilePublic, setIsProfilePublic] = useState<boolean>(true);
+  const [isProfilePublicLoading, setIsProfilePublicLoading] = useState(false);
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [linkedAccountsLoaded, setLinkedAccountsLoaded] = useState(false);
   const [unlinkingId, setUnlinkingId] = useState<number | null>(null);
@@ -90,6 +92,12 @@ export function Settings() {
     if (!user?.id) return;
     fetchNotificationSetting();
   }, [user?.id, fetchNotificationSetting]);
+
+  useEffect(() => {
+    if (user?.isProfilePublic !== undefined) {
+      setIsProfilePublic(user.isProfilePublic);
+    }
+  }, [user?.isProfilePublic]);
 
   useEffect(() => {
     fetchLinkedAccounts();
@@ -213,6 +221,20 @@ export function Settings() {
       toast.error('알림 설정 변경에 실패했습니다.');
     } finally {
       setIsNotificationLoading(false);
+    }
+  };
+
+  const handleProfilePublicToggle = async (checked: boolean) => {
+    if (!user) return;
+    setIsProfilePublicLoading(true);
+    try {
+      await usersApi.updateProfile(user.id, { isProfilePublic: checked });
+      setIsProfilePublic(checked);
+      toast.success(checked ? '프로필이 공개되었습니다.' : '프로필이 비공개로 설정되었습니다.');
+    } catch {
+      toast.error('프로필 공개 설정 변경에 실패했습니다.');
+    } finally {
+      setIsProfilePublicLoading(false);
     }
   };
 
@@ -391,6 +413,27 @@ export function Settings() {
               checked={isNotificationEnabled ?? false}
               onCheckedChange={handleNotificationToggle}
               disabled={!isNotificationLoaded || isNotificationLoading}
+            />
+          </div>
+        </Card>
+
+        {/* 개인정보 */}
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">개인정보</h3>
+          <div className="flex items-center justify-between gap-3 py-1">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-foreground">프로필 공개</p>
+                <p className="text-xs text-muted-foreground mt-0.5">다른 사용자가 내 프로필을 볼 수 있어요</p>
+              </div>
+            </div>
+            <Switch
+              checked={isProfilePublic}
+              onCheckedChange={handleProfilePublicToggle}
+              disabled={isProfilePublicLoading}
             />
           </div>
         </Card>

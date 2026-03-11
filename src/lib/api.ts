@@ -1082,6 +1082,7 @@ export type UpdateUserRequest = {
   bio?: string | null;
   instagramUrl?: string | null;
   blogUrl?: string | null;
+  isProfilePublic?: boolean;
 };
 
 export interface CreateNoteRequest {

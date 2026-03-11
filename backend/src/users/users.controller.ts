@@ -59,6 +59,11 @@ export class UsersController {
       : undefined;
 
     const user = await this.usersService.findOne(parsedId);
+
+    if (!user.isProfilePublic && currentUserId !== parsedId) {
+      throw new ForbiddenException('비공개 프로필입니다.');
+    }
+
     const [followerCount, followingCount, isFollowing] = await Promise.all([
       this.followsService.getFollowerCount(parsedId),
       this.followsService.getFollowingCount(parsedId),
