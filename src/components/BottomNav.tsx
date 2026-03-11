@@ -13,7 +13,7 @@ type BottomNavItem = {
 
 const NAV_ITEMS: BottomNavItem[] = [
   { label: '홈', path: '/', icon: Home, activeStyle: 'fill' },
-  { label: '사색', path: '/sasaek', icon: Search, activeStyle: 'bold' },
+  { label: '탐색', path: '/sasaek', icon: Search, activeStyle: 'bold' },
   {
     label: '차담',
     path: '/chadam',

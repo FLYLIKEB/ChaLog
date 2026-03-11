@@ -13,7 +13,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { path: '/', label: '홈', icon: Home },
-  { path: '/sasaek', label: '사색', icon: Search },
+  { path: '/sasaek', label: '탐색', icon: Search },
   { path: '/chadam', label: '차담', icon: MessageSquare },
   { path: '/my-notes', label: '내 차록', icon: FileText },
   { path: '/cellar', label: '찻장', icon: Package },

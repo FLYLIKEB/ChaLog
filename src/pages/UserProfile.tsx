@@ -277,7 +277,7 @@ export function UserProfile() {
           <EmptyState
             type="notes"
             message="사용자를 찾을 수 없어요."
-            action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+            action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
           />
         </div>
         <BottomNav />

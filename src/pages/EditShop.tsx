@@ -100,7 +100,7 @@ export function EditShop() {
         <EmptyState
           type="search"
           message="찻집을 찾을 수 없어요."
-          action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+          action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
         />
       </div>
     );

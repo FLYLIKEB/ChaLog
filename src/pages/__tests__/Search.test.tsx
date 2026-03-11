@@ -90,7 +90,7 @@ const getNavigateSpy = () => {
 };
 
 describe('Search 페이지', () => {
-  it('사색 섹션(인기, 신규, 맞춤차, 찻집)을 렌더링한다', async () => {
+  it('탐색 섹션(인기, 신규, 맞춤차, 찻집)을 렌더링한다', async () => {
     renderWithRouter(<Search />, { route: '/sasaek' });
 
     await waitFor(() => {

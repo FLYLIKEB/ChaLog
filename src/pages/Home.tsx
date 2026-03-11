@@ -279,7 +279,7 @@ export function Home() {
               <EmptyState
                 type="feed"
                 message="구독한 다우의 차록이 없어요. 다우를 구독해 보세요!"
-                action={{ label: '사색하기', onClick: () => navigate('/sasaek') }}
+                action={{ label: '탐색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </TabsContent>
@@ -337,7 +337,7 @@ export function Home() {
                   <EmptyState
                     type="feed"
                     message="구독한 테마의 공개 차록이 없어요."
-                    action={{ label: '테마 사색하기', onClick: () => navigate('/sasaek') }}
+                    action={{ label: '테마 탐색하기', onClick: () => navigate('/sasaek') }}
                   />
                 )}
               </>
