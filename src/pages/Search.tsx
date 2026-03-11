@@ -52,8 +52,7 @@ export function Search() {
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
-  const [showRecentSearches, setShowRecentSearches] = useState(false);
-  const [activeTab, setActiveTab] = useState<'search' | 'explore'>('explore');
+  const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
 
   const [searchQuery, setSearchQuery] = useState('');
   const [teas, setTeas] = useState<Tea[]>([]);
@@ -185,7 +184,6 @@ export function Search() {
     if (query.trim().length < 2) return;
 
     addSearch(query.trim());
-    setShowRecentSearches(false);
 
     try {
       setIsLoading(true);
@@ -386,80 +384,8 @@ export function Search() {
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setShowRecentSearches(true)}
-            onBlur={() => setTimeout(() => setShowRecentSearches(false), 150)}
             className="pl-10 rounded-full"
           />
-          {/* 검색 제안 드롭다운 (추천 검색어 + 최근 검색어) */}
-          {showRecentSearches && searchQuery.trim().length === 0 && (recentSearches.length > 0 || popularTags.length > 0) && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-xl shadow-lg overflow-hidden">
-              {/* 추천 검색어 */}
-              {popularTags.length > 0 && (
-                <div className="px-4 py-3 border-b border-border/60">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">추천 검색어</p>
-                  <div className="flex flex-wrap gap-2">
-                    {popularTags.slice(0, 8).map((tag) => (
-                      <button
-                        key={tag.name}
-                        type="button"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          setSearchQuery(tag.name);
-                          handleSearch(tag.name);
-                        }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-border/60 bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        #{tag.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* 최근 검색어 */}
-              {recentSearches.length > 0 && (
-                <>
-                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
-                    <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={clearAll}
-                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      전체 삭제
-                    </button>
-                  </div>
-                  <ul>
-                    {recentSearches.map((term) => (
-                      <li key={term} className="flex items-center gap-2 px-4 py-2.5 hover:bg-muted/50 transition-colors">
-                        <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        <button
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            setSearchQuery(term);
-                            handleSearch(term);
-                          }}
-                          className="flex-1 text-left text-sm truncate"
-                        >
-                          {term}
-                        </button>
-                        <button
-                          type="button"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => removeSearch(term)}
-                          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label={`${term} 삭제`}
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
         </div>
 
         {/* 검색/탐색 탭 */}
@@ -628,11 +554,68 @@ export function Search() {
           </>
         )}
 
-        {/* 검색 탭 빈 상태 */}
-        {!showResults && activeTab === 'search' && !showRecentSearches && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <SearchIcon className="w-10 h-10 text-muted-foreground/30 mb-3" />
-            <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색해보세요</p>
+        {/* 검색 탭 - 쿼리 없을 때 추천/최근 검색어 인라인 표시 */}
+        {!showResults && activeTab === 'search' && searchQuery.trim().length === 0 && (
+          <div className="space-y-4">
+            {recentSearches.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    전체 삭제
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {recentSearches.map((term) => (
+                    <li key={term} className="flex items-center gap-2 py-2">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                      <button
+                        type="button"
+                        onClick={() => { setSearchQuery(term); handleSearch(term); }}
+                        className="flex-1 text-left text-sm truncate"
+                      >
+                        {term}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSearch(term)}
+                        className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={`${term} 삭제`}
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {popularTags.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2">추천 검색어</p>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.slice(0, 8).map((tag) => (
+                    <button
+                      key={tag.name}
+                      type="button"
+                      onClick={() => { setSearchQuery(tag.name); handleSearch(tag.name); }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-border/60 bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      #{tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {recentSearches.length === 0 && popularTags.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <SearchIcon className="w-10 h-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">차 이름, 종류, 향미로 검색해보세요</p>
+              </div>
+            )}
           </div>
         )}
 
