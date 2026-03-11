@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status:*)",
+      "Bash(ls -la /Users/jwp/Documents/programming/ChaLog/.git/hooks/pre-commit*)"
+    ]
+  }
+}
