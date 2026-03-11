@@ -232,8 +232,12 @@ export function Login() {
               )}
             </Button>
 
-            <div className="text-right">
-              <Link to="/forgot-password" className="text-sm text-emerald-600 hover:underline">
+            <div className="flex justify-end gap-3 text-sm">
+              <Link to="/find-email" className="text-emerald-600 hover:underline">
+                아이디 찾기
+              </Link>
+              <span className="text-gray-400">·</span>
+              <Link to="/forgot-password" className="text-emerald-600 hover:underline">
                 비밀번호 찾기
               </Link>
             </div>

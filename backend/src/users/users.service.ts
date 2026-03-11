@@ -87,6 +87,10 @@ export class UsersService {
     return user;
   }
 
+  async findByName(name: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { name } });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const auth = await this.authRepository.findOne({
       where: { provider: AuthProvider.EMAIL, providerId: email },
