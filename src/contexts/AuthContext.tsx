@@ -276,12 +276,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshOnboardingStatus, token, user]);
 
   useEffect(() => {
-    const handleAuthLogout = () => { void logout(); };
-    window.addEventListener('auth:logout', handleAuthLogout);
-    return () => window.removeEventListener('auth:logout', handleAuthLogout);
-  }, [logout]);
-
-  useEffect(() => {
     if (!token || !user || user.role) {
       return;
     }
@@ -777,6 +771,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     toast.success('로그아웃되었습니다.');
   }, []);
+
+  useEffect(() => {
+    const handleAuthLogout = () => { void logout(); };
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => window.removeEventListener('auth:logout', handleAuthLogout);
+  }, [logout]);
 
   // isAuthenticated 계산값 메모이제이션
   const isAuthenticated = useMemo(() => !!token && !!user, [token, user]);
