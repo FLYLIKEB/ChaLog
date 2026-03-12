@@ -15,7 +15,6 @@ import { Section } from '../components/ui/Section';
 import { teasApi, tagsApi, notesApi, cellarApi } from '../lib/api';
 import { Tea, Seller, Note, CellarItem } from '../types';
 import { NoteCard } from '../components/NoteCard';
-import { SellerCombobox } from '../components/SellerCombobox';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
@@ -92,10 +91,6 @@ interface FilterPanelProps {
   setFilterType: (type: string | null) => void;
   filterMinRating: number | undefined;
   setFilterMinRating: (rating: number | undefined) => void;
-  filterPriceRange: import('@/hooks/useSearchFilters').PriceRange | null;
-  setFilterPriceRange: (range: import('@/hooks/useSearchFilters').PriceRange | null) => void;
-  filterSellerName: string;
-  setFilterSellerName: (name: string) => void;
   filterSort: 'popular' | 'new' | 'rating' | 'match' | 'recent';
   setFilterSort: (sort: 'popular' | 'new' | 'rating' | 'match' | 'recent') => void;
   noteSort: 'latest' | 'rating';
@@ -118,10 +113,6 @@ function FilterPanel({
   setFilterType,
   filterMinRating,
   setFilterMinRating,
-  filterPriceRange,
-  setFilterPriceRange,
-  filterSellerName,
-  setFilterSellerName,
   filterSort,
   setFilterSort,
   noteSort,
@@ -259,47 +250,6 @@ function FilterPanel({
           </div>
           )}
 
-          {/* 가격대 */}
-          {category === 'tea' && (
-          <div className="px-4 py-3 space-y-2">
-            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">가격대</p>
-            <div className="flex flex-wrap gap-1.5">
-              {([
-                { key: null, label: '전체' },
-                { key: 'under5k' as const, label: '5천원 미만' },
-                { key: '5k-10k' as const, label: '5천~1만원' },
-                { key: 'over10k' as const, label: '1만원 이상' },
-              ] as const).map((opt) => (
-                <button
-                  key={opt.label}
-                  type="button"
-                  onClick={() => setFilterPriceRange(opt.key)}
-                  className={cn(
-                    'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
-                    filterPriceRange === opt.key
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          )}
-
-          {/* 찻집 */}
-          {category === 'tea' && (
-          <div className="px-4 py-3 space-y-2">
-            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">찻집</p>
-            <SellerCombobox
-              value={filterSellerName}
-              onChange={setFilterSellerName}
-              placeholder="예: OO 찻집, OO몰"
-            />
-          </div>
-          )}
-
           {/* 향미 태그 */}
           {category !== 'cellar' && popularTags.length > 0 && (
             <div className="px-4 py-3 space-y-2">
@@ -346,8 +296,7 @@ export function Search() {
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
   const filters = useSearchFilters();
   const {
-    filterType, filterMinRating, filterPriceRange, filterSellerName,
-    filterSort, noteSort, setNoteSort,
+    filterType, filterMinRating, filterSort, noteSort, setNoteSort,
     filterOpen, setFilterOpen, activeFilterCount,
     urlTags, hasTagParams, hasFilterParams,
     handleTagClick, applyFilters, fetchWithFilters,
@@ -644,22 +593,12 @@ export function Search() {
           { setTeas, setIsLoading },
         );
       } else {
-        const urlPriceRangeParam = searchParams.get('priceRange') as 'under5k' | '5k-10k' | 'over10k' | null;
-        const urlSellerNameParam = searchParams.get('sellerName') ?? '';
-        const PRICE_MAP: Record<string, { minPrice?: number; maxPrice?: number }> = {
-          'under5k': { maxPrice: 5000 },
-          '5k-10k': { minPrice: 5000, maxPrice: 10000 },
-          'over10k': { minPrice: 10000 },
-        };
-        const priceParams = urlPriceRangeParam ? PRICE_MAP[urlPriceRangeParam] : {};
         fetchWithFilters(
           {
             q: searchQuery.trim() || undefined,
             type: urlType || undefined,
             minRating: urlMinRating ? parseFloat(urlMinRating) : undefined,
             sort: urlSort || 'popular',
-            ...priceParams,
-            sellerName: urlSellerNameParam || undefined,
           },
           { setTeas, setIsLoading },
         );
@@ -858,10 +797,6 @@ export function Search() {
             setFilterType={filters.setFilterType}
             filterMinRating={filterMinRating}
             setFilterMinRating={filters.setFilterMinRating}
-            filterPriceRange={filterPriceRange}
-            setFilterPriceRange={filters.setFilterPriceRange}
-            filterSellerName={filterSellerName}
-            setFilterSellerName={filters.setFilterSellerName}
             filterSort={filterSort}
             setFilterSort={filters.setFilterSort}
             noteSort={noteSort}

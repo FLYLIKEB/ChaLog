@@ -29,7 +29,7 @@ flowchart TB
     end
 
     subgraph Backend["AWS EC2 백엔드 서버"]
-        NestJS["NestJS Application<br/>3.39.48.139:3000"]
+        NestJS["NestJS Application<br/>YOUR_LIGHTSAIL_IP:3000"]
         
         subgraph NestJSModules["NestJS Modules"]
             Main["main.ts<br/>CORS, ValidationPipe"]
@@ -121,7 +121,7 @@ flowchart LR
     Process --> Query["쿼리 파라미터<br/>전달"]
     Process --> Timeout["타임아웃 처리<br/>기본 10초"]
     
-    Method --> Backend["백엔드 서버<br/>3.39.48.139:3000"]
+    Method --> Backend["백엔드 서버<br/>YOUR_LIGHTSAIL_IP:3000"]
     Headers --> Backend
     Query --> Backend
     Timeout --> Backend
@@ -133,7 +133,7 @@ flowchart LR
 
 **요청 흐름:**
 ```
-클라이언트 → /api/teas → Vercel Function → http://3.39.48.139:3000/teas
+클라이언트 → /api/teas → Vercel Function → http://YOUR_LIGHTSAIL_IP:3000/teas
 ```
 
 ### 3. 백엔드 (NestJS)
@@ -375,7 +375,7 @@ flowchart TB
 
     subgraph BackendDeploy["백엔드 배포 AWS EC2"]
         GitHubActions["GitHub Actions<br/>자동 배포 워크플로우"]
-        EC2Instance["Lightsail 인스턴스<br/>3.39.48.139"]
+        EC2Instance["Lightsail 인스턴스<br/>YOUR_LIGHTSAIL_IP"]
         PM2["PM2 프로세스 관리<br/>ecosystem.config.js"]
         NestJSApp["NestJS 앱<br/>포트 3000"]
     end
@@ -405,7 +405,7 @@ flowchart TB
 - `VITE_API_BASE_URL`: 백엔드 API URL (기본값: `/api`)
 
 ### Vercel Functions
-- `BACKEND_URL`: 백엔드 서버 URL (기본값: `http://3.39.48.139:3000`)
+- `BACKEND_URL`: 백엔드 서버 URL (기본값: `http://YOUR_LIGHTSAIL_IP:3000`)
 - `BACKEND_TIMEOUT_MS`: 타임아웃 시간 (기본값: `10000`)
 - `LOG_PROXY_REQUESTS`: 프록시 요청 로깅 여부 (기본값: `true`)
 
@@ -427,7 +427,7 @@ flowchart LR
     Browser["브라우저"] -->|HTTPS<br/>포트 443| VercelCDN["Vercel CDN"]
     VercelCDN -->|Static Files| Static["Static Files"]
     VercelCDN -->|API 요청| Functions["Vercel Functions"]
-    Functions -->|HTTP<br/>포트 3000| EC2["AWS EC2<br/>3.39.48.139"]
+    Functions -->|HTTP<br/>포트 3000| EC2["AWS EC2<br/>YOUR_LIGHTSAIL_IP"]
     EC2 -->|chalog-mysql:3306| MySQL["Lightsail Docker<br/>MySQL"]
 
 ```

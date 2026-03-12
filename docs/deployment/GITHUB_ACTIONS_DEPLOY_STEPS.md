@@ -157,7 +157,7 @@ GitHub Actions 워크플로우는 다음 단계를 수행합니다:
    - 첫 줄과 마지막 줄도 포함되어야 함
 
 2. `EC2_HOST` Secret 확인 (Lightsail Public IP)
-   - 값이 `3.39.48.139`인지 확인
+   - 값이 `YOUR_LIGHTSAIL_IP`인지 확인
 
 3. Lightsail 인스턴스 상태 확인
    - 인스턴스가 Running 상태인지 확인
@@ -217,7 +217,7 @@ GitHub Actions 워크플로우는 다음 단계를 수행합니다:
 
 1. **Health Check**
    ```bash
-   curl http://3.39.48.139:3000/health
+   curl http://YOUR_LIGHTSAIL_IP:3000/health
    ```
 
 2. **브라우저 SSH에서 확인**
@@ -227,7 +227,7 @@ GitHub Actions 워크플로우는 다음 단계를 수행합니다:
    ```
 
 3. **Nginx 설정** (한 번만 실행)
-   - 로컬 SSH 가능: `./scripts/setup-nginx.sh 3.39.48.139`
+   - 로컬 SSH 가능: `./scripts/setup-nginx.sh YOUR_LIGHTSAIL_IP`
    - 브라우저 SSH: [Nginx 설정 가이드](./NGINX_SETUP_GUIDE.md) 참고
 
 ## 관련 문서

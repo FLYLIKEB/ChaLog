@@ -18,7 +18,7 @@ Lightsail 인스턴스에 SSH 접속 후 실행:
 
 ```bash
 # SSH 접속
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 cd /home/ubuntu/chalog-backend
 
@@ -39,7 +39,7 @@ GitHub Secrets가 올바르게 설정되어 있는지 확인:
 
 1. GitHub 저장소 → Settings → Secrets and variables → Actions
 2. 다음 Secrets 확인:
-   - `EC2_HOST`: `3.39.48.139`
+   - `EC2_HOST`: `YOUR_LIGHTSAIL_IP`
    - `EC2_USER`: `ubuntu`
    - `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
    - `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@chalog-mysql:3306/chalog`
@@ -61,7 +61,7 @@ GitHub Secrets가 올바르게 설정되어 있는지 확인:
 Lightsail 인스턴스에서 직접 배포:
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 cd /home/ubuntu/chalog-backend
 
@@ -98,7 +98,7 @@ pm2 save
 애플리케이션 배포 후 TypeORM 마이그레이션 실행:
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 cd /home/ubuntu/chalog-backend
 
@@ -119,19 +119,19 @@ fi
 
 ```bash
 cd /Users/jwp/Documents/programming/ChaLog
-./scripts/setup-nginx.sh 3.39.48.139
+./scripts/setup-nginx.sh YOUR_LIGHTSAIL_IP
 ```
 
 또는 수동으로:
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 # Nginx 설정 파일 생성
 sudo tee /etc/nginx/sites-available/chalog-backend > /dev/null << 'EOF'
 server {
     listen 80;
-    server_name 3.39.48.139;
+    server_name YOUR_LIGHTSAIL_IP;
     
     access_log /var/log/nginx/chalog-backend-access.log;
     error_log /var/log/nginx/chalog-backend-error.log;
@@ -174,19 +174,19 @@ sudo systemctl enable nginx
 
 ```bash
 # Health check (직접 포트)
-curl http://3.39.48.139:3000/health
+curl http://YOUR_LIGHTSAIL_IP:3000/health
 
 # Health check (Nginx를 통한)
-curl http://3.39.48.139/health
+curl http://YOUR_LIGHTSAIL_IP/health
 
 # PM2 상태 확인
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 "pm2 status"
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP "pm2 status"
 
 # PM2 로그 확인
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 "pm2 logs chalog-backend --lines 50"
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP "pm2 logs chalog-backend --lines 50"
 
 # MySQL 연결 확인
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP \
     "docker exec chalog-mysql mysql -uchalog_user -pchangeme_password -e 'SELECT 1' chalog"
 ```
 

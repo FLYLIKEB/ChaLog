@@ -52,7 +52,7 @@ ChaLog/
 
 | 변수명 | 설명 | 개발 환경 | 프로덕션 |
 |--------|------|-----------|----------|
-| `BACKEND_URL` | Serverless Function이 프록시할 실제 백엔드 URL | `http://localhost:3000` | `http://3.39.48.139:3000` (Vercel 환경 변수에서 설정) |
+| `BACKEND_URL` | Serverless Function이 프록시할 실제 백엔드 URL | `http://localhost:3000` | `http://YOUR_LIGHTSAIL_IP:3000` (Vercel 환경 변수에서 설정) |
 | `BACKEND_TIMEOUT_MS` | 백엔드 요청 타임아웃(밀리초) | `10000` | 선택적으로 조정 |
 | `LOG_PROXY_REQUESTS` | 프록시 요청/응답 로깅 여부 | `true` | 필요 시 `false`로 비활성화 |
 
@@ -109,6 +109,15 @@ Vercel 대시보드에서 환경 변수 설정:
 | 변수명 | 설명 | 예시 |
 |--------|------|------|
 | `ADMIN_USER_IDS` | 초기 운영자로 지정할 사용자 ID (쉼표 구분). 마이그레이션 실행 시 적용 | `1,2` |
+
+#### AdminJS (백엔드 `/adminjs` 테이블 CRUD)
+
+| 변수명 | 설명 | 예시 |
+|--------|------|------|
+| `ADMINJS_SESSION_SECRET` | AdminJS 세션 암호화용 시크릿 | 32자 이상 랜덤 문자열 |
+| `ADMINJS_COOKIE_PASSWORD` | AdminJS 쿠키 암호화용 비밀값 (32자 이상) | 32자 이상 랜덤 문자열 |
+
+> AdminJS 로그인은 기존 User DB의 이메일/비밀번호로 하며, `role === 'admin'`인 사용자만 접근 가능합니다. 프로덕션에서는 위 두 값을 반드시 설정하세요.
 
 #### 서버 설정
 

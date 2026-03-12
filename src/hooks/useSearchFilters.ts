@@ -7,23 +7,12 @@ import { toast } from 'sonner';
 
 type TeaSort = 'popular' | 'new' | 'rating' | 'match' | 'recent';
 type NoteSort = 'latest' | 'rating';
-export type PriceRange = 'under5k' | '5k-10k' | 'over10k';
-
-export const PRICE_RANGE_MAP: Record<PriceRange, { minPrice?: number; maxPrice?: number }> = {
-  'under5k': { maxPrice: 5000 },
-  '5k-10k': { minPrice: 5000, maxPrice: 10000 },
-  'over10k': { minPrice: 10000 },
-};
 
 interface UseSearchFiltersReturn {
   filterType: string | null;
   setFilterType: (type: string | null) => void;
   filterMinRating: number | undefined;
   setFilterMinRating: (rating: number | undefined) => void;
-  filterPriceRange: PriceRange | null;
-  setFilterPriceRange: (range: PriceRange | null) => void;
-  filterSellerName: string;
-  setFilterSellerName: (name: string) => void;
   filterSort: TeaSort;
   setFilterSort: (sort: TeaSort) => void;
   noteSort: NoteSort;
@@ -45,16 +34,7 @@ interface UseSearchFiltersReturn {
     },
   ) => void;
   fetchWithFilters: (
-    params: {
-      q?: string;
-      type?: string;
-      minRating?: number;
-      minPrice?: number;
-      maxPrice?: number;
-      sellerName?: string;
-      sort?: string;
-      tags?: string[];
-    },
+    params: { q?: string; type?: string; minRating?: number; sort?: string; tags?: string[] },
     callbacks: {
       setTeas: (teas: Tea[]) => void;
       setIsLoading: (loading: boolean) => void;
@@ -68,8 +48,6 @@ export function useSearchFilters(): UseSearchFiltersReturn {
   const urlSort = searchParams.get('sort') as TeaSort | null;
   const urlType = searchParams.get('type');
   const urlMinRating = searchParams.get('minRating');
-  const urlPriceRange = searchParams.get('priceRange') as PriceRange | null;
-  const urlSellerName = searchParams.get('sellerName') ?? '';
   const urlTagsStr = searchParams.get('tags') ?? '';
   const urlTags = useMemo(
     () => urlTagsStr.split(',').map((t) => t.trim()).filter(Boolean),
@@ -80,8 +58,6 @@ export function useSearchFilters(): UseSearchFiltersReturn {
   const [filterMinRating, setFilterMinRating] = useState<number | undefined>(() =>
     urlMinRating ? parseFloat(urlMinRating) : undefined,
   );
-  const [filterPriceRange, setFilterPriceRange] = useState<PriceRange | null>(() => urlPriceRange);
-  const [filterSellerName, setFilterSellerName] = useState<string>(() => urlSellerName);
   const [filterSort, setFilterSort] = useState<TeaSort>(() =>
     urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort) ? urlSort : 'popular',
   );
@@ -91,20 +67,12 @@ export function useSearchFilters(): UseSearchFiltersReturn {
   useEffect(() => {
     if (urlType !== null) setFilterType(urlType);
     if (urlMinRating !== null) setFilterMinRating(parseFloat(urlMinRating));
-    if (urlPriceRange !== null) setFilterPriceRange(urlPriceRange);
-    if (urlSellerName) setFilterSellerName(urlSellerName);
     if (urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort)) setFilterSort(urlSort);
-  }, [urlType, urlMinRating, urlPriceRange, urlSellerName, urlSort]);
+  }, [urlType, urlMinRating, urlSort]);
 
   const hasTagParams = urlTags.length > 0;
-  const hasFilterParams = !!(urlSort || urlType || urlMinRating || urlPriceRange || urlSellerName || hasTagParams);
-  const activeFilterCount = [
-    filterType != null,
-    filterMinRating != null,
-    filterPriceRange != null,
-    filterSellerName.trim() !== '',
-    urlTags.length > 0,
-  ].filter(Boolean).length;
+  const hasFilterParams = !!(urlSort || urlType || urlMinRating || hasTagParams);
+  const activeFilterCount = [filterType != null, filterMinRating != null, urlTags.length > 0].filter(Boolean).length;
 
   useEffect(() => {
     if (hasFilterParams) setFilterOpen(true);
@@ -127,16 +95,7 @@ export function useSearchFilters(): UseSearchFiltersReturn {
 
   const fetchWithFilters = useCallback(
     async (
-      params: {
-        q?: string;
-        type?: string;
-        minRating?: number;
-        minPrice?: number;
-        maxPrice?: number;
-        sellerName?: string;
-        sort?: string;
-        tags?: string[];
-      },
+      params: { q?: string; type?: string; minRating?: number; sort?: string; tags?: string[] },
       callbacks: {
         setTeas: (teas: Tea[]) => void;
         setIsLoading: (loading: boolean) => void;
@@ -155,9 +114,6 @@ export function useSearchFilters(): UseSearchFiltersReturn {
             q: params.q || undefined,
             type: params.type || undefined,
             minRating: params.minRating,
-            minPrice: params.minPrice,
-            maxPrice: params.maxPrice,
-            sellerName: params.sellerName || undefined,
             sort: (params.sort as 'popular' | 'new' | 'rating') || 'popular',
           });
           callbacks.setTeas(Array.isArray(data) ? data : []);
@@ -188,8 +144,6 @@ export function useSearchFilters(): UseSearchFiltersReturn {
         if (filterType) params.set('type', filterType);
         if (filterMinRating != null && !Number.isNaN(filterMinRating))
           params.set('minRating', String(filterMinRating));
-        if (filterPriceRange) params.set('priceRange', filterPriceRange);
-        if (filterSellerName.trim()) params.set('sellerName', filterSellerName.trim());
         if (urlTags.length > 0) params.set('tags', urlTags.join(','));
         setSearchParams(params);
         callbacks.setHasSearched(true);
@@ -202,24 +156,22 @@ export function useSearchFilters(): UseSearchFiltersReturn {
             callbacks,
           );
         } else {
-          const priceParams = filterPriceRange ? PRICE_RANGE_MAP[filterPriceRange] : {};
           fetchWithFilters(
             {
               q: searchQuery.trim() || undefined,
               type: filterType || undefined,
               minRating: filterMinRating,
               sort: filterSort,
-              ...priceParams,
-              sellerName: filterSellerName.trim() || undefined,
             },
             callbacks,
           );
         }
       } else {
+        // For note category, just close the filter panel (client-side filtering is reactive)
         setFilterOpen(false);
       }
     },
-    [filterSort, filterType, filterMinRating, filterPriceRange, filterSellerName, urlTags, setSearchParams, fetchWithFilters],
+    [filterSort, filterType, filterMinRating, urlTags, setSearchParams, fetchWithFilters],
   );
 
   return {
@@ -227,10 +179,6 @@ export function useSearchFilters(): UseSearchFiltersReturn {
     setFilterType,
     filterMinRating,
     setFilterMinRating,
-    filterPriceRange,
-    setFilterPriceRange,
-    filterSellerName,
-    setFilterSellerName,
     filterSort,
     setFilterSort,
     noteSort,

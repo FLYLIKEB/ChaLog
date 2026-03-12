@@ -11,8 +11,15 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-LIGHTSAIL_IP="${1:-3.39.48.139}"
+LIGHTSAIL_IP="${1:-${LIGHTSAIL_IP}}"
 SSH_KEY="${SSH_KEY_PATH:-LightsailDefaultKey-ap-northeast-2.pem}"
+
+if [ -z "$LIGHTSAIL_IP" ]; then
+    echo -e "${RED}❌ Lightsail IP가 필요합니다.${NC}"
+    echo "사용법: $0 <LIGHTSAIL_IP>"
+    echo "또는 환경 변수: LIGHTSAIL_IP=<IP> $0"
+    exit 1
+fi
 
 echo -e "${BLUE}🌐 Lightsail Nginx 설정${NC}"
 echo "Lightsail IP: $LIGHTSAIL_IP"

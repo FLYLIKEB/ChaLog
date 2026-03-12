@@ -16,6 +16,12 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+vi.mock('../../contexts/AppModeContext', () => ({
+  useAppMode: () => ({
+    setSessionActive: vi.fn(),
+  }),
+}));
+
 vi.mock('../../lib/api', async () => {
   const actual = await vi.importActual<typeof import('../../lib/api')>('../../lib/api');
   return {

@@ -39,7 +39,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions
 
 2. **EC2_HOST**
    - EC2 인스턴스의 Public IP 또는 도메인
-   - 예: `3.39.48.139` 또는 `api.yourdomain.com`
+   - 예: `YOUR_LIGHTSAIL_IP` 또는 `api.yourdomain.com`
 
 3. **EC2_USER**
    - EC2 인스턴스 사용자명

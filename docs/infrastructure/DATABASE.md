@@ -107,7 +107,7 @@ cd backend
 ssh -i ~/.ssh/your-key.pem \
     -L 3307:localhost:3306 \
     -N -f \
-    ubuntu@3.39.48.139
+    ubuntu@YOUR_LIGHTSAIL_IP
 ```
 
 연결 후 `DATABASE_URL=mysql://chalog_user:password@localhost:3307/chalog` 사용
@@ -116,7 +116,7 @@ ssh -i ~/.ssh/your-key.pem \
 
 ```env
 SSH_KEY_PATH=~/.ssh/your-key.pem
-EC2_HOST=3.39.48.139
+EC2_HOST=YOUR_LIGHTSAIL_IP
 EC2_USER=ubuntu
 SSH_TUNNEL_LOCAL_PORT=3307
 SSH_TUNNEL_REMOTE_HOST=localhost

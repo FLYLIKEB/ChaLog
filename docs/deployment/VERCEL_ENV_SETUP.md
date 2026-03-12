@@ -14,7 +14,7 @@ yet the resource is in address space `loopback`.
 ### 오류 2: Mixed Content (HTTPS → HTTP 요청)
 ```
 Mixed Content: The page at 'https://cha-log-gilt.vercel.app/' was loaded over HTTPS, 
-but requested an insecure resource 'http://3.39.48.139:3000/teas'. 
+but requested an insecure resource 'http://YOUR_LIGHTSAIL_IP:3000/teas'. 
 This request has been blocked; the content must be served over HTTPS.
 ```
 
@@ -36,11 +36,11 @@ This request has been blocked; the content must be served over HTTPS.
 
 **문제 상황:**
 - **프로덕션 URL**: `https://cha-log-gilt.vercel.app` (HTTPS)
-- **요청 대상**: `http://3.39.48.139:3000` (HTTP)
+- **요청 대상**: `http://YOUR_LIGHTSAIL_IP:3000` (HTTP)
 - **오류**: 브라우저가 HTTPS 페이지에서 HTTP 리소스 요청을 차단
 
 **원인:**
-1. **환경 변수는 설정됨**: `VITE_API_BASE_URL=http://3.39.48.139:3000` ✅
+1. **환경 변수는 설정됨**: `VITE_API_BASE_URL=http://YOUR_LIGHTSAIL_IP:3000` ✅
 2. **하지만 HTTP 사용**: 백엔드가 HTTP로만 서비스되고 있음
 3. **브라우저 보안 정책**: Mixed Content 정책으로 HTTPS → HTTP 요청 차단
 
@@ -67,7 +67,7 @@ This request has been blocked; the content must be served over HTTPS.
 2. 다음 정보 입력:
    ```
    Key: VITE_API_BASE_URL
-   Value: http://3.39.48.139:3000  (임시, 오류 2 해결 후 HTTPS로 변경)
+   Value: http://YOUR_LIGHTSAIL_IP:3000  (임시, 오류 2 해결 후 HTTPS로 변경)
    Environment: Production, Preview, Development 모두 선택 ✅
    ```
 3. **Save** 클릭
@@ -92,7 +92,7 @@ This request has been blocked; the content must be served over HTTPS.
 📖 **상세 가이드**: [`docs/deployment/HTTPS_SETUP_GUIDE.md`](./HTTPS_SETUP_GUIDE.md) 참고
 
 **요약:**
-1. 도메인 DNS A 레코드를 Lightsail Public IP(`3.39.48.139`)에 연결
+1. 도메인 DNS A 레코드를 Lightsail Public IP(`YOUR_LIGHTSAIL_IP`)에 연결
 2. Lightsail에 Nginx 설치 및 설정
 3. Let's Encrypt로 SSL 인증서 발급
 4. Vercel 환경 변수를 `https://api.yourdomain.com`으로 변경
@@ -158,7 +158,7 @@ This request has been blocked; the content must be served over HTTPS.
    - `VITE_API_BASE_URL` 관련 오류가 없는지 확인
 
 2. **네트워크 탭 확인**
-   - 요청 URL이 `http://3.39.48.139:3000`으로 변경되었는지 확인
+   - 요청 URL이 `http://YOUR_LIGHTSAIL_IP:3000`으로 변경되었는지 확인
    - `localhost:3000`으로 요청하지 않는지 확인
    - ⚠️ Mixed Content 오류가 발생하면 "오류 2 해결" 참고
 
@@ -175,7 +175,7 @@ This request has been blocked; the content must be served over HTTPS.
 1. Vercel 배포 페이지에서 배포된 사이트 접속
 2. 브라우저 개발자 도구 (F12) → **Sources** 탭
 3. 빌드된 JavaScript 파일 (`index-*.js`) 열기
-4. `VITE_API_BASE_URL` 또는 `3.39.48.139` 검색
+4. `VITE_API_BASE_URL` 또는 `YOUR_LIGHTSAIL_IP` 검색
 5. 환경 변수 값이 포함되어 있으면 정상
 
 ### 브라우저 콘솔에서 확인
@@ -185,13 +185,13 @@ This request has been blocked; the content must be served over HTTPS.
 ```javascript
 // 환경 변수 확인 (빌드 시점에 주입됨)
 console.log(import.meta.env.VITE_API_BASE_URL);
-// 예상 출력: "http://3.39.48.139:3000"
+// 예상 출력: "http://YOUR_LIGHTSAIL_IP:3000"
 ```
 
 ## 문제 해결 체크리스트
 
 - [ ] Vercel 대시보드에서 환경 변수 설정 완료
-- [ ] `VITE_API_BASE_URL` 값이 `http://3.39.48.139:3000`으로 설정됨
+- [ ] `VITE_API_BASE_URL` 값이 `http://YOUR_LIGHTSAIL_IP:3000`으로 설정됨
 - [ ] `VITE_KAKAO_APP_KEY` 값이 설정됨
 - [ ] Production, Preview, Development 모두 선택됨
 - [ ] 환경 변수 저장 후 재배포 완료

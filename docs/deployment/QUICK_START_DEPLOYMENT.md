@@ -8,7 +8,7 @@ Lightsail Docker MySQL 배포를 빠르게 시작하는 가이드입니다.
 
 GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음 Secrets 확인:
 
-- ✅ `EC2_HOST`: Lightsail Public IP (예: `3.39.48.139`)
+- ✅ `EC2_HOST`: Lightsail Public IP (예: `YOUR_LIGHTSAIL_IP`)
 - ✅ `EC2_USER`: `ubuntu` (Lightsail SSH 사용자명)
 - ✅ `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
 - ✅ `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@localhost:3306/chalog`
@@ -19,7 +19,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음
 ### 2. Docker MySQL 컨테이너 확인
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 docker ps | grep chalog-mysql
 ```
 
@@ -58,7 +58,7 @@ git push origin main
 ### 1. Nginx 설정
 
 ```bash
-./scripts/setup-nginx.sh 3.39.48.139
+./scripts/setup-nginx.sh YOUR_LIGHTSAIL_IP
 ```
 
 **자세한 내용**: [Nginx 설정 가이드](./NGINX_SETUP_GUIDE.md)
@@ -67,10 +67,10 @@ git push origin main
 
 ```bash
 # 직접 접근
-curl http://3.39.48.139:3000/health
+curl http://YOUR_LIGHTSAIL_IP:3000/health
 
 # Nginx를 통한 접근
-curl http://3.39.48.139/health
+curl http://YOUR_LIGHTSAIL_IP/health
 ```
 
 예상 응답:
@@ -87,7 +87,7 @@ curl http://3.39.48.139/health
 ### 1. 기본 확인
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 # PM2 상태
 pm2 status
@@ -100,10 +100,10 @@ docker ps | grep chalog-mysql
 
 ```bash
 # Health check
-curl http://3.39.48.139/health
+curl http://YOUR_LIGHTSAIL_IP/health
 
 # API 엔드포인트 (예시)
-curl http://3.39.48.139/api/...
+curl http://YOUR_LIGHTSAIL_IP/api/...
 ```
 
 **자세한 내용**: [테스트 가이드](./TESTING_GUIDE.md)

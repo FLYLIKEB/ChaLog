@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.BACKEND_URL || 'http://3.39.48.139:3000';
+const BACKEND_URL = process.env.BACKEND_URL;
 const LOG_PROXY_REQUESTS =
   (process.env.LOG_PROXY_REQUESTS ?? 'true').toLowerCase() !== 'false';
 
@@ -41,6 +41,16 @@ export default async function handler(req: any, res: any) {
         error: 'Invalid request/response objects',
         message: '프록시 서버 설정 오류',
         statusCode: 500
+      });
+      return;
+    }
+
+    if (!BACKEND_URL) {
+      console.error('[Proxy] BACKEND_URL environment variable is not set');
+      res.status(502).json({
+        error: 'Bad Gateway',
+        message: '백엔드 URL이 설정되지 않았습니다. BACKEND_URL 환경 변수를 설정하세요.',
+        statusCode: 502,
       });
       return;
     }

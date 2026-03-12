@@ -35,9 +35,15 @@ if [ -z "$LOCAL_DATABASE_URL" ]; then
 fi
 
 # SSH 터널 필요 여부 확인
-# 원격 호스트가 Lightsail IP인 경우 SSH 터널 필요 (로컬에서 직접 접근 불가)
+# RDS 또는 원격 호스트(SSH_TUNNEL_REMOTE_HOST)인 경우 SSH 터널 사용
 SSH_TUNNEL_NEEDED=false
-if [[ "$DATABASE_URL" == *".rds.amazonaws.com"* ]] || [[ "$DATABASE_URL" == *"3.39.48.139"* ]]; then
+if [[ "$DATABASE_URL" == *".rds.amazonaws.com"* ]]; then
+    SSH_TUNNEL_NEEDED=true
+fi
+if [ -n "${SSH_TUNNEL_REMOTE_HOST:-}" ]; then
+    SSH_TUNNEL_NEEDED=true
+fi
+if [ "$SSH_TUNNEL_NEEDED" = true ]; then
     # SSH_TUNNEL_REMOTE_HOST가 설정되지 않았으면 DATABASE_URL에서 추출
     if [ -z "$SSH_TUNNEL_REMOTE_HOST" ]; then
         SSH_TUNNEL_REMOTE_HOST=$(echo "$DATABASE_URL" | sed -n 's/.*@\([^:]*\):.*/\1/p')
@@ -56,8 +62,6 @@ if [[ "$DATABASE_URL" == *".rds.amazonaws.com"* ]] || [[ "$DATABASE_URL" == *"3.
         echo "SSH_TUNNEL_REMOTE_HOST는 자동으로 설정되었습니다: $SSH_TUNNEL_REMOTE_HOST"
         exit 1
     fi
-    
-    SSH_TUNNEL_NEEDED=true
 fi
 
 # mysqldump 확인

@@ -1,6 +1,6 @@
 import { HTMLAttributes, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, FileText, MessageSquare, Package, MoreHorizontal } from 'lucide-react';
+import { Home, Search, FileText, MessageSquare, Package, MoreHorizontal } from 'lucide-react';
 import { cn } from './ui/utils';
 import { MoreMenu } from './MoreMenu';
 

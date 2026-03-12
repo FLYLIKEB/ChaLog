@@ -16,7 +16,14 @@ NC='\033[0m'
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Lightsail IP
-LIGHTSAIL_IP="${1:-${LIGHTSAIL_IP:-3.39.48.139}}"
+LIGHTSAIL_IP="${1:-${LIGHTSAIL_IP}}"
+
+if [ -z "$LIGHTSAIL_IP" ]; then
+    echo -e "${RED}❌ Lightsail IP가 필요합니다.${NC}"
+    echo "사용법: $0 <LIGHTSAIL_IP> [SSH_KEY_PATH]"
+    echo "또는 환경 변수: LIGHTSAIL_IP=<IP> $0"
+    exit 1
+fi
 
 # SSH 키 탐색
 if [ -n "$2" ] && [ -f "$2" ]; then

@@ -8,7 +8,7 @@ Lightsail Docker MySQL 배포를 실행하는 단계별 가이드입니다.
 
 배포 전에 다음 Secrets가 설정되어 있는지 확인하세요:
 
-- `EC2_HOST`: Lightsail Public IP (예: `3.39.48.139`)
+- `EC2_HOST`: Lightsail Public IP (예: `YOUR_LIGHTSAIL_IP`)
 - `EC2_USER`: `ubuntu` (Lightsail SSH 사용자명)
 - `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
 - `EC2_DATABASE_URL`: `mysql://chalog_user:changeme_password@localhost:3306/chalog`
@@ -21,7 +21,7 @@ Lightsail Docker MySQL 배포를 실행하는 단계별 가이드입니다.
 Lightsail 인스턴스에서 Docker MySQL 컨테이너가 실행 중인지 확인:
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 docker ps | grep chalog-mysql
 ```
 
@@ -92,7 +92,7 @@ GitHub Actions 워크플로우 실행 로그에서 다음을 확인:
 ### 2. Lightsail 인스턴스에서 확인
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 # PM2 상태 확인
 pm2 status
@@ -111,10 +111,10 @@ sudo netstat -tlnp | grep 3000
 
 ```bash
 # 직접 접근
-curl http://3.39.48.139:3000/health
+curl http://YOUR_LIGHTSAIL_IP:3000/health
 
 # 또는 브라우저에서
-# http://3.39.48.139:3000/health
+# http://YOUR_LIGHTSAIL_IP:3000/health
 ```
 
 예상 응답:

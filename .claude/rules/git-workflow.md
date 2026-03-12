@@ -38,12 +38,6 @@ EOF
 )"
 ```
 
-## PR 생성 후
-```bash
-git checkout main && git pull origin main
-```
-- PR 생성 완료 즉시 main으로 복귀 — 다음 작업은 항상 main 기반에서 시작
-
 ## PR 머지
 - 반드시 `gh pr merge --merge --delete-branch` (squash 금지)
 
@@ -51,9 +45,6 @@ git checkout main && git pull origin main
 ```bash
 git pull --rebase origin <브랜치명>
 ```
-
-## GitHub CLI
-- `gh issue view <번호>` 오류 시 `--json title,body,state` 플래그로 우회 (Projects classic API 지원 중단 오류)
 
 ## DB 스키마 변경 시
 - `*.entity.ts` 수정 → Migration 파일 반드시 함께 커밋
