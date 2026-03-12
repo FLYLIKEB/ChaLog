@@ -369,6 +369,9 @@ export class TeasService {
     q?: string;
     type?: string;
     minRating?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    sellerName?: string;
     sort?: 'popular' | 'new' | 'rating';
     limit?: number;
   }): Promise<Tea[]> {
@@ -389,6 +392,18 @@ export class TeasService {
     if (params.minRating != null && !Number.isNaN(params.minRating)) {
       const min = Math.max(0, Math.min(5, params.minRating));
       qb.andWhere('tea.averageRating >= :minRating', { minRating: min });
+    }
+    if (params.minPrice != null || params.maxPrice != null) {
+      qb.andWhere('tea.price IS NOT NULL');
+    }
+    if (params.minPrice != null) {
+      qb.andWhere('tea.price >= :minPrice', { minPrice: params.minPrice });
+    }
+    if (params.maxPrice != null) {
+      qb.andWhere('tea.price <= :maxPrice', { maxPrice: params.maxPrice });
+    }
+    if (params.sellerName?.trim()) {
+      qb.andWhere('seller.name LIKE :sellerName', { sellerName: `%${params.sellerName.trim()}%` });
     }
 
     switch (params.sort) {

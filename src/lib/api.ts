@@ -1138,6 +1138,9 @@ export const teasApi = {
     if (params.q) searchParams.set('q', params.q);
     if (params.type) searchParams.set('type', params.type);
     if (params.minRating != null) searchParams.set('minRating', String(params.minRating));
+    if (params.minPrice != null) searchParams.set('minPrice', String(params.minPrice));
+    if (params.maxPrice != null) searchParams.set('maxPrice', String(params.maxPrice));
+    if (params.sellerName) searchParams.set('sellerName', params.sellerName);
     if (params.sort) searchParams.set('sort', params.sort);
     const query = searchParams.toString();
     return apiClient.get<Tea[]>(`/teas${query ? `?${query}` : ''}`);
