@@ -20,6 +20,7 @@ import { Tag } from '../notes/entities/tag.entity';
 import { Comment } from '../comments/entities/comment.entity';
 import { NoteTag } from '../notes/entities/note-tag.entity';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
+import { parse } from 'csv-parse/sync';
 import { CreateTeaDto } from '../teas/dto/create-tea.dto';
 import { CreateSellerDto } from '../teas/dto/create-seller.dto';
 import { CreateTagDto } from './dto/create-tag.dto';
@@ -1331,6 +1332,54 @@ export class AdminService {
       targetTagId,
     });
     return { success: true };
+  }
+
+  async bulkUploadTeas(fileBuffer: Buffer): Promise<{
+    total: number;
+    success: number;
+    skipped: number;
+    errors: { row: number; message: string }[];
+  }> {
+    let rows: Record<string, string>[];
+    try {
+      rows = parse(fileBuffer, { columns: true, skip_empty_lines: true, trim: true });
+    } catch {
+      throw new BadRequestException('CSV 파일 파싱에 실패했습니다. 형식을 확인해주세요.');
+    }
+
+    const errors: { row: number; message: string }[] = [];
+    const toInsert: Partial<Tea>[] = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 2;
+      const name = row['name']?.trim();
+      const type = row['type']?.trim();
+      if (!name) { errors.push({ row: rowNum, message: 'name 필드가 비어있습니다.' }); continue; }
+      if (!type) { errors.push({ row: rowNum, message: 'type 필드가 비어있습니다.' }); continue; }
+
+      const existing = await this.teasRepository.findOne({ where: { name, type } });
+      if (existing) { continue; }
+
+      const price = row['price'] ? parseInt(row['price'], 10) : undefined;
+      const weight = row['weight'] ? parseInt(row['weight'], 10) : undefined;
+      toInsert.push({
+        name,
+        type,
+        origin: row['origin']?.trim() || undefined,
+        price: !isNaN(price as number) ? price : undefined,
+        weight: !isNaN(weight as number) ? weight : undefined,
+        averageRating: 0,
+        reviewCount: 0,
+      });
+    }
+
+    if (toInsert.length > 0) {
+      await this.teasRepository.save(toInsert.map((t) => this.teasRepository.create(t)));
+    }
+
+    const skipped = rows.length - errors.length - toInsert.length;
+    return { total: rows.length, success: toInsert.length, skipped, errors };
   }
 
   private async logAudit(

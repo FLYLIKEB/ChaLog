@@ -39,6 +39,15 @@ export function AdminMaster() {
   const [detailData, setDetailData] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailSaving, setDetailSaving] = useState(false);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const [csvResult, setCsvResult] = useState<{ total: number; success: number; skipped: number; errors: { row: number; message: string }[] } | null>(null);
+  const [crawlUrl, setCrawlUrl] = useState('');
+  const [crawlNameSel, setCrawlNameSel] = useState('');
+  const [crawlTypeSel, setCrawlTypeSel] = useState('');
+  const [crawlPriceSel, setCrawlPriceSel] = useState('');
+  const [crawlPreviewing, setCrawlPreviewing] = useState(false);
+  const [crawlItems, setCrawlItems] = useState<{ name: string; type: string; price?: number; selected: boolean }[]>([]);
+  const [crawlRegistering, setCrawlRegistering] = useState(false);
   const requestIdRef = useRef(0);
 
   useEffect(() => {
@@ -366,6 +375,135 @@ export function AdminMaster() {
             </table>
           </div>
         )
+      )}
+
+      {tab === 'teas' && (
+        <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border border-border">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <FileText className="w-4 h-4" />
+            CSV 벌크 업로드
+          </div>
+          <p className="text-xs text-muted-foreground">컬럼: name(필수), type(필수), origin, price, weight</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const csv = 'name,type,origin,price,weight\n예시차,녹차,한국,15000,50\n';
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'tea_template.csv';
+                a.click();
+              }}
+            >
+              템플릿 다운로드
+            </Button>
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept=".csv"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setCsvResult(null);
+                  setCsvUploading(true);
+                  try {
+                    const result = await adminApi.bulkUploadTeas(file);
+                    setCsvResult(result);
+                    toast.success(`등록 ${result.success}건 / 스킵 ${result.skipped}건 / 오류 ${result.errors.length}건`);
+                  } catch {
+                    toast.error('업로드 실패');
+                  } finally {
+                    setCsvUploading(false);
+                    e.target.value = '';
+                  }
+                }}
+              />
+              <Button size="sm" disabled={csvUploading} asChild>
+                <span>{csvUploading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}CSV 업로드</span>
+              </Button>
+            </label>
+          </div>
+          {csvResult && (
+            <div className="text-xs space-y-1">
+              <p>총 {csvResult.total}행 · 등록 <span className="text-green-600 font-medium">{csvResult.success}</span> · 스킵 {csvResult.skipped} · 오류 {csvResult.errors.length}</p>
+              {csvResult.errors.map((e) => (
+                <p key={e.row} className="text-destructive">{e.row}행: {e.message}</p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {tab === 'teas' && (
+        <div className="flex flex-col gap-3 p-3 bg-muted/30 rounded-lg border border-border">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <FileText className="w-4 h-4" />
+            찻집 URL 크롤링
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Input placeholder="URL (https://...)" value={crawlUrl} onChange={(e) => setCrawlUrl(e.target.value)} className="col-span-2 h-8 text-sm" />
+            <Input placeholder="차 이름 선택자 (예: .product-name)" value={crawlNameSel} onChange={(e) => setCrawlNameSel(e.target.value)} className="h-8 text-sm" />
+            <Input placeholder="차 종류 선택자 (선택)" value={crawlTypeSel} onChange={(e) => setCrawlTypeSel(e.target.value)} className="h-8 text-sm" />
+            <Input placeholder="가격 선택자 (선택)" value={crawlPriceSel} onChange={(e) => setCrawlPriceSel(e.target.value)} className="h-8 text-sm" />
+          </div>
+          <Button
+            size="sm"
+            disabled={crawlPreviewing || !crawlUrl || !crawlNameSel}
+            onClick={async () => {
+              setCrawlPreviewing(true);
+              setCrawlItems([]);
+              try {
+                const items = await adminApi.crawlPreview(crawlUrl, {
+                  nameSelector: crawlNameSel,
+                  typeSelector: crawlTypeSel || undefined,
+                  priceSelector: crawlPriceSel || undefined,
+                });
+                setCrawlItems(items.map((i) => ({ ...i, selected: true })));
+              } catch { toast.error('크롤링 실패'); }
+              finally { setCrawlPreviewing(false); }
+            }}
+          >
+            {crawlPreviewing ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}미리보기
+          </Button>
+          {crawlItems.length > 0 && (
+            <>
+              <div className="max-h-48 overflow-y-auto border border-border rounded text-xs">
+                <table className="w-full">
+                  <thead><tr className="bg-muted/50"><th className="p-2 text-left w-6">✓</th><th className="p-2 text-left">이름</th><th className="p-2 text-left">종류</th><th className="p-2 text-left">가격</th></tr></thead>
+                  <tbody>
+                    {crawlItems.map((item, idx) => (
+                      <tr key={idx} className="border-t">
+                        <td className="p-2"><input type="checkbox" checked={item.selected} onChange={(e) => setCrawlItems((prev) => prev.map((it, i) => i === idx ? { ...it, selected: e.target.checked } : it))} /></td>
+                        <td className="p-2">{item.name}</td>
+                        <td className="p-2">{item.type}</td>
+                        <td className="p-2">{item.price?.toLocaleString() ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <Button
+                size="sm"
+                disabled={crawlRegistering || crawlItems.every((i) => !i.selected)}
+                onClick={async () => {
+                  setCrawlRegistering(true);
+                  try {
+                    const selected = crawlItems.filter((i) => i.selected).map(({ name, type, price }) => ({ name, type, price }));
+                    const r = await adminApi.crawlRegister(selected);
+                    toast.success(`등록 ${r.success}건 / 스킵 ${r.skipped}건`);
+                    setCrawlItems([]);
+                  } catch { toast.error('등록 실패'); }
+                  finally { setCrawlRegistering(false); }
+                }}
+              >
+                {crawlRegistering ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}선택 항목 등록
+              </Button>
+            </>
+          )}
+        </div>
       )}
 
       {tab === 'teas' && (

@@ -9,9 +9,14 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { AdminService } from './admin.service';
+import { CrawlingService, TeaCrawlItem } from './crawling.service';
 import { AdminGuard } from './guards/admin.guard';
 import { UserId } from '../auth/decorators/user-id.decorator';
 import { ReportActionDto } from './dto/report-action.dto';
@@ -27,7 +32,10 @@ import { ReportStatus, ReportReason } from '../reports/entities/note-report.enti
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), AdminGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly crawlingService: CrawlingService,
+  ) {}
 
   @Get('dashboard')
   getDashboard() {
@@ -408,5 +416,22 @@ export class AdminController {
     @UserId() adminId: number,
   ) {
     return this.adminService.mergeTag(id, dto.targetTagId, adminId);
+  }
+
+  @Post('crawl/preview')
+  crawlPreview(@Body() body: { url: string; config: { nameSelector: string; typeSelector?: string; priceSelector?: string } }) {
+    return this.crawlingService.preview(body.url, body.config);
+  }
+
+  @Post('crawl/register')
+  crawlRegister(@Body() body: { items: TeaCrawlItem[]; sellerId?: number }) {
+    return this.crawlingService.register(body.items, body.sellerId);
+  }
+
+  @Post('teas/bulk-upload')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  bulkUploadTeas(@UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('CSV 파일을 업로드해주세요.');
+    return this.adminService.bulkUploadTeas(file.buffer);
   }
 }

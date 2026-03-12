@@ -1291,6 +1291,8 @@ export const usersApi = {
     apiClient.patch<UserNotificationSetting>(`/users/${id}/notification-settings`, {
       isNotificationEnabled,
     }),
+  getMyLevel: () => apiClient.get<import('../types').UserLevel>('/users/me/level'),
+  getLevel: (id: number) => apiClient.get<import('../types').UserLevel>(`/users/${id}/level`),
 };
 
 export const followsApi = {
@@ -1469,6 +1471,7 @@ export interface CreatePostRequest {
   isSponsored?: boolean;
   sponsorNote?: string;
   images?: PostImageItemRequest[];
+  taggedNoteIds?: number[];
 }
 
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
@@ -1673,5 +1676,15 @@ export const adminApi = {
   updateTag: (id: number, dto: { name: string }) => apiClient.patch(`/admin/tags/${id}`, dto),
   deleteTag: (id: number) => apiClient.delete(`/admin/tags/${id}`),
   mergeTag: (id: number, targetTagId: number) => apiClient.post(`/admin/tags/${id}/merge`, { targetTagId }),
+  crawlPreview: (url: string, config: { nameSelector: string; typeSelector?: string; priceSelector?: string }) =>
+    apiClient.post<{ name: string; type: string; price?: number }[]>('/admin/crawl/preview', { url, config }),
+  crawlRegister: (items: { name: string; type: string; price?: number }[], sellerId?: number) =>
+    apiClient.post<{ success: number; skipped: number }>('/admin/crawl/register', { items, sellerId }),
+  bulkUploadTeas: (file: File) => apiClient.uploadFile<{
+    total: number;
+    success: number;
+    skipped: number;
+    errors: { row: number; message: string }[];
+  }>('/admin/teas/bulk-upload', file),
 };
 

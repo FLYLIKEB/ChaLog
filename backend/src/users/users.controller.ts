@@ -20,6 +20,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { UsersService } from './users.service';
+import { UserLevelService } from './user-level.service';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { S3Service } from '../common/storage/s3.service';
@@ -35,6 +36,7 @@ export class UsersController {
 
   constructor(
     private readonly usersService: UsersService,
+    private readonly userLevelService: UserLevelService,
     private readonly s3Service: S3Service,
     private readonly imageProcessorService: ImageProcessorService,
     private readonly followsService: FollowsService,
@@ -346,5 +348,18 @@ export class UsersController {
     }
 
     return this.usersService.updateNotificationSetting(parsedUserId, dto);
+  }
+
+  @Get('me/level')
+  @UseGuards(AuthGuard('jwt'))
+  getMyLevel(@Request() req: any) {
+    const userId = parseInt(req.user.userId, 10);
+    return this.userLevelService.getUserLevel(userId);
+  }
+
+  @Get(':id/level')
+  @UseGuards(OptionalJwtAuthGuard)
+  getUserLevel(@Param('id') id: string) {
+    return this.userLevelService.getUserLevel(parseInt(id, 10));
   }
 }

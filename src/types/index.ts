@@ -228,8 +228,23 @@ export interface Post {
   isLiked: boolean;
   isBookmarked: boolean;
   images?: PostImageItem[];
+  taggedNotes?: Pick<Note, 'id' | 'teaName' | 'overallRating' | 'createdAt'>[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface UserLevelInfo {
+  level: number;
+  name: string;
+  count: number;
+  nextThreshold: number | null;
+}
+
+export interface UserLevel {
+  noteLevel: UserLevelInfo;
+  postLevel: UserLevelInfo;
+  cellarLevel: UserLevelInfo;
+  badges: { id: string; name: string }[];
 }
 
 export interface TagDetail {
