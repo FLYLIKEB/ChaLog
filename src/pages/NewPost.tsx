@@ -1,68 +1,36 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, BookOpen, X, ChevronDown, ChevronUp } from 'lucide-react';
-import { PostCategory, POST_CATEGORY_LABELS, PostImageItem, Note } from '../types';
-import { postsApi, notesApi, CreatePostRequest } from '../lib/api';
+import { Note } from '../types';
+import { notesApi } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
-
-type WriteGroupKey = 'qna' | 'review' | 'announcement' | 'report';
-
-const WRITE_GROUPS: Array<{
-  key: WriteGroupKey;
-  label: string;
-  categories: Array<{ value: PostCategory; label: string; hint?: string }>;
-}> = [
-  {
-    key: 'qna',
-    label: '질문·토론',
-    categories: [
-      { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우림법, 온도, 시간 등' },
-      { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation, hint: '차 추천 요청' },
-      { value: 'discussion', label: POST_CATEGORY_LABELS.discussion, hint: '자유 주제 토론' },
-    ],
-  },
-  {
-    key: 'review',
-    label: '리뷰',
-    categories: [
-      { value: 'tea_review', label: POST_CATEGORY_LABELS.tea_review, hint: '차 시음 후기' },
-      { value: 'tool_review', label: POST_CATEGORY_LABELS.tool_review, hint: '다기·도구 후기' },
-      { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review, hint: '찻집·카페 방문기' },
-    ],
-  },
-  {
-    key: 'announcement',
-    label: '공지',
-    categories: [{ value: 'announcement', label: POST_CATEGORY_LABELS.announcement }],
-  },
-  {
-    key: 'report',
-    label: '제보',
-    categories: [{ value: 'bug_report', label: POST_CATEGORY_LABELS.bug_report }],
-  },
-];
+import { usePostForm, WRITE_GROUPS } from '../hooks/usePostForm';
 
 export function NewPost() {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
 
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<WriteGroupKey>('qna');
-  const [category, setCategory] = useState<PostCategory>('brewing_question');
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
-  const [isSponsored, setIsSponsored] = useState(false);
-  const [sponsorNote, setSponsorNote] = useState('');
-  const [images, setImages] = useState<PostImageItem[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    title, setTitle,
+    content, setContent,
+    selectedGroup, setSelectedGroup,
+    category, setCategory,
+    isAnonymous, setIsAnonymous,
+    isPinned, setIsPinned,
+    isSponsored, setIsSponsored,
+    sponsorNote, setSponsorNote,
+    images, setImages,
+    isSubmitting,
+    taggedNoteIds, setTaggedNoteIds,
+    handleSubmit,
+  } = usePostForm({ mode: 'new' });
+
   const [taggedNotes, setTaggedNotes] = useState<Pick<Note, 'id' | 'teaName' | 'overallRating'>[]>([]);
   const [notePickerOpen, setNotePickerOpen] = useState(false);
   const [myNotes, setMyNotes] = useState<Pick<Note, 'id' | 'teaName' | 'overallRating'>[]>([]);
@@ -71,15 +39,17 @@ export function NewPost() {
   useEffect(() => {
     if (!notePickerOpen || myNotes.length > 0 || !user) return;
     notesApi.getAll(user.id, undefined, undefined, undefined, undefined, undefined, 1, 100)
-      .then((notes) => setMyNotes(notes.map((n) => ({ id: n.id, teaName: n.teaName, overallRating: n.overallRating }))))
+      .then((notes: Note[]) => setMyNotes(notes.map((n) => ({ id: n.id, teaName: n.teaName, overallRating: n.overallRating }))))
       .catch(() => {});
   }, [notePickerOpen, user]);
 
   const toggleNoteTag = (note: Pick<Note, 'id' | 'teaName' | 'overallRating'>) => {
     setTaggedNotes((prev) => {
-      if (prev.some((n) => n.id === note.id)) return prev.filter((n) => n.id !== note.id);
-      if (prev.length >= 5) { toast.error('차록은 최대 5개까지 태그할 수 있습니다.'); return prev; }
-      return [...prev, note];
+      const next = prev.some((n) => n.id === note.id)
+        ? prev.filter((n) => n.id !== note.id)
+        : prev.length >= 5 ? prev : [...prev, note];
+      setTaggedNoteIds(next.map((n) => n.id));
+      return next;
     });
   };
 
@@ -87,38 +57,6 @@ export function NewPost() {
     navigate('/login', { replace: true });
     return null;
   }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error('제목과 내용을 입력해주세요.');
-      return;
-    }
-
-    const dto: CreatePostRequest = {
-      title: title.trim(),
-      content: content.trim(),
-      category,
-      isAnonymous,
-      isPinned: isAdmin ? isPinned : undefined,
-      isSponsored,
-      sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
-      images: images.length > 0 ? images : undefined,
-      taggedNoteIds: taggedNotes.length > 0 ? taggedNotes.map((n) => n.id) : undefined,
-    };
-
-    setIsSubmitting(true);
-    try {
-      const post = await postsApi.create(dto);
-      toast.success('게시글이 작성되었습니다.');
-      navigate(`/chadam/${post.id}`, { replace: true });
-    } catch (err: unknown) {
-      const msg = (err as { message?: string })?.message;
-      toast.error(msg && typeof msg === 'string' ? msg : '게시글 작성에 실패했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen">

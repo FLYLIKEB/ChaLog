@@ -77,3 +77,16 @@ export interface User {
   email: string | null; // 인증 정보 분리 패턴으로 email은 UserAuthentication에서 관리
 }
 
+export const PostCategory = {
+  BREWING_QUESTION: 'brewing_question',
+  RECOMMENDATION: 'recommendation',
+  DISCUSSION: 'discussion',
+  TEA_REVIEW: 'tea_review',
+  TOOL_REVIEW: 'tool_review',
+  TEA_ROOM_REVIEW: 'tea_room_review',
+  ANNOUNCEMENT: 'announcement',
+  BUG_REPORT: 'bug_report',
+} as const;
+
+export type PostCategory = (typeof PostCategory)[keyof typeof PostCategory];
+

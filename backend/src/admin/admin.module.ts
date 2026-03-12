@@ -4,6 +4,10 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { CrawlingService } from './crawling.service';
 import { AdminGuard } from './guards/admin.guard';
+import { AdminUsersService } from './services/admin-users.service';
+import { AdminReportsService } from './services/admin-reports.service';
+import { AdminContentService } from './services/admin-content.service';
+import { AdminAnalyticsService } from './services/admin-analytics.service';
 import { User } from '../users/entities/user.entity';
 import { Note } from '../notes/entities/note.entity';
 import { Post } from '../posts/entities/post.entity';
@@ -43,6 +47,14 @@ import { TeasModule } from '../teas/teas.module';
     TeasModule,
   ],
   controllers: [AdminController],
-  providers: [AdminService, AdminGuard, CrawlingService],
+  providers: [
+    AdminService,
+    AdminGuard,
+    CrawlingService,
+    AdminUsersService,
+    AdminReportsService,
+    AdminContentService,
+    AdminAnalyticsService,
+  ],
 })
 export class AdminModule {}

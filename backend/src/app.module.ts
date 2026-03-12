@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -89,6 +90,7 @@ const AdminJSModulePromise = (async () => {
       },
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot(),
     CacheModule.register({
       isGlobal: true,
       ttl: 600000, // 10분 (밀리초)

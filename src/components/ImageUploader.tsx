@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { X, Upload, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from './ui/button';
 import { notesApi } from '../lib/api';
@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useImageUpload } from '../hooks/useImageUpload';
 
 interface ImageUploaderProps {
   images: string[];
@@ -15,7 +16,8 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ images, imageThumbnails = [], onChange, maxImages = 5 }: ImageUploaderProps) {
-  const [uploading, setUploading] = useState(false);
+  const { status, setStatus, validate } = useImageUpload({ maxSizeMB: 10 });
+  const uploading = status === 'uploading';
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -38,23 +40,15 @@ export function ImageUploader({ images, imageThumbnails = [], onChange, maxImage
 
     const filesToUpload = Array.from(files).slice(0, remainingSlots);
 
-    // 파일 타입 검증
-    const invalidFiles = filesToUpload.filter(
-      file => !file.type.startsWith('image/')
-    );
-    if (invalidFiles.length > 0) {
-      toast.error('이미지 파일만 업로드할 수 있습니다.');
-      return;
+    for (const file of filesToUpload) {
+      const validationError = validate(file);
+      if (validationError) {
+        toast.error(validationError);
+        return;
+      }
     }
 
-    // 파일 크기 검증 (10MB)
-    const oversizedFiles = filesToUpload.filter(file => file.size > 10 * 1024 * 1024);
-    if (oversizedFiles.length > 0) {
-      toast.error('파일 크기는 10MB를 초과할 수 없습니다.');
-      return;
-    }
-
-    setUploading(true);
+    setStatus('uploading');
 
     try {
       const uploadPromises = filesToUpload.map(file => notesApi.uploadImage(file));
@@ -112,7 +106,7 @@ export function ImageUploader({ images, imageThumbnails = [], onChange, maxImage
         toast.error(error?.message || '이미지 업로드에 실패했습니다.');
       }
     } finally {
-      setUploading(false);
+      setStatus('idle');
       // 파일 입력 초기화
       if (fileInputRef.current) {
         fileInputRef.current.value = '';

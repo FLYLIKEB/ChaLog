@@ -1,5 +1,6 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, registerDecorator, ValidationOptions } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, MaxLength, registerDecorator, ValidationOptions } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { VALIDATION } from '../../common/constants/validation';
 
 function IsHalfStep(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
@@ -64,11 +65,13 @@ export class CreateNoteDto {
   @IsOptional()
   @Transform(({ value }) => value === null ? null : value)
   @IsString()
+  @MaxLength(VALIDATION.NOTE_APPEARANCE_MAX)
   appearance?: string | null;
 
   @IsOptional()
   @Transform(({ value }) => value === null ? null : value)
   @IsString()
+  @MaxLength(VALIDATION.NOTE_MEMO_MAX)
   memo?: string | null;
 
   @IsOptional()

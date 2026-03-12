@@ -1,25 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, AlertCircle, Store } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
-import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
-import { Label } from '../components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
-import { SellerCombobox } from '../components/SellerCombobox';
-import { TeaTypeSelector } from '../components/TeaTypeSelector';
+import { TeaBasicInfoForm } from '../components/tea-form/TeaBasicInfoForm';
+import { TeaYearSection } from '../components/tea-form/TeaYearSection';
+import { TeaSellerSection } from '../components/tea-form/TeaSellerSection';
+import { TeaPriceWeightSection } from '../components/tea-form/TeaPriceWeightSection';
+import { TeaOriginSection } from '../components/tea-form/TeaOriginSection';
 import { teasApi } from '../lib/api';
-import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
-import { NAVIGATION_DELAY, CURRENT_YEAR, YEAR_OPTIONS, getOriginsForTeaType, COMMON_PRICES, COMMON_WEIGHTS, formatPriceToKorean, guessTeaTypeFromName } from '../constants';
+import { NAVIGATION_DELAY, CURRENT_YEAR, guessTeaTypeFromName } from '../constants';
 
 export function NewTea() {
   const navigate = useNavigate();
@@ -43,7 +36,6 @@ export function NewTea() {
   const [duplicateTeaId, setDuplicateTeaId] = useState<number | null>(null);
   const [typeTouched, setTypeTouched] = useState(false);
 
-  // 로그인 상태 확인
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error('로그인이 필요합니다.');
@@ -51,36 +43,26 @@ export function NewTea() {
     }
   }, [isAuthenticated, navigate]);
 
-  // 이름 기반 차 종류 자동 선택 (사용자가 직접 선택하지 않은 경우에만)
   useEffect(() => {
     if (typeTouched) return;
     const guessed = guessTeaTypeFromName(name);
-    if (guessed) {
-      setType(guessed);
-    } else {
-      setType('');
-    }
+    setType(guessed || '');
   }, [name, typeTouched]);
 
-  // 중복 확인 (debounce 500ms)
   useEffect(() => {
     if (!name.trim() || name.trim().length < 2) {
       setDuplicateWarning(null);
       setDuplicateTeaId(null);
       return;
     }
-
     const timeoutId = setTimeout(async () => {
       try {
         setIsCheckingDuplicate(true);
         const teas = await teasApi.getAll(name.trim());
         const teaArray = Array.isArray(teas) ? teas : [];
-        
-        // 정확히 일치하는 차 이름 찾기
         const exactMatch = teaArray.find(
-          tea => tea.name.toLowerCase().trim() === name.toLowerCase().trim()
+          (tea) => tea.name.toLowerCase().trim() === name.toLowerCase().trim()
         );
-
         if (exactMatch) {
           setDuplicateWarning(`"${exactMatch.name}"과(와) 동일한 이름의 차가 이미 등록되어 있습니다.`);
           setDuplicateTeaId(exactMatch.id);
@@ -90,55 +72,38 @@ export function NewTea() {
         }
       } catch (error) {
         logger.error('Failed to check duplicate:', error);
-        // 중복 확인 실패해도 계속 진행 가능
       } finally {
         setIsCheckingDuplicate(false);
       }
     }, 500);
-
     return () => clearTimeout(timeoutId);
   }, [name]);
 
+  const handleUseExisting = () => {
+    if (!duplicateTeaId) return;
+    navigate(returnTo ? `${returnTo}?teaId=${duplicateTeaId}` : `/tea/${duplicateTeaId}`, { replace: true });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!isAuthenticated) {
-      toast.error('로그인이 필요합니다.');
-      navigate('/login');
-      return;
-    }
-
-    // 필수 필드 검증
-    if (!name.trim()) {
-      toast.error('차 이름을 입력해주세요.');
-      return;
-    }
-
-    if (!type.trim()) {
-      setTypeTouched(true);
-      toast.error('차 종류를 입력해주세요.');
-      return;
-    }
+    if (!isAuthenticated) { toast.error('로그인이 필요합니다.'); navigate('/login'); return; }
+    if (!name.trim()) { toast.error('차 이름을 입력해주세요.'); return; }
+    if (!type.trim()) { setTypeTouched(true); toast.error('차 종류를 입력해주세요.'); return; }
 
     const yearValue = yearSelect === 'custom' ? yearCustom.trim() : (yearSelect === '__none__' ? '' : yearSelect);
     if (yearValue) {
       const yearNum = parseInt(yearValue, 10);
-      if (isNaN(yearNum) || yearNum < 1900) {
-        toast.error('연도는 1900년 이상이어야 합니다.');
-        return;
-      }
+      if (isNaN(yearNum) || yearNum < 1900) { toast.error('연도는 1900년 이상이어야 합니다.'); return; }
     }
 
     try {
       setIsLoading(true);
-
       const priceNum = price.trim() ? parseInt(price.replace(/,/g, ''), 10) : undefined;
       if (price.trim() && (isNaN(priceNum!) || priceNum! < 0)) {
         toast.error('가격을 올바르게 입력해주세요.');
         setIsLoading(false);
         return;
       }
-
       const weightNum = weight.trim() ? parseInt(weight.replace(/,/g, ''), 10) : undefined;
       if (weight.trim() && (isNaN(weightNum!) || weightNum! < 0)) {
         toast.error('무게를 올바르게 입력해주세요.');
@@ -146,7 +111,7 @@ export function NewTea() {
         return;
       }
 
-      const teaData = {
+      const createdTea = await teasApi.create({
         name: name.trim(),
         type: type.trim(),
         year: yearValue ? parseInt(yearValue, 10) : undefined,
@@ -154,28 +119,13 @@ export function NewTea() {
         origin: origin.trim() || undefined,
         price: priceNum,
         weight: weightNum,
-      };
-
-      const createdTea = await teasApi.create(teaData);
+      });
       const teaId = createdTea?.id;
-
-      if (!teaId) {
-        throw new Error('차 등록에 실패했습니다.');
-      }
-
+      if (!teaId) throw new Error('차 등록에 실패했습니다.');
       toast.success('차가 등록되었습니다.');
-
-      // returnTo 파라미터가 있으면 해당 페이지로 이동하고 teaId 전달
-      if (returnTo) {
-        setTimeout(() => {
-          navigate(`${returnTo}?teaId=${teaId}`, { replace: true });
-        }, NAVIGATION_DELAY);
-      } else {
-        // 기본적으로 차 상세 페이지로 이동
-        setTimeout(() => {
-          navigate(`/tea/${teaId}`, { replace: true });
-        }, NAVIGATION_DELAY);
-      }
+      setTimeout(() => {
+        navigate(returnTo ? `${returnTo}?teaId=${teaId}` : `/tea/${teaId}`, { replace: true });
+      }, NAVIGATION_DELAY);
     } catch (error) {
       logger.error('Failed to create tea:', error);
       const errorMessage =
@@ -187,292 +137,49 @@ export function NewTea() {
     }
   };
 
-  const handleUseExisting = () => {
-    if (duplicateTeaId) {
-      if (returnTo) {
-        navigate(`${returnTo}?teaId=${duplicateTeaId}`, { replace: true });
-      } else {
-        navigate(`/tea/${duplicateTeaId}`, { replace: true });
-      }
-    }
-  };
-
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen">
       <Header showBack title="새 차 등록" showProfile />
-
       <div className="p-4 pb-24 sm:max-w-md sm:mx-auto">
         <div className="bg-card rounded-lg p-6 space-y-5 border border-border">
           <form id="tea-form" onSubmit={handleSubmit} className="space-y-5" noValidate>
-            {/* 차 이름 · 차 종류 우선 */}
-            <div className="space-y-2">
-              <Label htmlFor="name">
-                차 이름 <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                type="text"
-                placeholder="예: 정산소종, 다즐링, 동정미록"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isLoading}
-                required
-              />
-              {isCheckingDuplicate && (
-                <p className="text-xs text-muted-foreground">중복 확인 중...</p>
-              )}
-              {duplicateWarning && (
-                <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-sm text-amber-800 dark:text-amber-200">{duplicateWarning}</p>
-                      {duplicateTeaId && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="mt-2"
-                          onClick={handleUseExisting}
-                        >
-                          기존 차 사용하기
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 차 종류 */}
-            <div className="space-y-2">
-              <div className="text-sm font-medium">
-                차 종류 <span className="text-red-500">*</span>
-              </div>
-              <TeaTypeSelector
-                value={type}
-                onChange={(v) => {
-                  setType(v);
-                  setTypeTouched(true);
-                }}
-                disabled={isLoading}
-                error={typeTouched && !type}
-              />
-              {!type && typeTouched && (
-                <p className="text-xs text-destructive">차 종류를 선택해주세요.</p>
-              )}
-              {!type && !typeTouched && (
-                <p className="text-xs text-muted-foreground">1개 선택</p>
-              )}
-            </div>
-
-            {/* 차종류 선택 시에만 표시: 연도, 구매처, 가격, 무게, 산지 */}
+            <TeaBasicInfoForm
+              name={name}
+              onNameChange={setName}
+              type={type}
+              onTypeChange={(v) => { setType(v); setTypeTouched(true); }}
+              typeTouched={typeTouched}
+              isLoading={isLoading}
+              isCheckingDuplicate={isCheckingDuplicate}
+              duplicateWarning={duplicateWarning}
+              duplicateTeaId={duplicateTeaId}
+              onUseExisting={handleUseExisting}
+            />
             {type && (
-            <>
-            <div className="space-y-2" role="group" aria-labelledby="year-label">
-              <Label id="year-label" htmlFor="year-select">제조 연도 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <div className="flex flex-wrap gap-2 mb-1">
-                <Button
-                  type="button"
-                  variant={yearSelect === String(CURRENT_YEAR) ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setYearSelect(String(CURRENT_YEAR))}
-                  disabled={isLoading}
-                  className="h-6 px-2 text-xs"
-                >
-                  올해
-                </Button>
-                <Button
-                  type="button"
-                  variant={yearSelect === String(CURRENT_YEAR - 1) ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setYearSelect(String(CURRENT_YEAR - 1))}
-                  disabled={isLoading}
-                  className="h-6 px-2 text-xs"
-                >
-                  작년
-                </Button>
-                <Button
-                  type="button"
-                  variant={yearSelect === '__none__' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setYearSelect('__none__')}
-                  disabled={isLoading}
-                  className="h-6 px-2 text-xs"
-                >
-                  선택 안 함
-                </Button>
-              </div>
-              <Select
-                value={yearSelect}
-                onValueChange={(v) => setYearSelect(v)}
-                disabled={isLoading}
-              >
-                <SelectTrigger id="year-select" className="w-full" aria-label="연도 선택">
-                  <SelectValue placeholder="연도를 선택하세요" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">선택 안 함</SelectItem>
-                  {YEAR_OPTIONS.map((y) => (
-                    <SelectItem key={y} value={String(y)}>
-                      {y}년
-                    </SelectItem>
-                  ))}
-                  <SelectItem value="custom">그 외 (직접 입력)</SelectItem>
-                </SelectContent>
-              </Select>
-              {yearSelect === 'custom' && (
-                <Input
-                  id="year-custom"
-                  type="number"
-                  placeholder="1900~1989년"
-                  value={yearCustom}
-                  onChange={(e) => setYearCustom(e.target.value)}
-                  disabled={isLoading}
-                  min={1900}
-                  max={1989}
-                  className="mt-2"
-                  aria-label="연도 직접 입력"
+              <>
+                <TeaYearSection
+                  yearSelect={yearSelect}
+                  onYearSelectChange={setYearSelect}
+                  yearCustom={yearCustom}
+                  onYearCustomChange={setYearCustom}
+                  isLoading={isLoading}
                 />
-              )}
-            </div>
-
-            {/* 구매처 */}
-            <div className="space-y-2">
-              <Label htmlFor="seller">구매처 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <div className="flex gap-2">
-                <SellerCombobox
-                  id="seller"
-                  value={seller}
-                  onChange={setSeller}
-                  disabled={isLoading}
-                  placeholder="검색하거나 새 찻집 이름 입력"
-                  className="flex-1"
+                <TeaSellerSection seller={seller} onSellerChange={setSeller} isLoading={isLoading} />
+                <TeaPriceWeightSection
+                  price={price}
+                  onPriceChange={setPrice}
+                  weight={weight}
+                  onWeightChange={setWeight}
+                  isLoading={isLoading}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  disabled={isLoading}
-                  onClick={() => navigate('/teahouse/new?returnTo=/tea/new')}
-                  aria-label="찻집 추가"
-                  title="찻집 추가"
-                >
-                  <Store className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                기존 찻집을 선택하거나, 새 찻집 추가 버튼으로 등록할 수 있어요.
-              </p>
-            </div>
-
-            {/* 가격 */}
-            <div className="space-y-2">
-              <Label htmlFor="price">가격 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <div className="flex flex-wrap gap-2">
-                {COMMON_PRICES.map((p) => (
-                  <Button
-                    key={p}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const current = parseInt(price.replace(/,/g, ''), 10) || 0;
-                      setPrice(String(current + p));
-                    }}
-                    disabled={isLoading}
-                    className="h-6 px-2 text-xs"
-                  >
-                    +{formatPriceToKorean(p)}원
-                  </Button>
-                ))}
-              </div>
-              <Input
-                id="price"
-                type="text"
-                inputMode="numeric"
-                placeholder="직접 입력 (예: 15000)"
-                value={price}
-                onChange={(e) => setPrice(e.target.value.replace(/[^0-9,]/g, ''))}
-                disabled={isLoading}
-                aria-label="가격 (원)"
-                className="mt-1"
-              />
-            </div>
-
-            {/* 무게 */}
-            <div className="space-y-2">
-              <Label htmlFor="weight">무게 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <div className="flex flex-wrap gap-2">
-                {COMMON_WEIGHTS.map((w) => (
-                  <Button
-                    key={w}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const current = parseInt(weight.replace(/,/g, ''), 10) || 0;
-                      setWeight(String(current + w));
-                    }}
-                    disabled={isLoading}
-                    className="h-6 px-2 text-xs"
-                  >
-                    +{w}g
-                  </Button>
-                ))}
-              </div>
-              <Input
-                id="weight"
-                type="text"
-                inputMode="numeric"
-                placeholder="직접 입력 (예: 50)"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value.replace(/[^0-9,]/g, ''))}
-                disabled={isLoading}
-                aria-label="무게 (g)"
-                className="mt-1"
-              />
-            </div>
-
-            {/* 산지 */}
-            <div className="space-y-2">
-              <Label htmlFor="origin" className="text-xs">산지 <span className="text-muted-foreground font-normal">(선택)</span></Label>
-              <div className="flex flex-wrap gap-2">
-                {getOriginsForTeaType(type).map((o) => (
-                  <Button
-                    key={o}
-                    type="button"
-                    variant={origin === o ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setOrigin(origin === o ? '' : o)}
-                    disabled={isLoading}
-                    className="h-6 px-2 text-xs"
-                  >
-                    {o}
-                  </Button>
-                ))}
-              </div>
-              <Input
-                id="origin"
-                type="text"
-                placeholder="직접 입력 (예: 윈난, 다즐링)"
-                value={origin}
-                onChange={(e) => setOrigin(e.target.value)}
-                disabled={isLoading}
-                className="mt-1"
-              />
-            </div>
-            </>
+                <TeaOriginSection type={type} origin={origin} onOriginChange={setOrigin} isLoading={isLoading} />
+              </>
             )}
           </form>
         </div>
       </div>
-
-      {/* 저장 버튼 - 하단 고정 플로팅 (차록 작성처럼) */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/80 dark:bg-background/90 backdrop-blur-sm z-40 sm:max-w-md sm:left-1/2 sm:-translate-x-1/2">
         <Button
           type="submit"
@@ -481,16 +188,10 @@ export function NewTea() {
           disabled={isLoading || isCheckingDuplicate}
         >
           {isLoading ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              등록 중...
-            </>
-          ) : (
-            '등록하기'
-          )}
+            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />등록 중...</>
+          ) : '등록하기'}
         </Button>
       </div>
     </div>
   );
 }
-

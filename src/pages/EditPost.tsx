@@ -1,118 +1,33 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { Post, PostCategory, POST_CATEGORY_LABELS, PostImageItem } from '../types';
-import { postsApi } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { PostImageUploader } from '../components/PostImageUploader';
 import { useAuth } from '../contexts/AuthContext';
-import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
-
-type WriteGroupKey = 'qna' | 'review' | 'announcement' | 'report';
-
-const WRITE_GROUPS: Array<{
-  key: WriteGroupKey;
-  label: string;
-  categories: Array<{ value: PostCategory; label: string; hint?: string }>;
-}> = [
-  {
-    key: 'qna',
-    label: '질문·토론',
-    categories: [
-      { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우림법, 온도, 시간 등' },
-      { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation, hint: '차 추천 요청' },
-      { value: 'discussion', label: POST_CATEGORY_LABELS.discussion, hint: '자유 주제 토론' },
-    ],
-  },
-  {
-    key: 'review',
-    label: '리뷰',
-    categories: [
-      { value: 'tea_review', label: POST_CATEGORY_LABELS.tea_review, hint: '차 시음 후기' },
-      { value: 'tool_review', label: POST_CATEGORY_LABELS.tool_review, hint: '다기·도구 후기' },
-      { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review, hint: '찻집·카페 방문기' },
-    ],
-  },
-  {
-    key: 'announcement',
-    label: '공지',
-    categories: [{ value: 'announcement', label: POST_CATEGORY_LABELS.announcement }],
-  },
-  {
-    key: 'report',
-    label: '제보',
-    categories: [{ value: 'bug_report', label: POST_CATEGORY_LABELS.bug_report }],
-  },
-];
-
-function getGroupFromCategory(cat: PostCategory): WriteGroupKey {
-  const g = WRITE_GROUPS.find((group) => group.categories.some((c) => c.value === cat));
-  return g?.key ?? 'qna';
-}
+import { usePostForm, WRITE_GROUPS } from '../hooks/usePostForm';
 
 export function EditPost() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { isAdmin } = useAuth();
   const postId = Number(id);
 
-  const [post, setPost] = useState<Post | null>(null);
-  const [isLoadingPost, setIsLoadingPost] = useState(true);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedGroup, setSelectedGroup] = useState<WriteGroupKey>('qna');
-  const [category, setCategory] = useState<PostCategory>('brewing_question');
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const [isPinned, setIsPinned] = useState(false);
-  const [isSponsored, setIsSponsored] = useState(false);
-  const [sponsorNote, setSponsorNote] = useState('');
-  const [images, setImages] = useState<PostImageItem[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!postId || isNaN(postId)) {
-      navigate('/chadam', { replace: true });
-      return;
-    }
-
-    const fetchPost = async () => {
-      try {
-        const data = await postsApi.getById(postId);
-        if (data.userId !== user?.id) {
-          toast.error('수정 권한이 없습니다.');
-          navigate(`/chadam/${postId}`, { replace: true });
-          return;
-        }
-        setPost(data);
-        setTitle(data.title);
-        setContent(data.content);
-        setCategory(data.category);
-        setSelectedGroup(getGroupFromCategory(data.category));
-        setIsAnonymous(data.isAnonymous ?? false);
-        setIsPinned(data.isPinned ?? false);
-        setIsSponsored(data.isSponsored);
-        setSponsorNote(data.sponsorNote ?? '');
-        setImages(
-          (data.images ?? []).map((img) => ({
-            url: img.url,
-            thumbnailUrl: img.thumbnailUrl ?? undefined,
-            caption: img.caption ?? undefined,
-          })),
-        );
-      } catch {
-        toast.error('게시글을 불러오는 데 실패했습니다.');
-        navigate('/chadam', { replace: true });
-      } finally {
-        setIsLoadingPost(false);
-      }
-    };
-
-    fetchPost();
-  }, [postId, user, navigate]);
+  const {
+    title, setTitle,
+    content, setContent,
+    selectedGroup, setSelectedGroup,
+    category, setCategory,
+    isAnonymous, setIsAnonymous,
+    isPinned, setIsPinned,
+    isSponsored, setIsSponsored,
+    sponsorNote, setSponsorNote,
+    images, setImages,
+    isSubmitting,
+    isLoadingPost,
+    handleSubmit,
+  } = usePostForm({ mode: 'edit', postId });
 
   if (isLoadingPost) {
     return (
@@ -121,36 +36,6 @@ export function EditPost() {
       </div>
     );
   }
-
-  if (!post) return null;
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      toast.error('제목과 내용을 입력해주세요.');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await postsApi.update(postId, {
-        title: title.trim(),
-        content: content.trim(),
-        category,
-        isAnonymous,
-        isPinned: isAdmin ? isPinned : undefined,
-        isSponsored,
-        sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
-        images,
-      });
-      toast.success('게시글이 수정되었습니다.');
-      navigate(`/chadam/${postId}`, { replace: true });
-    } catch {
-      toast.error('게시글 수정에 실패했습니다.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen">

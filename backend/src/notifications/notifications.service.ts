@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PaginationHelper } from '../common/utils/pagination.helper';
 import { Notification, NotificationType } from './entities/notification.entity';
 import { UserNotificationSetting } from '../users/entities/user-notification-setting.entity';
 
@@ -65,15 +66,14 @@ export class NotificationsService {
     page = 1,
     limit = 20,
   ): Promise<{ notifications: Notification[]; total: number }> {
-    const safePage = Math.max(1, page);
-    const safeLimit = Math.min(100, Math.max(1, limit));
+    const { take, skip } = PaginationHelper.normalize(page, limit);
 
     const [notifications, total] = await this.notificationsRepository.findAndCount({
       where: { userId },
       relations: ['actor'],
       order: { createdAt: 'DESC' },
-      skip: (safePage - 1) * safeLimit,
-      take: safeLimit,
+      skip,
+      take,
     });
 
     return { notifications, total };

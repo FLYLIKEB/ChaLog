@@ -51,6 +51,7 @@ export function UserProfile() {
   const [isOnboardingEditModalOpen, setIsOnboardingEditModalOpen] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
+  const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
 

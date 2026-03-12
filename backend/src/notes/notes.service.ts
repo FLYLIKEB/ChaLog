@@ -125,198 +125,164 @@ export class NotesService {
 
   async findAll(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, bookmarked?: boolean, feed?: string, sort: 'latest' | 'rating' = 'latest', page?: number, limit?: number): Promise<any[] | { data: any[]; total: number; page: number; limit: number }> {
     try {
-      // following 피드: 팔로잉한 유저의 공개 노트만 조회
       if (feed === 'following') {
-        if (!currentUserId) {
-          throw new BadRequestException('팔로잉 피드를 조회하려면 로그인이 필요합니다.');
-        }
-
-        const followingIds = await this.followsService.getFollowingIds(currentUserId);
-
-        if (followingIds.length === 0) {
-          return [];
-        }
-
-        const queryBuilder = this.notesRepository
-          .createQueryBuilder('note')
-          .leftJoinAndSelect('note.user', 'user')
-          .leftJoinAndSelect('note.tea', 'tea')
-          .leftJoinAndSelect('tea.seller', 'seller')
-          .leftJoinAndSelect('note.schema', 'schema')
-          .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
-          .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
-          .leftJoinAndSelect('note.noteTags', 'noteTags')
-          .leftJoinAndSelect('noteTags.tag', 'tag')
-          .leftJoinAndSelect('note.axisValues', 'axisValues')
-          .leftJoinAndSelect('axisValues.axis', 'axis')
-          .where('note.userId IN (:...followingIds)', { followingIds })
-          .andWhere('note.isPublic = :isPublic', { isPublic: true })
-          .orderBy('note.createdAt', 'DESC');
-
-        const notes = await queryBuilder.getMany();
-        return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+        return await this.findFollowingFeed(currentUserId);
       }
 
-      // tags 피드: 팔로우한 태그가 달린 공개 노트 조회
       if (feed === 'tags') {
-        if (!currentUserId) {
-          throw new BadRequestException('태그 피드를 조회하려면 로그인이 필요합니다.');
-        }
-
-        const tagFollows = await this.tagFollowsRepository.find({
-          where: { userId: currentUserId },
-          select: ['tagId'],
-        });
-
-        if (tagFollows.length === 0) {
-          return [];
-        }
-
-        const tagIds = tagFollows.map((tf) => tf.tagId);
-
-        const queryBuilder = this.notesRepository
-          .createQueryBuilder('note')
-          .leftJoinAndSelect('note.user', 'user')
-          .leftJoinAndSelect('note.tea', 'tea')
-          .leftJoinAndSelect('tea.seller', 'seller')
-          .leftJoinAndSelect('note.schema', 'schema')
-          .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
-          .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
-          .leftJoinAndSelect('note.noteTags', 'noteTags')
-          .leftJoinAndSelect('noteTags.tag', 'tag')
-          .leftJoinAndSelect('note.axisValues', 'axisValues')
-          .leftJoinAndSelect('axisValues.axis', 'axis')
-          .innerJoin('note.noteTags', 'followedNoteTag')
-          .where('followedNoteTag.tagId IN (:...tagIds)', { tagIds })
-          .andWhere('note.isPublic = :isPublic', { isPublic: true })
-          .orderBy('note.createdAt', 'DESC');
-
-        const notes = await queryBuilder.getMany();
-        return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+        return await this.findTagsFeed(currentUserId);
       }
 
-      // 북마크 필터가 활성화된 경우, 북마크한 노트만 조회
       if (bookmarked) {
-        if (!currentUserId) {
-          throw new BadRequestException('북마크한 노트를 조회하려면 로그인이 필요합니다.');
-        }
-        
-        // 북마크한 노트 ID 및 북마크한 날짜 조회 (북마크한 날짜 기준 최신순)
-        const bookmarkedNotes = await this.noteBookmarksRepository
-          .createQueryBuilder('bookmark')
-          .select('bookmark.noteId', 'noteId')
-          .addSelect('bookmark.createdAt', 'createdAt')
-          .where('bookmark.userId = :userId', { userId: currentUserId })
-          .orderBy('bookmark.createdAt', 'DESC')
-          .getRawMany();
-        
-        const bookmarkedNoteIds = bookmarkedNotes.map(b => b.noteId);
-        
-        if (bookmarkedNoteIds.length === 0) {
-          return [];
-        }
-        
-        // 북마크한 노트만 조회
-        const queryBuilder = this.notesRepository
-          .createQueryBuilder('note')
-          .leftJoinAndSelect('note.user', 'user')
-          .leftJoinAndSelect('note.tea', 'tea')
-          .leftJoinAndSelect('tea.seller', 'seller')
-          .leftJoinAndSelect('note.schema', 'schema')
-          .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
-          .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
-          .leftJoinAndSelect('note.noteTags', 'noteTags')
-          .leftJoinAndSelect('noteTags.tag', 'tag')
-          .leftJoinAndSelect('note.axisValues', 'axisValues')
-          .leftJoinAndSelect('axisValues.axis', 'axis')
-          .where('note.id IN (:...noteIds)', { noteIds: bookmarkedNoteIds });
-        
-        const notes = await queryBuilder.getMany();
-        
-        // 북마크한 날짜 기준으로 정렬 (북마크 테이블의 createdAt 기준)
-        const bookmarkMap = new Map(
-          bookmarkedNotes.map(b => [b.noteId, new Date(b.createdAt).getTime()])
-        );
-        const sortedNotes = notes.sort((a, b) => {
-          const bookmarkTimeA = bookmarkMap.get(a.id) || 0;
-          const bookmarkTimeB = bookmarkMap.get(b.id) || 0;
-          return bookmarkTimeB - bookmarkTimeA; // 최신순 (큰 값이 먼저)
-        });
-        
-        // 좋아요 및 북마크 정보 추가
-        return await this.enrichNotesWithLikesAndBookmarks(sortedNotes, currentUserId);
-      }
-      
-      // 기존 로직 (북마크 필터 없음)
-      const queryBuilder = this.notesRepository
-        .createQueryBuilder('note')
-        .leftJoinAndSelect('note.user', 'user')
-        .leftJoinAndSelect('note.tea', 'tea')
-        .leftJoinAndSelect('tea.seller', 'seller')
-        .leftJoinAndSelect('note.schema', 'schema')
-        .leftJoinAndSelect('note.noteSchemas', 'noteSchemas')
-        .leftJoinAndSelect('noteSchemas.schema', 'noteSchemasSchema')
-        .leftJoinAndSelect('note.noteTags', 'noteTags')
-        .leftJoinAndSelect('noteTags.tag', 'tag')
-        .leftJoinAndSelect('note.axisValues', 'axisValues')
-        .leftJoinAndSelect('axisValues.axis', 'axis');
-
-      if (sort === 'rating') {
-        // MySQL에서 NULL을 마지막으로 정렬: IS NULL 오름차순 → NULL이 아닌 값이 먼저
-        queryBuilder
-          .orderBy('note.overallRating IS NULL', 'ASC')
-          .addOrderBy('note.overallRating', 'DESC')
-          .addOrderBy('note.createdAt', 'DESC');
-      } else {
-        queryBuilder.orderBy('note.createdAt', 'DESC');
+        return await this.findBookmarkedFeed(currentUserId);
       }
 
-      const conditions: string[] = [];
-      const params: Record<string, any> = {};
-
-      if (userId) {
-        conditions.push('note.userId = :userId');
-        params.userId = userId;
-      }
-
-      if (isPublic !== undefined) {
-        conditions.push('note.isPublic = :isPublic');
-        params.isPublic = isPublic;
-      }
-
-      if (teaId) {
-        conditions.push('note.teaId = :teaId');
-        params.teaId = teaId;
-      }
-
-      if (conditions.length > 0) {
-        queryBuilder.where(conditions.join(' AND '), params);
-      }
-
-      // 페이지네이션 적용
-      if (page != null && limit != null) {
-        const [notes, total] = await queryBuilder
-          .skip((page - 1) * limit)
-          .take(limit)
-          .getManyAndCount();
-        const data = await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
-        return { data, total, page, limit };
-      }
-
-      const notes = await queryBuilder.getMany();
-
-      // 좋아요 및 북마크 정보 추가
-      return await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+      return await this.findPaginatedFeed(userId, isPublic, teaId, currentUserId, sort, page, limit);
     } catch (error) {
       this.logger.error(`Failed to findAll notes: ${error.message}`, error.stack);
       throw error;
     }
   }
 
+  private buildListQueryBuilder() {
+    return this.notesRepository
+      .createQueryBuilder('note')
+      .leftJoinAndSelect('note.user', 'user')
+      .leftJoinAndSelect('note.tea', 'tea');
+  }
+
+  private async findFollowingFeed(currentUserId?: number): Promise<any[]> {
+    if (!currentUserId) {
+      throw new BadRequestException('팔로잉 피드를 조회하려면 로그인이 필요합니다.');
+    }
+
+    const followingIds = await this.followsService.getFollowingIds(currentUserId);
+
+    if (followingIds.length === 0) {
+      return [];
+    }
+
+    const notes = await this.buildListQueryBuilder()
+      .where('note.userId IN (:...followingIds)', { followingIds })
+      .andWhere('note.isPublic = :isPublic', { isPublic: true })
+      .orderBy('note.createdAt', 'DESC')
+      .getMany();
+
+    return this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+  }
+
+  private async findTagsFeed(currentUserId?: number): Promise<any[]> {
+    if (!currentUserId) {
+      throw new BadRequestException('태그 피드를 조회하려면 로그인이 필요합니다.');
+    }
+
+    const tagFollows = await this.tagFollowsRepository.find({
+      where: { userId: currentUserId },
+      select: ['tagId'],
+    });
+
+    if (tagFollows.length === 0) {
+      return [];
+    }
+
+    const tagIds = tagFollows.map((tf) => tf.tagId);
+
+    const notes = await this.buildListQueryBuilder()
+      .innerJoin('note.noteTags', 'followedNoteTag')
+      .where('followedNoteTag.tagId IN (:...tagIds)', { tagIds })
+      .andWhere('note.isPublic = :isPublic', { isPublic: true })
+      .orderBy('note.createdAt', 'DESC')
+      .getMany();
+
+    return this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+  }
+
+  private async findBookmarkedFeed(currentUserId?: number): Promise<any[]> {
+    if (!currentUserId) {
+      throw new BadRequestException('북마크한 노트를 조회하려면 로그인이 필요합니다.');
+    }
+
+    const bookmarkedNotes = await this.noteBookmarksRepository
+      .createQueryBuilder('bookmark')
+      .select('bookmark.noteId', 'noteId')
+      .addSelect('bookmark.createdAt', 'createdAt')
+      .where('bookmark.userId = :userId', { userId: currentUserId })
+      .orderBy('bookmark.createdAt', 'DESC')
+      .getRawMany();
+
+    const bookmarkedNoteIds = bookmarkedNotes.map(b => b.noteId);
+
+    if (bookmarkedNoteIds.length === 0) {
+      return [];
+    }
+
+    const notes = await this.buildListQueryBuilder()
+      .where('note.id IN (:...noteIds)', { noteIds: bookmarkedNoteIds })
+      .getMany();
+
+    const bookmarkMap = new Map(
+      bookmarkedNotes.map(b => [b.noteId, new Date(b.createdAt).getTime()])
+    );
+    const sortedNotes = notes.sort((a, b) => {
+      const bookmarkTimeA = bookmarkMap.get(a.id) || 0;
+      const bookmarkTimeB = bookmarkMap.get(b.id) || 0;
+      return bookmarkTimeB - bookmarkTimeA;
+    });
+
+    return this.enrichNotesWithLikesAndBookmarks(sortedNotes, currentUserId);
+  }
+
+  private async findPaginatedFeed(userId?: number, isPublic?: boolean, teaId?: number, currentUserId?: number, sort: 'latest' | 'rating' = 'latest', page?: number, limit?: number): Promise<any[] | { data: any[]; total: number; page: number; limit: number }> {
+    const queryBuilder = this.buildListQueryBuilder();
+
+    if (sort === 'rating') {
+      queryBuilder
+        .orderBy('note.overallRating IS NULL', 'ASC')
+        .addOrderBy('note.overallRating', 'DESC')
+        .addOrderBy('note.createdAt', 'DESC');
+    } else {
+      queryBuilder.orderBy('note.createdAt', 'DESC');
+    }
+
+    const conditions: string[] = [];
+    const params: Record<string, any> = {};
+
+    if (userId) {
+      conditions.push('note.userId = :userId');
+      params.userId = userId;
+    }
+
+    if (isPublic !== undefined) {
+      conditions.push('note.isPublic = :isPublic');
+      params.isPublic = isPublic;
+    }
+
+    if (teaId) {
+      conditions.push('note.teaId = :teaId');
+      params.teaId = teaId;
+    }
+
+    if (conditions.length > 0) {
+      queryBuilder.where(conditions.join(' AND '), params);
+    }
+
+    if (page != null && limit != null) {
+      const [notes, total] = await queryBuilder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+      const data = await this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+      return { data, total, page, limit };
+    }
+
+    const notes = await queryBuilder.getMany();
+    return this.enrichNotesWithLikesAndBookmarks(notes, currentUserId);
+  }
+
   async findOne(id: number, userId?: number): Promise<any> {
     const note = await this.notesRepository.findOne({
       where: { id },
-      relations: ['user', 'tea', 'tea.seller', 'schema', 'noteSchemas', 'noteSchemas.schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
+      relations: ['user', 'tea', 'schema', 'noteSchemas', 'noteSchemas.schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
     });
 
     if (!note) {
@@ -474,8 +440,8 @@ export class NotesService {
           try {
             await this.s3Service.deleteFile(thumbnailKey);
             this.logger.log(`S3 썸네일 삭제 성공: ${thumbnailKey}`);
-          } catch {
-            // 레거시 노트는 썸네일이 없을 수 있음
+          } catch (err) {
+            this.logger.warn(`S3 썸네일 삭제 실패 (레거시 노트일 수 있음): ${err instanceof Error ? err.message : String(err)}`);
           }
         }
       } catch (error) {

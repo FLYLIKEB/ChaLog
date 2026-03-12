@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource, QueryFailedError, In } from 'typeorm';
+import { PaginationHelper } from '../common/utils/pagination.helper';
 import { Post, PostCategory } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
@@ -101,14 +102,14 @@ export class PostsService {
       throw new BadRequestException('북마크한 게시글을 조회하려면 로그인이 필요합니다.');
     }
 
-    const skip = (page - 1) * limit;
+    const { take, skip } = PaginationHelper.normalize(page, limit, 50);
     const qb = this.postsRepository
       .createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user')
       .leftJoinAndSelect('post.images', 'postImages')
       .orderBy('post.isPinned', 'DESC')
       .skip(skip)
-      .take(limit);
+      .take(take);
 
     if (bookmarked && currentUserId) {
       qb.innerJoin('post_bookmarks', 'pb', 'pb.postId = post.id AND pb.userId = :bookmarkUserId', {
@@ -150,7 +151,7 @@ export class PostsService {
         });
       }
 
-      const popularRows = await popularQb.skip(skip).take(limit).getRawMany();
+      const popularRows = await popularQb.skip(skip).take(take).getRawMany();
       const popularIds = popularRows.map((r) => r.postId);
 
       if (popularIds.length === 0) {
