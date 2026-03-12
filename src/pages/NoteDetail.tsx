@@ -257,57 +257,59 @@ export function NoteDetail() {
                 )}
               </Badge>
             </div>
-            {user && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleLikeClick}
-                  disabled={isTogglingLike}
-                  className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                    isLiked 
-                      ? 'text-primary hover:bg-primary/10' 
-                      : 'text-muted-foreground hover:bg-accent'
-                  }`}
-                  title={isLiked ? '좋아요 취소' : '좋아요'}
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-all ${
-                      isLiked 
-                        ? 'fill-primary text-primary stroke-primary' 
-                        : 'fill-none text-muted-foreground stroke-muted-foreground'
+            <div className="flex items-center gap-2">
+              {user && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleLikeClick}
+                    disabled={isTogglingLike}
+                    className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                      isLiked
+                        ? 'text-primary hover:bg-primary/10'
+                        : 'text-muted-foreground hover:bg-accent'
                     }`}
-                  />
-                  {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBookmarkClick}
-                  disabled={isTogglingBookmark}
-                  className={`min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                    isBookmarked 
-                      ? 'text-primary hover:bg-primary/10' 
-                      : 'text-muted-foreground hover:bg-accent'
-                  }`}
-                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
-                >
-                  <Bookmark
-                    className={`w-5 h-5 transition-all ${
+                    title={isLiked ? '좋아요 취소' : '좋아요'}
+                  >
+                    <Heart
+                      className={`w-5 h-5 transition-all ${
+                        isLiked
+                          ? 'fill-primary text-primary stroke-primary'
+                          : 'fill-none text-muted-foreground stroke-muted-foreground'
+                      }`}
+                    />
+                    {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleBookmarkClick}
+                    disabled={isTogglingBookmark}
+                    className={`min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
                       isBookmarked
-                        ? 'fill-primary text-primary stroke-primary'
-                        : 'fill-none text-muted-foreground stroke-muted-foreground'
+                        ? 'text-primary hover:bg-primary/10'
+                        : 'text-muted-foreground hover:bg-accent'
                     }`}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => share(tea?.name ?? '차록', window.location.href)}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
-                  title="공유하기"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+                    title={isBookmarked ? '북마크 해제' : '북마크 추가'}
+                  >
+                    <Bookmark
+                      className={`w-5 h-5 transition-all ${
+                        isBookmarked
+                          ? 'fill-primary text-primary stroke-primary'
+                          : 'fill-none text-muted-foreground stroke-muted-foreground'
+                      }`}
+                    />
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => share(tea?.name ?? '차록', window.location.href)}
+                className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
+                title="공유하기"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+            </div>
 
           </div>
           

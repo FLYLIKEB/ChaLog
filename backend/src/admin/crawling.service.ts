@@ -1,7 +1,8 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Tea } from '../teas/entities/tea.entity';
+import { Seller } from '../teas/entities/seller.entity';
 import * as cheerio from 'cheerio';
 
 export interface CrawlConfig {
@@ -23,6 +24,8 @@ export class CrawlingService {
   constructor(
     @InjectRepository(Tea)
     private teasRepository: Repository<Tea>,
+    @InjectRepository(Seller)
+    private sellersRepository: Repository<Seller>,
   ) {}
 
   private validateUrl(url: string): void {
@@ -92,6 +95,11 @@ export class CrawlingService {
 
   async register(items: TeaCrawlItem[], sellerId?: number): Promise<{ success: number; skipped: number }> {
     if (items.length === 0) return { success: 0, skipped: 0 };
+
+    if (sellerId !== undefined) {
+      const seller = await this.sellersRepository.findOne({ where: { id: sellerId } });
+      if (!seller) throw new NotFoundException(`찻집(id=${sellerId})을 찾을 수 없습니다.`);
+    }
 
     const existingTeas = await this.teasRepository.findBy({ name: In(items.map((i) => i.name)) });
     const existingKeys = new Set(existingTeas.map((t) => `${t.name}||${t.type}`));

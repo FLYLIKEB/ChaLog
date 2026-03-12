@@ -330,7 +330,7 @@ export function PostDetail() {
                 <button
                   key={note.id}
                   type="button"
-                  onClick={() => navigate(`/notes/${note.id}`)}
+                  onClick={() => navigate(`/note/${note.id}`)}
                   className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
                 >
                   <span className="text-sm font-medium text-foreground">{note.teaName}</span>

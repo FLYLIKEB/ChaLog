@@ -72,7 +72,7 @@ export function NewPost() {
     if (!notePickerOpen || myNotes.length > 0 || !user) return;
     notesApi.getAll(user.id, undefined, undefined, undefined, undefined, undefined, 1, 100)
       .then((notes) => setMyNotes(notes.map((n) => ({ id: n.id, teaName: n.teaName, overallRating: n.overallRating }))))
-      .catch(() => {});
+      .catch(() => toast.error('차록 목록을 불러오지 못했습니다.'));
   }, [notePickerOpen, user]);
 
   const toggleNoteTag = (note: Pick<Note, 'id' | 'teaName' | 'overallRating'>) => {
