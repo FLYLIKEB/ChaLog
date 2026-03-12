@@ -1,6 +1,6 @@
 import { HTMLAttributes, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, FileText, MessageSquare, Package, MoreHorizontal } from 'lucide-react';
+import { Home, FileText, MessageSquare, Package, MoreHorizontal } from 'lucide-react';
 import { cn } from './ui/utils';
 import { MoreMenu } from './MoreMenu';
 
@@ -14,7 +14,6 @@ type BottomNavItem = {
 
 const NAV_ITEMS: BottomNavItem[] = [
   { label: '홈', path: '/', icon: Home, activeStyle: 'fill' },
-  { label: '탐색', path: '/sasaek', icon: Search, activeStyle: 'bold' },
   {
     label: '차담',
     path: '/chadam',

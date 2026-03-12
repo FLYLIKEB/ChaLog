@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
-import { Search as SearchIcon, Plus, Loader2, Store, Filter, Clock, X } from 'lucide-react';
+import { Search as SearchIcon, Plus, Store, Filter, Clock, X, ChevronDown, Package } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
@@ -12,13 +12,17 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
-import { teasApi, tagsApi } from '../lib/api';
-import { Tea, Seller } from '../types';
+import { teasApi, tagsApi, notesApi, cellarApi } from '../lib/api';
+import { Tea, Seller, Note, CellarItem } from '../types';
+import { NoteCard } from '../components/NoteCard';
+import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
 import { SEARCH_DEBOUNCE_DELAY, TEA_TYPES, TEA_TYPE_COLORS, CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES, CARD_SKELETON_CONTAINER_CLASSES } from '../constants';
 import { cn } from '../components/ui/utils';
 import { useRecentSearches } from '../hooks/useRecentSearches';
+import { useSearchFilters } from '../hooks/useSearchFilters';
+import { useAuth } from '../contexts/AuthContext';
 
 const SORT_OPTIONS = [
   { key: 'popular' as const, label: '인기순' },
@@ -38,39 +42,283 @@ const MIN_RATING_OPTIONS = [
   { value: 3, label: '3점 이상' },
 ];
 
+type SearchCategory = 'tea' | 'note' | 'cellar' | 'seller' | 'tag';
+
+const SEARCH_CATEGORIES: { key: SearchCategory; label: string }[] = [
+  { key: 'tea', label: '차' },
+  { key: 'note', label: '내 차록' },
+  { key: 'cellar', label: '찻장' },
+  { key: 'seller', label: '찻집' },
+  { key: 'tag', label: '향미' },
+];
+
+const NOTE_SORT_OPTIONS = [
+  { key: 'latest' as const, label: '최신순' },
+  { key: 'rating' as const, label: '평점순' },
+];
+
+const CELLAR_SORT_OPTIONS = [
+  { key: 'recent' as const, label: '등록순' },
+  { key: 'name' as const, label: '이름순' },
+  { key: 'quantity' as const, label: '수량순' },
+];
+
+const CATEGORY_CREATE_CONFIG: Partial<Record<SearchCategory, { label: string; path: string }>> = {
+  tea: { label: '🍵 새 차 등록', path: '/tea/new' },
+  note: { label: '📝 새 차록 쓰기', path: '/note/new' },
+  cellar: { label: '📦 새 찻장 항목 추가', path: '/cellar/new' },
+  seller: { label: '🏪 새 찻집 등록', path: '/teahouse/new' },
+};
+
+function CategoryCreateButton({ category }: { category: SearchCategory }) {
+  const navigate = useNavigate();
+  const config = CATEGORY_CREATE_CONFIG[category];
+  if (!config) return null;
+  return (
+    <Button variant="outline" className="w-full mt-3" onClick={() => navigate(config.path)}>
+      <Plus className="w-4 h-4 mr-2" />
+      {config.label}
+    </Button>
+  );
+}
+
+interface FilterPanelProps {
+  category: SearchCategory;
+  filterOpen: boolean;
+  setFilterOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
+  activeFilterCount: number;
+  filterType: string | null;
+  setFilterType: (type: string | null) => void;
+  filterMinRating: number | undefined;
+  setFilterMinRating: (rating: number | undefined) => void;
+  filterSort: 'popular' | 'new' | 'rating' | 'match' | 'recent';
+  setFilterSort: (sort: 'popular' | 'new' | 'rating' | 'match' | 'recent') => void;
+  noteSort: 'latest' | 'rating';
+  setNoteSort: (sort: 'latest' | 'rating') => void;
+  cellarSort?: 'name' | 'quantity' | 'recent';
+  setCellarSort?: (sort: 'name' | 'quantity' | 'recent') => void;
+  hasTagParams: boolean;
+  urlTags: string[];
+  popularTags: { name: string; noteCount: number }[];
+  handleTagClick: (tagName: string) => void;
+  onApply: () => void;
+}
+
+function FilterPanel({
+  category,
+  filterOpen,
+  setFilterOpen,
+  activeFilterCount,
+  filterType,
+  setFilterType,
+  filterMinRating,
+  setFilterMinRating,
+  filterSort,
+  setFilterSort,
+  noteSort,
+  setNoteSort,
+  cellarSort,
+  setCellarSort,
+  hasTagParams,
+  urlTags,
+  popularTags,
+  handleTagClick,
+  onApply,
+}: FilterPanelProps) {
+  return (
+    <div className="border border-border/60 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setFilterOpen((v: boolean) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/40 transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <Filter className="w-4 h-4" />
+          필터
+          {activeFilterCount > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
+              {activeFilterCount}
+            </span>
+          )}
+        </span>
+        <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', filterOpen && 'rotate-180')} />
+      </button>
+      {filterOpen && (
+        <div className="divide-y divide-border/40">
+          {/* 정렬 */}
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">정렬</p>
+            <div className="flex flex-wrap gap-1.5">
+              {category === 'note'
+                ? NOTE_SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setNoteSort(opt.key)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                        noteSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))
+                : category === 'cellar'
+                ? CELLAR_SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setCellarSort?.(opt.key)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                        cellarSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))
+                : (hasTagParams ? SORT_OPTIONS_WITH_MATCH : SORT_OPTIONS).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setFilterSort(opt.key)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                        filterSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+            </div>
+          </div>
+
+          {/* 차 종류 */}
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">차 종류</p>
+            <div className="flex flex-wrap gap-1.5">
+              {TEA_TYPES.map((type) => {
+                const isSelected = filterType === type;
+                const colorClass = TEA_TYPE_COLORS[type];
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setFilterType(isSelected ? null : type)}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', isSelected ? 'bg-primary-foreground' : colorClass)} aria-hidden />
+                    {type}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 평점 */}
+          {category !== 'cellar' && (
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">평점</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MIN_RATING_OPTIONS.map((opt) => (
+                <button
+                  key={opt.label}
+                  type="button"
+                  onClick={() => setFilterMinRating(opt.value)}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                    filterMinRating === opt.value
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          )}
+
+          {/* 향미 태그 */}
+          {category !== 'cellar' && popularTags.length > 0 && (
+            <div className="px-4 py-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">향미</p>
+              <div className="flex flex-wrap gap-1.5">
+                {popularTags.slice(0, 12).map((tag) => (
+                  <button
+                    key={tag.name}
+                    type="button"
+                    onClick={() => handleTagClick(tag.name)}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                      urlTags.includes(tag.name)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    #{tag.name}
+                    {tag.noteCount > 0 && <span className="text-[10px] opacity-60">({tag.noteCount})</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 적용 */}
+          <div className="px-4 py-3">
+            <Button size="sm" className="w-full" onClick={onApply}>
+              적용
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Search() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | 'match' | 'recent' | null;
-  const urlType = searchParams.get('type');
-  const urlMinRating = searchParams.get('minRating');
-  const urlTagsStr = searchParams.get('tags') ?? '';
-  const urlTags = useMemo(
-    () => urlTagsStr.split(',').map((t) => t.trim()).filter(Boolean),
-    [urlTagsStr],
-  );
   const urlSection = searchParams.get('section') as 'popular' | 'new' | 'curation' | null;
 
+  const { user } = useAuth();
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
-  const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const filters = useSearchFilters();
+  const {
+    filterType, filterMinRating, filterSort, noteSort, setNoteSort,
+    filterOpen, setFilterOpen, activeFilterCount,
+    urlTags, hasTagParams, hasFilterParams,
+    handleTagClick, applyFilters, fetchWithFilters,
+  } = filters;
+
+  const [cellarSort, setCellarSort] = useState<'name' | 'quantity' | 'recent'>('recent');
+  const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
+  const [searchCategory, setSearchCategory] = useState<SearchCategory>('tea');
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [noteResults, setNoteResults] = useState<Note[]>([]);
+  const [allNotes, setAllNotes] = useState<Note[]>([]);
+  const [sellerResults, setSellerResults] = useState<Seller[]>([]);
+  const [tagResults, setTagResults] = useState<{ name: string; noteCount: number }[]>([]);
+  const [cellarResults, setCellarResults] = useState<CellarItem[]>([]);
+  const [allCellar, setAllCellar] = useState<CellarItem[]>([]);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [teas, setTeas] = useState<Tea[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [filterType, setFilterType] = useState<string | null>(() => urlType);
-  const [filterMinRating, setFilterMinRating] = useState<number | undefined>(() =>
-    urlMinRating ? parseFloat(urlMinRating) : undefined,
-  );
-  const [filterSort, setFilterSort] = useState<'popular' | 'new' | 'rating' | 'match' | 'recent'>(() =>
-    urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort) ? urlSort : 'popular',
-  );
 
-  useEffect(() => {
-    if (urlType !== null) setFilterType(urlType);
-    if (urlMinRating !== null) setFilterMinRating(parseFloat(urlMinRating));
-    if (urlSort && ['popular', 'new', 'rating', 'match', 'recent'].includes(urlSort)) setFilterSort(urlSort);
-  }, [urlType, urlMinRating, urlSort]);
+  const filterCallbacks = useMemo(() => ({ setTeas, setIsLoading, setHasSearched }), []);
 
   const [selectedFlavorTag, setSelectedFlavorTag] = useState<string | null>(null);
   const [flavorTeas, setFlavorTeas] = useState<Tea[]>([]);
@@ -166,25 +414,10 @@ export function Search() {
     setSectionsLoading(false);
   }, []);
 
-  const fetchAllTeas = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const data = await teasApi.getAll();
-      setTeas(Array.isArray(data) ? data : []);
-      setHasSearched(false);
-    } catch (error) {
-      logger.error('Failed to fetch teas:', error);
-      toast.error('차 목록을 불러오는데 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const handleSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return;
 
     addSearch(query.trim());
-    setShowRecentSearches(false);
 
     try {
       setIsLoading(true);
@@ -199,52 +432,129 @@ export function Search() {
     }
   }, [addSearch]);
 
-  const fetchWithFilters = useCallback(
-    async (params: { q?: string; type?: string; minRating?: number; sort?: string; tags?: string[] }) => {
-      try {
-        setIsLoading(true);
-        if (params.tags && params.tags.length > 0) {
-          const tagSort = ['match', 'popular', 'recent'].includes(params.sort || '')
-            ? (params.sort as 'match' | 'popular' | 'recent')
-            : 'match';
-          const data = await teasApi.getByTags(params.tags, tagSort, 50);
-          setTeas(Array.isArray(data) ? data : []);
-        } else {
-          const data = await teasApi.getWithFilters({
-            q: params.q || undefined,
-            type: params.type || undefined,
-            minRating: params.minRating,
-            sort: (params.sort as 'popular' | 'new' | 'rating') || 'popular',
-          });
-          setTeas(Array.isArray(data) ? data : []);
-        }
-      } catch (error) {
-        logger.error('Filter failed:', error);
-        toast.error('필터 결과를 불러오는데 실패했습니다.');
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [],
-  );
+  const urlTagsStr = searchParams.get('tags') ?? '';
 
-  const hasTagParams = urlTags.length > 0;
-  const hasFilterParams = !!(urlSort || urlType || urlMinRating || hasTagParams);
-  const showResults = searchQuery.length > 0 || hasSearched || hasFilterParams;
+  // 카테고리 변경 시 기본 데이터 로드
+  useEffect(() => {
+    if (activeTab !== 'search' || searchCategory === 'tea' || searchCategory === 'seller') return;
+    setCategoryLoading(true);
+    const q = searchQuery.trim().toLowerCase();
+    if (searchCategory === 'note') {
+      notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, noteSort, 1, 200)
+        .then((data: unknown) => {
+          const notes: Note[] = Array.isArray(data)
+            ? data
+            : (data as { data?: Note[] })?.data ?? (data as { notes?: Note[] })?.notes ?? [];
+          setAllNotes(notes);
+          setNoteResults(
+            q
+              ? notes.filter(
+                  (n) =>
+                    n.teaName?.toLowerCase().includes(q) ||
+                    n.memo?.toLowerCase().includes(q),
+                )
+              : notes,
+          );
+        })
+        .catch(() => { setAllNotes([]); setNoteResults([]); })
+        .finally(() => setCategoryLoading(false));
+    } else if (searchCategory === 'tag') {
+      tagsApi.getPopularTags(100)
+        .then((data) => {
+          const tags = Array.isArray(data) ? data : [];
+          setTagResults(q ? tags.filter((t) => t.name?.toLowerCase().includes(q)) : tags);
+        })
+        .catch(() => setTagResults([]))
+        .finally(() => setCategoryLoading(false));
+    } else if (searchCategory === 'cellar') {
+      cellarApi.getAll()
+        .then((data: unknown) => {
+          const items: CellarItem[] = Array.isArray(data) ? data : [];
+          setAllCellar(items);
+          setCellarResults(q ? items.filter((c) => c.tea?.name?.toLowerCase().includes(q)) : items);
+        })
+        .catch(() => { setAllCellar([]); setCellarResults([]); })
+        .finally(() => setCategoryLoading(false));
+    }
+  }, [searchCategory, activeTab, user?.id, noteSort]);
+
+  // 찻집 검색 (서버 사이드, debounce)
+  useEffect(() => {
+    if (activeTab !== 'search' || searchCategory !== 'seller') return;
+    setCategoryLoading(true);
+    const q = searchQuery.trim();
+    const timeoutId = setTimeout(() => {
+      teasApi.getSellers(q || undefined)
+        .then((data) => setSellerResults(data?.sellers ?? []))
+        .catch(() => setSellerResults([]))
+        .finally(() => setCategoryLoading(false));
+    }, SEARCH_DEBOUNCE_DELAY);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchCategory, activeTab]);
+
+  // 차록/찻장/향미: 쿼리 변경 시 클라이언트 필터
+  useEffect(() => {
+    if (activeTab !== 'search') return;
+    const q = searchQuery.trim().toLowerCase();
+    if (searchCategory === 'note') {
+      setNoteResults(
+        allNotes.filter((n) => {
+          if (q && !n.teaName?.toLowerCase().includes(q) && !n.memo?.toLowerCase().includes(q)) return false;
+          if (filterType && n.teaType !== filterType) return false;
+          if (filterMinRating != null && (n.overallRating == null || n.overallRating < filterMinRating)) return false;
+          if (urlTags.length > 0 && !urlTags.every((tag) => n.tags?.includes(tag))) return false;
+          return true;
+        }),
+      );
+    } else if (searchCategory === 'cellar') {
+      let filtered = allCellar.filter((c) => {
+        if (q && !c.tea?.name?.toLowerCase().includes(q)) return false;
+        if (filterType && c.tea?.type !== filterType) return false;
+        return true;
+      });
+      if (cellarSort === 'name') {
+        filtered = [...filtered].sort((a, b) => (a.tea?.name ?? '').localeCompare(b.tea?.name ?? ''));
+      } else if (cellarSort === 'quantity') {
+        filtered = [...filtered].sort((a, b) => b.quantity - a.quantity);
+      } else {
+        filtered = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      setCellarResults(filtered);
+    } else if (searchCategory === 'tag') {
+      setTagResults(
+        q ? popularTags.filter((t) => t.name?.toLowerCase().includes(q)) : popularTags,
+      );
+    }
+  }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags, filterType, filterMinRating, urlTagsStr, cellarSort]);
+
+  const noteHasFilters = !!(filterType || filterMinRating != null || urlTags.length > 0);
+  const cellarHasFilters = !!filterType;
+  const showResults =
+    searchCategory === 'tea'
+      ? searchQuery.length > 0 || hasSearched || hasFilterParams
+      : searchQuery.trim().length >= 2 ||
+        (searchCategory === 'note' && noteHasFilters) ||
+        (searchCategory === 'cellar' && cellarHasFilters);
   const handleRefresh = useCallback(async () => {
     if (showResults) {
       if (hasTagParams) {
-        await fetchWithFilters({
-          tags: urlTags,
-          sort: ['match', 'popular', 'recent'].includes(filterSort) ? filterSort : 'match',
-        });
+        await fetchWithFilters(
+          {
+            tags: urlTags,
+            sort: ['match', 'popular', 'recent'].includes(filterSort) ? filterSort : 'match',
+          },
+          { setTeas, setIsLoading },
+        );
       } else {
-        await fetchWithFilters({
-          q: searchQuery || undefined,
-          type: filterType || undefined,
-          minRating: filterMinRating,
-          sort: filterSort,
-        });
+        await fetchWithFilters(
+          {
+            q: searchQuery || undefined,
+            type: filterType || undefined,
+            minRating: filterMinRating,
+            sort: filterSort,
+          },
+          { setTeas, setIsLoading },
+        );
       }
     } else {
       await fetchSections();
@@ -263,28 +573,38 @@ export function Search() {
       return () => clearTimeout(timeoutId);
     }
     if (trimmedQuery.length === 0) {
-      fetchAllTeas();
+      setHasSearched(false);
+      setTeas([]);
     }
-  }, [searchQuery, fetchAllTeas, handleSearch]);
+  }, [searchQuery, handleSearch]);
 
   useEffect(() => {
     if (hasFilterParams) {
       setHasSearched(true);
+      const urlSort = searchParams.get('sort') as 'popular' | 'new' | 'rating' | 'match' | 'recent' | null;
+      const urlType = searchParams.get('type');
+      const urlMinRating = searchParams.get('minRating');
       if (hasTagParams) {
-        fetchWithFilters({
-          tags: urlTags,
-          sort: urlSort && ['match', 'popular', 'recent'].includes(urlSort) ? urlSort : 'match',
-        });
+        fetchWithFilters(
+          {
+            tags: urlTags,
+            sort: urlSort && ['match', 'popular', 'recent'].includes(urlSort) ? urlSort : 'match',
+          },
+          { setTeas, setIsLoading },
+        );
       } else {
-        fetchWithFilters({
-          q: searchQuery.trim() || undefined,
-          type: urlType || undefined,
-          minRating: urlMinRating ? parseFloat(urlMinRating) : undefined,
-          sort: urlSort || 'popular',
-        });
+        fetchWithFilters(
+          {
+            q: searchQuery.trim() || undefined,
+            type: urlType || undefined,
+            minRating: urlMinRating ? parseFloat(urlMinRating) : undefined,
+            sort: urlSort || 'popular',
+          },
+          { setTeas, setIsLoading },
+        );
       }
     }
-  }, [hasFilterParams, hasTagParams, urlTagsStr, urlSort, urlType, urlMinRating, fetchWithFilters, searchQuery]);
+  }, [hasFilterParams, hasTagParams, urlTagsStr, searchParams, fetchWithFilters, searchQuery]);
 
   useEffect(() => {
     if (!searchQuery.trim() && !hasSearched && !hasFilterParams) {
@@ -305,29 +625,13 @@ export function Search() {
     }
   }, [showResults, popularTags.length]);
 
-  const applyFilters = useCallback(() => {
-    const params = new URLSearchParams();
-    params.set('sort', filterSort);
-    if (filterType) params.set('type', filterType);
-    if (filterMinRating != null && !Number.isNaN(filterMinRating))
-      params.set('minRating', String(filterMinRating));
-    if (urlTags.length > 0) params.set('tags', urlTags.join(','));
-    setSearchParams(params);
-    setHasSearched(true);
-    if (urlTags.length > 0) {
-      fetchWithFilters({
-        tags: urlTags,
-        sort: ['match', 'popular', 'recent'].includes(filterSort) ? filterSort : 'match',
-      });
+  const handleApplyFilters = useCallback(() => {
+    if (searchCategory === 'tea') {
+      applyFilters('tea', searchQuery, filterCallbacks);
     } else {
-      fetchWithFilters({
-        q: searchQuery.trim() || undefined,
-        type: filterType || undefined,
-        minRating: filterMinRating,
-        sort: filterSort,
-      });
+      setFilterOpen(false);
     }
-  }, [filterSort, filterType, filterMinRating, searchQuery, urlTags, setSearchParams, fetchWithFilters]);
+  }, [applyFilters, searchCategory, searchQuery, filterCallbacks, setFilterOpen]);
 
   const SECTION_TITLES: Record<string, string> = {
     popular: '🏆 사랑받는 차',
@@ -349,20 +653,12 @@ export function Search() {
     setHasSearched(false);
   }, [setSearchParams]);
 
-  const handleTagClick = useCallback(
+  const onTagClick = useCallback(
     (tagName: string) => {
-      const newTags = urlTags.includes(tagName)
-        ? urlTags.filter((t) => t !== tagName)
-        : [...urlTags, tagName];
-      const params = new URLSearchParams();
-      if (newTags.length > 0) {
-        params.set('tags', newTags.join(','));
-        params.set('sort', 'match');
-      }
-      setSearchParams(params);
+      handleTagClick(tagName);
       setHasSearched(true);
     },
-    [urlTags, setSearchParams],
+    [handleTagClick],
   );
 
   return (
@@ -378,199 +674,324 @@ export function Search() {
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {/* 검색 입력 영역 */}
         <div className="relative">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           <Input
             type="text"
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setShowRecentSearches(true)}
-            onBlur={() => setTimeout(() => setShowRecentSearches(false), 150)}
-            className="pl-10 rounded-full"
+            className={cn('pl-10 rounded-full transition-all', searchQuery ? 'pr-10' : '')}
           />
-          {/* 최근 검색어 드롭다운 */}
-          {showRecentSearches && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-border rounded-xl shadow-lg overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
-                <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
-                <button
-                  type="button"
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={clearAll}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  전체 삭제
-                </button>
-              </div>
-              <ul>
-                {recentSearches.map((term) => (
-                  <li key={term} className="flex items-center gap-2 px-4 py-2.5 hover:bg-muted/50 transition-colors">
-                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        setSearchQuery(term);
-                        handleSearch(term);
-                      }}
-                      className="flex-1 text-left text-sm truncate"
-                    >
-                      {term}
-                    </button>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => removeSearch(term)}
-                      className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label={`${term} 삭제`}
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+              aria-label="검색어 지우기"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          {searchQuery.trim().length === 1 && (
+            <p className="absolute -bottom-5 left-4 text-xs text-muted-foreground animate-fade-in">
+              한 글자 더 입력하면 검색됩니다
+            </p>
           )}
         </div>
 
-        {/* 필터 패널 */}
-        {showResults && (
-          <div className="space-y-3 pb-2 border-b border-border/60">
-            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Filter className="w-4 h-4" />
-              필터
-            </div>
-            {/* 향미 태그 선택 */}
-            <div>
-              <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
-              <div className="flex flex-wrap gap-2">
-                {popularTags.slice(0, 12).map((tag) => (
-                  <button
-                    key={tag.name}
-                    type="button"
-                    onClick={() => handleTagClick(tag.name)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                      urlTags.includes(tag.name)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background border-border/60 hover:bg-muted/80'
-                    }`}
-                  >
-                    #{tag.name}
-                    {tag.noteCount > 0 && (
-                      <span className="text-xs opacity-70">({tag.noteCount})</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {TEA_TYPES.map((type) => {
-                const isSelected = filterType === type;
-                const colorClass = TEA_TYPE_COLORS[type];
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => {
-                      setFilterType(isSelected ? null : type);
-                    }}
-                    className={cn(
-                      'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
-                      isSelected
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background border-border/60 hover:bg-muted/80',
-                    )}
-                  >
-                    {!isSelected && (
-                      <span className={cn('w-1.5 h-5 rounded-full shrink-0', colorClass)} aria-hidden />
-                    )}
-                    {type}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">평점:</span>
-              {MIN_RATING_OPTIONS.map((opt) => (
-                <button
-                  key={opt.label}
-                  type="button"
-                  onClick={() => setFilterMinRating(opt.value)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    filterMinRating === opt.value
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 hover:bg-muted/80'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">정렬:</span>
-              {(hasTagParams ? SORT_OPTIONS_WITH_MATCH : SORT_OPTIONS).map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setFilterSort(opt.key)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    filterSort === opt.key
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 hover:bg-muted/80'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <Button size="sm" onClick={applyFilters}>
-              적용
-            </Button>
+        {/* 검색/탐색 탭 */}
+        <div className="flex gap-1 p-1 bg-muted rounded-lg">
+          <button
+            type="button"
+            onClick={() => setActiveTab('search')}
+            className={cn(
+              'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
+              activeTab === 'search'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            검색
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('explore')}
+            className={cn(
+              'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
+              activeTab === 'explore'
+                ? 'bg-background text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            탐색
+          </button>
+        </div>
+
+        {/* 카테고리 선택 */}
+        {activeTab === 'search' && (
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 -mx-1 px-1">
+            {SEARCH_CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                type="button"
+                onClick={() => setSearchCategory(cat.key)}
+                className={cn(
+                  'shrink-0 px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors',
+                  searchCategory === cat.key
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                )}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* 검색/필터 결과 */}
-        {showResults && (
-          <>
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <TeaCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : teas.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-{teas.map((tea, i) => (
-                <div
-                  key={tea.id}
-                  className="animate-fade-in-up opacity-0"
-                  style={{ animationDelay: `${i * 50}ms` }}
-                >
-                  <TeaCard tea={tea} />
-                </div>
+        {/* 검색 탭 - 최근 검색어 (필터 위) */}
+        {activeTab === 'search' && !showResults && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
+              <button
+                type="button"
+                onClick={clearAll}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                전체 삭제
+              </button>
+            </div>
+            <ul className="space-y-1">
+              {recentSearches.map((term) => (
+                <li key={term} className="flex items-center gap-2 py-2">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(term); handleSearch(term); }}
+                    className="flex-1 text-left text-sm truncate"
+                  >
+                    {term}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeSearch(term)}
+                    className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={`${term} 삭제`}
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </li>
               ))}
-              </div>
-            ) : (
-              <EmptyState
-                type="search"
-                message="검색 결과가 없어요."
-                action={{ label: '검색어 바꿔보기', onClick: goBackToExplore }}
-              />
+            </ul>
+          </div>
+        )}
+
+        {/* 필터 패널 */}
+        {activeTab === 'search' && (searchCategory === 'tea' || searchCategory === 'note' || searchCategory === 'cellar') && (
+          <FilterPanel
+            category={searchCategory}
+            filterOpen={filterOpen}
+            setFilterOpen={setFilterOpen}
+            activeFilterCount={activeFilterCount}
+            filterType={filterType}
+            setFilterType={filters.setFilterType}
+            filterMinRating={filterMinRating}
+            setFilterMinRating={filters.setFilterMinRating}
+            filterSort={filterSort}
+            setFilterSort={filters.setFilterSort}
+            noteSort={noteSort}
+            setNoteSort={setNoteSort}
+            cellarSort={cellarSort}
+            setCellarSort={setCellarSort}
+            hasTagParams={hasTagParams}
+            urlTags={urlTags}
+            popularTags={popularTags}
+            handleTagClick={onTagClick}
+            onApply={handleApplyFilters}
+          />
+        )}
+
+        {/* 검색/필터 결과 */}
+        {showResults && activeTab === 'search' && (
+          <>
+            {searchCategory === 'tea' && (
+              <>
+                {isLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <TeaCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : teas.length > 0 ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">결과 {teas.length}개</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {teas.map((tea, i) => (
+                        <div
+                          key={tea.id}
+                          className="animate-fade-in-up opacity-0"
+                          style={{ animationDelay: `${i * 50}ms` }}
+                        >
+                          <TeaCard tea={tea} />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : hasSearched || hasFilterParams ? (
+                  <>
+                    <EmptyState
+                      type="search"
+                      message="검색 결과가 없어요."
+                      action={{ label: '검색어 바꿔보기', onClick: goBackToExplore }}
+                    />
+                    <CategoryCreateButton category="tea" />
+                  </>
+                ) : null}
+              </>
             )}
 
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => navigate('/tea/new')}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              🍵 새 차 등록
-            </Button>
+            {searchCategory === 'note' && (
+              <>
+                {categoryLoading ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {[1, 2, 3].map((i) => (
+                      <NoteCardSkeleton key={i} />
+                    ))}
+                  </div>
+                ) : noteResults.length > 0 ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">결과 {noteResults.length}개</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {noteResults.map((note) => (
+                        <NoteCard key={note.id} note={note} showTeaName />
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <EmptyState type="search" message="차록이 없어요." />
+                    <CategoryCreateButton category="note" />
+                  </>
+                )}
+              </>
+            )}
+
+            {searchCategory === 'cellar' && (
+              <>
+                {categoryLoading ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="h-16 rounded-xl bg-muted/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : cellarResults.length > 0 ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">결과 {cellarResults.length}개</p>
+                    <div className="space-y-2">
+                      {cellarResults.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => navigate(`/cellar/${item.id}`)}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card hover:bg-muted/40 transition-colors text-left"
+                        >
+                          <Package className="w-5 h-5 text-muted-foreground shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{item.tea?.name}</p>
+                            {item.tea?.type && (
+                              <p className="text-xs text-muted-foreground">{item.tea.type}</p>
+                            )}
+                          </div>
+                          <span className="text-sm text-muted-foreground shrink-0">
+                            {item.quantity}{item.unit}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <EmptyState type="search" message="찻장이 비어있어요." />
+                    <CategoryCreateButton category="cellar" />
+                  </>
+                )}
+              </>
+            )}
+
+            {searchCategory === 'seller' && (
+              <>
+                {categoryLoading ? (
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-9 w-24 rounded-lg bg-muted/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : sellerResults.length > 0 ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">결과 {sellerResults.length}개</p>
+                    <div className="flex flex-wrap gap-2">
+                      {sellerResults.map((seller) => (
+                        <button
+                          key={seller.name}
+                          type="button"
+                          onClick={() => navigate(`/teahouse/${encodeURIComponent(seller.name)}`)}
+                          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+                        >
+                          <Store className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{seller.name}</span>
+                          <span className="text-xs text-muted-foreground">{seller.teaCount}종</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <EmptyState type="search" message="찻집 검색 결과가 없어요." />
+                    <CategoryCreateButton category="seller" />
+                  </>
+                )}
+              </>
+            )}
+
+            {searchCategory === 'tag' && (
+              <>
+                {categoryLoading ? (
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="h-8 w-16 rounded-full bg-muted/50 animate-pulse" />
+                    ))}
+                  </div>
+                ) : tagResults.length > 0 ? (
+                  <>
+                    <p className="text-xs text-muted-foreground">결과 {tagResults.length}개</p>
+                    <div className="flex flex-wrap gap-2">
+                      {tagResults.map((tag) => (
+                        <button
+                          key={tag.name}
+                          type="button"
+                          onClick={() => navigate(`/tag/${encodeURIComponent(tag.name)}`)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-border/60 bg-background hover:bg-muted/60 transition-colors"
+                        >
+                          #{tag.name}
+                          {tag.noteCount > 0 && (
+                            <span className="text-xs opacity-60">({tag.noteCount})</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <EmptyState type="search" message="향미 검색 결과가 없어요." />
+                )}
+              </>
+            )}
+
           </>
         )}
 
-        {/* 탐색 섹션 (검색 전) */}
-        {!showResults && (
+
+        {/* 탐색 섹션 (탐색 탭) */}
+        {activeTab === 'explore' && (
           <>
             {sectionsLoading ? (
               <div className="space-y-8">
