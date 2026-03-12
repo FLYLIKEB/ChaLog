@@ -107,7 +107,7 @@ export function SpeedDialFAB() {
         style={{ bottom: 'calc(var(--bottom-nav-spacer) + 0.75rem)' }}
       >
         {/* 메뉴 아이템 (FAB 위쪽으로 펼침) */}
-        <div className="flex flex-col items-end gap-3 mb-3">
+        <div className={cn('flex flex-col items-end gap-3 mb-3', !isOpen && 'pointer-events-none')}>
           {menuItems.map((item, index) => {
             // 아래(FAB에서 가까운) 항목일수록 먼저 나타남
             const delayMs = (menuItems.length - 1 - index) * 50;
