@@ -41,6 +41,9 @@ export class User {
   @Column({ type: 'datetime', nullable: true })
   bannedAt: Date | null;
 
+  @Column({ type: 'boolean', default: true })
+  isProfilePublic: boolean;
+
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];
 

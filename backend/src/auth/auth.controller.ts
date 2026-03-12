@@ -7,6 +7,7 @@ import { KakaoLoginDto } from './dto/kakao-login.dto';
 import { GoogleLoginDto } from './dto/google-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { FindEmailDto } from './dto/find-email.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('auth')
@@ -100,5 +101,17 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
     await this.authService.resetPassword(dto.token, dto.newPassword);
     return { message: '비밀번호가 성공적으로 변경되었습니다.' };
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
+  @Post('find-email')
+  async findEmail(@Body() dto: FindEmailDto): Promise<{ maskedEmail: string | null; message: string }> {
+    const result = await this.authService.findEmail(dto.name);
+    return {
+      ...result,
+      message: result.maskedEmail
+        ? '일치하는 계정을 찾았습니다.'
+        : '일치하는 계정이 없습니다.',
+    };
   }
 }

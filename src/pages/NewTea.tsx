@@ -190,9 +190,9 @@ export function NewTea() {
   const handleUseExisting = () => {
     if (duplicateTeaId) {
       if (returnTo) {
-        navigate(`${returnTo}?teaId=${duplicateTeaId}`);
+        navigate(`${returnTo}?teaId=${duplicateTeaId}`, { replace: true });
       } else {
-        navigate(`/tea/${duplicateTeaId}`);
+        navigate(`/tea/${duplicateTeaId}`, { replace: true });
       }
     }
   };

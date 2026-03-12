@@ -45,6 +45,7 @@ export function UserAvatar({ name, profileImageUrl, size = "md", className, ...p
           alt={name}
           onError={handleImageError}
           className="object-cover"
+          loading="lazy"
         />
       )}
       <AvatarFallback

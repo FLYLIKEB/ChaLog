@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, MessageSquare, FileText, Package, ChevronLeft, ChevronRight, Bell, Settings } from 'lucide-react';
+import { Home, Search, MessageSquare, FileText, Package, ChevronLeft, ChevronRight, Bell, Settings, Bookmark, Clock, EyeOff } from 'lucide-react';
 import { cn } from './ui/utils';
 import { useSidebar } from '../contexts/SidebarContext';
 import { ChaLogLogo } from './ChaLogLogo';
@@ -75,6 +75,47 @@ export function AppSidebar() {
           </Link>
         ))}
       </nav>
+
+      {/* 더보기: 숨겨진 페이지들 */}
+      <div className={cn('py-2 border-t border-sidebar-border overflow-hidden', isExpanded ? 'px-2' : 'px-1')}>
+        {isExpanded && <p className="text-xs text-sidebar-foreground/40 px-3 pb-1">더보기</p>}
+        {[
+          {
+            path: '/saved',
+            label: '저장함',
+            Icon: Bookmark,
+            active: location.pathname === '/saved',
+          },
+          {
+            path: '/sessions',
+            label: '시음 세션',
+            Icon: Clock,
+            active: location.pathname === '/sessions' || location.pathname.startsWith('/session/'),
+          },
+          {
+            path: '/blind/new',
+            label: '블라인드 테이스팅',
+            Icon: EyeOff,
+            active: location.pathname.startsWith('/blind/'),
+          },
+        ].map(({ path, label, Icon, active }) => (
+          <Link
+            key={path}
+            to={path}
+            title={!isExpanded ? label : undefined}
+            className={cn(
+              'flex items-center gap-3 py-2.5 rounded-lg transition-colors mb-1',
+              isExpanded ? 'px-3' : 'justify-center px-0',
+              active
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+            )}
+          >
+            <Icon className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="truncate text-sm">{label}</span>}
+          </Link>
+        ))}
+      </div>
 
       {/* 하단: 알림, 설정 */}
       <div className={cn('py-2 border-t border-sidebar-border overflow-hidden', isExpanded ? 'px-2' : 'px-1')}>

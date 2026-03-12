@@ -148,6 +148,7 @@ export interface User {
   followerCount?: number;
   followingCount?: number;
   isFollowing?: boolean;
+  isProfilePublic?: boolean;
 }
 
 export interface UserOnboardingPreference {

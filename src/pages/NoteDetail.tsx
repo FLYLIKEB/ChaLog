@@ -20,7 +20,7 @@ import {
 } from '../components/ui/alert-dialog';
 import { Link } from 'react-router-dom';
 import { BREW_COLORS } from '../components/BrewColorPicker';
-import { notesApi, teasApi } from '../lib/api';
+import { notesApi } from '../lib/api';
 import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -62,13 +62,8 @@ export function NoteDetail() {
       setIsLiked(normalizedNote.isLiked ?? false);
       setLikeCount(normalizedNote.likeCount ?? 0);
       setIsBookmarked(normalizedNote.isBookmarked ?? false);
-      if (normalizedNote.teaId) {
-        try {
-          const teaData = await teasApi.getById(normalizedNote.teaId);
-          setTea(teaData as Tea);
-        } catch (error) {
-          logger.error('Failed to fetch tea:', error);
-        }
+      if (normalizedNote.tea) {
+        setTea(normalizedNote.tea);
       }
     } catch (error: any) {
       logger.error('Failed to fetch note:', error);

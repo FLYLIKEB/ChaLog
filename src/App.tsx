@@ -52,6 +52,7 @@ const EditPost = lazy(() => import('./pages/EditPost').then((m) => ({ default: m
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then((m) => ({ default: m.ForgotPassword })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
+const FindEmail = lazy(() => import('./pages/FindEmail').then((m) => ({ default: m.FindEmail })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const TagDetail = lazy(() => import('./pages/TagDetail').then((m) => ({ default: m.TagDetail })));
 const ShopDetail = lazy(() => import('./pages/ShopDetail').then((m) => ({ default: m.ShopDetail })));
@@ -129,6 +130,7 @@ function FloatingActionButtonSwitcher() {
     location.pathname === '/onboarding' ||
     location.pathname === '/forgot-password' ||
     location.pathname === '/reset-password' ||
+    location.pathname === '/find-email' ||
     location.pathname.startsWith('/admin');
   
   const override = floatingActionRouteOverrides[location.pathname];
@@ -155,7 +157,7 @@ function FloatingActionButtonSwitcher() {
 function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, isLoading, hasCompletedOnboarding, isOnboardingLoading } = useAuth();
-  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/onboarding'];
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/onboarding', '/find-email'];
 
   if (isLoading || isOnboardingLoading) {
     return null;
@@ -255,6 +257,7 @@ function AppContent() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/find-email" element={<FindEmail />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
                 <Route path="/search" element={<Navigate to="/sasaek" replace />} />
