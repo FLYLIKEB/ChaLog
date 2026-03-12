@@ -1,551 +1,196 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Check, Loader2, Plus } from 'lucide-react';
+import React, { useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
-import { AxisStarRow } from '../components/AxisStarRow';
 import { StarRating } from '../components/StarRating';
 import { AddTemplateModal } from '../components/AddTemplateModal';
 import { ImageUploader } from '../components/ImageUploader';
 import { TagInput } from '../components/TagInput';
-import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
 import { TemplateSelect } from '../components/TemplateSelect';
 import { RatingGuideModal } from '../components/RatingGuideModal';
-import { teasApi, notesApi } from '../lib/api';
-import { Tea, RatingSchema, RatingAxis } from '../types';
-import { toast } from 'sonner';
+import { TeaSearchSection } from '../components/TeaSearchSection';
+import { AxisRatingSection } from '../components/AxisRatingSection';
 import { useAuth } from '../contexts/AuthContext';
-import { logger } from '../lib/logger';
-import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
-import { TeaTypeBadge } from '../components/TeaTypeBadge';
-
-const SAMPLE_TEA_ID = -1;
+import { useNoteForm } from '../hooks/useNoteForm';
+import { RATING_DEFAULT } from '../constants';
 
 export function NewNote() {
-  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const preselectedTeaId = searchParams.get('teaId');
   const isSampleMode = searchParams.get('sample') === '1';
-
-  const [teas, setTeas] = useState<Tea[]>([]);
-  const teasRef = useRef<Tea[]>([]);
-  const [selectedTea, setSelectedTea] = useState<number | null>(() => {
-    if (isSampleMode) return SAMPLE_TEA_ID;
-    return preselectedTeaId ? parseInt(preselectedTeaId, 10) : null;
-  });
-  const [searchQuery, setSearchQuery] = useState(() =>
-    isSampleMode ? '샘플 녹차 (체험용)' : ''
-  );
-  const [schemas, setSchemas] = useState<RatingSchema[]>([]);
-  const [pinnedSchemaIds, setPinnedSchemaIds] = useState<number[]>([]);
-  const [selectedSchemaIds, setSelectedSchemaIds] = useState<number[]>([]);
-  const [axes, setAxes] = useState<RatingAxis[]>([]);
-  const [axisValues, setAxisValues] = useState<Record<number, number>>({});
-  const [overallRating, setOverallRating] = useState<number | null>(() =>
-    isSampleMode ? RATING_DEFAULT : null
-  );
-  const [memo, setMemo] = useState('');
-  const [images, setImages] = useState<string[]>([]);
-  const [imageThumbnails, setImageThumbnails] = useState<(string | null)[]>([]);
-  const [tags, setTags] = useState<string[]>([]);
-  const [isPublic, setIsPublic] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [addTemplateOpen, setAddTemplateOpen] = useState(false);
   const teaInputRef = useRef<HTMLInputElement>(null);
 
-  const defaultSchema = schemas.length > 0 ? schemas[0] : null;
-
-  const handleTemplateAdded = (schema: RatingSchema) => {
-    setSchemas(prev => [schema, ...prev]);
-    setPinnedSchemaIds(prev => [schema.id, ...prev]);
-    setSelectedSchemaIds(prev => (prev.includes(schema.id) ? prev : [schema.id, ...prev]));
-  };
-
-  useEffect(() => {
-    const fetchTeas = async () => {
-      try {
-        const data = await teasApi.getAll();
-        const teasArray = Array.isArray(data) ? data : [];
-        setTeas(teasArray);
-        teasRef.current = teasArray;
-      } catch (error) {
-        logger.error('Failed to fetch teas:', error);
-      }
-    };
-    fetchTeas();
-  }, []);
-
-  useEffect(() => {
-    if (overallRating === null) return;
-    const fetchSchemas = async () => {
-      try {
-        const res = await notesApi.getActiveSchemas();
-        const list = res?.schemas ?? [];
-        const pinned = res?.pinnedSchemaIds ?? [];
-        if (list.length > 0) {
-          setSchemas(list);
-          setPinnedSchemaIds(pinned);
-        } else {
-          logger.error('No active schema found');
-          toast.error('활성 평가 스키마를 찾을 수 없습니다.');
-        }
-      } catch (error) {
-        logger.error('Failed to fetch schemas:', error);
-        toast.error('평가 스키마를 불러오는데 실패했습니다.');
-      }
-    };
-    fetchSchemas();
-  }, [overallRating]);
-
-  const primarySchemaId = selectedSchemaIds[0] ?? null;
-
-  useEffect(() => {
-    if (selectedSchemaIds.length === 0) {
-      setAxes([]);
-      setAxisValues({});
-      return;
-    }
-    const fetchAxes = async () => {
-      try {
-        const axesBySchema = await Promise.all(
-          selectedSchemaIds.map(async (schemaId) => {
-            const axesData = (await notesApi.getSchemaAxes(schemaId)) as RatingAxis[];
-            return Array.isArray(axesData) ? axesData : [];
-          })
-        );
-        const allAxes = axesBySchema.flat();
-        setAxes(allAxes);
-        const initialValues: Record<number, number> = {};
-        allAxes.forEach((axis: RatingAxis) => {
-          initialValues[axis.id] = RATING_DEFAULT;
-        });
-        setAxisValues(initialValues);
-      } catch (error) {
-        logger.error('Failed to fetch schema axes:', error);
-        toast.error('평가 축 정보를 불러오는데 실패했습니다.');
-      }
-    };
-    fetchAxes();
-  }, [selectedSchemaIds.join(',')]);
-
-  useEffect(() => {
-    if (preselectedTeaId) {
-      const teaId = parseInt(preselectedTeaId, 10);
-      if (isNaN(teaId)) return;
-
-      // useRef를 사용하여 최신 teas 배열 참조 (의존성 배열에 포함하지 않아도 됨)
-      const tea = teasRef.current.find(t => t.id === teaId);
-      if (tea) {
-        setSelectedTea(teaId);
-        setSearchQuery(tea.name);
-      } else {
-        // teas 목록에 없으면 개별적으로 가져오기 (새로 등록한 차일 수 있음)
-        const fetchTea = async () => {
-          try {
-            const teaData = await teasApi.getById(teaId);
-            if (teaData) {
-              setTeas(prev => {
-                if (prev.some(t => t.id === teaId)) return prev;
-                const updated = [...prev, teaData as Tea];
-                teasRef.current = updated;
-                return updated;
-              });
-              setSelectedTea(teaId);
-              setSearchQuery((teaData as Tea).name);
-            }
-          } catch (error) {
-            logger.error('Failed to fetch tea:', error);
-          }
-        };
-        fetchTea();
-      }
-    }
-  }, [preselectedTeaId]);
-
-  // 검색 필터링
-  const filteredTeas = teas.filter(tea => {
-    const query = searchQuery.toLowerCase();
-    return (
-      tea.name.toLowerCase().includes(query) ||
-      tea.type.toLowerCase().includes(query) ||
-      (tea.seller && tea.seller.toLowerCase().includes(query))
-    );
+  const {
+    teaSelector,
+    selectedTea,
+    schemas,
+    pinnedSchemaIds,
+    setPinnedSchemaIds,
+    selectedSchemaIds,
+    setSelectedSchemaIds,
+    axes,
+    axisValues,
+    setAxisValues,
+    overallRating,
+    setOverallRating,
+    memo,
+    setMemo,
+    images,
+    imageThumbnails,
+    setImagesAndThumbnails,
+    tags,
+    setTags,
+    isPublic,
+    setIsPublic,
+    isSaving,
+    addTemplateOpen,
+    setAddTemplateOpen,
+    handleTemplateAdded,
+    handleSave,
+  } = useNoteForm({
+    mode: 'new',
+    preselectedTeaId: preselectedTeaId ? parseInt(preselectedTeaId, 10) : null,
+    isSampleMode,
   });
 
-  const selectedTeaData =
-    selectedTea === SAMPLE_TEA_ID
-      ? {
-          id: SAMPLE_TEA_ID,
-          name: '샘플 녹차 (체험용)',
-          type: '녹차',
-          averageRating: 0,
-          reviewCount: 0,
-        }
-      : selectedTea
-        ? teas.find((t) => t.id === selectedTea) ?? null
-        : null;
-
-  const handleSave = async () => {
-    if (isSampleMode) {
-      toast.success('체험 완료! 차록 작성 화면을 둘러보셨나요?');
-      setTimeout(() => navigate('/'), NAVIGATION_DELAY);
-      return;
-    }
-    if (!isAuthenticated) {
-      toast.error('로그인이 필요합니다.');
-      navigate('/login');
-      return;
-    }
-
-    if (!selectedTea) {
-      toast.error('차를 선택해주세요.');
-      return;
-    }
-
-    if (overallRating === null) {
-      toast.error('0.5~5점 평점을 선택해주세요.');
-      return;
-    }
-
-    const schemaIdsToSend = selectedSchemaIds.length > 0 ? selectedSchemaIds : (defaultSchema ? [defaultSchema.id] : []);
-    if (schemaIdsToSend.length === 0) {
-      toast.error('최소 1개의 평가 스키마를 선택해주세요.');
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-
-      const axisValuesArray =
-        selectedSchemaIds.length > 0 && axes.length > 0
-          ? axes
-              .filter((axis) => axisValues[axis.id] !== undefined)
-              .map((axis) => ({
-                axisId: axis.id,
-                value: Math.max(
-                  axis.minValue ?? RATING_MIN,
-                  Math.min(axis.maxValue ?? RATING_MAX, axisValues[axis.id]),
-                ),
-              }))
-          : [];
-
-      const processedMemo = memo && memo.trim() ? memo.trim() : null;
-
-      await notesApi.create({
-        teaId: selectedTea,
-        schemaIds: schemaIdsToSend,
-        overallRating,
-        isRatingIncluded: true,
-        axisValues: axisValuesArray,
-        memo: processedMemo,
-        images: images.length > 0 ? images : null,
-        imageThumbnails:
-          images.length > 0 && imageThumbnails.length === images.length
-            ? imageThumbnails.map((t, i) => t ?? images[i])
-            : images.length > 0
-              ? images
-              : null,
-        tags: tags.length > 0 ? tags : undefined,
-        isPublic,
-      });
-
-      toast.success('기록이 저장되었습니다.');
-      setTimeout(() => navigate('/my-notes'), NAVIGATION_DELAY);
-    } catch (error) {
-      logger.error('Failed to save note:', error);
-      toast.error(error instanceof Error ? error.message : '저장에 실패했습니다.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const { query: searchQuery, setQuery: setSearchQuery, results: filteredTeas, selectedTeaData, selectTea } = teaSelector;
 
   return (
     <div className="min-h-screen">
       <Header showBack title="새 차록 작성" showProfile showLogo />
-      
+
       <div className="p-4 pb-24 space-y-6">
         {isSampleMode && (
           <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-200">
             샘플 평가 체험 중입니다. 저장되지 않아요.
           </div>
         )}
-        {/* 차 선택 영역 */}
-        <section className="bg-card rounded-lg p-3">
-          <Label className="mb-1.5 block text-sm">차 선택</Label>
-          {isSampleMode ? (
+
+        {isSampleMode ? (
+          <section className="bg-card rounded-lg p-3">
+            <Label className="mb-1.5 block text-sm">차 선택</Label>
             <div className="py-2.5 px-3 bg-muted/50 rounded-lg text-sm text-muted-foreground">
               샘플 녹차 (체험용)
             </div>
-          ) : (
-          <>
-          <Input
-            ref={teaInputRef}
-            type="text"
-            placeholder="차 이름으로 검색..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setSelectedTea(null);
-            }}
+          </section>
+        ) : (
+          <TeaSearchSection
+            inputRef={teaInputRef}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedTea={selectedTea}
+            filteredTeas={filteredTeas}
+            selectedTeaData={selectedTeaData}
+            onSelectTea={selectTea}
+            newTeaBasePath="/tea/new?returnTo=/note/new"
           />
-          
-          {searchQuery && !selectedTea && filteredTeas.length > 0 && (
-            <div
-              className="fixed z-50 w-[calc(100%-2rem)] max-w-md bg-card border border-border rounded-lg shadow-lg divide-y divide-border max-h-48 overflow-y-auto"
-              style={{
-                top: `${teaInputRef.current ? teaInputRef.current.getBoundingClientRect().bottom + 8 : 0}px`,
-                left: '50%',
-                transform: 'translateX(-50%)',
-              }}
-            >
-              {filteredTeas.map(tea => (
-                <button
-                  key={tea.id}
-                  onClick={() => {
-                    setSelectedTea(tea.id);
-                    setSearchQuery(tea.name);
-                  }}
-                  className="w-full text-left p-3 hover:bg-muted/50 transition-colors min-h-[44px]"
-                >
-                  <p className="text-sm">{tea.name}</p>
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
-                    {tea.type && <TeaTypeBadge type={tea.type} />}
-                    {tea.seller && ` · ${tea.seller}`}
-                    {tea.price != null && tea.price > 0 && ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
-                    {!tea.seller && !(tea.price != null && tea.price > 0) && ' · 구매처 미상'}
-                  </p>
-                </button>
-              ))}
-            </div>
-          )}
+        )}
 
-          {/* 검색 결과가 없을 때 새 차 추가 옵션 */}
-          {searchQuery && !selectedTea && filteredTeas.length === 0 && (
-            <div className="mt-2 py-3 px-4 border border-dashed border-border rounded-lg text-center">
-              <p className="text-sm text-muted-foreground mb-2">
-                "{searchQuery}"에 대한 검색 결과가 없습니다.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  navigate(`/tea/new?returnTo=/note/new&searchQuery=${encodeURIComponent(searchQuery)}`);
-                }}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                새 차로 등록하기
-              </Button>
-            </div>
-          )}
-
-          {selectedTeaData && (
-            <div className="mt-2 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-              <div className="flex items-center gap-2 mb-1">
-                <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="text-sm text-emerald-900 dark:text-emerald-100">{selectedTeaData.name}</span>
-              </div>
-              <div className="text-xs text-emerald-700 dark:text-emerald-300 space-y-0.5">
-                {selectedTeaData.year && <p>연도: {selectedTeaData.year}년</p>}
-                <p>종류: {selectedTeaData.type}</p>
-                {selectedTeaData.seller && (
-                  <p>
-                    구매처:{' '}
-                    <Link
-                      to={`/teahouse/${encodeURIComponent(selectedTeaData.seller)}`}
-                      className="text-primary hover:underline"
-                    >
-                      {selectedTeaData.seller}
-                    </Link>
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          </>
-          )}
-        </section>
-
-        {/* 1-5 평점 */}
         <section className="bg-card rounded-lg p-4">
           <Label className="mb-3 block text-base font-semibold text-foreground">
             평점 <span className="text-destructive">*</span>
           </Label>
-          <p className="text-sm text-muted-foreground mb-2">
-            이 차에 몇 점을 주시겠어요?
-          </p>
+          <p className="text-sm text-muted-foreground mb-2">이 차에 몇 점을 주시겠어요?</p>
           <p className="text-xs text-muted-foreground mb-3">
             같은 온도·시간에서 비교하면 일관된 평가가 가능해요.{' '}
             <RatingGuideModal />
           </p>
-          <StarRating
-            value={overallRating}
-            onChange={setOverallRating}
-            max={5}
-            size="lg"
-          />
+          <StarRating value={overallRating} onChange={setOverallRating} max={5} size="lg" />
         </section>
 
-        {/* 평점 선택 후 아래 컴포넌트들 표시 */}
         {overallRating !== null && (
           <>
-        {/* 테이스팅 템플릿 선택 */}
-        <section className="bg-card rounded-lg p-4">
-          <Label className="mb-2 block text-base font-semibold text-foreground">
-            테이스팅 템플릿
-          </Label>
-          <p className="text-sm text-muted-foreground mb-2">
-            템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 검색·핀 고정 가능.
-          </p>
-          {schemas.length > 0 ? (
-            <TemplateSelect
-              schemas={schemas}
-              pinnedSchemaIds={pinnedSchemaIds}
-              onPinnedChange={setPinnedSchemaIds}
-              value={selectedSchemaIds}
-              onChange={(v) => setSelectedSchemaIds(Array.isArray(v) ? v : v != null ? [v] : [])}
-              onAddTemplate={() => setAddTemplateOpen(true)}
-              isAuthenticated={isAuthenticated}
-              multiple
-            />
-          ) : (
-            <p className="text-sm text-muted-foreground py-2">
-              사용 가능한 템플릿이 없습니다.
-            </p>
-          )}
-        </section>
-
-        <AddTemplateModal
-          open={addTemplateOpen}
-          onOpenChange={setAddTemplateOpen}
-          onSuccess={handleTemplateAdded}
-        />
-
-        {/* 구체적 평가 (선택된 모든 템플릿의 축 표시) */}
-        {selectedSchemaIds.length > 0 && axes.length > 0 && (
-          <section className="bg-card rounded-lg p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <h3 className="text-base font-semibold text-foreground">
-                구체적 평가
-              </h3>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  0.5 ~ 5점
-                </span>
-                <RatingGuideModal
-                  trigger={
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground hover:text-foreground underline"
-                    >
-                      축 설명 보기
-                    </button>
-                  }
-                  schemaAxes={[...new Set(axes.map((a) => a.nameKo))]}
-                />
-              </div>
-            </div>
-            <div className="space-y-4">
-              {selectedSchemaIds.map((schemaId) => {
-                const schemaAxes = axes
-                  .filter((a) => a.schemaId === schemaId)
-                  .sort((a, b) => a.displayOrder - b.displayOrder);
-                const schema = schemas.find((s) => s.id === schemaId);
-                if (schemaAxes.length === 0) return null;
-                return (
-                  <div key={schemaId} className="space-y-0 divide-y divide-border/60 rounded-lg border border-border/60 overflow-hidden">
-                    {selectedSchemaIds.length > 1 && (
-                      <div className="px-3 py-2 bg-muted/50 text-sm font-medium text-foreground">
-                        {schema?.nameKo ?? `템플릿 ${schemaId}`}
-                      </div>
-                    )}
-                    {schemaAxes.map((axis) => (
-                      <AxisStarRow
-                        key={axis.id}
-                        label={axis.nameKo}
-                        description={axis.descriptionKo ?? undefined}
-                        value={axisValues[axis.id] ?? RATING_DEFAULT}
-                        onChange={(value) =>
-                          setAxisValues((prev) => ({ ...prev, [axis.id]: value }))
-                        }
-                        minValue={axis.minValue}
-                        maxValue={axis.maxValue}
-                      />
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* 사진 업로드 */}
-        <section className="bg-card rounded-lg p-4">
-          <ImageUploader
-            images={images}
-            imageThumbnails={imageThumbnails}
-            onChange={(newImages, newThumbnails) => {
-              setImages(newImages);
-              setImageThumbnails(newThumbnails);
-            }}
-            maxImages={5}
-          />
-        </section>
-
-        {/* 태그 입력 */}
-        <section 
-          className="bg-card rounded-lg p-4"
-          onKeyDown={(e) => {
-            // 태그 입력 섹션에서 Enter 키가 폼 제출을 트리거하지 않도록 방지
-            if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
-              e.preventDefault();
-              e.stopPropagation();
-            }
-          }}
-        >
-          <TagInput
-            tags={tags}
-            onChange={setTags}
-            maxTags={10}
-          />
-        </section>
-
-        {/* 메모 입력 */}
-        <section className="bg-card rounded-lg p-4">
-          <Label className="mb-2 block">메모</Label>
-          <Textarea
-            placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
-            value={memo}
-            onChange={(e) => setMemo(e.target.value)}
-            rows={6}
-          />
-        </section>
-
-        {/* 공개 여부 스위치 */}
-        <section className="bg-card rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <Label>공개 설정</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                다른 사용자에게 이 차록을 공개합니다
+            <section className="bg-card rounded-lg p-4">
+              <Label className="mb-2 block text-base font-semibold text-foreground">
+                테이스팅 템플릿
+              </Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 검색·핀 고정 가능.
               </p>
-            </div>
-            <Switch checked={isPublic} onCheckedChange={setIsPublic} />
-          </div>
-        </section>
+              {schemas.length > 0 ? (
+                <TemplateSelect
+                  schemas={schemas}
+                  pinnedSchemaIds={pinnedSchemaIds}
+                  onPinnedChange={setPinnedSchemaIds}
+                  value={selectedSchemaIds}
+                  onChange={(v) => setSelectedSchemaIds(Array.isArray(v) ? v : v != null ? [v] : [])}
+                  onAddTemplate={() => setAddTemplateOpen(true)}
+                  isAuthenticated={isAuthenticated}
+                  multiple
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground py-2">사용 가능한 템플릿이 없습니다.</p>
+              )}
+            </section>
+
+            <AddTemplateModal
+              open={addTemplateOpen}
+              onOpenChange={setAddTemplateOpen}
+              onSuccess={handleTemplateAdded}
+            />
+
+            <AxisRatingSection
+              selectedSchemaIds={selectedSchemaIds}
+              axes={axes}
+              schemas={schemas}
+              axisValues={axisValues}
+              onAxisChange={(axisId, value) => setAxisValues((prev) => ({ ...prev, [axisId]: value }))}
+            />
+
+            <section className="bg-card rounded-lg p-4">
+              <ImageUploader
+                images={images}
+                imageThumbnails={imageThumbnails}
+                onChange={setImagesAndThumbnails}
+                maxImages={5}
+              />
+            </section>
+
+            <section
+              className="bg-card rounded-lg p-4"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+            >
+              <TagInput tags={tags} onChange={setTags} maxTags={10} />
+            </section>
+
+            <section className="bg-card rounded-lg p-4">
+              <Label className="mb-2 block">메모</Label>
+              <Textarea
+                placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
+                value={memo}
+                onChange={(e) => setMemo(e.target.value)}
+                rows={6}
+              />
+            </section>
+
+            <section className="bg-card rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>공개 설정</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    다른 사용자에게 이 차록을 공개합니다
+                  </p>
+                </div>
+                <Switch checked={isPublic} onCheckedChange={setIsPublic} />
+              </div>
+            </section>
           </>
         )}
-
       </div>
 
-      {/* 저장 버튼 - 하단 고정 플로팅 */}
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/80 dark:bg-background/90 backdrop-blur-sm z-40">
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           className="w-full opacity-70 hover:opacity-100 transition-opacity"
           disabled={isSaving}
         >

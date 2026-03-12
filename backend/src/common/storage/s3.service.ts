@@ -164,7 +164,8 @@ export class S3Service {
       }
       // 표준 S3: pathname = /key
       return pathParts.length > 0 ? pathParts.join('/') : null;
-    } catch {
+    } catch (err) {
+      this.logger.warn(`S3 URL 파싱 실패: ${url} - ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }

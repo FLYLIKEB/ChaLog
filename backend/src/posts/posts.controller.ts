@@ -15,6 +15,7 @@ import {
   HttpStatus,
   UseInterceptors,
   UploadedFile,
+  Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
@@ -26,9 +27,12 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { PostCategory } from './entities/post.entity';
 import { S3Service } from '../common/storage/s3.service';
 import { ImageProcessorService } from '../common/storage/image-processor.service';
+import { ValidatedUserId } from '../common/decorators/validated-user-id.decorator';
 
 @Controller('posts')
 export class PostsController {
+  private readonly logger = new Logger(PostsController.name);
+
   constructor(
     private readonly postsService: PostsService,
     private readonly s3Service: S3Service,
@@ -83,8 +87,8 @@ export class PostsController {
           thumbnailBuffer,
           file.mimetype,
         );
-      } catch {
-        // 썸네일 생성/업로드 실패 시 원본 URL 사용
+      } catch (err) {
+        this.logger.warn(`썸네일 생성/업로드 실패, 원본 URL 사용: ${err instanceof Error ? err.message : String(err)}`);
       }
 
       return { url, thumbnailUrl };
@@ -92,7 +96,6 @@ export class PostsController {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      console.error('Image upload failed:', error);
       const msg = String(error?.message ?? error).toLowerCase();
       if (msg.includes('heif') || msg.includes('heic')) {
         throw new BadRequestException(
@@ -105,9 +108,7 @@ export class PostsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Post()
-  create(@Request() req, @Body() dto: CreatePostDto) {
-    const userId = parseInt(req.user.userId, 10);
-    if (isNaN(userId)) throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+  create(@ValidatedUserId() userId: number, @Body() dto: CreatePostDto) {
     return this.postsService.create(userId, dto);
   }
 
@@ -160,44 +161,36 @@ export class PostsController {
 
   @UseGuards(AuthGuard('jwt'))
   @Patch(':id')
-  update(@Param('id') id: string, @Request() req, @Body() dto: UpdatePostDto) {
+  update(@Param('id') id: string, @ValidatedUserId() userId: number, @Body() dto: UpdatePostDto) {
     const postId = parseInt(id, 10);
-    const userId = parseInt(req.user.userId, 10);
     if (isNaN(postId)) throw new BadRequestException('Invalid id');
-    if (isNaN(userId)) throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     return this.postsService.update(postId, userId, dto);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string, @Request() req) {
+  remove(@Param('id') id: string, @ValidatedUserId() userId: number) {
     const postId = parseInt(id, 10);
-    const userId = parseInt(req.user.userId, 10);
     if (isNaN(postId)) throw new BadRequestException('Invalid id');
-    if (isNaN(userId)) throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     return this.postsService.remove(postId, userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
   @Post(':id/like')
-  toggleLike(@Param('id') id: string, @Request() req) {
+  toggleLike(@Param('id') id: string, @ValidatedUserId() userId: number) {
     const postId = parseInt(id, 10);
-    const userId = parseInt(req.user.userId, 10);
     if (isNaN(postId)) throw new BadRequestException('Invalid id');
-    if (isNaN(userId)) throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     return this.postsService.toggleLike(postId, userId);
   }
 
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
   @Post(':id/bookmark')
-  toggleBookmark(@Param('id') id: string, @Request() req) {
+  toggleBookmark(@Param('id') id: string, @ValidatedUserId() userId: number) {
     const postId = parseInt(id, 10);
-    const userId = parseInt(req.user.userId, 10);
     if (isNaN(postId)) throw new BadRequestException('Invalid id');
-    if (isNaN(userId)) throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     return this.postsService.toggleBookmark(postId, userId);
   }
 }

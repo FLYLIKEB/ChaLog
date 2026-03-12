@@ -23,15 +23,14 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 import { CreateRatingSchemaDto } from './dto/create-rating-schema.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
-import { S3Service } from '../common/storage/s3.service';
-import { ImageProcessorService } from '../common/storage/image-processor.service';
+import { ImageUploadService } from '../common/storage/image-upload.service';
+import { ValidatedUserId } from '../common/decorators/validated-user-id.decorator';
 
 @Controller('notes')
 export class NotesController {
   constructor(
     private readonly notesService: NotesService,
-    private readonly s3Service: S3Service,
-    private readonly imageProcessorService: ImageProcessorService,
+    private readonly imageUploadService: ImageUploadService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -49,52 +48,10 @@ export class NotesController {
       throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     }
 
-    if (!file) {
-      throw new BadRequestException('이미지 파일이 필요합니다.');
-    }
-
-    // 파일 타입 검증
-    if (!this.imageProcessorService.validateImageType(file.mimetype)) {
-      throw new BadRequestException('지원하지 않는 이미지 형식입니다. JPEG, PNG, WebP만 지원합니다.');
-    }
-
-    // 파일 크기 검증
-    if (!this.imageProcessorService.validateImageSize(file.size)) {
-      throw new BadRequestException('파일 크기는 10MB를 초과할 수 없습니다.');
-    }
-
     try {
-      // 이미지 처리 (리사이징, 최적화)
-      const processedBuffer = await this.imageProcessorService.processImage(
-        file.buffer,
-        file.mimetype,
-      );
-
-      // S3에 원본 업로드
-      const key = this.s3Service.generateKey('notes', file.originalname, file.mimetype);
-      const url = await this.s3Service.uploadFile(key, processedBuffer, file.mimetype);
-
-      // 썸네일 생성 및 업로드 (실패 시 원본 URL로 폴백)
-      let thumbnailUrl = url;
-      try {
-        const thumbnailBuffer = await this.imageProcessorService.generateThumbnail(
-          file.buffer,
-          file.mimetype,
-        );
-        const thumbnailKey = this.s3Service.getThumbnailKey(key);
-        thumbnailUrl = await this.s3Service.uploadFile(
-          thumbnailKey,
-          thumbnailBuffer,
-          file.mimetype,
-        );
-      } catch {
-        // 썸네일 생성/업로드 실패 시 원본 URL 사용
-      }
-
-      return { url, thumbnailUrl };
+      const { urls, thumbnailUrl } = await this.imageUploadService.uploadNoteImages([file]);
+      return { url: urls[0], thumbnailUrl };
     } catch (error) {
-      // 사용자 입력 오류(파일 형식, 크기)는 이미 위에서 처리됨
-      // S3 또는 이미지 처리 서버 오류는 500으로 처리
       if (error instanceof BadRequestException) {
         throw error;
       }
@@ -106,17 +63,8 @@ export class NotesController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Request() req, @Body() createNoteDto: CreateNoteDto) {
-    if (!req.user || !req.user.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
-    const parsedUserId = parseInt(req.user.userId, 10);
-    if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
-    return this.notesService.create(parsedUserId, createNoteDto);
+  create(@ValidatedUserId() userId: number, @Body() createNoteDto: CreateNoteDto) {
+    return this.notesService.create(userId, createNoteDto);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -158,7 +106,7 @@ export class NotesController {
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    
+
     let userId: number | undefined;
     if (req.user?.userId) {
       const parsedUserId = parseInt(req.user.userId, 10);
@@ -168,90 +116,50 @@ export class NotesController {
         userId = parsedUserId;
       }
     }
-    
+
     return this.notesService.findOne(parsedId, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Request() req, @Body() updateNoteDto: UpdateNoteDto) {
-    if (!req.user || !req.user.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
+  update(@Param('id') id: string, @ValidatedUserId() userId: number, @Body() updateNoteDto: UpdateNoteDto) {
     const parsedId = parseInt(id, 10);
-    const parsedUserId = parseInt(req.user.userId, 10);
-    
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
-    return this.notesService.update(parsedId, parsedUserId, updateNoteDto);
+    return this.notesService.update(parsedId, userId, updateNoteDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() req) {
-    if (!req.user || !req.user.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
+  remove(@Param('id') id: string, @ValidatedUserId() userId: number) {
     const parsedId = parseInt(id, 10);
-    const parsedUserId = parseInt(req.user.userId, 10);
-    
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
-    return this.notesService.remove(parsedId, parsedUserId);
+    return this.notesService.remove(parsedId, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @HttpCode(201)
   @Post(':id/like')
-  toggleLike(@Param('id') id: string, @Request() req) {
-    if (!req.user || !req.user.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
+  toggleLike(@Param('id') id: string, @ValidatedUserId() userId: number) {
     const parsedId = parseInt(id, 10);
-    const parsedUserId = parseInt(req.user.userId, 10);
-    
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
-    return this.notesService.toggleLike(parsedId, parsedUserId);
+    return this.notesService.toggleLike(parsedId, userId);
   }
 
   @UseGuards(JwtAuthGuard)
   @HttpCode(201)
   @Post(':id/bookmark')
-  toggleBookmark(@Param('id') id: string, @Request() req) {
-    if (!req.user || !req.user.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
+  toggleBookmark(@Param('id') id: string, @ValidatedUserId() userId: number) {
     const parsedId = parseInt(id, 10);
-    const parsedUserId = parseInt(req.user.userId, 10);
-    
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    if (Number.isNaN(parsedUserId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    
-    return this.notesService.toggleBookmark(parsedId, parsedUserId);
+    return this.notesService.toggleBookmark(parsedId, userId);
   }
 
   @UseGuards(OptionalJwtAuthGuard)
@@ -263,13 +171,9 @@ export class NotesController {
 
   @UseGuards(JwtAuthGuard)
   @Post('schemas/:schemaId/pin')
-  async toggleSchemaPin(@Param('schemaId') schemaId: string, @Request() req) {
-    if (!req.user?.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    const userId = parseInt(req.user.userId, 10);
+  async toggleSchemaPin(@Param('schemaId') schemaId: string, @ValidatedUserId() userId: number) {
     const parsedSchemaId = parseInt(schemaId, 10);
-    if (Number.isNaN(userId) || Number.isNaN(parsedSchemaId)) {
+    if (Number.isNaN(parsedSchemaId)) {
       throw new BadRequestException('잘못된 요청입니다.');
     }
     return this.notesService.toggleSchemaPin(userId, parsedSchemaId);
@@ -277,14 +181,7 @@ export class NotesController {
 
   @UseGuards(JwtAuthGuard)
   @Post('schemas')
-  async createSchema(@Request() req, @Body() dto: CreateRatingSchemaDto) {
-    if (!req.user?.userId) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
-    const userId = parseInt(req.user.userId, 10);
-    if (Number.isNaN(userId)) {
-      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
-    }
+  async createSchema(@ValidatedUserId() userId: number, @Body() dto: CreateRatingSchemaDto) {
     return this.notesService.createSchema(userId, dto);
   }
 

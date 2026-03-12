@@ -1,11 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Repository, DataSource } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { TeasService } from './teas.service';
+import { SellerService } from './seller.service';
+import { TeaRecommendationService } from './tea-recommendation.service';
+import { TeaAnalyticsService } from './tea-analytics.service';
 import { Tea } from './entities/tea.entity';
 import { Seller } from './entities/seller.entity';
+import { TeaWishlist } from './entities/tea-wishlist.entity';
 import { UsersService } from '../users/users.service';
 
 const mockSeller = (overrides: Partial<Seller> = {}): Seller =>
@@ -87,11 +92,16 @@ describe('TeasService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TeasService,
+        SellerService,
+        TeaRecommendationService,
+        TeaAnalyticsService,
         { provide: getRepositoryToken(Tea), useValue: mockTeasRepository },
         { provide: getRepositoryToken(Seller), useValue: mockSellerRepository },
+        { provide: getRepositoryToken(TeaWishlist), useValue: {} },
         { provide: DataSource, useValue: mockDataSource },
         { provide: CACHE_MANAGER, useValue: mockCacheManager },
         { provide: UsersService, useValue: mockUsersService },
+        { provide: EventEmitter2, useValue: { emit: jest.fn() } },
       ],
     }).compile();
 

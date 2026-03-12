@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import { PaginationHelper } from '../common/utils/pagination.helper';
 import { Tag } from '../notes/entities/tag.entity';
 import { NoteTag } from '../notes/entities/note-tag.entity';
 import { Note } from '../notes/entities/note.entity';
@@ -54,7 +55,7 @@ export class TagsService {
       throw new NotFoundException(`태그 '${name}'을 찾을 수 없습니다.`);
     }
 
-    const offset = (page - 1) * limit;
+    const { take, skip } = PaginationHelper.normalize(page, limit);
 
     const [noteTags, total] = await this.noteTagsRepository
       .createQueryBuilder('nt')
@@ -66,8 +67,8 @@ export class TagsService {
       .where('nt.tagId = :tagId', { tagId: tag.id })
       .andWhere('note.isPublic = :isPublic', { isPublic: true })
       .orderBy('note.createdAt', 'DESC')
-      .skip(offset)
-      .take(limit)
+      .skip(skip)
+      .take(take)
       .getManyAndCount();
 
     const notes = noteTags.map((nt) => nt.note);
@@ -120,7 +121,7 @@ export class TagsService {
       createdAt: note.createdAt,
     }));
 
-    return { tag: tagDetail, notes: noteDtos, total, page, limit };
+    return { tag: tagDetail, notes: noteDtos, total, page: page ?? 1, limit: take };
   }
 
   async getPopularTags(limit: number, currentUserId?: number): Promise<PopularTagDto[]> {
