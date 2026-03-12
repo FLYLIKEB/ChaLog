@@ -15,9 +15,19 @@ import { PostLike } from './post-like.entity';
 import { PostBookmark } from './post-bookmark.entity';
 import { PostImage } from './post-image.entity';
 import { Note } from '../../notes/entities/note.entity';
-import { PostCategory } from '@chalog/types';
 
-export { PostCategory };
+export const PostCategory = {
+  BREWING_QUESTION: 'brewing_question',
+  RECOMMENDATION: 'recommendation',
+  DISCUSSION: 'discussion',
+  TEA_REVIEW: 'tea_review',
+  TOOL_REVIEW: 'tool_review',
+  TEA_ROOM_REVIEW: 'tea_room_review',
+  ANNOUNCEMENT: 'announcement',
+  BUG_REPORT: 'bug_report',
+} as const;
+
+export type PostCategory = (typeof PostCategory)[keyof typeof PostCategory];
 
 @Entity('posts')
 export class Post {
