@@ -152,6 +152,8 @@ export function useNoteForm({
           }
         }
 
+        initialSchemaSet.current = true;
+
         setMemo(normalizedNote.memo || '');
         const noteImages = normalizedNote.images || [];
         setImages(noteImages);
