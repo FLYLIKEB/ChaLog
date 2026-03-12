@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, BadRequestException } from '@nestjs/common';
+import { ValidationPipe, BadRequestException, Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
@@ -82,7 +82,11 @@ async function bootstrap() {
             children: c.children?.map((cc) => ({ property: cc.property, constraints: cc.constraints })),
           })),
         }));
-        console.error('[ValidationPipe] Validation failed:', JSON.stringify(details, null, 2));
+        if (process.env.NODE_ENV !== 'production') {
+          console.error('[ValidationPipe] Validation failed:', JSON.stringify(details, null, 2));
+        } else {
+          console.error('[ValidationPipe] Validation failed fields:', details.map((e) => e.property));
+        }
         const flatten = (arr: typeof details): string[] =>
           arr.flatMap((e) => [
             ...(e.constraints ? Object.values(e.constraints) : []),
@@ -97,7 +101,7 @@ async function bootstrap() {
 
   const port = parseInt((configService.get('PORT') as string) || '3000', 10);
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  Logger.log(`Application is running on: http://localhost:${port}`, 'Bootstrap');
 }
 
 bootstrap().catch((error) => {
