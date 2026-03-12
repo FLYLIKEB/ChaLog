@@ -67,6 +67,9 @@ export interface TeaFilterParams {
   q?: string;
   type?: string;
   minRating?: number;
+  minPrice?: number;
+  maxPrice?: number;
+  sellerName?: string;
   sort?: 'popular' | 'new' | 'rating';
 }
 

@@ -31,18 +31,26 @@ export class TeasController {
     @Query('q') query?: string,
     @Query('type') type?: string,
     @Query('minRating') minRatingStr?: string,
+    @Query('minPrice') minPriceStr?: string,
+    @Query('maxPrice') maxPriceStr?: string,
+    @Query('sellerName') sellerName?: string,
     @Query('sort') sort?: 'popular' | 'new' | 'rating',
     @Query('limit') limitStr?: string,
   ) {
-    const hasFilters = query || type || minRatingStr || sort;
+    const hasFilters = query || type || minRatingStr || minPriceStr || maxPriceStr || sellerName || sort;
     const teas = hasFilters
       ? await (async () => {
           const minRating = minRatingStr ? parseFloat(minRatingStr) : undefined;
+          const minPrice = minPriceStr ? parseInt(minPriceStr, 10) : undefined;
+          const maxPrice = maxPriceStr ? parseInt(maxPriceStr, 10) : undefined;
           const limit = limitStr ? parseInt(limitStr, 10) : undefined;
           return this.teasService.findWithFilters({
             q: query,
             type,
             minRating: Number.isNaN(minRating as number) ? undefined : minRating,
+            minPrice: Number.isNaN(minPrice as number) ? undefined : minPrice,
+            maxPrice: Number.isNaN(maxPrice as number) ? undefined : maxPrice,
+            sellerName,
             sort,
             limit: Number.isNaN(limit as number) ? undefined : limit,
           });
