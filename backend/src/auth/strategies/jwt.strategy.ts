@@ -1,6 +1,6 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../../users/users.service';
 
@@ -13,12 +13,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const jwtSecret = configService.get<string>('JWT_SECRET');
     
     if (!jwtSecret || jwtSecret.trim().length === 0) {
-      console.error('FATAL: JWT_SECRET environment variable is required and must not be empty');
+      Logger.error('FATAL: JWT_SECRET environment variable is required and must not be empty', 'JwtStrategy');
       process.exit(1);
     }
     
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: any) => req?.cookies?.['access_token'] ?? null,
+      ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
     });

@@ -379,17 +379,16 @@ class ApiClient {
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit & { timeout?: number } = {}
+    options: RequestInit & { timeout?: number; _retry?: boolean } = {}
   ): Promise<T> {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    const token = localStorage.getItem('access_token');
     const timeout = options.timeout ?? API_TIMEOUT;
-    
+
     // 모바일 환경 감지
     const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const networkInfo = typeof navigator !== 'undefined' ? ((navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection) : null;
-    
+
     logger.info(`[API Request ${requestId}] 시작`, {
       endpoint,
       method: options.method || 'GET',
@@ -399,27 +398,15 @@ class ApiClient {
       networkDownlink: networkInfo?.downlink || 'unknown',
       networkRtt: networkInfo?.rtt || 'unknown',
       timeout,
-      hasToken: !!token,
-      tokenLength: token?.length || 0,
     });
-    
-    // timeout을 제거한 fetch 옵션 생성
-    const { timeout: _, ...fetchOptions } = options;
-    
+
+    // timeout, _retry를 제거한 fetch 옵션 생성
+    const { timeout: _, _retry, ...fetchOptions } = options;
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...fetchOptions.headers,
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-      logger.debug(`[API Request ${requestId}] 인증 토큰 포함`, {
-        tokenPrefix: token.substring(0, 20) + '...',
-      });
-    } else {
-      // 인증 토큰이 없는 것은 공개 API 호출 시 정상적인 상황이므로 debug 레벨로 변경
-      logger.debug(`[API Request ${requestId}] 인증 토큰 없음 (공개 API 호출)`);
-    }
 
     // 테스트 환경에서 상대 URL을 절대 URL로 변환
     let url: string;
@@ -505,6 +492,7 @@ class ApiClient {
         logger.info(`[API Request ${requestId}] fetch 호출 시작`, { attempt });
         const response = await fetch(url, {
           ...fetchOptionsWithAddressSpace,
+          credentials: 'include',
           signal: controller.signal,
         });
       
@@ -532,6 +520,25 @@ class ApiClient {
           attempt += 1;
           continue;
         }
+
+        // 401 응답 시 refresh 시도 (한 번만)
+        if (response.status === 401 && !_retry) {
+          try {
+            const refreshRes = await fetch(`${this.baseURL}/auth/refresh`, {
+              method: 'POST',
+              credentials: 'include',
+            });
+            if (refreshRes.ok) {
+              clearTimeout(timeoutId);
+              return this.request<T>(endpoint, { ...options, _retry: true });
+            }
+          } catch {
+            // refresh 실패 무시
+          }
+          // refresh 실패 시 로그아웃 이벤트 발생
+          window.dispatchEvent(new Event('auth:logout'));
+        }
+
         logger.error(`[API Request ${requestId}] 응답 오류`, {
           status: response.status,
           statusText: response.statusText,
@@ -814,13 +821,12 @@ class ApiClient {
   async uploadFile<T>(endpoint: string, file: File): Promise<T> {
     const requestId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    const token = localStorage.getItem('access_token');
     const timeout = API_TIMEOUT;
-    
+
     // 모바일 환경 감지
     const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const networkInfo = typeof navigator !== 'undefined' ? ((navigator as any).connection || (navigator as any).mozConnection || (navigator as any).webkitConnection) : null;
-    
+
     logger.info(`[File Upload ${requestId}] 시작`, {
       endpoint,
       fileName: file.name,
@@ -828,20 +834,9 @@ class ApiClient {
       fileType: file.type,
       isMobile,
       networkType: networkInfo?.effectiveType || 'unknown',
-      hasToken: !!token,
     });
-    
-    if (!token) {
-      logger.error(`[File Upload ${requestId}] 인증 토큰 없음`);
-      throw {
-        message: '로그인이 필요합니다.',
-        statusCode: 401,
-      } as ApiError;
-    }
-    
-    const headers: HeadersInit = {
-      'Authorization': `Bearer ${token}`,
-    };
+
+    const headers: HeadersInit = {};
 
     const url = `${this.baseURL}${endpoint}`;
     
@@ -869,6 +864,7 @@ class ApiClient {
         method: 'POST',
         headers,
         body: formData,
+        credentials: 'include',
         signal: controller.signal,
       });
       
@@ -1118,6 +1114,8 @@ export const authApi = {
   loginWithGoogle: (data: GoogleLoginRequest) => apiClient.post<AuthResponse>('/auth/google', data),
   getMe: () => apiClient.get<{ user: { id: number; email: string | null; name: string; role?: 'user' | 'admin' } }>('/auth/me'),
   getProfile: () => apiClient.post('/auth/profile'),
+  logout: () => apiClient.post<null>('/auth/logout'),
+  refresh: () => apiClient.post<{ message: string }>('/auth/refresh'),
   linkKakao: (accessToken: string) =>
     apiClient.post<null>('/auth/link/kakao', { accessToken }),
   linkGoogle: (accessToken: string) =>
