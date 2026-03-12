@@ -5,6 +5,11 @@
 - `synchronize: true` 운영 환경 절대 금지
 - 엔티티 변경 시 Migration 파일 반드시 함께 커밋
 
+## Migration 파일 작성 주의사항
+- `Index`는 TypeORM **데코레이터**이므로 migration에서 `new Index(...)` 사용 금지
+  - 인덱스 추가 시: `new TableIndex({ columnNames: [...] })` 사용
+  - MySQL은 FK 컬럼에 자동으로 인덱스 생성 — 별도 인덱스 불필요한 경우 많음
+
 ## Migration 명령어 (backend/ 디렉토리에서)
 ```bash
 npm run migration:generate -- migrations/MigrationName  # 생성
