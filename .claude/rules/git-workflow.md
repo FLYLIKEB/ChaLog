@@ -9,7 +9,10 @@
 6. `gh pr create` — 본문에 `Closes #번호` 필수
 
 ## 브랜치 규칙
-- **신규 이슈 시작**: main에서 새 브랜치 → `feature/issue-{번호}-{설명}`
+- **모든 신규 작업 시작 브랜치는 반드시 main** — 예외 없음
+  ```bash
+  git checkout main && git pull origin main && git checkout -b feature/issue-{번호}-{설명}
+  ```
 - **기존 브랜치 작업 중**: 브랜치 전환 없이 현재 브랜치 유지
 - main/master 직접 커밋 금지
 
