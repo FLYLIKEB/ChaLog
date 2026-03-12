@@ -306,13 +306,13 @@ export function Search() {
     const q = searchQuery.trim().toLowerCase();
     if (searchCategory === 'note') {
       setNoteResults(
-        q
-          ? allNotes.filter(
-              (n) =>
-                n.teaName?.toLowerCase().includes(q) ||
-                n.memo?.toLowerCase().includes(q),
-            )
-          : allNotes,
+        allNotes.filter((n) => {
+          if (q && !n.teaName?.toLowerCase().includes(q) && !n.memo?.toLowerCase().includes(q)) return false;
+          if (filterType && n.teaType !== filterType) return false;
+          if (filterMinRating != null && (n.overallRating == null || n.overallRating < filterMinRating)) return false;
+          if (urlTags.length > 0 && !urlTags.every((tag) => n.tags?.includes(tag))) return false;
+          return true;
+        }),
       );
     } else if (searchCategory === 'cellar') {
       setCellarResults(q ? allCellar.filter((c) => c.tea?.name?.toLowerCase().includes(q)) : allCellar);
@@ -321,12 +321,13 @@ export function Search() {
         q ? popularTags.filter((t) => t.name?.toLowerCase().includes(q)) : popularTags,
       );
     }
-  }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags]);
+  }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags, filterType, filterMinRating, urlTagsStr]);
 
+  const noteHasFilters = !!(filterType || filterMinRating != null || urlTags.length > 0);
   const showResults =
     searchCategory === 'tea'
       ? searchQuery.length > 0 || hasSearched || hasFilterParams
-      : searchQuery.trim().length >= 2;
+      : searchQuery.trim().length >= 2 || (searchCategory === 'note' && noteHasFilters);
   const handleRefresh = useCallback(async () => {
     if (showResults) {
       if (hasTagParams) {
@@ -629,8 +630,6 @@ export function Search() {
                 </div>
               </>
             )}
-            {/* 차 전용 필터 */}
-            {searchCategory === 'tea' && <>
             {/* 향미 태그 선택 */}
             <div>
               <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
@@ -714,7 +713,6 @@ export function Search() {
                 </button>
               ))}
             </div>
-            </>}
             <Button size="sm" onClick={searchCategory === 'tea' ? applyFilters : () => setFilterOpen(false)}>
               적용
             </Button>
