@@ -423,7 +423,9 @@ export function Search() {
     if (searchCategory === 'note') {
       notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, noteSort, 1, 200)
         .then((data: unknown) => {
-          const notes: Note[] = Array.isArray(data) ? data : (data as { notes?: Note[] })?.notes ?? [];
+          const notes: Note[] = Array.isArray(data)
+            ? data
+            : (data as { data?: Note[] })?.data ?? (data as { notes?: Note[] })?.notes ?? [];
           setAllNotes(notes);
           setNoteResults(
             q
