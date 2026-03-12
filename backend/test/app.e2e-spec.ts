@@ -4,6 +4,7 @@ import { TEST_CONSTANTS } from './constants/test-constants';
 
 // 모든 테스트 스위트 import
 import './suites/auth.e2e-spec';
+import './suites/auth-refresh.e2e-spec';
 import './suites/teas.e2e-spec';
 import './suites/notes-like.e2e-spec';
 import './suites/notes-bookmark.e2e-spec';

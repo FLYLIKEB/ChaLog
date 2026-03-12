@@ -5,6 +5,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const logger: ('error' | 'warn' | 'log' | 'debug' | 'verbose')[] =
@@ -63,8 +64,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
-  // HTTP 보안 헤더 (Helmet.js)
   app.use(helmet());
+  app.use(cookieParser());
 
   // 전역 API prefix 설정 (health는 배포 플랫폼 체크용으로 /health 노출)
   app.setGlobalPrefix('api', { exclude: ['health', 'adminjs'] });
@@ -86,11 +87,7 @@ async function bootstrap() {
             children: c.children?.map((cc) => ({ property: cc.property, constraints: cc.constraints })),
           })),
         }));
-        if (process.env.NODE_ENV !== 'production') {
-          console.error('[ValidationPipe] Validation failed:', JSON.stringify(details, null, 2));
-        } else {
-          console.error('[ValidationPipe] Validation failed fields:', details.map((e) => e.property));
-        }
+        Logger.error('[ValidationPipe] Validation failed: ' + JSON.stringify(details, null, 2), 'ValidationPipe');
         const flatten = (arr: typeof details): string[] =>
           arr.flatMap((e) => [
             ...(e.constraints ? Object.values(e.constraints) : []),
@@ -109,6 +106,6 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error('Failed to start application:', error);
+  Logger.error('Failed to start application: ' + String(error), 'Bootstrap');
   process.exit(1);
 });

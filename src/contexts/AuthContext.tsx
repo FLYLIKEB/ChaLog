@@ -36,7 +36,7 @@ interface AuthContextType {
   register: (email: string, name: string, password: string) => Promise<boolean | null>;
   loginWithKakao: (code?: string) => Promise<boolean | null>;
   loginWithGoogle: (accessToken: string) => Promise<boolean | null>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   isAdmin: boolean;
   refreshOnboardingStatus: (userId: number) => Promise<boolean | null>;
@@ -52,21 +52,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isOnboardingLoading, setIsOnboardingLoading] = useState(false);
 
   useEffect(() => {
-    // 로컬 스토리지에서 토큰과 사용자 정보 복원
-    const storedToken = localStorage.getItem('access_token');
-    const storedUser = localStorage.getItem('user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        logger.error('Failed to parse stored user data', error);
-        localStorage.removeItem('access_token');
+    // 쿠키 기반 인증: getMe()로 초기 인증 상태 확인
+    authApi.getMe()
+      .then((res) => {
+        setUser(res.user);
+        setToken('cookie'); // 쿠키 인증 활성화 표시
+        localStorage.setItem('user', JSON.stringify(res.user));
+      })
+      .catch(() => {
+        setUser(null);
+        setToken(null);
         localStorage.removeItem('user');
-      }
-    }
-    setIsLoading(false);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
 
     // interval 추적을 위한 변수
     let checkInterval: NodeJS.Timeout | null = null;
@@ -276,6 +276,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [refreshOnboardingStatus, token, user]);
 
   useEffect(() => {
+    const handleAuthLogout = () => { void logout(); };
+    window.addEventListener('auth:logout', handleAuthLogout);
+    return () => window.removeEventListener('auth:logout', handleAuthLogout);
+  }, [logout]);
+
+  useEffect(() => {
     if (!token || !user || user.role) {
       return;
     }
@@ -294,9 +300,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     try {
       const response = await authApi.login({ email, password });
-      setToken(response.access_token);
+      setToken('cookie');
       setUser(response.user);
-      localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
       toast.success('로그인되었습니다.');
@@ -310,9 +315,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (email: string, name: string, password: string) => {
     try {
       const response = await authApi.register({ email, name, password });
-      setToken(response.access_token);
+      setToken('cookie');
       setUser(response.user);
-      localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
       toast.success('회원가입이 완료되었습니다.');
@@ -392,15 +396,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             userName: response.user?.name,
           });
 
-          setToken(response.access_token);
+          setToken('cookie');
           setUser(response.user);
-          localStorage.setItem('access_token', response.access_token);
           localStorage.setItem('user', JSON.stringify(response.user));
           const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
-          
+
           const elapsedTime = Date.now() - startTime;
           logger.info(`=== 카카오 로그인 완료 (소요 시간: ${elapsedTime}ms) ===`);
-          
+
           toast.success('카카오 로그인되었습니다.');
           return onboardingCompleted;
         } catch (error) {
@@ -709,12 +712,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         userName: response.user?.name,
       });
 
-      setToken(response.access_token);
+      setToken('cookie');
       setUser(response.user);
-      localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
-      
+
       const elapsedTime = Date.now() - startTime;
       logger.info(`=== 카카오 로그인 완료 (소요 시간: ${elapsedTime}ms) ===`);
       
@@ -738,9 +740,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = useCallback(async (accessToken: string) => {
     try {
       const response = await authApi.loginWithGoogle({ accessToken });
-      setToken(response.access_token);
+      setToken('cookie');
       setUser(response.user);
-      localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('user', JSON.stringify(response.user));
       const onboardingCompleted = await refreshOnboardingStatus(response.user.id);
       toast.success('구글 로그인되었습니다.');
@@ -751,17 +752,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [refreshOnboardingStatus]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // 서버 revoke 실패해도 클라이언트 로그아웃 진행
+    }
     setToken(null);
     setUser(null);
     setHasCompletedOnboarding(null);
     localStorage.removeItem('access_token');
     localStorage.removeItem('user');
-    
+
     // 카카오 로그아웃 (선택사항)
     try {
       if (typeof window !== 'undefined' && window.Kakao?.Auth?.getAccessToken?.()) {
-        // 카카오 SDK의 logout 메서드가 있는 경우에만 호출
         if (window.Kakao.Auth.logout) {
           window.Kakao.Auth.logout();
         }
@@ -769,7 +774,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       logger.error('Kakao logout failed', error);
     }
-    
+
     toast.success('로그아웃되었습니다.');
   }, []);
 
