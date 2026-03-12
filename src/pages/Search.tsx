@@ -15,6 +15,7 @@ import { Section } from '../components/ui/Section';
 import { teasApi, tagsApi, notesApi, cellarApi } from '../lib/api';
 import { Tea, Seller, Note, CellarItem } from '../types';
 import { NoteCard } from '../components/NoteCard';
+import { SellerCombobox } from '../components/SellerCombobox';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
@@ -287,16 +288,14 @@ function FilterPanel({
           </div>
           )}
 
-          {/* 구매처 */}
+          {/* 찻집 */}
           {category === 'tea' && (
           <div className="px-4 py-3 space-y-2">
-            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">구매처</p>
-            <input
-              type="text"
-              placeholder="예: 쿠팡, 네이버, 직구"
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">찻집</p>
+            <SellerCombobox
               value={filterSellerName}
-              onChange={(e) => setFilterSellerName(e.target.value)}
-              className="w-full border border-border/60 rounded-lg px-3 py-2 text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+              onChange={setFilterSellerName}
+              placeholder="예: OO 찻집, OO몰"
             />
           </div>
           )}
