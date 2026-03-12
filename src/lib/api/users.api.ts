@@ -48,6 +48,7 @@ export const usersApi = {
     id: number,
     data: { preferredTeaTypes: string[]; preferredFlavorTags: string[] },
   ) => apiClient.patch<UserOnboardingPreference>(`/users/${id}/onboarding`, data),
+  getLevel: (id: number) => apiClient.get(`/users/${id}/level`),
   getNotificationSetting: (id: number) =>
     apiClient.get<UserNotificationSetting>(`/users/${id}/notification-settings`),
   updateNotificationSetting: (id: number, isNotificationEnabled: boolean) =>
