@@ -14,6 +14,7 @@ import { AuditLog, AuditAction } from '../entities/audit-log.entity';
 import { UpdateUserDto } from '../../users/dto/update-user.dto';
 import { FollowsService } from '../../follows/follows.service';
 import { UsersService } from '../../users/users.service';
+import { NotesService } from '../../notes/notes.service';
 
 @Injectable()
 export class AdminUsersService {
@@ -34,6 +35,7 @@ export class AdminUsersService {
     private dataSource: DataSource,
     private followsService: FollowsService,
     private usersService: UsersService,
+    private notesService: NotesService,
   ) {}
 
   private validateSort(allowedSortBy: readonly string[], sortBy: string, sortOrder: string) {
@@ -330,8 +332,12 @@ export class AdminUsersService {
       throw new BadRequestException('운영자 계정은 삭제할 수 없습니다.');
     }
 
+    const userNotes = await this.notesRepository.find({ where: { userId } });
+    for (const note of userNotes) {
+      await this.notesService.removeByAdmin(note.id);
+    }
+
     await this.dataSource.transaction(async (manager) => {
-      await manager.delete(Note, { userId });
       await manager.delete(NoteReport, { reporterId: userId });
       await manager.delete(PostReport, { reporterId: userId });
       await manager.delete(User, { id: userId });

@@ -81,7 +81,17 @@ export class AdminReportsService {
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
     this.validateSort(['createdAt', 'reportCount'], sortBy, sortOrder);
-    qb.orderBy(`report.${sortBy}`, sortOrder);
+
+    if (sortBy === 'reportCount') {
+      const countSub = this.noteReportsRepository
+        .createQueryBuilder('cnt')
+        .select('COUNT(*)')
+        .where('cnt.noteId = report.noteId');
+      qb.addSelect(`(${countSub.getQuery()})`, 'reportCount');
+      qb.orderBy('reportCount', sortOrder);
+    } else {
+      qb.orderBy(`report.${sortBy}`, sortOrder);
+    }
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
@@ -154,7 +164,17 @@ export class AdminReportsService {
     const sortBy = params.sortBy ?? 'createdAt';
     const sortOrder = params.sortOrder ?? 'DESC';
     this.validateSort(['createdAt', 'reportCount'], sortBy, sortOrder);
-    qb.orderBy(`report.${sortBy}`, sortOrder);
+
+    if (sortBy === 'reportCount') {
+      const countSub = this.postReportsRepository
+        .createQueryBuilder('cnt')
+        .select('COUNT(*)')
+        .where('cnt.postId = report.postId');
+      qb.addSelect(`(${countSub.getQuery()})`, 'reportCount');
+      qb.orderBy('reportCount', sortOrder);
+    } else {
+      qb.orderBy(`report.${sortBy}`, sortOrder);
+    }
 
     const [items, total] = await qb.skip(skip).take(limit).getManyAndCount();
 
@@ -234,6 +254,9 @@ export class AdminReportsService {
       where: { id: reportId },
     });
     if (!report) throw new NotFoundException('신고를 찾을 수 없습니다.');
+    if (report.status !== ReportStatus.PENDING) {
+      throw new BadRequestException('대기 중인 신고만 기각할 수 있습니다.');
+    }
     report.status = ReportStatus.DISMISSED;
     await this.noteReportsRepository.save(report);
     await this.logAudit(adminId, AuditAction.REPORT_DISMISS, 'note_report', reportId);
@@ -245,6 +268,9 @@ export class AdminReportsService {
       where: { id: reportId },
     });
     if (!report) throw new NotFoundException('신고를 찾을 수 없습니다.');
+    if (report.status !== ReportStatus.PENDING) {
+      throw new BadRequestException('대기 중인 신고만 기각할 수 있습니다.');
+    }
     report.status = ReportStatus.DISMISSED;
     await this.postReportsRepository.save(report);
     await this.logAudit(adminId, AuditAction.REPORT_DISMISS, 'post_report', reportId);
@@ -257,13 +283,16 @@ export class AdminReportsService {
       relations: ['note'],
     });
     if (!report) throw new NotFoundException('신고를 찾을 수 없습니다.');
+    if (report.status !== ReportStatus.PENDING) {
+      throw new BadRequestException('대기 중인 신고만 조치할 수 있습니다.');
+    }
     const noteId = report.noteId;
 
+    await this.notesService.removeByAdmin(noteId);
     await this.noteReportsRepository.update(
-      { noteId },
+      { noteId, status: ReportStatus.PENDING },
       { status: ReportStatus.ACTED },
     );
-    await this.notesService.removeByAdmin(noteId);
     await this.logAudit(adminId, AuditAction.REPORT_ACTION, 'note', noteId, reason, {
       reportId,
     });
@@ -275,13 +304,16 @@ export class AdminReportsService {
       where: { id: reportId },
     });
     if (!report) throw new NotFoundException('신고를 찾을 수 없습니다.');
+    if (report.status !== ReportStatus.PENDING) {
+      throw new BadRequestException('대기 중인 신고만 조치할 수 있습니다.');
+    }
     const postId = report.postId;
 
+    await this.postsService.removeByAdmin(postId);
     await this.postReportsRepository.update(
-      { postId },
+      { postId, status: ReportStatus.PENDING },
       { status: ReportStatus.ACTED },
     );
-    await this.postsService.removeByAdmin(postId);
     await this.logAudit(adminId, AuditAction.REPORT_ACTION, 'post', postId, reason, {
       reportId,
     });
