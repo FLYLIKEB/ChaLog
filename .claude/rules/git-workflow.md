@@ -9,10 +9,7 @@
 6. `gh pr create` — 본문에 `Closes #번호` 필수
 
 ## 브랜치 규칙
-- **모든 신규 작업 시작 브랜치는 반드시 main** — 예외 없음
-  ```bash
-  git checkout main && git pull origin main && git checkout -b feature/issue-{번호}-{설명}
-  ```
+- **신규 이슈 시작**: main에서 새 브랜치 → `feature/issue-{번호}-{설명}`
 - **기존 브랜치 작업 중**: 브랜치 전환 없이 현재 브랜치 유지
 - main/master 직접 커밋 금지
 
@@ -38,12 +35,6 @@ EOF
 )"
 ```
 
-## PR 생성 후
-```bash
-git checkout main && git pull origin main
-```
-- PR 생성 완료 즉시 main으로 복귀 — 다음 작업은 항상 main 기반에서 시작
-
 ## PR 머지
 - 반드시 `gh pr merge --merge --delete-branch` (squash 금지)
 
@@ -51,9 +42,6 @@ git checkout main && git pull origin main
 ```bash
 git pull --rebase origin <브랜치명>
 ```
-
-## GitHub CLI
-- `gh issue view <번호>` 오류 시 `--json title,body,state` 플래그로 우회 (Projects classic API 지원 중단 오류)
 
 ## DB 스키마 변경 시
 - `*.entity.ts` 수정 → Migration 파일 반드시 함께 커밋
