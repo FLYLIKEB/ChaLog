@@ -1,12 +1,13 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider } from 'next-themes';
 import { PAGE_BG_GRADIENT } from './constants';
-import { Plus, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { FloatingActionButton } from './components/FloatingActionButton';
+import { SpeedDialFAB } from './components/SpeedDialFAB';
+import { AppModeProvider } from './contexts/AppModeContext';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { AdminLayout } from './components/AdminLayout';
@@ -79,81 +80,6 @@ const AdminMonitoring = lazy(() => import('./pages/admin/AdminMonitoring').then(
 const AdminMaster = lazy(() => import('./pages/admin/AdminMaster').then((m) => ({ default: m.AdminMaster })));
 
 
-type FloatingActionRouteConfig = {
-  position?: 'default' | 'aboveNav';
-  ariaLabel?: string;
-  hidden?: boolean;
-};
-
-const DEFAULT_FLOATING_ACTION_CONFIG: FloatingActionRouteConfig = {
-  position: 'aboveNav',
-  ariaLabel: '새 차록 작성',
-};
-
-const floatingActionRouteOverrides: Record<string, FloatingActionRouteConfig> = {
-  '/my-notes': { position: 'aboveNav' },
-  '/notifications': { hidden: true },
-  '/note/new': { hidden: true },
-  '/note/:id/edit': { hidden: true },
-  '/tea/new': { hidden: true },
-  '/teahouse/new': { hidden: true },
-  '/cellar': { hidden: true },
-  '/cellar/new': { hidden: true },
-  '/session/new': { hidden: true },
-  '/sessions': { hidden: true },
-  '/blind/new': { hidden: true },
-  '/blind/join/:code': { hidden: true },
-  '/blind/:id': { hidden: true },
-  '/blind/:id/write': { hidden: true },
-  '/blind/:id/report': { hidden: true },
-  '/onboarding': { hidden: true },
-};
-
-function FloatingActionButtonSwitcher() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  // 동적 라우트 처리 (차담 페이지는 자체 FAB을 사용)
-  const shouldHide = 
-    location.pathname === '/note/new' ||
-    location.pathname.startsWith('/note/') && location.pathname.endsWith('/edit') ||
-    location.pathname.startsWith('/session/') ||
-    location.pathname === '/sessions' ||
-    location.pathname.startsWith('/blind/') ||
-    location.pathname === '/tea/new' ||
-    location.pathname === '/teahouse/new' ||
-    location.pathname.match(/^\/teahouse\/[^/]+\/edit$/) ||
-    location.pathname === '/cellar' ||
-    location.pathname === '/cellar/new' ||
-    location.pathname.match(/^\/cellar\/\d+\/edit$/) ||
-    location.pathname === '/chadam' ||
-    location.pathname.startsWith('/chadam/') ||
-    location.pathname === '/onboarding' ||
-    location.pathname === '/forgot-password' ||
-    location.pathname === '/reset-password' ||
-    location.pathname === '/find-email' ||
-    location.pathname.startsWith('/admin');
-  
-  const override = floatingActionRouteOverrides[location.pathname];
-  const config = {
-    ...DEFAULT_FLOATING_ACTION_CONFIG,
-    ...override,
-  };
-
-  if (config.hidden || shouldHide) {
-    return null;
-  }
-
-  return (
-    <FloatingActionButton
-      onClick={() => navigate('/note/new')}
-      ariaLabel={config.ariaLabel}
-      position={config.position}
-    >
-      <Plus className="w-6 h-6" />
-    </FloatingActionButton>
-  );
-}
 
 function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -205,6 +131,7 @@ function AppContent() {
   }
 
   return (
+    <AppModeProvider>
     <SidebarProvider>
     <div className={`h-screen flex flex-col md:flex-row overflow-hidden ${PAGE_BG_GRADIENT}`}>
       {/* 데스크톱 사이드바 (md 이상에서만 표시) */}
@@ -272,10 +199,11 @@ function AppContent() {
         </OnboardingRouteGuard>
       </div>
 
-      <FloatingActionButtonSwitcher />
+      <SpeedDialFAB />
       <PWAInstallBanner />
     </div>
     </SidebarProvider>
+    </AppModeProvider>
   );
 }
 

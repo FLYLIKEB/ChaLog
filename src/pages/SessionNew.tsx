@@ -9,12 +9,14 @@ import { teasApi, teaSessionsApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppMode } from '../contexts/AppModeContext';
 import { logger } from '../lib/logger';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 
 export function SessionNew() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { setSessionActive } = useAppMode();
   const [searchParams] = useSearchParams();
   const preselectedTeaId = searchParams.get('teaId');
 
@@ -98,6 +100,7 @@ export function SessionNew() {
     try {
       setIsCreating(true);
       const session = await teaSessionsApi.create({ teaId: selectedTea });
+      setSessionActive(session.id);
       toast.success('다회 세션이 시작되었습니다.');
       navigate(`/session/${session.id}`);
     } catch (error) {

@@ -9,11 +9,13 @@ import { teasApi, blindSessionsApi } from '../lib/api';
 import { Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppMode } from '../contexts/AppModeContext';
 import { logger } from '../lib/logger';
 
 export function BlindSessionNew() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { setBlindActive } = useAppMode();
   const [teas, setTeas] = useState<Tea[]>([]);
   const [selectedTeas, setSelectedTeas] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,6 +95,7 @@ export function BlindSessionNew() {
     try {
       setIsCreating(true);
       const session = await blindSessionsApi.create({ teaIds: selectedTeas });
+      setBlindActive(session.id);
       setCreatedSession({ id: session.id, inviteCode: session.inviteCode });
       toast.success('블라인드 세션이 생성되었습니다.');
     } catch (error) {
