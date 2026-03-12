@@ -111,8 +111,8 @@ export class AdminUsersService {
             .getRawMany()
         : [];
 
-    const noteMap = Object.fromEntries(noteCounts.map((r: any) => [r.userId, r.count]));
-    const postMap = Object.fromEntries(postCounts.map((r: any) => [r.userId, r.count]));
+    const noteMap = Object.fromEntries(noteCounts.map((r: { userId: number; count: string }) => [r.userId, r.count]));
+    const postMap = Object.fromEntries(postCounts.map((r: { userId: number; count: string }) => [r.userId, r.count]));
 
     return {
       items: items.map((u) => ({

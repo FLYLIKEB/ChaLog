@@ -98,7 +98,7 @@ export class AdminReportsService {
         : [];
 
     const countMap = Object.fromEntries(
-      reportCounts.map((r: any) => [r.noteId, r.count]),
+      reportCounts.map((r: { noteId: number; count: string }) => [r.noteId, r.count]),
     );
 
     return {
@@ -171,7 +171,7 @@ export class AdminReportsService {
         : [];
 
     const countMap = Object.fromEntries(
-      reportCounts.map((r: any) => [r.postId, r.count]),
+      reportCounts.map((r: { postId: number; count: string }) => [r.postId, r.count]),
     );
 
     return {
