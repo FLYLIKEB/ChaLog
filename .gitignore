@@ -40,3 +40,8 @@ your-key.pem
 *.session.sql
 chalog-s3-user_accessKeys.csv
 .omc
+
+# packages/types build artifacts
+packages/types/index.js
+packages/types/index.js.map
+packages/types/index.d.ts
