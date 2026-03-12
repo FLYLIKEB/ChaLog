@@ -60,6 +60,7 @@ export function Search() {
   const { recentSearches, addSearch, removeSearch, clearAll } = useRecentSearches();
   const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
   const [filterOpen, setFilterOpen] = useState(false);
+  const [noteSort, setNoteSort] = useState<'latest' | 'rating'>('latest');
   const [searchCategory, setSearchCategory] = useState<SearchCategory>('tea');
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [noteResults, setNoteResults] = useState<Note[]>([]);
@@ -203,7 +204,7 @@ export function Search() {
     setCategoryLoading(true);
     const q = searchQuery.trim().toLowerCase();
     if (searchCategory === 'note') {
-      notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, 'latest', 1, 200)
+      notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, noteSort, 1, 200)
         .then((data: unknown) => {
           const notes: Note[] = Array.isArray(data) ? data : (data as { notes?: Note[] })?.notes ?? [];
           setAllNotes(notes);
@@ -237,7 +238,7 @@ export function Search() {
         .catch(() => { setAllCellar([]); setCellarResults([]); })
         .finally(() => setCategoryLoading(false));
     }
-  }, [searchCategory, activeTab, user?.id]);
+  }, [searchCategory, activeTab, user?.id, noteSort]);
 
   // 찻집 검색 (서버 사이드, debounce)
   useEffect(() => {
@@ -542,7 +543,7 @@ export function Search() {
         )}
 
         {/* 필터 패널 */}
-        {activeTab === 'search' && searchCategory === 'tea' && (
+        {activeTab === 'search' && (searchCategory === 'tea' || searchCategory === 'note') && (
           <div className="border border-border/60 rounded-xl overflow-hidden">
             <button
               type="button"
@@ -561,6 +562,30 @@ export function Search() {
               <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', filterOpen && 'rotate-180')} />
             </button>
             {filterOpen && <div className="space-y-3 px-4 pb-4 pt-1">
+            {/* 차록 필터 */}
+            {searchCategory === 'note' && (
+              <>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-muted-foreground">정렬:</span>
+                  {([{ key: 'latest', label: '최신순' }, { key: 'rating', label: '평점순' }] as const).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setNoteSort(opt.key)}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                        noteSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 hover:bg-muted/80'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            {/* 차 전용 필터 */}
+            {searchCategory === 'tea' && <>
             {/* 향미 태그 선택 */}
             <div>
               <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
@@ -644,7 +669,8 @@ export function Search() {
                 </button>
               ))}
             </div>
-            <Button size="sm" onClick={applyFilters}>
+            </>}
+            <Button size="sm" onClick={searchCategory === 'tea' ? applyFilters : () => setFilterOpen(false)}>
               적용
             </Button>
             </div>}
