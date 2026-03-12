@@ -939,27 +939,22 @@ export class NotesService {
   }
 
   private async updateTeaRating(teaId: number): Promise<void> {
-    const notes = await this.notesRepository.find({
-      where: { teaId, isRatingIncluded: true },
-    });
+    const result = await this.notesRepository
+      .createQueryBuilder('note')
+      .select('AVG(note.overallRating)', 'avg')
+      .addSelect('COUNT(note.id)', 'count')
+      .where('note.teaId = :teaId', { teaId })
+      .andWhere('note.isRatingIncluded = :included', { included: true })
+      .andWhere('note.overallRating IS NOT NULL')
+      .getRawOne<{ avg: string | null; count: string }>();
 
-    if (notes.length === 0) {
-      // 모든 노트가 삭제되었거나 포함되지 않았을 때 평점을 초기화
+    const count = parseInt(result?.count ?? '0', 10);
+    if (count === 0) {
       await this.teasService.updateRating(teaId, 0, 0);
       return;
     }
 
-    // overallRating이 있는 노트만 계산
-    const notesWithRating = notes.filter(note => note.overallRating !== null);
-    
-    if (notesWithRating.length === 0) {
-      await this.teasService.updateRating(teaId, 0, 0);
-      return;
-    }
-
-    const averageRating =
-      notesWithRating.reduce((sum, note) => sum + Number(note.overallRating), 0) / notesWithRating.length;
-
-    await this.teasService.updateRating(teaId, averageRating, notesWithRating.length);
+    const averageRating = parseFloat(result?.avg ?? '0');
+    await this.teasService.updateRating(teaId, averageRating, count);
   }
 }
