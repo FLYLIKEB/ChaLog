@@ -36,6 +36,7 @@ const AdminJSModulePromise = (async () => {
   });
   const { AdminModule: AdminJSModule } = await import('@adminjs/nestjs');
   return AdminJSModule.createAdminAsync({
+    imports: [UsersModule],
     useFactory: (configService: ConfigService, usersService: UsersService) => {
       const cookiePassword =
         configService.get<string>('ADMINJS_COOKIE_PASSWORD') || 'adminjs-cookie-secret-min-32-chars';
