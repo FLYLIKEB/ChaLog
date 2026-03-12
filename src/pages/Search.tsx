@@ -549,7 +549,7 @@ export function Search() {
         )}
 
         {/* 검색 탭 - 최근 검색어 (필터 위) */}
-        {activeTab === 'search' && searchCategory === 'tea' && !showResults && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
+        {activeTab === 'search' && !showResults && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
