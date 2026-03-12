@@ -54,12 +54,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
         `Unhandled Exception: ${exception.message}`,
         exception.stack,
       );
+      const SENSITIVE_FIELDS = ['password', 'token', 'refreshToken', 'access_token', 'refresh_token'];
+      const sanitizeBody = (body: Record<string, unknown>) => {
+        if (!body || typeof body !== 'object') return body;
+        return Object.fromEntries(
+          Object.entries(body).map(([k, v]) =>
+            SENSITIVE_FIELDS.includes(k) ? [k, '[REDACTED]'] : [k, v]
+          )
+        );
+      };
       this.logger.error(
         `Request Details: ${request.method} ${request.url}`,
         JSON.stringify({
           query: request.query,
           params: request.params,
-          body: request.body,
+          body: sanitizeBody(request.body),
           headers: {
             'content-type': request.headers['content-type'],
             'authorization': request.headers['authorization'] ? '[REDACTED]' : undefined,

@@ -33,7 +33,12 @@ export class HealthController {
 
       const environment = this.configService.get('NODE_ENV') || 'development';
       const port = this.configService.get('PORT') || '3000';
-      
+      const isProd = environment === 'production';
+
+      if (isProd) {
+        return { status: 'healthy', timestamp };
+      }
+
       return {
         status: 'healthy',
         service: 'ChaLog Backend API',
