@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, In } from 'typeorm';
 import * as os from 'os';
 import { getRecentLogs } from '../common/error-log-buffer';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -1350,6 +1350,8 @@ export class AdminService {
     const errors: { row: number; message: string }[] = [];
     const toInsert: Partial<Tea>[] = [];
 
+    type ValidRow = { row: Record<string, string>; rowNum: number; name: string; type: string };
+    const validRows: ValidRow[] = [];
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
       const rowNum = i + 2;
@@ -1357,9 +1359,16 @@ export class AdminService {
       const type = row['type']?.trim();
       if (!name) { errors.push({ row: rowNum, message: 'name 필드가 비어있습니다.' }); continue; }
       if (!type) { errors.push({ row: rowNum, message: 'type 필드가 비어있습니다.' }); continue; }
+      validRows.push({ row, rowNum, name, type });
+    }
 
-      const existing = await this.teasRepository.findOne({ where: { name, type } });
-      if (existing) { continue; }
+    const existingTeas = validRows.length > 0
+      ? await this.teasRepository.findBy({ name: In(validRows.map((r) => r.name)) })
+      : [];
+    const existingKeys = new Set(existingTeas.map((t) => `${t.name}||${t.type}`));
+
+    for (const { row, name, type } of validRows) {
+      if (existingKeys.has(`${name}||${type}`)) { continue; }
 
       const price = row['price'] ? parseInt(row['price'], 10) : undefined;
       const weight = row['weight'] ? parseInt(row['weight'], 10) : undefined;

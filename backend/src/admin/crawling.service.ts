@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Tea } from '../teas/entities/tea.entity';
 import * as cheerio from 'cheerio';
 
@@ -25,7 +25,33 @@ export class CrawlingService {
     private teasRepository: Repository<Tea>,
   ) {}
 
+  private validateUrl(url: string): void {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      throw new BadRequestException('유효하지 않은 URL입니다.');
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new BadRequestException('http 또는 https URL만 허용됩니다.');
+    }
+    const h = parsed.hostname;
+    const privatePatterns = [
+      /^127\./,
+      /^10\./,
+      /^172\.(1[6-9]|2\d|3[01])\./,
+      /^192\.168\./,
+      /^169\.254\./,
+      /^::1$/,
+      /^localhost$/i,
+    ];
+    if (privatePatterns.some((p) => p.test(h))) {
+      throw new BadRequestException('내부 네트워크 주소는 허용되지 않습니다.');
+    }
+  }
+
   async preview(url: string, config: CrawlConfig): Promise<TeaCrawlItem[]> {
+    this.validateUrl(url);
     let html: string;
     try {
       const controller = new AbortController();
@@ -65,16 +91,14 @@ export class CrawlingService {
   }
 
   async register(items: TeaCrawlItem[], sellerId?: number): Promise<{ success: number; skipped: number }> {
-    let success = 0;
-    let skipped = 0;
+    if (items.length === 0) return { success: 0, skipped: 0 };
 
-    for (const item of items) {
-      const existing = await this.teasRepository.findOne({
-        where: { name: item.name, type: item.type },
-      });
-      if (existing) { skipped++; continue; }
+    const existingTeas = await this.teasRepository.findBy({ name: In(items.map((i) => i.name)) });
+    const existingKeys = new Set(existingTeas.map((t) => `${t.name}||${t.type}`));
 
-      await this.teasRepository.save(
+    const toInsert = items
+      .filter((item) => !existingKeys.has(`${item.name}||${item.type}`))
+      .map((item) =>
         this.teasRepository.create({
           name: item.name,
           type: item.type,
@@ -84,9 +108,11 @@ export class CrawlingService {
           reviewCount: 0,
         }),
       );
-      success++;
+
+    if (toInsert.length > 0) {
+      await this.teasRepository.save(toInsert);
     }
 
-    return { success, skipped };
+    return { success: toInsert.length, skipped: items.length - toInsert.length };
   }
 }
