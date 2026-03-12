@@ -6,7 +6,7 @@ Lightsail 인스턴스에 SSH 연결이 안 될 때 해결 방법입니다.
 
 - `Connection timed out during banner exchange`
 - `Connection to YOUR_LIGHTSAIL_IP port 22 timed out`
-- **GitHub Actions**: `❌ 포트 22 닫힘 또는 타임아웃` → [포트 22 타임아웃 전용 가이드](../SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md) 참고
+- **GitHub Actions**: `❌ 포트 22 닫힘 또는 타임아웃` → [포트 22 타임아웃 전용 가이드](SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md) 참고
 - 포트 22는 열려있지만 SSH 연결 실패
 
 ## 해결 방법
@@ -45,7 +45,7 @@ Lightsail 인스턴스에 SSH 연결이 안 될 때 해결 방법입니다.
    - "Create" 클릭
 
 **GitHub Actions 배포에서 포트 22 타임아웃이 나는 경우:**  
-방화벽에 SSH(22) 규칙이 있고 소스가 `Anywhere (0.0.0.0/0)`인지 확인하세요. 제한된 IP만 허용해 두었다면 GitHub Actions IP가 막혀 있을 수 있습니다. 자세한 내용은 [SSH 포트 22 타임아웃 해결](../SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md)을 참고하세요.
+방화벽에 SSH(22) 규칙이 있고 소스가 `Anywhere (0.0.0.0/0)`인지 확인하세요. 제한된 IP만 허용해 두었다면 GitHub Actions IP가 막혀 있을 수 있습니다. 자세한 내용은 [SSH 포트 22 타임아웃 해결](SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md)을 참고하세요.
 
 ### 3. 브라우저 SSH 활성화 및 사용
 
