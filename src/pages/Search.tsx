@@ -115,114 +115,125 @@ function FilterPanel({
         <ChevronDown className={cn('w-4 h-4 transition-transform duration-200', filterOpen && 'rotate-180')} />
       </button>
       {filterOpen && (
-        <div className="space-y-3 px-4 pb-4 pt-1">
-          {/* 차록 정렬 (note category only) */}
-          {category === 'note' && (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-muted-foreground">정렬:</span>
-              {NOTE_SORT_OPTIONS.map((opt) => (
+        <div className="divide-y divide-border/40">
+          {/* 정렬 */}
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">정렬</p>
+            <div className="flex flex-wrap gap-1.5">
+              {category === 'note'
+                ? NOTE_SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setNoteSort(opt.key)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                        noteSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))
+                : (hasTagParams ? SORT_OPTIONS_WITH_MATCH : SORT_OPTIONS).map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setFilterSort(opt.key)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                        filterSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+            </div>
+          </div>
+
+          {/* 차 종류 */}
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">차 종류</p>
+            <div className="flex flex-wrap gap-1.5">
+              {TEA_TYPES.map((type) => {
+                const isSelected = filterType === type;
+                const colorClass = TEA_TYPE_COLORS[type];
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setFilterType(isSelected ? null : type)}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                      isSelected
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', isSelected ? 'bg-primary-foreground' : colorClass)} aria-hidden />
+                    {type}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 평점 */}
+          <div className="px-4 py-3 space-y-2">
+            <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">평점</p>
+            <div className="flex flex-wrap gap-1.5">
+              {MIN_RATING_OPTIONS.map((opt) => (
                 <button
-                  key={opt.key}
+                  key={opt.label}
                   type="button"
-                  onClick={() => setNoteSort(opt.key)}
-                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    noteSort === opt.key
+                  onClick={() => setFilterMinRating(opt.value)}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                    filterMinRating === opt.value
                       ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 hover:bg-muted/80'
-                  }`}
+                      : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                  )}
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
-          )}
-          {/* 향미 태그 선택 */}
-          <div>
-            <span className="text-sm text-muted-foreground mb-2 block">향미로 검색:</span>
-            <div className="flex flex-wrap gap-2">
-              {popularTags.slice(0, 12).map((tag) => (
-                <button
-                  key={tag.name}
-                  type="button"
-                  onClick={() => handleTagClick(tag.name)}
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    urlTags.includes(tag.name)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 hover:bg-muted/80'
-                  }`}
-                >
-                  #{tag.name}
-                  {tag.noteCount > 0 && (
-                    <span className="text-xs opacity-70">({tag.noteCount})</span>
-                  )}
-                </button>
-              ))}
+          </div>
+
+          {/* 향미 태그 */}
+          {popularTags.length > 0 && (
+            <div className="px-4 py-3 space-y-2">
+              <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">향미</p>
+              <div className="flex flex-wrap gap-1.5">
+                {popularTags.slice(0, 12).map((tag) => (
+                  <button
+                    key={tag.name}
+                    type="button"
+                    onClick={() => handleTagClick(tag.name)}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                      urlTags.includes(tag.name)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    #{tag.name}
+                    {tag.noteCount > 0 && <span className="text-[10px] opacity-60">({tag.noteCount})</span>}
+                  </button>
+                ))}
+              </div>
             </div>
+          )}
+
+          {/* 적용 */}
+          <div className="px-4 py-3">
+            <Button size="sm" className="w-full" onClick={onApply}>
+              적용
+            </Button>
           </div>
-          {/* 차 종류 */}
-          <div className="flex flex-wrap gap-2">
-            {TEA_TYPES.map((type) => {
-              const isSelected = filterType === type;
-              const colorClass = TEA_TYPE_COLORS[type];
-              return (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setFilterType(isSelected ? null : type)}
-                  className={cn(
-                    'inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium border transition-colors',
-                    isSelected
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background border-border/60 hover:bg-muted/80',
-                  )}
-                >
-                  {!isSelected && (
-                    <span className={cn('w-1.5 h-5 rounded-full shrink-0', colorClass)} aria-hidden />
-                  )}
-                  {type}
-                </button>
-              );
-            })}
-          </div>
-          {/* 평점 */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground">평점:</span>
-            {MIN_RATING_OPTIONS.map((opt) => (
-              <button
-                key={opt.label}
-                type="button"
-                onClick={() => setFilterMinRating(opt.value)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  filterMinRating === opt.value
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background border-border/60 hover:bg-muted/80'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          {/* 정렬 (tea sort) */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground">정렬:</span>
-            {(hasTagParams ? SORT_OPTIONS_WITH_MATCH : SORT_OPTIONS).map((opt) => (
-              <button
-                key={opt.key}
-                type="button"
-                onClick={() => setFilterSort(opt.key)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  filterSort === opt.key
-                    ? 'bg-primary text-primary-foreground border-primary'
-                    : 'bg-background border-border/60 hover:bg-muted/80'
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-          <Button size="sm" onClick={onApply}>
-            적용
-          </Button>
         </div>
       )}
     </div>
