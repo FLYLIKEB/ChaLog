@@ -412,6 +412,7 @@ export function AdminMaster() {
                   try {
                     const result = await adminApi.bulkUploadTeas(file);
                     setCsvResult(result);
+                    adminApi.getTeas({ search: search || undefined, limit: 50 }).then(setTeas);
                     toast.success(`등록 ${result.success}건 / 스킵 ${result.skipped}건 / 오류 ${result.errors.length}건`);
                   } catch {
                     toast.error('업로드 실패');
@@ -493,6 +494,7 @@ export function AdminMaster() {
                   try {
                     const selected = crawlItems.filter((i) => i.selected).map(({ name, type, price }) => ({ name, type, price }));
                     const r = await adminApi.crawlRegister(selected);
+                    adminApi.getTeas({ search: search || undefined, limit: 50 }).then(setTeas);
                     toast.success(`등록 ${r.success}건 / 스킵 ${r.skipped}건`);
                     setCrawlItems([]);
                   } catch { toast.error('등록 실패'); }

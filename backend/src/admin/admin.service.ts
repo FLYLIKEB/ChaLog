@@ -1359,6 +1359,16 @@ export class AdminService {
       const type = row['type']?.trim();
       if (!name) { errors.push({ row: rowNum, message: 'name 필드가 비어있습니다.' }); continue; }
       if (!type) { errors.push({ row: rowNum, message: 'type 필드가 비어있습니다.' }); continue; }
+      const priceRaw = row['price']?.trim();
+      const weightRaw = row['weight']?.trim();
+      if (priceRaw) {
+        const p = Number(priceRaw);
+        if (!Number.isInteger(p) || p < 0) { errors.push({ row: rowNum, message: 'price는 0 이상의 정수여야 합니다.' }); continue; }
+      }
+      if (weightRaw) {
+        const w = Number(weightRaw);
+        if (!Number.isInteger(w) || w < 0) { errors.push({ row: rowNum, message: 'weight는 0 이상의 정수여야 합니다.' }); continue; }
+      }
       validRows.push({ row, rowNum, name, type });
     }
 
@@ -1367,11 +1377,15 @@ export class AdminService {
       : [];
     const existingKeys = new Set(existingTeas.map((t) => `${t.name}||${t.type}`));
 
+    const seen = new Set<string>();
     for (const { row, name, type } of validRows) {
       if (existingKeys.has(`${name}||${type}`)) { continue; }
+      const key = `${name}||${type}`;
+      if (seen.has(key)) { continue; }
+      seen.add(key);
 
-      const price = row['price'] ? parseInt(row['price'], 10) : undefined;
-      const weight = row['weight'] ? parseInt(row['weight'], 10) : undefined;
+      const price = row['price']?.trim() ? Number(row['price']?.trim()) : undefined;
+      const weight = row['weight']?.trim() ? Number(row['weight']?.trim()) : undefined;
       toInsert.push({
         name,
         type,

@@ -360,6 +360,8 @@ export class UsersController {
   @Get(':id/level')
   @UseGuards(OptionalJwtAuthGuard)
   getUserLevel(@Param('id') id: string) {
-    return this.userLevelService.getUserLevel(parseInt(id, 10));
+    const parsedId = parseInt(id, 10);
+    if (isNaN(parsedId)) throw new BadRequestException('유효하지 않은 사용자 ID입니다.');
+    return this.userLevelService.getUserLevel(parsedId);
   }
 }
