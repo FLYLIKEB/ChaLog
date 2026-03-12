@@ -1,9 +1,10 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, BadRequestException } from '@nestjs/common';
+import { ValidationPipe, BadRequestException, Logger } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const logger: ('error' | 'warn' | 'log' | 'debug' | 'verbose')[] =
@@ -62,6 +63,9 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
 
+  // HTTP 보안 헤더 (Helmet.js)
+  app.use(helmet());
+
   // 전역 API prefix 설정 (health는 배포 플랫폼 체크용으로 /health 노출)
   app.setGlobalPrefix('api', { exclude: ['health'] });
 
@@ -97,7 +101,7 @@ async function bootstrap() {
 
   const port = parseInt((configService.get('PORT') as string) || '3000', 10);
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  Logger.log(`Application is running on: http://localhost:${port}`, 'Bootstrap');
 }
 
 bootstrap().catch((error) => {
