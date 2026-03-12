@@ -1,0 +1,368 @@
+import { useState, useEffect } from 'react';
+import { Loader2, BookOpen, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { PostCategory, POST_CATEGORY_LABELS, PostImageItem, Note } from '../types';
+import { notesApi } from '../lib/api';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { PostImageUploader } from './PostImageUploader';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from 'sonner';
+import { cn } from './ui/utils';
+
+type WriteGroupKey = 'qna' | 'review' | 'announcement' | 'report';
+
+const WRITE_GROUPS: Array<{
+  key: WriteGroupKey;
+  label: string;
+  categories: Array<{ value: PostCategory; label: string; hint?: string }>;
+}> = [
+  {
+    key: 'qna',
+    label: '질문·토론',
+    categories: [
+      { value: 'brewing_question', label: POST_CATEGORY_LABELS.brewing_question, hint: '우림법, 온도, 시간 등' },
+      { value: 'recommendation', label: POST_CATEGORY_LABELS.recommendation, hint: '차 추천 요청' },
+      { value: 'discussion', label: POST_CATEGORY_LABELS.discussion, hint: '자유 주제 토론' },
+    ],
+  },
+  {
+    key: 'review',
+    label: '리뷰',
+    categories: [
+      { value: 'tea_review', label: POST_CATEGORY_LABELS.tea_review, hint: '차 시음 후기' },
+      { value: 'tool_review', label: POST_CATEGORY_LABELS.tool_review, hint: '다기·도구 후기' },
+      { value: 'tea_room_review', label: POST_CATEGORY_LABELS.tea_room_review, hint: '찻집·카페 방문기' },
+    ],
+  },
+  {
+    key: 'announcement',
+    label: '공지',
+    categories: [{ value: 'announcement', label: POST_CATEGORY_LABELS.announcement }],
+  },
+  {
+    key: 'report',
+    label: '제보',
+    categories: [{ value: 'bug_report', label: POST_CATEGORY_LABELS.bug_report }],
+  },
+];
+
+export function getGroupFromCategory(cat: PostCategory): WriteGroupKey {
+  return WRITE_GROUPS.find((g) => g.categories.some((c) => c.value === cat))?.key ?? 'qna';
+}
+
+export interface PostFormValues {
+  title: string;
+  content: string;
+  category: PostCategory;
+  isAnonymous: boolean;
+  isPinned: boolean;
+  isSponsored: boolean;
+  sponsorNote: string;
+  images: PostImageItem[];
+  taggedNoteIds: number[];
+}
+
+type TaggedNote = Pick<Note, 'id' | 'teaName' | 'overallRating'>;
+
+interface PostFormInitialValues {
+  title?: string;
+  content?: string;
+  category?: PostCategory;
+  isAnonymous?: boolean;
+  isPinned?: boolean;
+  isSponsored?: boolean;
+  sponsorNote?: string;
+  images?: PostImageItem[];
+  taggedNotes?: TaggedNote[];
+}
+
+interface PostFormProps {
+  mode: 'create' | 'edit';
+  initialValues?: PostFormInitialValues;
+  onSubmit: (values: PostFormValues) => Promise<void>;
+  isSubmitting: boolean;
+}
+
+export function PostForm({ mode, initialValues, onSubmit, isSubmitting }: PostFormProps) {
+  const { user, isAdmin } = useAuth();
+
+  const [title, setTitle] = useState(initialValues?.title ?? '');
+  const [content, setContent] = useState(initialValues?.content ?? '');
+  const [selectedGroup, setSelectedGroup] = useState<WriteGroupKey>(
+    initialValues?.category ? getGroupFromCategory(initialValues.category) : 'qna',
+  );
+  const [category, setCategory] = useState<PostCategory>(initialValues?.category ?? 'brewing_question');
+  const [isAnonymous, setIsAnonymous] = useState(initialValues?.isAnonymous ?? false);
+  const [isPinned, setIsPinned] = useState(initialValues?.isPinned ?? false);
+  const [isSponsored, setIsSponsored] = useState(initialValues?.isSponsored ?? false);
+  const [sponsorNote, setSponsorNote] = useState(initialValues?.sponsorNote ?? '');
+  const [images, setImages] = useState<PostImageItem[]>(initialValues?.images ?? []);
+  const [taggedNotes, setTaggedNotes] = useState<TaggedNote[]>(initialValues?.taggedNotes ?? []);
+  const [notePickerOpen, setNotePickerOpen] = useState(false);
+  const [myNotes, setMyNotes] = useState<TaggedNote[]>([]);
+  const [noteSearch, setNoteSearch] = useState('');
+
+  useEffect(() => {
+    if (!notePickerOpen || myNotes.length > 0 || !user) return;
+    notesApi
+      .getAll(user.id, undefined, undefined, undefined, undefined, undefined, 1, 100)
+      .then((notes) =>
+        setMyNotes(notes.map((n) => ({ id: n.id, teaName: n.teaName, overallRating: n.overallRating }))),
+      )
+      .catch(() => {});
+  }, [notePickerOpen, user]);
+
+  const toggleNoteTag = (note: TaggedNote) => {
+    setTaggedNotes((prev) => {
+      if (prev.some((n) => n.id === note.id)) return prev.filter((n) => n.id !== note.id);
+      if (prev.length >= 5) {
+        toast.error('차록은 최대 5개까지 태그할 수 있습니다.');
+        return prev;
+      }
+      return [...prev, note];
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || !content.trim()) {
+      toast.error('제목과 내용을 입력해주세요.');
+      return;
+    }
+    await onSubmit({
+      title: title.trim(),
+      content: content.trim(),
+      category,
+      isAnonymous,
+      isPinned,
+      isSponsored,
+      sponsorNote,
+      images,
+      taggedNoteIds: taggedNotes.map((n) => n.id),
+    });
+  };
+
+  const filteredNotes = myNotes.filter((n) =>
+    (n.teaName ?? '').toLowerCase().includes(noteSearch.toLowerCase()),
+  );
+
+  return (
+    <form onSubmit={handleSubmit} className="px-4 py-4 flex flex-col gap-5">
+      {/* 카테고리 선택 */}
+      <div className="flex flex-col gap-3">
+        <label className="text-sm font-medium text-foreground">어떤 주제인가요?</label>
+        <div className="flex flex-wrap gap-2">
+          {WRITE_GROUPS.filter((g) => g.key !== 'announcement' || isAdmin).map((g) => (
+            <button
+              key={g.key}
+              type="button"
+              onClick={() => {
+                setSelectedGroup(g.key);
+                setCategory(g.categories[0].value);
+              }}
+              className={cn(
+                'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                selectedGroup === g.key
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+              )}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-xs text-muted-foreground">세부 주제</span>
+          <div className="flex flex-wrap gap-2">
+            {WRITE_GROUPS.find((g) => g.key === selectedGroup)?.categories.map(({ value, label, hint }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setCategory(value)}
+                title={hint}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-sm font-medium transition-colors border',
+                  category === value
+                    ? 'bg-primary text-primary-foreground border-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/50 hover:text-foreground',
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 제목 */}
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-foreground" htmlFor="post-title">
+          제목 <span className="text-destructive">*</span>
+        </label>
+        <Input
+          id="post-title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="제목을 입력하세요"
+          maxLength={200}
+        />
+        <span className="text-xs text-muted-foreground text-right">{title.length}/200</span>
+      </div>
+
+      {/* 내용 */}
+      <div className="flex flex-col gap-2">
+        <label className="text-sm font-medium text-foreground" htmlFor="post-content">
+          내용 <span className="text-destructive">*</span>
+        </label>
+        <Textarea
+          id="post-content"
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="내용을 입력하세요. 마크다운(제목, 리스트, 링크, 테이블 등)을 사용할 수 있어요."
+          rows={8}
+        />
+        <p className="text-xs text-muted-foreground">마크다운 문법 지원</p>
+      </div>
+
+      {/* 사진 */}
+      <PostImageUploader images={images} onChange={setImages} maxImages={5} />
+
+      {/* 차록 태그 */}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setNotePickerOpen((v) => !v)}
+          className="flex items-center gap-2 text-sm font-medium text-foreground"
+        >
+          <BookOpen className="w-4 h-4" />
+          차록 태그하기 ({taggedNotes.length}/5)
+          {notePickerOpen ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+        </button>
+
+        {taggedNotes.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {taggedNotes.map((n) => (
+              <span
+                key={n.id}
+                className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium"
+              >
+                {n.teaName}
+                {n.overallRating !== null && (
+                  <span className="text-muted-foreground">({Number(n.overallRating).toFixed(1)})</span>
+                )}
+                <button type="button" onClick={() => toggleNoteTag(n)} className="ml-0.5 hover:text-destructive">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {notePickerOpen && (
+          <div className="border border-border rounded-lg p-3 flex flex-col gap-2">
+            <Input
+              placeholder="차 이름으로 검색"
+              value={noteSearch}
+              onChange={(e) => setNoteSearch(e.target.value)}
+              className="h-8 text-sm"
+            />
+            <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+              {filteredNotes.map((n) => {
+                const selected = taggedNotes.some((t) => t.id === n.id);
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => toggleNoteTag(n)}
+                    className={cn(
+                      'flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-colors',
+                      selected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-foreground',
+                    )}
+                  >
+                    <span>{n.teaName}</span>
+                    {n.overallRating !== null && (
+                      <span className="text-xs text-muted-foreground">★ {Number(n.overallRating).toFixed(1)}</span>
+                    )}
+                  </button>
+                );
+              })}
+              {myNotes.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">작성한 차록이 없습니다.</p>
+              )}
+              {myNotes.length > 0 && filteredNotes.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">검색 결과가 없습니다.</p>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 공지 고정 (관리자만) */}
+      {isAdmin && (
+        <div className="flex flex-col gap-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={isPinned}
+              onChange={(e) => setIsPinned(e.target.checked)}
+              className="w-4 h-4 rounded border-border accent-primary"
+            />
+            <span className="text-sm font-medium text-foreground">공지로 고정</span>
+          </label>
+        </div>
+      )}
+
+      {/* 익명 */}
+      <div className="flex flex-col gap-3">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isAnonymous}
+            onChange={(e) => setIsAnonymous(e.target.checked)}
+            className="w-4 h-4 rounded border-border accent-primary"
+          />
+          <span className="text-sm font-medium text-foreground">익명으로 작성</span>
+        </label>
+      </div>
+
+      {/* 광고/협찬 */}
+      <div className="flex flex-col gap-3">
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isSponsored}
+            onChange={(e) => setIsSponsored(e.target.checked)}
+            className="w-4 h-4 rounded border-border accent-primary"
+          />
+          <span className="text-sm font-medium text-foreground">광고/협찬 게시글</span>
+        </label>
+
+        {isSponsored && (
+          <Input
+            type="text"
+            value={sponsorNote}
+            onChange={(e) => setSponsorNote(e.target.value)}
+            placeholder="협찬 다실 또는 내용을 입력하세요 (선택)"
+            maxLength={300}
+          />
+        )}
+      </div>
+
+      {/* 제출 버튼 */}
+      <Button type="submit" disabled={isSubmitting || !title.trim() || !content.trim()} className="w-full">
+        {isSubmitting ? (
+          <>
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            {mode === 'create' ? '작성 중...' : '수정 중...'}
+          </>
+        ) : mode === 'create' ? (
+          '게시글 작성'
+        ) : (
+          '게시글 수정'
+        )}
+      </Button>
+    </form>
+  );
+}
