@@ -3,19 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { PostCard } from '../components/PostCard';
+import { TeaCard } from '../components/TeaCard';
 import { EmptyState } from '../components/EmptyState';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
 import { Button } from '../components/ui/button';
-import { notesApi, postsApi } from '../lib/api';
-import { Note, Post } from '../types';
+import { notesApi, postsApi, teasApi } from '../lib/api';
+import { Note, Post, Tea } from '../types';
 import { logger } from '../lib/logger';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../components/ui/utils';
 
-type SavedTab = 'notes' | 'posts';
+type SavedTab = 'notes' | 'posts' | 'teas';
 const PAGE_SIZE = 20;
 
 export function Saved() {
@@ -32,6 +33,8 @@ export function Saved() {
   const [postsPage, setPostsPage] = useState(1);
   const [postsHasMore, setPostsHasMore] = useState(true);
   const [isLoadingMorePosts, setIsLoadingMorePosts] = useState(false);
+  const [wishlistedTeas, setWishlistedTeas] = useState<Tea[]>([]);
+  const [isLoadingTeas, setIsLoadingTeas] = useState(false);
 
   const displayedNotes = useMemo(
     () => bookmarkedNotes.slice(0, notesDisplayCount),
@@ -71,6 +74,20 @@ export function Saved() {
     }
   }, [user]);
 
+  const fetchWishlistedTeas = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsLoadingTeas(true);
+      const teas = await teasApi.getWishlisted();
+      setWishlistedTeas(Array.isArray(teas) ? teas : []);
+    } catch (error) {
+      logger.error('Failed to fetch wishlisted teas:', error);
+      toast.error('찜한 차를 불러오는데 실패했습니다.');
+    } finally {
+      setIsLoadingTeas(false);
+    }
+  }, [user]);
+
   const handleLoadMorePosts = useCallback(async () => {
     if (!user) return;
     const nextPage = postsPage + 1;
@@ -101,15 +118,20 @@ export function Saved() {
     if (activeTab === 'posts' && user) {
       fetchBookmarkedPosts();
     }
-  }, [activeTab, user, fetchBookmarkedPosts]);
+    if (activeTab === 'teas' && user) {
+      fetchWishlistedTeas();
+    }
+  }, [activeTab, user, fetchBookmarkedPosts, fetchWishlistedTeas]);
 
   const handleRefresh = useCallback(() => {
     if (activeTab === 'notes') {
       fetchBookmarkedNotes();
-    } else {
+    } else if (activeTab === 'posts') {
       fetchBookmarkedPosts();
+    } else {
+      fetchWishlistedTeas();
     }
-  }, [activeTab, fetchBookmarkedNotes, fetchBookmarkedPosts]);
+  }, [activeTab, fetchBookmarkedNotes, fetchBookmarkedPosts, fetchWishlistedTeas]);
 
   const handleNoteBookmarkRemoved = (noteId: number) => {
     setBookmarkedNotes(prev => prev.filter(n => n.id !== noteId));
@@ -155,6 +177,17 @@ export function Saved() {
             )}
           >
             게시글
+          </button>
+          <button
+            onClick={() => setActiveTab('teas')}
+            className={cn(
+              'px-4 py-2 rounded-full text-sm font-medium transition-colors',
+              activeTab === 'teas'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50',
+            )}
+          >
+            찜한 차
           </button>
         </div>
       </div>
@@ -242,6 +275,28 @@ export function Saved() {
                 type="feed"
                 message="아직 저장한 게시글이 없어요."
                 action={{ label: '차담 보기', onClick: () => navigate('/chadam') }}
+              />
+            )}
+          </Section>
+        )}
+
+        {activeTab === 'teas' && (
+          <Section title="찜한 차" spacing="lg">
+            {isLoadingTeas ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" role="status" aria-label="로딩 중" />
+              </div>
+            ) : wishlistedTeas.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {wishlistedTeas.map(tea => (
+                  <TeaCard key={tea.id} tea={tea} />
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                type="search"
+                message="아직 찜한 차가 없어요."
+                action={{ label: '차 탐색하기', onClick: () => navigate('/sasaek') }}
               />
             )}
           </Section>
