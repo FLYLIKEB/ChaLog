@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Body, UseGuards, Request, BadRequestException, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Request, Req, Res, BadRequestException, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -10,37 +11,78 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { FindEmailDto } from './dto/find-email.dto';
 import { AuthGuard } from '@nestjs/passport';
 
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax' as const,
+  path: '/',
+};
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 인증 엔드포인트는 더 엄격한 제한
   @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return await this.authService.register(
+  async register(@Body() registerDto: RegisterDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.register(
       registerDto.email,
       registerDto.name,
       registerDto.password,
     );
+    res.cookie('access_token', result.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 1000 });
+    res.cookie('refresh_token', result.refresh_token, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    return result;
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseGuards(AuthGuard('local'))
   @Post('login')
-  async login(@Request() req, @Body() loginDto: LoginDto) {
-    return await this.authService.login(req.user);
+  async login(@Request() req, @Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.login(req.user);
+    res.cookie('access_token', result.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 1000 });
+    res.cookie('refresh_token', result.refresh_token, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    return result;
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('kakao')
-  async loginWithKakao(@Body() kakaoLoginDto: KakaoLoginDto) {
-    return await this.authService.loginWithKakao(kakaoLoginDto.accessToken);
+  async loginWithKakao(@Body() kakaoLoginDto: KakaoLoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.loginWithKakao(kakaoLoginDto.accessToken);
+    res.cookie('access_token', result.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 1000 });
+    res.cookie('refresh_token', result.refresh_token, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    return result;
   }
 
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('google')
-  async loginWithGoogle(@Body() googleLoginDto: GoogleLoginDto) {
-    return await this.authService.loginWithGoogle(googleLoginDto.accessToken);
+  async loginWithGoogle(@Body() googleLoginDto: GoogleLoginDto, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.loginWithGoogle(googleLoginDto.accessToken);
+    res.cookie('access_token', result.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 1000 });
+    res.cookie('refresh_token', result.refresh_token, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    return result;
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  async refresh(@Req() req, @Res({ passthrough: true }) res: Response) {
+    const rawToken = req.cookies?.['refresh_token'];
+    if (!rawToken) throw new UnauthorizedException('리프레시 토큰이 없습니다.');
+    const result = await this.authService.validateAndRotateRefreshToken(rawToken);
+    res.cookie('access_token', result.access_token, { ...COOKIE_OPTIONS, maxAge: 60 * 60 * 1000 });
+    res.cookie('refresh_token', result.refresh_token, { ...COOKIE_OPTIONS, maxAge: 7 * 24 * 60 * 60 * 1000 });
+    return { message: '토큰이 갱신되었습니다.' };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('logout')
+  @HttpCode(204)
+  async logout(@Request() req, @Res({ passthrough: true }) res: Response) {
+    if (req.user?.userId) {
+      await this.authService.revokeAllRefreshTokens(req.user.userId);
+    }
+    res.clearCookie('access_token', { path: '/' });
+    res.clearCookie('refresh_token', { path: '/' });
   }
 
   @UseGuards(AuthGuard('jwt'))

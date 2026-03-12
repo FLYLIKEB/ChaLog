@@ -8,6 +8,7 @@ import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import { AuthProvider, UserAuthentication } from '../users/entities/user-authentication.entity';
 import { PasswordReset } from '../users/entities/password-reset.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { MailService } from '../mail/mail.service';
 import axios from 'axios';
 
@@ -20,6 +21,8 @@ export class AuthService {
     private userAuthRepository: Repository<UserAuthentication>,
     @InjectRepository(PasswordReset)
     private passwordResetRepository: Repository<PasswordReset>,
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepository: Repository<RefreshToken>,
     private mailService: MailService,
   ) {}
 
@@ -46,8 +49,11 @@ export class AuthService {
       email: email || null,
       sub: user.id,
     };
+    const access_token = this.jwtService.sign(payload);
+    const refresh_token = await this.generateRefreshTokenValue(user.id);
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
+      refresh_token,
       user: {
         id: user.id,
         email: email || null,
@@ -55,6 +61,34 @@ export class AuthService {
         role: user.role,
       },
     };
+  }
+
+  private async generateRefreshTokenValue(userId: number): Promise<string> {
+    const raw = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(raw).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7일
+    await this.refreshTokenRepository.save({ userId, tokenHash, expiresAt, isRevoked: false });
+    return raw;
+  }
+
+  async validateAndRotateRefreshToken(rawToken: string): Promise<{ access_token: string; refresh_token: string; userId: number }> {
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const stored = await this.refreshTokenRepository.findOne({ where: { tokenHash } });
+    if (!stored || stored.isRevoked || stored.expiresAt < new Date()) {
+      throw new UnauthorizedException('유효하지 않은 리프레시 토큰입니다.');
+    }
+    // Rotate: revoke old, issue new
+    stored.isRevoked = true;
+    await this.refreshTokenRepository.save(stored);
+
+    const email = await this.usersService.getUserEmail(stored.userId);
+    const access_token = this.jwtService.sign({ email: email || null, sub: stored.userId });
+    const refresh_token = await this.generateRefreshTokenValue(stored.userId);
+    return { access_token, refresh_token, userId: stored.userId };
+  }
+
+  async revokeAllRefreshTokens(userId: number): Promise<void> {
+    await this.refreshTokenRepository.update({ userId, isRevoked: false }, { isRevoked: true });
   }
 
   async register(email: string, name: string, password: string) {

@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAuthentication } from '../users/entities/user-authentication.entity';
 import { PasswordReset } from '../users/entities/password-reset.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { MailModule } from '../mail/mail.module';
 
 @Module({
@@ -17,7 +18,7 @@ import { MailModule } from '../mail/mail.module';
     UsersModule,
     PassportModule,
     MailModule,
-    TypeOrmModule.forFeature([UserAuthentication, PasswordReset]),
+    TypeOrmModule.forFeature([UserAuthentication, PasswordReset, RefreshToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
@@ -27,7 +28,7 @@ import { MailModule } from '../mail/mail.module';
           throw new Error('JWT_SECRET environment variable is required and must not be empty');
         }
         
-        const jwtExpiresIn = configService.get<string>('JWT_EXPIRES_IN') || '7d';
+        const jwtExpiresIn = configService.get<string>('JWT_EXPIRES_IN') || '1h';
         
         return {
           secret: jwtSecret,
