@@ -46,7 +46,7 @@ type SearchCategory = 'tea' | 'note' | 'cellar' | 'seller' | 'tag';
 
 const SEARCH_CATEGORIES: { key: SearchCategory; label: string }[] = [
   { key: 'tea', label: '차' },
-  { key: 'note', label: '차록' },
+  { key: 'note', label: '내 차록' },
   { key: 'cellar', label: '찻장' },
   { key: 'seller', label: '찻집' },
   { key: 'tag', label: '향미' },
