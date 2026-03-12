@@ -63,6 +63,25 @@ const CELLAR_SORT_OPTIONS = [
   { key: 'quantity' as const, label: '수량순' },
 ];
 
+const CATEGORY_CREATE_CONFIG: Partial<Record<SearchCategory, { label: string; path: string }>> = {
+  tea: { label: '🍵 새 차 등록', path: '/tea/new' },
+  note: { label: '📝 새 차록 쓰기', path: '/note/new' },
+  cellar: { label: '📦 새 찻장 항목 추가', path: '/cellar/new' },
+  seller: { label: '🏪 새 찻집 등록', path: '/teahouse/new' },
+};
+
+function CategoryCreateButton({ category }: { category: SearchCategory }) {
+  const navigate = useNavigate();
+  const config = CATEGORY_CREATE_CONFIG[category];
+  if (!config) return null;
+  return (
+    <Button variant="outline" className="w-full mt-3" onClick={() => navigate(config.path)}>
+      <Plus className="w-4 h-4 mr-2" />
+      {config.label}
+    </Button>
+  );
+}
+
 interface FilterPanelProps {
   category: SearchCategory;
   filterOpen: boolean;
@@ -819,11 +838,14 @@ export function Search() {
                     </div>
                   </>
                 ) : hasSearched || hasFilterParams ? (
-                  <EmptyState
-                    type="search"
-                    message="검색 결과가 없어요."
-                    action={{ label: '검색어 바꿔보기', onClick: goBackToExplore }}
-                  />
+                  <>
+                    <EmptyState
+                      type="search"
+                      message="검색 결과가 없어요."
+                      action={{ label: '검색어 바꿔보기', onClick: goBackToExplore }}
+                    />
+                    <CategoryCreateButton category="tea" />
+                  </>
                 ) : null}
               </>
             )}
@@ -846,7 +868,10 @@ export function Search() {
                     </div>
                   </>
                 ) : (
-                  <EmptyState type="search" message="공개된 차록이 없어요." />
+                  <>
+                    <EmptyState type="search" message="차록이 없어요." />
+                    <CategoryCreateButton category="note" />
+                  </>
                 )}
               </>
             )}
@@ -885,7 +910,10 @@ export function Search() {
                     </div>
                   </>
                 ) : (
-                  <EmptyState type="search" message="찻장이 비어있어요." />
+                  <>
+                    <EmptyState type="search" message="찻장이 비어있어요." />
+                    <CategoryCreateButton category="cellar" />
+                  </>
                 )}
               </>
             )}
@@ -917,7 +945,10 @@ export function Search() {
                     </div>
                   </>
                 ) : (
-                  <EmptyState type="search" message="찻집 검색 결과가 없어요." />
+                  <>
+                    <EmptyState type="search" message="찻집 검색 결과가 없어요." />
+                    <CategoryCreateButton category="seller" />
+                  </>
                 )}
               </>
             )}
@@ -955,16 +986,6 @@ export function Search() {
               </>
             )}
 
-            {searchCategory === 'tea' && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate('/tea/new')}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                🍵 새 차 등록
-              </Button>
-            )}
           </>
         )}
 
