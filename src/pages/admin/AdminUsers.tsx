@@ -191,7 +191,7 @@ export function AdminUsers() {
 
         {/* 프로필 수정 모달 */}
         <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <DialogTitle>프로필 수정</DialogTitle>
             </DialogHeader>

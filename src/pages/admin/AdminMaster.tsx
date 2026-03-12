@@ -596,7 +596,7 @@ export function AdminMaster() {
 
       {/* Detail Modal - 전체 정보 보기/수정 */}
       <Dialog open={!!detailOpen} onOpenChange={(open) => !open && setDetailOpen(null)}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>
               {detailOpen?.type === 'tea' && '차 상세'}
@@ -660,7 +660,7 @@ export function AdminMaster() {
 
       {/* Create Tea Modal */}
       <Dialog open={createOpen.tea} onOpenChange={(open) => setCreateOpen((o) => ({ ...o, tea: open }))}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>차 추가</DialogTitle>
           </DialogHeader>
@@ -748,7 +748,7 @@ export function AdminMaster() {
 
       {/* Create Seller Modal */}
       <Dialog open={createOpen.seller} onOpenChange={(open) => setCreateOpen((o) => ({ ...o, seller: open }))}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>찻집 추가</DialogTitle>
           </DialogHeader>
@@ -791,7 +791,7 @@ export function AdminMaster() {
 
       {/* Create Tag Modal */}
       <Dialog open={createOpen.tag} onOpenChange={(open) => setCreateOpen((o) => ({ ...o, tag: open }))}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>태그 추가</DialogTitle>
           </DialogHeader>

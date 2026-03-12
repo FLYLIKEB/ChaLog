@@ -43,7 +43,7 @@ export function RatingGuideModal({ trigger, children, schemaAxes }: RatingGuideM
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>차록 평가 가이드</DialogTitle>
         </DialogHeader>
