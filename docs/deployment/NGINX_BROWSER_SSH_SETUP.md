@@ -26,7 +26,7 @@ sudo apt-get install -y nginx
 sudo tee /etc/nginx/sites-available/chalog-backend > /dev/null << 'EOF'
 server {
     listen 80;
-    server_name 3.39.48.139;
+    server_name YOUR_LIGHTSAIL_IP;
     
     # 로그 설정
     access_log /var/log/nginx/chalog-backend-access.log;
@@ -124,7 +124,7 @@ sudo ss -tlnp | grep :80
 curl http://localhost/health
 
 # 외부에서 테스트 (다른 터미널에서)
-curl http://3.39.48.139/health
+curl http://YOUR_LIGHTSAIL_IP/health
 ```
 
 예상 응답:
@@ -205,7 +205,7 @@ sudo apt-get update && sudo apt-get install -y nginx
 sudo tee /etc/nginx/sites-available/chalog-backend > /dev/null << 'EOF'
 server {
     listen 80;
-    server_name 3.39.48.139;
+    server_name YOUR_LIGHTSAIL_IP;
     access_log /var/log/nginx/chalog-backend-access.log;
     error_log /var/log/nginx/chalog-backend-error.log;
     client_max_body_size 50M;

@@ -9,7 +9,7 @@ GitHub 저장소 → Settings → Secrets and variables → Actions에서 다음
 ### ✅ 필수 Secrets
 
 - [ ] **EC2_HOST** (Lightsail Public IP)
-  - 값: `3.39.48.139`
+  - 값: `YOUR_LIGHTSAIL_IP`
   - 설명: Lightsail 인스턴스 Public IP 주소
 
 - [ ] **EC2_USER**
@@ -128,7 +128,7 @@ cat /Users/jwp/Documents/programming/ChaLog/LightsailDefaultKey-ap-northeast-2.p
 
 2. Lightsail 인스턴스에서 공개 키 확인
    ```bash
-   ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+   ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
    cat ~/.ssh/authorized_keys
    ```
 

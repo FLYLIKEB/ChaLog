@@ -39,7 +39,7 @@ EC2에서 Lightsail로 전환하여 비용을 절감하는 가이드입니다.
 
 ```bash
 # EC2에서 현재 애플리케이션 상태 확인
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 
 # PM2 상태 확인
 pm2 status
@@ -54,7 +54,7 @@ du -sh /home/ubuntu/chalog-backend/*
 
 ```bash
 # 데이터베이스 백업 (Lightsail Docker MySQL인 경우)
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139 \
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP \
   "docker exec chalog-mysql mysqldump -uroot -p\${MYSQL_ROOT_PASSWORD} chalog" > chalog-backup-$(date +%Y%m%d).sql
 
 # 애플리케이션 파일 백업
@@ -69,7 +69,7 @@ EC2 서버의 `.env` 파일을 로컬로 복사:
 ```bash
 # EC2에서 .env 파일 다운로드
 scp -i LightsailDefaultKey-ap-northeast-2.pem \
-  ubuntu@3.39.48.139:/home/ubuntu/chalog-backend/.env \
+  ubuntu@YOUR_LIGHTSAIL_IP:/home/ubuntu/chalog-backend/.env \
   ./backend/.env.backup
 ```
 
@@ -212,7 +212,7 @@ sudo ufw enable
 Lightsail 인스턴스에서 Docker MySQL이 실행 중인지 확인:
 
 ```bash
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 docker ps | grep chalog-mysql
 ```
 
@@ -364,7 +364,7 @@ Vercel 환경 변수 또는 프론트엔드 설정에서 백엔드 URL 변경:
 
 ```env
 # 기존
-BACKEND_URL=http://3.39.48.139:3000
+BACKEND_URL=http://YOUR_LIGHTSAIL_IP:3000
 
 # 변경
 BACKEND_URL=http://your-lightsail-ip:3000

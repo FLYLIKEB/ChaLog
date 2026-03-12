@@ -9,7 +9,7 @@ Lightsail Docker MySQL 배포를 위한 빠른 체크리스트입니다.
 GitHub 저장소 → Settings → Secrets and variables → Actions
 
 필수 Secrets:
-- [ ] `EC2_HOST`: Lightsail Public IP (예: `3.39.48.139`)
+- [ ] `EC2_HOST`: Lightsail Public IP (예: `YOUR_LIGHTSAIL_IP`)
 - [ ] `EC2_USER`: `ubuntu` (Lightsail SSH 사용자명)
 - [ ] `EC2_SSH_KEY`: Lightsail SSH 키 전체 내용
   - 확인: `cat LightsailDefaultKey-ap-northeast-2.pem`
@@ -81,7 +81,7 @@ docker ps | grep chalog-mysql
 ### 3. 외부에서 Health Check
 
 ```bash
-curl http://3.39.48.139:3000/health
+curl http://YOUR_LIGHTSAIL_IP:3000/health
 ```
 
 예상 응답:
@@ -97,7 +97,7 @@ curl http://3.39.48.139:3000/health
 ### 로컬 SSH가 가능한 경우
 
 ```bash
-./scripts/setup-nginx.sh 3.39.48.139
+./scripts/setup-nginx.sh YOUR_LIGHTSAIL_IP
 ```
 
 ### 브라우저 SSH를 사용하는 경우
@@ -113,7 +113,7 @@ sudo apt-get install -y nginx
 sudo tee /etc/nginx/sites-available/chalog-backend > /dev/null << 'EOF'
 server {
     listen 80;
-    server_name 3.39.48.139;
+    server_name YOUR_LIGHTSAIL_IP;
     
     access_log /var/log/nginx/chalog-backend-access.log;
     error_log /var/log/nginx/chalog-backend-error.log;

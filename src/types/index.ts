@@ -113,6 +113,8 @@ export interface Note {
   teaId: number;
   teaName: string;
   teaType?: string;
+  teaYear?: number;
+  teaSeller?: string;
   userId: number;
   userName: string;
   schemaId: number;

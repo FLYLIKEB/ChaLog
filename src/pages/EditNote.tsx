@@ -324,8 +324,7 @@ export function EditNote() {
       const calculatedOverallRating =
         overallRating ??
         (axisValuesArray.length > 0
-          ? axisValuesArray.reduce((sum, av) => sum + av.value, 0) /
-            axisValuesArray.length
+          ? Math.round((axisValuesArray.reduce((sum, av) => sum + av.value, 0) / axisValuesArray.length) * 2) / 2
           : null);
 
       // memo 처리: 빈 문자열이나 공백만 있는 경우 null로 변환

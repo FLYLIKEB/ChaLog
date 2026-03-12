@@ -18,7 +18,7 @@ NC='\033[0m'
 # RDS 설정 (계획 파일에서 가져옴)
 RDS_ENDPOINT="${RDS_ENDPOINT:-database-1.cnyqy8snc0sl.ap-northeast-2.rds.amazonaws.com}"
 RDS_USER="${RDS_USER:-admin}"
-RDS_PASSWORD="${RDS_PASSWORD:-az980831}"
+RDS_PASSWORD="${RDS_PASSWORD:?RDS_PASSWORD is required}"
 RDS_DATABASE="${RDS_DATABASE:-chalog}"
 
 # Docker MySQL 설정

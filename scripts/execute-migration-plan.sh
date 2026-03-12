@@ -14,10 +14,16 @@ CYAN='\033[0;36m'
 NC='\033[0m'
 
 # 설정
-LIGHTSAIL_IP="${LIGHTSAIL_IP:-3.39.48.139}"
+LIGHTSAIL_IP="${LIGHTSAIL_IP:-}"
 SSH_KEY="${SSH_KEY_PATH:-LightsailDefaultKey-ap-northeast-2.pem}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+if [ -z "$LIGHTSAIL_IP" ]; then
+    echo -e "${RED}❌ LIGHTSAIL_IP가 필요합니다.${NC}"
+    echo "사용법: LIGHTSAIL_IP=<IP> $0"
+    exit 1
+fi
 
 # SSH 키 경로 확인
 if [[ "$SSH_KEY" == ~* ]]; then

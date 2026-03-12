@@ -48,7 +48,7 @@ export function Report() {
       try {
         setIsLoading(true);
         const data = await notesApi.getAll(user.id, undefined, undefined, undefined, undefined, 'latest', 1, 500);
-        setNotes(Array.isArray(data) ? data : (data as any)?.notes ?? []);
+        setNotes(Array.isArray(data) ? data : (data as any)?.data ?? (data as any)?.notes ?? []);
       } catch (error) {
         logger.error('Failed to fetch notes for report:', error);
         toast.error('차록 데이터를 불러오는데 실패했습니다.');
@@ -105,7 +105,7 @@ export function Report() {
   }
 
   return (
-    <div className="min-h-screen pb-20 flex flex-col overflow-hidden">
+    <div className="min-h-screen pb-20 flex flex-col">
       <Header title="차록 레포트" showBack onBack={() => navigate(-1)} />
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-6">
@@ -138,7 +138,7 @@ export function Report() {
         {/* 요약 카드 */}
         <div className="grid grid-cols-3 gap-2">
           <div className="bg-card rounded-xl p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">이번 달</p>
+            <p className="text-xs text-muted-foreground mb-1">{selectedMonth ? formatMonthLabel(selectedMonth) : '이번 달'}</p>
             <p className="text-xl font-bold text-primary">{report.thisMonthCount}</p>
             <p className="text-xs text-muted-foreground">건</p>
           </div>

@@ -5,7 +5,7 @@ Lightsail 배포를 위한 GitHub Secrets 설정 가이드입니다.
 ## 필수 Secrets
 
 ### 1. EC2_HOST (Lightsail Public IP)
-- **값**: `3.39.48.139` (Lightsail Public IP)
+- **값**: `YOUR_LIGHTSAIL_IP` (Lightsail Public IP)
 - **설정 위치**: GitHub 저장소 → Settings → Secrets and variables → Actions → New repository secret
 
 ### 2. EC2_USER (Lightsail SSH 사용자명)

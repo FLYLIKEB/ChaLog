@@ -13,8 +13,15 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-LIGHTSAIL_IP="${1:-3.39.48.139}"
+LIGHTSAIL_IP="${1:-${LIGHTSAIL_IP}}"
 BACKEND_DIR="/home/ubuntu/chalog-backend"
+
+if [ -z "$LIGHTSAIL_IP" ]; then
+    echo -e "${RED}❌ Lightsail IP가 필요합니다.${NC}"
+    echo "사용법: $0 <LIGHTSAIL_IP>"
+    echo "또는 환경 변수: LIGHTSAIL_IP=<IP> $0"
+    exit 1
+fi
 
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${CYAN}✅ 배포 후 확인${NC}"

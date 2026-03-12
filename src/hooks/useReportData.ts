@@ -27,8 +27,12 @@ export function useReportData(notes: Note[], selectedMonth: string | null): Repo
       ? notes.filter((n) => toMonthKey(new Date(n.createdAt)) === selectedMonth)
       : notes;
 
-    const thisMonthNotes = notes.filter((n) => toMonthKey(new Date(n.createdAt)) === thisMonth);
-    const lastMonthNotes = notes.filter((n) => toMonthKey(new Date(n.createdAt)) === lastMonth);
+    const currentKey = selectedMonth ?? thisMonth;
+    const [cy, cm] = currentKey.split('-').map(Number);
+    const prevKey = toMonthKey(new Date(cy, cm - 2, 1));
+
+    const thisMonthNotes = notes.filter((n) => toMonthKey(new Date(n.createdAt)) === currentKey);
+    const lastMonthNotes = notes.filter((n) => toMonthKey(new Date(n.createdAt)) === prevKey);
 
     // 차 종류별 분포
     const typeMap: Record<string, number> = {};

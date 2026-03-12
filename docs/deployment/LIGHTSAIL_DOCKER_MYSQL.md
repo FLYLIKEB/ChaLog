@@ -152,10 +152,10 @@ mysqldump -h your-source-db-host \
 # Lightsail로 전송
 scp -i LightsailDefaultKey-ap-northeast-2.pem \
   chalog_backup.sql \
-  ubuntu@3.39.48.139:/tmp/
+  ubuntu@YOUR_LIGHTSAIL_IP:/tmp/
 
 # Lightsail에서 복원
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 docker exec -i chalog-mysql mysql -uroot -p${MYSQL_ROOT_PASSWORD} chalog < /tmp/chalog_backup.sql
 ```
 

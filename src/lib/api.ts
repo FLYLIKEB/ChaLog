@@ -131,7 +131,7 @@ function parseDates<T>(obj: T): T {
 interface BackendNote {
   id: number;
   teaId: number;
-  tea?: { name: string; type?: string };
+  tea?: { name: string; type?: string; year?: number; seller?: { name: string } | null };
   userId: number;
   user?: { name: string };
   schemaId: number;
@@ -183,6 +183,8 @@ interface NormalizedNote {
   teaId: number;
   teaName: string;
   teaType?: string;
+  teaYear?: number;
+  teaSeller?: string;
   userId: number;
   userName: string;
   schemaId: number;
@@ -251,6 +253,8 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     teaType: note.tea?.type || undefined,
+    teaYear: note.tea?.year ?? undefined,
+    teaSeller: note.tea?.seller?.name ?? undefined,
     userName: note.user?.name || '',
     // memo는 null을 유지 (이제 nullable)
     memo: note.memo,

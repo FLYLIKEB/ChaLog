@@ -34,12 +34,17 @@ fi
 
 # SSH 연결 정보
 SSH_KEY="${LIGHTSAIL_KEY_PATH:-${SSH_KEY_PATH:-}}"
-EC2_HOST_ADDR="${EC2_HOST:-3.39.48.139}"
+EC2_HOST_ADDR="${EC2_HOST:-}"
 EC2_USER_NAME="${EC2_USER:-ubuntu}"
 SSH_TUNNEL_PORT="${SSH_TUNNEL_LOCAL_PORT:-3307}"
 EC2_APP_DIR="/home/ubuntu/chalog-backend"
 
 # 필수 값 검증
+if [ -z "$EC2_HOST_ADDR" ]; then
+  echo "❌ EC2_HOST가 설정되지 않았습니다. .ec2-config 또는 환경 변수에 설정하세요."
+  exit 1
+fi
+
 if [ -z "${TEST_DATABASE_URL:-}" ]; then
   echo "❌ TEST_DATABASE_URL / LOCAL_DATABASE_URL 환경 변수가 설정되지 않았습니다."
   exit 1

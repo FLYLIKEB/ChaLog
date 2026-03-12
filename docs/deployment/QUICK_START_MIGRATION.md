@@ -18,7 +18,7 @@ cd /Users/jwp/Documents/programming/ChaLog
 
 **단계:**
 1. AWS Lightsail 콘솔 접속: https://lightsail.aws.amazon.com/
-2. 인스턴스 선택 (IP: 3.39.48.139)
+2. 인스턴스 선택 (IP: YOUR_LIGHTSAIL_IP)
 3. "브라우저에서 연결" 클릭
 4. 출력된 명령어들을 복사하여 브라우저 터미널에 붙여넣기
 
@@ -40,13 +40,13 @@ cd /Users/jwp/Documents/programming/ChaLog
 
 ```bash
 # 1. SSH 접속 후 마이그레이션 실행
-ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@3.39.48.139
+ssh -i LightsailDefaultKey-ap-northeast-2.pem ubuntu@YOUR_LIGHTSAIL_IP
 cd /home/ubuntu/chalog-backend
 export $(cat .env | xargs)
 npx typeorm-ts-node-commonjs migration:run -d dist/src/database/data-source.js
 
 # 2. Nginx 설정
-./scripts/setup-nginx.sh 3.39.48.139
+./scripts/setup-nginx.sh YOUR_LIGHTSAIL_IP
 ```
 
 ## 📋 준비된 스크립트
@@ -104,7 +104,7 @@ docker compose up -d mysql
 - [ ] 마이그레이션 완료
 - [ ] Docker MySQL에 테이블 확인
 - [ ] 애플리케이션 배포 완료
-- [ ] Health check 통과 (`curl http://3.39.48.139/health`)
+- [ ] Health check 통과 (`curl http://YOUR_LIGHTSAIL_IP/health`)
 - [ ] Nginx 설정 완료
 - [ ] 모든 기능 테스트 완료
 

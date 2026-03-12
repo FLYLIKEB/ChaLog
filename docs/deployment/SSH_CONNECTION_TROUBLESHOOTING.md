@@ -5,7 +5,7 @@ Lightsail 인스턴스에 SSH 연결이 안 될 때 해결 방법입니다.
 ## 증상
 
 - `Connection timed out during banner exchange`
-- `Connection to 3.39.48.139 port 22 timed out`
+- `Connection to YOUR_LIGHTSAIL_IP port 22 timed out`
 - **GitHub Actions**: `❌ 포트 22 닫힘 또는 타임아웃` → [포트 22 타임아웃 전용 가이드](../SSH_CONNECTION_TIMEOUT_TROUBLESHOOTING.md) 참고
 - 포트 22는 열려있지만 SSH 연결 실패
 
@@ -16,7 +16,7 @@ Lightsail 인스턴스에 SSH 연결이 안 될 때 해결 방법입니다.
 **AWS Lightsail 콘솔에서 확인:**
 
 1. https://lightsail.aws.amazon.com/ 접속
-2. 인스턴스 선택 (IP: 3.39.48.139)
+2. 인스턴스 선택 (IP: YOUR_LIGHTSAIL_IP)
 3. 상태 확인:
    - ✅ **Running** (실행 중) → 다음 단계로
    - ❌ **Stopped** (중지됨) → "Start" 버튼 클릭하여 시작
@@ -161,7 +161,7 @@ chmod 600 ~/.ssh/authorized_keys
 ssh -i LightsailDefaultKey-ap-northeast-2.pem \
     -o ConnectTimeout=10 \
     -o StrictHostKeyChecking=no \
-    ubuntu@3.39.48.139 \
+    ubuntu@YOUR_LIGHTSAIL_IP \
     "echo '연결 성공' && hostname"
 ```
 

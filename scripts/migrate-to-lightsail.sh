@@ -64,8 +64,14 @@ if [ -f "$PROJECT_ROOT/.ec2-config" ]; then
     source "$PROJECT_ROOT/.ec2-config"
 fi
 
-EC2_HOST="${EC2_HOST:-3.39.48.139}"
+EC2_HOST="${EC2_HOST:-}"
 EC2_USER="${EC2_USER:-ubuntu}"
+
+if [ -z "$EC2_HOST" ]; then
+    echo -e "${RED}❌ EC2_HOST가 필요합니다. .ec2-config에 설정하거나 EC2_HOST 환경 변수를 설정하세요.${NC}"
+    echo "사용법: EC2_HOST=<IP> $0 <LIGHTSAIL_IP> [SSH_KEY_PATH]"
+    exit 1
+fi
 
 echo "EC2 호스트: $EC2_USER@$EC2_HOST"
 echo "Lightsail IP: $LIGHTSAIL_IP"
