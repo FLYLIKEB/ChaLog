@@ -105,7 +105,7 @@ export function BottomNav({ className, ...rest }: BottomNavProps) {
           );
         })}
         <button
-          onClick={() => setMoreOpen(true)}
+          onClick={(e) => { (e.currentTarget as HTMLButtonElement).blur(); setMoreOpen(true); }}
           className={cn(
             'min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-all duration-200 active:scale-95',
             isMoreActive(location.pathname) ? 'text-primary' : 'text-muted-foreground',
