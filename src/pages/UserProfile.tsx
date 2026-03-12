@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
-import { TeaCard } from '../components/TeaCard';
+
 import { EmptyState } from '../components/EmptyState';
 import {
   Select,
@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
-import { usersApi, notesApi, followsApi, teasApi } from '../lib/api';
-import { User, Note, UserOnboardingPreference, Tea, UserLevel } from '../types';
+import { usersApi, notesApi, followsApi } from '../lib/api';
+import { User, Note, UserOnboardingPreference, UserLevel } from '../types';
 import { toast } from 'sonner';
 import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark, BarChart2 } from 'lucide-react';
 import { logger } from '../lib/logger';
@@ -53,7 +53,7 @@ export function UserProfile() {
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
 
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
-  const [wishlistedTeas, setWishlistedTeas] = useState<Tea[]>([]);
+
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
 
   const initialLoadDone = useRef(false);
@@ -105,9 +105,6 @@ export function UserProfile() {
       setOnboardingPreference(pref);
       initialLoadDone.current = true;
 
-      if (isOwnProfile) {
-        teasApi.getWishlisted().then((teas) => setWishlistedTeas(Array.isArray(teas) ? teas : [])).catch(() => {});
-      }
     } catch (error: unknown) {
       logger.error('Failed to fetch user profile:', error);
       const statusCode = (error as { statusCode?: number })?.statusCode;
@@ -564,25 +561,6 @@ export function UserProfile() {
               </SelectContent>
             </Select>
           </div>
-        )}
-
-        {/* 찜한 차 섹션 - 내 프로필에서만 표시 */}
-        {isOwnProfile && (
-          <Section title="찜한 차" spacing="lg">
-            {wishlistedTeas.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {wishlistedTeas.map((tea) => (
-                  <TeaCard key={tea.id} tea={tea} />
-                ))}
-              </div>
-            ) : (
-              <EmptyState
-                type="search"
-                message="아직 찜한 차가 없어요."
-                action={{ label: '차 탐색하기', onClick: () => navigate('/sasaek') }}
-              />
-            )}
-          </Section>
         )}
 
         {/* 노트 목록 섹션 */}

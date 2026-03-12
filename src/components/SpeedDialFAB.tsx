@@ -103,7 +103,7 @@ export function SpeedDialFAB() {
 
       {/* Speed Dial 컨테이너 */}
       <div
-        className="fixed right-6 z-50 flex flex-col items-end md:bottom-6"
+        className={cn('fixed right-6 z-50 flex flex-col items-end md:bottom-6', !isOpen && 'pointer-events-none')}
         style={{ bottom: 'calc(var(--bottom-nav-spacer) + 0.75rem)' }}
       >
         {/* 메뉴 아이템 (FAB 위쪽으로 펼침) */}
@@ -155,7 +155,7 @@ export function SpeedDialFAB() {
           aria-label={isOpen ? '메뉴 닫기' : '메뉴 열기'}
           aria-expanded={isOpen}
           onClick={() => setIsOpen((prev) => !prev)}
-          className="w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_2px_12px_rgba(29,185,60,0.35)] flex items-center justify-center transition-all hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(29,185,60,0.4)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="pointer-events-auto w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-[0_2px_12px_rgba(29,185,60,0.35)] flex items-center justify-center transition-all hover:bg-primary/90 hover:shadow-[0_4px_16px_rgba(29,185,60,0.4)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <span
             className={cn(
