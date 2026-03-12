@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
-import { Search as SearchIcon, Plus, Store, Filter, Clock, X, ChevronDown, Package } from 'lucide-react';
+import { Search as SearchIcon, Plus, Store, Filter, Clock, X, ChevronDown, Package, Loader2, Hash } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { TeaCard } from '../components/TeaCard';
@@ -12,10 +12,12 @@ import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { BottomNav } from '../components/BottomNav';
 import { Section } from '../components/ui/Section';
-import { teasApi, tagsApi, notesApi, cellarApi } from '../lib/api';
-import { Tea, Seller, Note, CellarItem } from '../types';
+import { teasApi, tagsApi, notesApi, cellarApi, usersApi } from '../lib/api';
+import { Tea, Seller, Note, CellarItem, PopularTagItem } from '../types';
 import { NoteCard } from '../components/NoteCard';
+import { CreatorCard } from '../components/CreatorCard';
 import { SellerCombobox } from '../components/SellerCombobox';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
 import { toast } from 'sonner';
 import { logger } from '../lib/logger';
@@ -416,15 +418,69 @@ export function Search() {
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [popularTags, setPopularTags] = useState<{ name: string; noteCount: number }[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null } & { followerCount: number }>>([]);
+
+  type ExploreFeedTab = 'forYou' | 'following' | 'tags';
+  const [exploreFeedTab, setExploreFeedTab] = useState<ExploreFeedTab>('forYou');
+  const [explorePublicNotes, setExplorePublicNotes] = useState<Note[]>([]);
+  const [exploreFollowingNotes, setExploreFollowingNotes] = useState<Note[]>([]);
+  const [exploreTagNotes, setExploreTagNotes] = useState<Note[]>([]);
+  const [exploreFollowedTags, setExploreFollowedTags] = useState<PopularTagItem[]>([]);
+  const [isExploreFeedLoading, setIsExploreFeedLoading] = useState(false);
+  const [isExploreFollowingLoading, setIsExploreFollowingLoading] = useState(false);
+  const [isExploreTagsLoading, setIsExploreTagsLoading] = useState(false);
+
+  const fetchExploreFeed = useCallback(async (opts?: { silent?: boolean }) => {
+    try {
+      if (!opts?.silent) setIsExploreFeedLoading(true);
+      const data = await notesApi.getAll(undefined, true);
+      setExplorePublicNotes(Array.isArray(data) ? (data as Note[]) : []);
+    } catch (error) {
+      logger.error('Failed to fetch explore feed:', error);
+    } finally {
+      setIsExploreFeedLoading(false);
+    }
+  }, []);
+
+  const fetchExploreFollowingFeed = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsExploreFollowingLoading(true);
+      const data = await notesApi.getAll(undefined, undefined, undefined, undefined, 'following');
+      setExploreFollowingNotes(Array.isArray(data) ? (data as Note[]) : []);
+    } catch (error) {
+      logger.error('Failed to fetch explore following feed:', error);
+    } finally {
+      setIsExploreFollowingLoading(false);
+    }
+  }, [user]);
+
+  const fetchExploreTagsFeed = useCallback(async () => {
+    if (!user) return;
+    try {
+      setIsExploreTagsLoading(true);
+      const [notesData, tagsData] = await Promise.all([
+        notesApi.getAll(undefined, undefined, undefined, undefined, 'tags'),
+        tagsApi.getFollowedTags(),
+      ]);
+      setExploreTagNotes(Array.isArray(notesData) ? (notesData as Note[]) : []);
+      setExploreFollowedTags(Array.isArray(tagsData) ? tagsData : []);
+    } catch (error) {
+      logger.error('Failed to fetch explore tags feed:', error);
+    } finally {
+      setIsExploreTagsLoading(false);
+    }
+  }, [user]);
 
   const fetchSections = useCallback(async () => {
     setSectionsLoading(true);
-    const [popularRes, newRes, curationRes, sellersRes, tagsRes] = await Promise.allSettled([
+    const [popularRes, newRes, curationRes, sellersRes, tagsRes, creatorsRes] = await Promise.allSettled([
       teasApi.getPopularRankings(10),
       teasApi.getNewRankings(3),
       teasApi.getCuration(3),
       teasApi.getSellers(),
       tagsApi.getPopularTags(15),
+      usersApi.getTrending('7d'),
     ]);
     if (popularRes.status === 'fulfilled') {
       setPopularTeas(Array.isArray(popularRes.value) ? popularRes.value : []);
@@ -454,6 +510,11 @@ export function Search() {
         })),
       );
     }
+    if (creatorsRes.status === 'fulfilled') {
+      setTrendingCreators(Array.isArray(creatorsRes.value) ? creatorsRes.value : []);
+    } else {
+      logger.error('Failed to fetch trending creators:', creatorsRes.reason);
+    }
     const anyFailed =
       popularRes.status === 'rejected' ||
       newRes.status === 'rejected' ||
@@ -463,7 +524,8 @@ export function Search() {
       toast.error('탐색 데이터를 불러오는데 실패했습니다.');
     }
     setSectionsLoading(false);
-  }, []);
+    fetchExploreFeed();
+  }, [fetchExploreFeed]);
 
   const handleSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) return;
@@ -672,6 +734,18 @@ export function Search() {
       fetchSections();
     }
   }, [searchQuery, hasSearched, hasFilterParams, fetchSections]);
+
+  useEffect(() => {
+    if (activeTab === 'explore' && exploreFeedTab === 'following' && user) {
+      fetchExploreFollowingFeed();
+    }
+  }, [activeTab, exploreFeedTab, user, fetchExploreFollowingFeed]);
+
+  useEffect(() => {
+    if (activeTab === 'explore' && exploreFeedTab === 'tags' && user) {
+      fetchExploreTagsFeed();
+    }
+  }, [activeTab, exploreFeedTab, user, fetchExploreTagsFeed]);
 
   useEffect(() => {
     if (showResults && popularTags.length === 0) {
@@ -1198,6 +1272,148 @@ export function Search() {
                   ) : (
                     <p className="text-sm text-muted-foreground py-4">엄선한 차가 없습니다.</p>
                   )}
+                </Section>
+
+                {/* 인기 다우 섹션 */}
+                {trendingCreators.length > 0 && (
+                  <Section
+                    title="🌿 인기 다우"
+                    description="구독자가 많은 인기 다우를 만나보세요."
+                    spacing="lg"
+                  >
+                    <div className={CARD_CONTAINER_CLASSES}>
+                      {trendingCreators.map((creator) => (
+                        <div key={creator.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.DEFAULT)}>
+                          <CreatorCard user={creator} followerCount={creator.followerCount} />
+                        </div>
+                      ))}
+                    </div>
+                  </Section>
+                )}
+
+                {/* 차록 흐름 섹션 */}
+                <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
+                  <Tabs
+                    value={exploreFeedTab}
+                    onValueChange={(v) => setExploreFeedTab(v as 'forYou' | 'following' | 'tags')}
+                  >
+                    <TabsList className="w-full">
+                      <TabsTrigger value="forYou" className="flex-1">맞춤차</TabsTrigger>
+                      <TabsTrigger value="following" className="flex-1">구독</TabsTrigger>
+                      <TabsTrigger value="tags" className="flex-1">향미</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="forYou" className="mt-4">
+                      {isExploreFeedLoading ? (
+                        <div className="flex justify-center py-12">
+                          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        </div>
+                      ) : explorePublicNotes.length > 0 ? (
+                        <div className={CARD_CONTAINER_CLASSES}>
+                          {explorePublicNotes.map((note, i) => (
+                            <div
+                              key={note.id}
+                              className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE, 'animate-fade-in-up opacity-0')}
+                              style={{ animationDelay: `${i * 50}ms` }}
+                            >
+                              <NoteCard note={note} showTeaName />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState type="feed" message="아직 등록된 차록이 없어요." />
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="following" className="mt-4">
+                      {!user ? (
+                        <div className="flex flex-col items-center gap-4 py-12 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            구독한 다우의 차록을 보려면 로그인이 필요합니다.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/login')}
+                            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                          >
+                            로그인하기
+                          </button>
+                        </div>
+                      ) : isExploreFollowingLoading ? (
+                        <div className="flex justify-center py-12">
+                          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        </div>
+                      ) : exploreFollowingNotes.length > 0 ? (
+                        <div className={CARD_CONTAINER_CLASSES}>
+                          {exploreFollowingNotes.map((note) => (
+                            <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                              <NoteCard note={note} showTeaName />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <EmptyState type="feed" message="구독한 다우의 차록이 없어요." />
+                      )}
+                    </TabsContent>
+
+                    <TabsContent value="tags" className="mt-4">
+                      {!user ? (
+                        <div className="flex flex-col items-center gap-4 py-12 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            구독한 향미 차록을 보려면 로그인이 필요합니다.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/login')}
+                            className="px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                          >
+                            로그인하기
+                          </button>
+                        </div>
+                      ) : isExploreTagsLoading ? (
+                        <div className="flex justify-center py-12">
+                          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                        </div>
+                      ) : (
+                        <>
+                          {exploreFollowedTags.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mb-4 pb-3 border-b border-border/50">
+                              {exploreFollowedTags.map((tag) => (
+                                <button
+                                  key={tag.name}
+                                  type="button"
+                                  onClick={() => navigate(`/tag/${encodeURIComponent(tag.name)}`)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                                >
+                                  <Hash className="w-3 h-3" />
+                                  {tag.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {exploreTagNotes.length > 0 ? (
+                            <div className={CARD_CONTAINER_CLASSES}>
+                              {exploreTagNotes.map((note) => (
+                                <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
+                                  <NoteCard note={note} showTeaName />
+                                </div>
+                              ))}
+                            </div>
+                          ) : exploreFollowedTags.length === 0 ? (
+                            <div className="flex flex-col items-center gap-4 py-12 text-center">
+                              <Hash className="w-10 h-10 text-muted-foreground/30" />
+                              <p className="text-muted-foreground text-sm">구독한 향미가 없습니다.</p>
+                              <p className="text-xs text-muted-foreground">
+                                향미를 클릭해 상세 페이지에서 구독해 보세요!
+                              </p>
+                            </div>
+                          ) : (
+                            <EmptyState type="feed" message="구독한 향미의 공개 차록이 없어요." />
+                          )}
+                        </>
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 </Section>
 
 <Section
