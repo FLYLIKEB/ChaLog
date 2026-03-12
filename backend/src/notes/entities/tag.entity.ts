@@ -1,9 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
+import { BaseEntity, Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Index } from 'typeorm';
 import { NoteTag } from './note-tag.entity';
 
 @Entity('tags')
 @Index(['name'], { unique: true })
-export class Tag {
+export class Tag extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 

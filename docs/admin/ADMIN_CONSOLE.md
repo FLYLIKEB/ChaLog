@@ -10,6 +10,13 @@
 - **인증**: 일반 앱과 동일한 JWT 로그인. `User.role === 'admin'`인 사용자만 접근 가능합니다.
 - **접근 제한**: `AdminRouteGuard`가 role을 검사하여 비운영자 접근 시 거부합니다.
 
+### AdminJS (백엔드 직접 접속)
+
+- **URL**: 백엔드 오리진 기준 `/adminjs` (예: `https://api.your-domain.com/adminjs` 또는 로컬 `http://localhost:3000/adminjs`)
+- **역할**: TypeORM 엔티티(차·찻집·태그 등)에 대한 **자동 CRUD UI** 제공. 기존 React 어드민(`/admin`)의 마스터 데이터 관리와 병행 사용 가능.
+- **인증**: AdminJS 로그인 폼에서 이메일/비밀번호 입력. User DB에서 검증하며 `role === 'admin'`인 사용자만 로그인 성공.
+- **환경 변수**: `ADMINJS_SESSION_SECRET`, `ADMINJS_COOKIE_PASSWORD` 등은 [ENVIRONMENT_VARIABLES.md](../configuration/ENVIRONMENT_VARIABLES.md) 참고.
+
 ## 환경 변수
 
 | 변수명 | 설명 | 참고 |

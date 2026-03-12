@@ -21,6 +21,52 @@ import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
 import { User } from './users/entities/user.entity';
 import { HttpExceptionFilter } from './common/http-exception.filter';
+import { Tea } from './teas/entities/tea.entity';
+import { Seller } from './teas/entities/seller.entity';
+import { Tag } from './notes/entities/tag.entity';
+import { UsersService } from './users/users.service';
+import { UserRole } from './users/entities/user.entity';
+
+const AdminJSModulePromise = (async () => {
+  const AdminJSTypeorm = await import('@adminjs/typeorm');
+  const AdminJS = (await import('adminjs')).default;
+  AdminJS.registerAdapter({
+    Resource: AdminJSTypeorm.Resource,
+    Database: AdminJSTypeorm.Database,
+  });
+  const { AdminModule: AdminJSModule } = await import('@adminjs/nestjs');
+  return AdminJSModule.createAdminAsync({
+    useFactory: (configService: ConfigService, usersService: UsersService) => {
+      const cookiePassword =
+        configService.get<string>('ADMINJS_COOKIE_PASSWORD') || 'adminjs-cookie-secret-min-32-chars';
+      const sessionSecret =
+        configService.get<string>('ADMINJS_SESSION_SECRET') || 'adminjs-session-secret';
+      return {
+        adminJsOptions: {
+          rootPath: '/adminjs',
+          resources: [Tea, Seller, Tag],
+        },
+        auth: {
+          authenticate: async (email: string, password: string) => {
+            const user = await usersService.validateUser(email, password);
+            if (!user || user.role !== UserRole.ADMIN) {
+              return null;
+            }
+            return { email };
+          },
+          cookieName: 'adminjs',
+          cookiePassword,
+        },
+        sessionOptions: {
+          resave: true,
+          saveUninitialized: true,
+          secret: sessionSecret,
+        },
+      };
+    },
+    inject: [ConfigService, UsersService],
+  });
+})();
 
 @Module({
   imports: [
@@ -65,6 +111,7 @@ import { HttpExceptionFilter } from './common/http-exception.filter';
     AdminModule,
     TeaSessionsModule,
     BlindTastingModule,
+    AdminJSModulePromise,
   ],
   controllers: [HealthController],
   providers: [

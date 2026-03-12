@@ -67,7 +67,7 @@ async function bootstrap() {
   app.use(helmet());
 
   // 전역 API prefix 설정 (health는 배포 플랫폼 체크용으로 /health 노출)
-  app.setGlobalPrefix('api', { exclude: ['health'] });
+  app.setGlobalPrefix('api', { exclude: ['health', 'adminjs'] });
 
   // 전역 ValidationPipe 설정
   app.useGlobalPipes(

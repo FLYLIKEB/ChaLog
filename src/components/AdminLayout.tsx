@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Flag, Users, FileText, MessageSquare, ClipboardList, Database, Activity, Menu } from 'lucide-react';
+import { LayoutDashboard, Flag, Users, FileText, MessageSquare, ClipboardList, Database, Activity, Menu, ExternalLink } from 'lucide-react';
 import { Sheet, SheetContent } from './ui/sheet';
 import { Button } from './ui/button';
+import { getAdminJsUrl } from '../lib/adminJsUrl';
 
 const navItems = [
   { path: '/admin', label: '대시보드', icon: LayoutDashboard },
@@ -67,7 +68,18 @@ export function AdminLayout() {
       <nav className="flex-1 p-2 overflow-y-auto">
         <NavLinks location={location} onLinkClick={closeMobileMenu} />
       </nav>
-      <div className="p-2 border-t border-sidebar-border">
+      <div className="p-2 border-t border-sidebar-border space-y-1">
+        <a
+          href={getAdminJsUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={closeMobileMenu}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+        >
+          <Database className="w-5 h-5 shrink-0" />
+          AdminJS (테이블 CRUD)
+          <ExternalLink className="w-4 h-4 shrink-0 opacity-70" />
+        </a>
         <Link
           to="/"
           onClick={closeMobileMenu}
