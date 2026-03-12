@@ -57,6 +57,12 @@ const NOTE_SORT_OPTIONS = [
   { key: 'rating' as const, label: '평점순' },
 ];
 
+const CELLAR_SORT_OPTIONS = [
+  { key: 'recent' as const, label: '등록순' },
+  { key: 'name' as const, label: '이름순' },
+  { key: 'quantity' as const, label: '수량순' },
+];
+
 interface FilterPanelProps {
   category: SearchCategory;
   filterOpen: boolean;
@@ -70,6 +76,8 @@ interface FilterPanelProps {
   setFilterSort: (sort: 'popular' | 'new' | 'rating' | 'match' | 'recent') => void;
   noteSort: 'latest' | 'rating';
   setNoteSort: (sort: 'latest' | 'rating') => void;
+  cellarSort?: 'name' | 'quantity' | 'recent';
+  setCellarSort?: (sort: 'name' | 'quantity' | 'recent') => void;
   hasTagParams: boolean;
   urlTags: string[];
   popularTags: { name: string; noteCount: number }[];
@@ -90,6 +98,8 @@ function FilterPanel({
   setFilterSort,
   noteSort,
   setNoteSort,
+  cellarSort,
+  setCellarSort,
   hasTagParams,
   urlTags,
   popularTags,
@@ -129,6 +139,22 @@ function FilterPanel({
                       className={cn(
                         'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
                         noteSort === opt.key
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))
+                : category === 'cellar'
+                ? CELLAR_SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.key}
+                      type="button"
+                      onClick={() => setCellarSort?.(opt.key)}
+                      className={cn(
+                        'px-3 py-1 rounded-full text-sm font-medium border transition-colors',
+                        cellarSort === opt.key
                           ? 'bg-primary text-primary-foreground border-primary'
                           : 'bg-background border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/60',
                       )}
@@ -182,6 +208,7 @@ function FilterPanel({
           </div>
 
           {/* 평점 */}
+          {category !== 'cellar' && (
           <div className="px-4 py-3 space-y-2">
             <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">평점</p>
             <div className="flex flex-wrap gap-1.5">
@@ -202,9 +229,10 @@ function FilterPanel({
               ))}
             </div>
           </div>
+          )}
 
           {/* 향미 태그 */}
-          {popularTags.length > 0 && (
+          {category !== 'cellar' && popularTags.length > 0 && (
             <div className="px-4 py-3 space-y-2">
               <p className="text-xs font-semibold text-foreground/60 uppercase tracking-wide">향미</p>
               <div className="flex flex-wrap gap-1.5">
@@ -255,6 +283,7 @@ export function Search() {
     handleTagClick, applyFilters, fetchWithFilters,
   } = filters;
 
+  const [cellarSort, setCellarSort] = useState<'name' | 'quantity' | 'recent'>('recent');
   const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
   const [searchCategory, setSearchCategory] = useState<SearchCategory>('tea');
   const [categoryLoading, setCategoryLoading] = useState(false);
@@ -457,19 +486,34 @@ export function Search() {
         }),
       );
     } else if (searchCategory === 'cellar') {
-      setCellarResults(q ? allCellar.filter((c) => c.tea?.name?.toLowerCase().includes(q)) : allCellar);
+      let filtered = allCellar.filter((c) => {
+        if (q && !c.tea?.name?.toLowerCase().includes(q)) return false;
+        if (filterType && c.tea?.type !== filterType) return false;
+        return true;
+      });
+      if (cellarSort === 'name') {
+        filtered = [...filtered].sort((a, b) => (a.tea?.name ?? '').localeCompare(b.tea?.name ?? ''));
+      } else if (cellarSort === 'quantity') {
+        filtered = [...filtered].sort((a, b) => b.quantity - a.quantity);
+      } else {
+        filtered = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      setCellarResults(filtered);
     } else if (searchCategory === 'tag') {
       setTagResults(
         q ? popularTags.filter((t) => t.name?.toLowerCase().includes(q)) : popularTags,
       );
     }
-  }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags, filterType, filterMinRating, urlTagsStr]);
+  }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags, filterType, filterMinRating, urlTagsStr, cellarSort]);
 
   const noteHasFilters = !!(filterType || filterMinRating != null || urlTags.length > 0);
+  const cellarHasFilters = !!filterType;
   const showResults =
     searchCategory === 'tea'
       ? searchQuery.length > 0 || hasSearched || hasFilterParams
-      : searchQuery.trim().length >= 2 || (searchCategory === 'note' && noteHasFilters);
+      : searchQuery.trim().length >= 2 ||
+        (searchCategory === 'note' && noteHasFilters) ||
+        (searchCategory === 'cellar' && cellarHasFilters);
   const handleRefresh = useCallback(async () => {
     if (showResults) {
       if (hasTagParams) {
@@ -561,8 +605,12 @@ export function Search() {
   }, [showResults, popularTags.length]);
 
   const handleApplyFilters = useCallback(() => {
-    applyFilters(searchCategory === 'note' ? 'note' : 'tea', searchQuery, filterCallbacks);
-  }, [applyFilters, searchCategory, searchQuery, filterCallbacks]);
+    if (searchCategory === 'tea') {
+      applyFilters('tea', searchQuery, filterCallbacks);
+    } else {
+      setFilterOpen(false);
+    }
+  }, [applyFilters, searchCategory, searchQuery, filterCallbacks, setFilterOpen]);
 
   const SECTION_TITLES: Record<string, string> = {
     popular: '🏆 사랑받는 차',
@@ -718,7 +766,7 @@ export function Search() {
         )}
 
         {/* 필터 패널 */}
-        {activeTab === 'search' && (searchCategory === 'tea' || searchCategory === 'note') && (
+        {activeTab === 'search' && (searchCategory === 'tea' || searchCategory === 'note' || searchCategory === 'cellar') && (
           <FilterPanel
             category={searchCategory}
             filterOpen={filterOpen}
@@ -732,6 +780,8 @@ export function Search() {
             setFilterSort={filters.setFilterSort}
             noteSort={noteSort}
             setNoteSort={setNoteSort}
+            cellarSort={cellarSort}
+            setCellarSort={setCellarSort}
             hasTagParams={hasTagParams}
             urlTags={urlTags}
             popularTags={popularTags}
