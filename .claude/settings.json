@@ -3,11 +3,7 @@
     "allow": [
       "Bash(git status:*)",
       "Bash(ls -la /Users/jwp/Documents/programming/ChaLog/.git/hooks/pre-commit*)",
-      "mcp__filesystem__list_directory",
-      "mcp__filesystem__read_multiple_files"
-    ],
-    "additionalDirectories": [
-      "/Users/jwp/Documents/programming/ChaLog/.claude"
+      "mcp__filesystem__list_directory"
     ]
   }
 }

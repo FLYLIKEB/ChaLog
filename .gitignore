@@ -40,3 +40,4 @@ your-key.pem
 *.session.sql
 chalog-s3-user_accessKeys.csv
 .omc
+.claude/settings.json
