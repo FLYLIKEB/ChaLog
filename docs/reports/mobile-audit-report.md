@@ -9,7 +9,7 @@
 
 ## 실행 요약
 
-현재 ChaLog 애플리케이션은 기본적인 모바일 레이아웃은 갖추고 있으나, **터치 인터랙션, iOS Safe Area 지원, 작은 화면 최적화** 측면에서 개선이 필요합니다. 특히 **터치 영역이 권장 최소 크기(44x44px)보다 작은 요소들이 다수 발견**되었으며, **iOS Safari의 안전 영역(safe-area) 지원이 전혀 없어** 노치가 있는 기기에서 UI 요소가 가려질 수 있습니다.
+현재 ChaLog 애플리케이션은 **iOS Safe Area 지원, BottomNav/Header 터치 영역(44px), TeaDetail/NoteDetail/ImageUploader 반응형 그리드, Input/Button/Slider 모바일 크기** 등이 반영된 상태입니다. **남은 개선**: App 컨테이너 좌우 패딩, use-mobile 초기값, NoteCard 북마크 터치 영역(40px→44px), NewNote/EditNote 키보드·TagInput 겹침, Home/Search 등 패딩·그리드 미세 조정, 모바일 퍼스트 CSS·성능 최적화 등.
 
 ---
 
@@ -257,15 +257,13 @@ export function useIsMobile() {
 
 ### 7.1 터치 인터랙션
 
-**현재 상태**: 대부분의 인터랙티브 요소가 권장 최소 44x44px 미달
+**현재 상태**: BottomNav, Header, NoteDetail, UserProfile, Button, Input, Slider 등 주요 요소는 44px 반영됨.
 
-**문제점**:
-- ❌ **심각**: 다수의 버튼/인터랙션 요소가 작은 터치 영역
-- ⚠️ **문제**: 터치 피드백(active 상태)은 있으나 일관성 확인 필요
+**남은 문제점**:
+- ⚠️ NoteCard 스와이프 영역 북마크 버튼 40px (44px 권장)
+- 터치 피드백(active 상태) 일관성 확인
 
-**권장 사항**: 모든 인터랙티브 요소 최소 44x44px 보장
-
-**우선순위**: 높음 (Critical)
+**우선순위**: 중간 (High)
 
 ---
 
@@ -301,50 +299,28 @@ export function useIsMobile() {
 
 ### 높은 우선순위 (Critical) - 즉시 수정 필요
 
-1. **터치 영역 확대**
-   - 모든 버튼/인터랙션 요소 최소 44x44px 보장
-   - 영향받는 컴포넌트:
-     - BottomNav 버튼
-     - Header 버튼 (백, 프로필)
-     - NoteCard 좋아요/북마크 버튼
-     - NoteDetail 좋아요/북마크 버튼
-     - UserProfile 프로필 이미지 수정 버튼
-     - Button 컴포넌트 (default, sm, icon 크기)
-     - RatingSlider Thumb
-     - Input 컴포넌트 높이
-
-2. **iOS Safe Area 지원**
-   - BottomNav에 하단 안전 영역 적용
-   - Header에 상단 안전 영역 적용
-   - FloatingActionButton에 안전 영역 적용
-
-3. **작은 화면(320px) 레이아웃 수정**
-   - TeaDetail 2열 그리드 → 1열 (모바일)
-   - NoteDetail 이미지 갤러리 2열 → 1열 (모바일)
-   - ImageUploader 3열 그리드 → 2열 (모바일)
-
-4. **모바일 키보드와 UI 요소 겹침 문제 해결**
+1. **모바일 키보드와 UI 요소 겹침 문제 해결**
    - TagInput 드롭다운 키보드 대응
    - 차 선택 드롭다운 키보드 대응
    - 입력 필드 포커스 시 스크롤 조정
+
+2. **NoteCard 북마크 터치 영역**
+   - 스와이프 영역 버튼 `min-h-[40px] min-w-[40px]` → 44px 권장
 
 ---
 
 ### 중간 우선순위 (High) - 단기 개선
 
-1. **그리드 레이아웃 모바일 최적화**
-   - 모든 2열/3열 그리드를 모바일에서 1열/2열로 변경
+1. **패딩/마진 모바일 최적화**
+   - App 메인 컨테이너: 좌우 패딩 `px-4 sm:px-6` 검토
+   - Home 페이지: `p-6` → `p-4 sm:p-6` 검토
 
-2. **폼 입력 필드 높이 확대**
-   - Input 컴포넌트: 36px → 44px (모바일)
-
-3. **패딩/마진 모바일 최적화**
-   - Home 페이지: `p-6` → `p-4 sm:p-6`
-   - 기타 페이지 패딩 조정
-
-4. **텍스트 크기 가독성 개선**
+2. **텍스트 크기 가독성 개선**
    - BottomNav 텍스트 `text-xs` → `text-sm` 검토
    - NoteCard 태그 텍스트 크기 검토
+
+3. **use-mobile 훅**
+   - 초기값/SSR 대응으로 깜빡임 방지 검토
 
 ---
 
@@ -384,93 +360,77 @@ export function useIsMobile() {
 
 ## 10. 결론
 
-현재 ChaLog 애플리케이션은 **기본적인 모바일 레이아웃은 갖추고 있으나**, 다음과 같은 주요 개선이 필요합니다:
+**이미 반영된 항목**: iOS Safe Area, BottomNav/Header/FAB 터치 영역(44px), TeaDetail/NoteDetail/ImageUploader 반응형 그리드, Input/Button/Slider 모바일 크기, NewTea/Login/Register max-w-md 등.
 
-1. **터치 영역 확대** - 가장 시급한 문제로, 사용자 경험에 직접적인 영향
-2. **iOS Safe Area 지원** - 노치가 있는 기기에서 UI 요소 가려짐 방지
-3. **작은 화면 최적화** - 320px 화면에서 레이아웃 깨짐 수정
-4. **키보드 대응** - 모바일 키보드와 UI 요소 겹침 문제 해결
-
-이러한 개선 사항들을 우선순위에 따라 단계적으로 적용하면 모바일 사용자 경험이 크게 향상될 것입니다.
+**남은 주요 개선**:
+1. **키보드 대응** - TagInput·차 선택 드롭다운이 키보드에 가려지지 않도록
+2. **NoteCard 북마크 터치 영역** - 40px → 44px
+3. **패딩/가독성** - App·Home 패딩, 텍스트 크기 등 미세 조정
+4. **모바일 퍼스트·성능** - 선택적 장기 개선
 
 ---
 
-## 11. 발견된 문제 통계
+## 11. 발견된 문제 통계 (반영 후 기준)
 
-### 심각도별 문제 수
+### 심각도별 남은 문제 수
 
-- **Critical (심각)**: 15개
-  - 터치 영역 부족: 10개
-  - Safe Area 미지원: 3개
-  - 작은 화면 레이아웃 깨짐: 2개
+- **Critical (심각)**: 1~2개
+  - 키보드·UI 겹침 (TagInput, 차 선택 드롭다운)
+  - NoteCard 북마크 44px 미달 (40px)
 
-- **High (중간)**: 8개
-  - 그리드 레이아웃 최적화: 4개
-  - 폼 입력 필드 높이: 2개
-  - 패딩/마진 최적화: 2개
+- **High (중간)**: 2~3개
+  - App/Home 패딩, use-mobile 초기값, 텍스트 가독성
 
-- **Medium (낮음)**: 5개
-  - 모바일 퍼스트 전환: 1개
-  - 성능 최적화: 2개
-  - 기타: 2개
+- **Medium (낮음)**: 3~4개
+  - 모바일 퍼스트 전환, 성능 최적화 등
 
-### 영향받는 컴포넌트 수
+### 영향받는 컴포넌트 (미반영/남은 작업)
 
-- **글로벌 컴포넌트**: 3개 (App, BottomNav, Header)
-- **페이지 컴포넌트**: 8개 (모든 주요 페이지)
-- **공통 컴포넌트**: 5개 (NoteCard, ImageUploader, TagInput 등)
-- **UI 라이브러리 컴포넌트**: 3개 (Input, Button, Slider)
+- **글로벌**: App 컨테이너
+- **페이지**: Home, NewNote/EditNote (키보드 대응)
+- **공통**: NoteCard (북마크 터치), TagInput (키보드)
+- **훅**: use-mobile
 
 ---
 
 ## 12. 권장 개선 로드맵
 
-### Phase 1 (1-2주) - Critical 우선순위
-1. iOS Safe Area 지원 추가 (BottomNav, Header, FloatingActionButton)
-2. 터치 영역 확대 (Button, Input 컴포넌트 기본 수정)
-3. 작은 화면 그리드 레이아웃 수정 (TeaDetail, NoteDetail, ImageUploader)
+### Phase 1 (1주 내) - 남은 Critical
+1. TagInput·차 선택 드롭다운 키보드 대응 (포털/ fixed 위치 등)
+2. NoteCard 북마크 버튼 44px 터치 영역
 
-### Phase 2 (2-3주) - High 우선순위
-1. 모든 페이지별 터치 영역 확대
-2. 폼 입력 필드 높이 조정
-3. 패딩/마진 모바일 최적화
+### Phase 2 (2주 내) - High
+1. App/Home 패딩 조정
+2. use-mobile 초기값/SSR 검토
+3. BottomNav/NoteCard 텍스트 가독성 검토
 
-### Phase 3 (3-4주) - Medium 우선순위
-1. 키보드 대응 개선
-2. 성능 최적화 (이미지 lazy loading)
-3. 추가 테스트 및 미세 조정
+### Phase 3 - Medium (선택)
+1. 성능 최적화 (이미지 lazy loading)
+2. 모바일 퍼스트 CSS 전환
+3. 디바이스/브라우저 테스트 정리
 
 ---
 
-## 부록: 코드 예시
+## 부록: 코드 예시 (미반영 항목 위주)
 
-### Safe Area 지원 예시
+### 키보드 대응 예시 (TagInput)
 
 ```tsx
-// BottomNav.tsx
-<nav className={cn(
-  'fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3',
-  'pb-[calc(0.75rem+env(safe-area-inset-bottom))]', // Safe Area 지원
-  'flex items-center justify-around',
-)}>
+{showSuggestions && (
+  <div className="fixed bottom-[env(keyboard-inset-height,0)] left-0 right-0 z-50 ...">
+    {/* 포털 또는 fixed로 키보드 위에 표시 */}
+  </div>
+)}
 ```
 
-### 터치 영역 확대 예시
+### NoteCard 북마크 터치 영역 (44px)
 
 ```tsx
-// Button 컴포넌트
-size: {
-  default: "h-11 sm:h-9 px-4 py-2", // 모바일 44px, 데스크톱 36px
-  icon: "size-11 sm:size-9", // 모바일 44px, 데스크톱 36px
-}
-```
-
-### 반응형 그리드 예시
-
-```tsx
-// TeaDetail.tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-  {/* 모바일 1열, 태블릿 이상 2열 */}
-</div>
+<button
+  className="min-h-[44px] min-w-[44px] flex items-center justify-center ..."
+  aria-label="북마크 추가"
+>
+  <Bookmark className="w-5 h-5" />
+</button>
 ```
 
