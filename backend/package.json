@@ -6,8 +6,6 @@
     "node": ">=20"
   },
   "overrides": {
-    "glob": "^10.5.0",
-    "inflight": "npm:@isaacs/inflight@^1.0.6",
     "test-exclude": {
       "glob": "^10.5.0",
       "inflight": "npm:@isaacs/inflight@^1.0.6"
