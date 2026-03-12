@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag } from 'lucide-react';
+import { Star, Trash2, Globe, Lock, Loader2, Heart, Bookmark, Edit, Flag, Share2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
@@ -25,6 +25,7 @@ import { Note, Tea } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
+import { useShare } from '../hooks/useShare';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -48,6 +49,7 @@ export function NoteDetail() {
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [use10Scale, setUse10Scale] = useState(false);
+  const { share } = useShare();
 
   const fetchData = useCallback(async () => {
     if (isNaN(noteId)) {
@@ -290,11 +292,19 @@ export function NoteDetail() {
                 >
                   <Bookmark
                     className={`w-5 h-5 transition-all ${
-                      isBookmarked 
-                        ? 'fill-primary text-primary stroke-primary' 
+                      isBookmarked
+                        ? 'fill-primary text-primary stroke-primary'
                         : 'fill-none text-muted-foreground stroke-muted-foreground'
                     }`}
                   />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => share(tea?.name ?? '차록', window.location.href)}
+                  className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
+                  title="공유하기"
+                >
+                  <Share2 className="w-5 h-5" />
                 </button>
               </div>
             )}

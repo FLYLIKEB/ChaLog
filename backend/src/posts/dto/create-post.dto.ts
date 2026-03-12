@@ -8,6 +8,7 @@ import {
   IsArray,
   ValidateNested,
   ArrayMaxSize,
+  IsInt,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { PostCategory } from '../entities/post.entity';
@@ -59,4 +60,10 @@ export class CreatePostDto {
   @ValidateNested({ each: true })
   @Type(() => PostImageItemDto)
   images?: PostImageItemDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsInt({ each: true })
+  taggedNoteIds?: number[];
 }

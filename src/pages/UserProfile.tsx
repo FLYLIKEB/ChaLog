@@ -13,7 +13,7 @@ import {
 } from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi, teasApi } from '../lib/api';
-import { User, Note, UserOnboardingPreference, Tea } from '../types';
+import { User, Note, UserOnboardingPreference, Tea, UserLevel } from '../types';
 import { toast } from 'sonner';
 import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark, BookHeart } from 'lucide-react';
 import { logger } from '../lib/logger';
@@ -55,8 +55,14 @@ export function UserProfile() {
   const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
   const [wishlistedTeas, setWishlistedTeas] = useState<Tea[]>([]);
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
+  const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
 
   const initialLoadDone = useRef(false);
+
+  useEffect(() => {
+    if (isNaN(userId)) return;
+    usersApi.getLevel(userId).then(setUserLevel).catch(() => {});
+  }, [userId]);
 
   const fetchNotes = useCallback(async (sortType: SortType, pageNum = 1, append = false) => {
     if (isNaN(userId)) return;
@@ -442,6 +448,34 @@ export function UserProfile() {
             label="작성한 차록"
           />
         </div>
+
+        {/* 레벨/뱃지 섹션 */}
+        {userLevel && (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: '차록', info: userLevel.noteLevel },
+                { label: '게시글', info: userLevel.postLevel },
+                { label: '찻장', info: userLevel.cellarLevel },
+              ].map(({ label, info }) => (
+                <div key={label} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/40 text-center">
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <span className="text-sm font-semibold text-primary">{info.name}</span>
+                  <span className="text-xs text-muted-foreground">Lv.{info.level}</span>
+                </div>
+              ))}
+            </div>
+            {userLevel.badges.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {userLevel.badges.map((b) => (
+                  <span key={b.id} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                    {b.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 취향 정보 섹션 - 내 프로필에서만 표시 */}
         {isOwnProfile && onboardingPreference && (

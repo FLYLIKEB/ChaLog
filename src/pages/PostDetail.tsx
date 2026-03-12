@@ -14,6 +14,8 @@ import {
   Eye,
   Pin,
   Shield,
+  Share2,
+  BookOpen,
 } from 'lucide-react';
 import { Post, Comment, POST_CATEGORY_LABELS } from '../types';
 import { postsApi, commentsApi } from '../lib/api';
@@ -22,6 +24,7 @@ import { BottomNav } from '../components/BottomNav';
 import { CommentList } from '../components/CommentList';
 import { PostReportModal } from '../components/PostReportModal';
 import { useAuth } from '../contexts/AuthContext';
+import { useShare } from '../hooks/useShare';
 import { toast } from 'sonner';
 import { cn } from '../components/ui/utils';
 import {
@@ -46,6 +49,7 @@ export function PostDetail() {
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
+  const { share } = useShare();
 
   const fetchData = useCallback(async () => {
     if (!postId || isNaN(postId)) return;
@@ -304,7 +308,43 @@ export function PostDetail() {
             )}
             북마크
           </button>
+
+          <button
+            onClick={() => share(post?.title ?? '게시글', window.location.href)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-border text-sm font-medium text-muted-foreground hover:bg-muted/50 transition-colors"
+          >
+            <Share2 className="w-4 h-4" />
+            공유
+          </button>
         </div>
+
+        {/* 태그된 차록 */}
+        {post.taggedNotes && post.taggedNotes.length > 0 && (
+          <div className="flex flex-col gap-2 border-t border-border/50 pt-4">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <BookOpen className="w-3.5 h-3.5" />
+              관련 차록
+            </div>
+            <div className="flex flex-col gap-2">
+              {post.taggedNotes.map((note) => (
+                <button
+                  key={note.id}
+                  type="button"
+                  onClick={() => navigate(`/notes/${note.id}`)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg border border-border bg-muted/30 hover:bg-muted/60 transition-colors text-left"
+                >
+                  <span className="text-sm font-medium text-foreground">{note.teaName}</span>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    {note.overallRating !== null && (
+                      <span>★ {Number(note.overallRating).toFixed(1)}</span>
+                    )}
+                    <span>{new Date(note.createdAt).toLocaleDateString('ko-KR')}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 댓글 섹션 */}
         <div className="border-t border-border/50 pt-4">

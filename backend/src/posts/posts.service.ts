@@ -11,6 +11,7 @@ import { Post, PostCategory } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
 import { PostBookmark } from './entities/post-bookmark.entity';
 import { PostImage } from './entities/post-image.entity';
+import { Note } from '../notes/entities/note.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { UsersService } from '../users/users.service';
@@ -29,6 +30,8 @@ export class PostsService {
     private postBookmarksRepository: Repository<PostBookmark>,
     @InjectRepository(PostImage)
     private postImagesRepository: Repository<PostImage>,
+    @InjectRepository(Note)
+    private notesRepository: Repository<Note>,
     @InjectDataSource()
     private dataSource: DataSource,
     private usersService: UsersService,
@@ -45,7 +48,9 @@ export class PostsService {
     const isAdmin = user.role === UserRole.ADMIN;
     const isPinned = isAdmin && (dto.isPinned === true);
 
-    const { images: imagesDto, ...postData } = dto;
+    const { images: imagesDto, taggedNoteIds, ...postData } = dto;
+
+    const taggedNotes = await this.resolveTaggedNotes(taggedNoteIds, userId);
 
     return this.dataSource.transaction(async (manager) => {
       const post = manager.create(Post, {
@@ -55,6 +60,7 @@ export class PostsService {
         isPinned,
         isSponsored: dto.isSponsored ?? false,
         sponsorNote: dto.sponsorNote ?? null,
+        taggedNotes,
       });
       const saved = await manager.save(Post, post);
 
@@ -73,7 +79,7 @@ export class PostsService {
 
       const createdPost = await manager.findOne(Post, {
         where: { id: saved.id },
-        relations: ['user', 'images'],
+        relations: ['user', 'images', 'taggedNotes', 'taggedNotes.tea'],
       });
       if (!createdPost) {
         throw new NotFoundException('게시글을 찾을 수 없습니다.');
@@ -188,7 +194,7 @@ export class PostsService {
   async findOne(id: number, currentUserId?: number): Promise<any> {
     const post = await this.postsRepository.findOne({
       where: { id },
-      relations: ['user', 'images'],
+      relations: ['user', 'images', 'taggedNotes', 'taggedNotes.tea'],
     });
     if (!post) {
       throw new NotFoundException('게시글을 찾을 수 없습니다.');
@@ -208,10 +214,17 @@ export class PostsService {
     if (!isAdmin && 'isPinned' in dto) {
       delete (updateDto as any).isPinned;
     }
-    const { images: imagesDto, ...restDto } = updateDto;
+    const { images: imagesDto, taggedNoteIds, ...restDto } = updateDto;
+
+    const taggedNotes = taggedNoteIds !== undefined
+      ? await this.resolveTaggedNotes(taggedNoteIds, userId)
+      : undefined;
 
     return this.dataSource.transaction(async (manager) => {
-      const post = await manager.findOne(Post, { where: { id } });
+      const post = await manager.findOne(Post, {
+        where: { id },
+        relations: ['taggedNotes'],
+      });
       if (!post) {
         throw new NotFoundException('게시글을 찾을 수 없습니다.');
       }
@@ -219,6 +232,9 @@ export class PostsService {
         throw new ForbiddenException('이 게시글을 수정할 권한이 없습니다.');
       }
       Object.assign(post, restDto);
+      if (taggedNotes !== undefined) {
+        post.taggedNotes = taggedNotes;
+      }
       await manager.save(Post, post);
 
       if (imagesDto !== undefined) {
@@ -239,7 +255,7 @@ export class PostsService {
 
       const updatedPost = await manager.findOne(Post, {
         where: { id },
-        relations: ['user', 'images'],
+        relations: ['user', 'images', 'taggedNotes', 'taggedNotes.tea'],
       });
       if (!updatedPost) {
         throw new NotFoundException('게시글을 찾을 수 없습니다.');
@@ -325,6 +341,15 @@ export class PostsService {
 
       return { bookmarked: true };
     });
+  }
+
+  private async resolveTaggedNotes(noteIds: number[] | undefined, userId: number): Promise<Note[]> {
+    if (!noteIds?.length) return [];
+    const notes = await this.notesRepository.find({
+      where: { id: In(noteIds), userId },
+      relations: ['tea'],
+    });
+    return notes;
   }
 
   private async enrichPostsWithStats(posts: Post[], currentUserId?: number): Promise<any[]> {

@@ -5,13 +5,16 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  ManyToMany,
   OneToMany,
   JoinColumn,
+  JoinTable,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { PostLike } from './post-like.entity';
 import { PostBookmark } from './post-bookmark.entity';
 import { PostImage } from './post-image.entity';
+import { Note } from '../../notes/entities/note.entity';
 
 export enum PostCategory {
   BREWING_QUESTION = 'brewing_question',
@@ -68,6 +71,14 @@ export class Post {
 
   @OneToMany(() => PostImage, (image) => image.post, { cascade: true })
   images: PostImage[];
+
+  @ManyToMany(() => Note)
+  @JoinTable({
+    name: 'post_note_tags',
+    joinColumn: { name: 'postId', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'noteId', referencedColumnName: 'id' },
+  })
+  taggedNotes: Note[];
 
   @CreateDateColumn()
   createdAt: Date;

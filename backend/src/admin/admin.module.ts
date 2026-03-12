@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { CrawlingService } from './crawling.service';
 import { AdminGuard } from './guards/admin.guard';
 import { User } from '../users/entities/user.entity';
 import { Note } from '../notes/entities/note.entity';
@@ -42,6 +43,6 @@ import { TeasModule } from '../teas/teas.module';
     TeasModule,
   ],
   controllers: [AdminController],
-  providers: [AdminService, AdminGuard],
+  providers: [AdminService, AdminGuard, CrawlingService],
 })
 export class AdminModule {}

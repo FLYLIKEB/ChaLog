@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
-import { PostCategory, POST_CATEGORY_LABELS, PostImageItem } from '../types';
-import { postsApi, CreatePostRequest } from '../lib/api';
+import { Loader2, BookOpen, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { PostCategory, POST_CATEGORY_LABELS, PostImageItem, Note } from '../types';
+import { postsApi, notesApi, CreatePostRequest } from '../lib/api';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -63,6 +63,25 @@ export function NewPost() {
   const [sponsorNote, setSponsorNote] = useState('');
   const [images, setImages] = useState<PostImageItem[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [taggedNotes, setTaggedNotes] = useState<Pick<Note, 'id' | 'teaName' | 'overallRating'>[]>([]);
+  const [notePickerOpen, setNotePickerOpen] = useState(false);
+  const [myNotes, setMyNotes] = useState<Pick<Note, 'id' | 'teaName' | 'overallRating'>[]>([]);
+  const [noteSearch, setNoteSearch] = useState('');
+
+  useEffect(() => {
+    if (!notePickerOpen || myNotes.length > 0 || !user) return;
+    notesApi.getAll(user.id, undefined, undefined, undefined, undefined, undefined, 1, 100)
+      .then((notes) => setMyNotes(notes.map((n) => ({ id: n.id, teaName: n.teaName, overallRating: n.overallRating }))))
+      .catch(() => {});
+  }, [notePickerOpen, user]);
+
+  const toggleNoteTag = (note: Pick<Note, 'id' | 'teaName' | 'overallRating'>) => {
+    setTaggedNotes((prev) => {
+      if (prev.some((n) => n.id === note.id)) return prev.filter((n) => n.id !== note.id);
+      if (prev.length >= 5) { toast.error('차록은 최대 5개까지 태그할 수 있습니다.'); return prev; }
+      return [...prev, note];
+    });
+  };
 
   if (!user) {
     navigate('/login', { replace: true });
@@ -85,6 +104,7 @@ export function NewPost() {
       isSponsored,
       sponsorNote: isSponsored ? sponsorNote.trim() || undefined : undefined,
       images: images.length > 0 ? images : undefined,
+      taggedNoteIds: taggedNotes.length > 0 ? taggedNotes.map((n) => n.id) : undefined,
     };
 
     setIsSubmitting(true);
@@ -184,6 +204,70 @@ export function NewPost() {
 
         {/* 사진 */}
         <PostImageUploader images={images} onChange={setImages} maxImages={5} />
+
+        {/* 차록 태그 */}
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setNotePickerOpen((v) => !v)}
+            className="flex items-center gap-2 text-sm font-medium text-foreground"
+          >
+            <BookOpen className="w-4 h-4" />
+            차록 태그하기 ({taggedNotes.length}/5)
+            {notePickerOpen ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
+          </button>
+
+          {taggedNotes.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {taggedNotes.map((n) => (
+                <span key={n.id} className="flex items-center gap-1 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                  {n.teaName}
+                  {n.overallRating !== null && <span className="text-muted-foreground">({Number(n.overallRating).toFixed(1)})</span>}
+                  <button type="button" onClick={() => toggleNoteTag(n)} className="ml-0.5 hover:text-destructive">
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {notePickerOpen && (
+            <div className="border border-border rounded-lg p-3 flex flex-col gap-2">
+              <Input
+                placeholder="차 이름으로 검색"
+                value={noteSearch}
+                onChange={(e) => setNoteSearch(e.target.value)}
+                className="h-8 text-sm"
+              />
+              <div className="max-h-48 overflow-y-auto flex flex-col gap-1">
+                {myNotes
+                  .filter((n) => n.teaName.toLowerCase().includes(noteSearch.toLowerCase()))
+                  .map((n) => {
+                    const selected = taggedNotes.some((t) => t.id === n.id);
+                    return (
+                      <button
+                        key={n.id}
+                        type="button"
+                        onClick={() => toggleNoteTag(n)}
+                        className={cn(
+                          'flex items-center justify-between px-3 py-2 rounded-md text-sm text-left transition-colors',
+                          selected ? 'bg-primary/10 text-primary' : 'hover:bg-muted/50 text-foreground',
+                        )}
+                      >
+                        <span>{n.teaName}</span>
+                        {n.overallRating !== null && (
+                          <span className="text-xs text-muted-foreground">★ {Number(n.overallRating).toFixed(1)}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                {myNotes.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-4">작성한 차록이 없습니다.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* 공지 고정 (관리자만) */}
         {isAdmin && (

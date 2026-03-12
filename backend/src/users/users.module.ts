@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersService } from './users.service';
+import { UserLevelService } from './user-level.service';
 import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { UserAuthentication } from './entities/user-authentication.entity';
@@ -17,7 +18,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     FollowsModule,
     NotificationsModule,
   ],
-  providers: [UsersService],
+  providers: [UsersService, UserLevelService],
   controllers: [UsersController],
   exports: [UsersService],
 })
