@@ -56,6 +56,16 @@ vi.mock('../../lib/api', () => ({
   },
   tagsApi: {
     getPopularTags: vi.fn(() => Promise.resolve(mockPopularTags)),
+    getFollowedTags: vi.fn(() => Promise.resolve([])),
+  },
+  notesApi: {
+    getAll: vi.fn(() => Promise.resolve([])),
+  },
+  usersApi: {
+    getTrending: vi.fn(() => Promise.resolve([])),
+  },
+  cellarApi: {
+    getAll: vi.fn(() => Promise.resolve([])),
   },
 }));
 
@@ -91,14 +101,18 @@ const getNavigateSpy = () => {
 
 describe('Search 페이지', () => {
   it('탐색 섹션(인기, 신규, 맞춤차, 찻집)을 렌더링한다', async () => {
+    const user = userEvent.setup();
     renderWithRouter(<Search />, { route: '/sasaek' });
 
+    const exploreTabButtons = screen.getAllByRole('button', { name: '탐색' });
+    await user.click(exploreTabButtons[exploreTabButtons.length - 1]);
+
     await waitFor(() => {
-      expect(screen.getByText(/사랑받는 차/)).toBeInTheDocument();
+      expect(screen.getAllByText(/사랑받는 차/).length).toBeGreaterThan(0);
     });
-    expect(screen.getByText(/신규 차/)).toBeInTheDocument();
-    expect(screen.getByText(/맞춤차/)).toBeInTheDocument();
-    expect(screen.getByText(/찻집\/다실/)).toBeInTheDocument();
+    expect(screen.getAllByText(/신규 차/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/맞춤차/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/찻집\/다실/).length).toBeGreaterThan(0);
   });
 
   it('검색어와 일치하는 차를 렌더링한다', async () => {
@@ -123,7 +137,11 @@ describe('Search 페이지', () => {
   });
 
   it('찻집/다실 섹션에 찻집 목록을 표시한다', async () => {
+    const user = userEvent.setup();
     renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const exploreTabBtns = screen.getAllByRole('button', { name: '탐색' });
+    await user.click(exploreTabBtns[exploreTabBtns.length - 1]);
 
     await waitFor(() => {
       expect(screen.getByText('탐색전용샵')).toBeInTheDocument();
@@ -170,6 +188,11 @@ describe('Search 페이지', () => {
     await waitFor(() => {
       expect(screen.getByText('필터')).toBeInTheDocument();
     });
-    expect(screen.getByText('인기순')).toBeInTheDocument();
+
+    await user.click(screen.getByText('필터'));
+
+    await waitFor(() => {
+      expect(screen.getByText('인기순')).toBeInTheDocument();
+    });
   });
 });
