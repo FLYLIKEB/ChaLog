@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Bash(git status:*)",
-      "Bash(ls -la /Users/jwp/Documents/programming/ChaLog/.git/hooks/pre-commit*)"
+      "Bash(ls -la /Users/jwp/Documents/programming/ChaLog/.git/hooks/pre-commit*)",
+      "mcp__filesystem__list_directory"
     ]
   }
 }

@@ -323,9 +323,9 @@ export function Search() {
   }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags]);
 
   const showResults =
-    searchCategory !== 'tea'
-      ? true
-      : searchQuery.length > 0 || hasSearched || hasFilterParams;
+    searchCategory === 'tea'
+      ? searchQuery.length > 0 || hasSearched || hasFilterParams
+      : searchQuery.trim().length >= 2;
   const handleRefresh = useCallback(async () => {
     if (showResults) {
       if (hasTagParams) {
