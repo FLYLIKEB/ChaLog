@@ -6,9 +6,12 @@ type SessionState = {
   sessionId?: number;
 };
 
+export type AppMode = 'explore' | 'record';
+
 type AppModeState = {
   sessionMode: SessionState;
   blindMode: SessionState;
+  appMode: AppMode;
 };
 
 type AppModeContextType = AppModeState & {
@@ -18,6 +21,7 @@ type AppModeContextType = AppModeState & {
   setBlindActive: (sessionId: number) => void;
   clearSession: () => void;
   clearBlind: () => void;
+  setAppMode: (mode: AppMode) => void;
 };
 
 const STORAGE_KEY = 'chalog-app-mode';
@@ -25,6 +29,7 @@ const STORAGE_KEY = 'chalog-app-mode';
 const defaultState: AppModeState = {
   sessionMode: { active: false },
   blindMode: { active: false },
+  appMode: 'explore',
 };
 
 const AppModeContext = createContext<AppModeContextType | null>(null);
@@ -34,7 +39,9 @@ export function AppModeProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppModeState>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? (JSON.parse(stored) as AppModeState) : defaultState;
+      if (!stored) return defaultState;
+      const parsed = JSON.parse(stored) as Partial<AppModeState>;
+      return { ...defaultState, ...parsed };
     } catch {
       return defaultState;
     }
@@ -76,6 +83,10 @@ export function AppModeProvider({ children }: { children: React.ReactNode }) {
     setState((prev) => ({ ...prev, blindMode: { active: false } }));
   }, []);
 
+  const setAppMode = useCallback((mode: AppMode) => {
+    setState((prev) => ({ ...prev, appMode: mode }));
+  }, []);
+
   return (
     <AppModeContext.Provider
       value={{
@@ -86,6 +97,7 @@ export function AppModeProvider({ children }: { children: React.ReactNode }) {
         setBlindActive,
         clearSession,
         clearBlind,
+        setAppMode,
       }}
     >
       {children}

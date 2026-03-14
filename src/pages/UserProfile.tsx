@@ -1,26 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
-import { NoteCard } from '../components/NoteCard';
-
 import { EmptyState } from '../components/EmptyState';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
 import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference, UserLevel } from '../types';
 import { toast } from 'sonner';
-import { Loader2, Star, Heart, FileText, Camera, Instagram, Globe, Pencil, Bookmark, BarChart2 } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { logger } from '../lib/logger';
-import { UserAvatar } from '../components/ui/UserAvatar';
-import { StatCard } from '../components/ui/StatCard';
 import { Card } from '../components/ui/card';
-import { Section } from '../components/ui/Section';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { OnboardingPreferenceEditModal } from '../components/OnboardingPreferenceEditModal';
@@ -29,7 +17,9 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { cn } from '../components/ui/utils';
-import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
+import { ProfileHeader } from '../components/profile/ProfileHeader';
+import { ProfileStats } from '../components/profile/ProfileStats';
+import { UserNoteList } from '../components/profile/UserNoteList';
 
 type SortType = 'latest' | 'rating';
 
@@ -53,10 +43,8 @@ export function UserProfile() {
   const [onboardingPreference, setOnboardingPreference] = useState<UserOnboardingPreference | null>(null);
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
 
-  const isOwnProfile = !authLoading && currentUser && userId === currentUser.id;
-
+  const isOwnProfile = !authLoading && !!currentUser && userId === currentUser.id;
   const [isPrivateProfile, setIsPrivateProfile] = useState(false);
-
   const initialLoadDone = useRef(false);
 
   useEffect(() => {
@@ -105,7 +93,6 @@ export function UserProfile() {
       setUser(userData as User);
       setOnboardingPreference(pref);
       initialLoadDone.current = true;
-
     } catch (error: unknown) {
       logger.error('Failed to fetch user profile:', error);
       const statusCode = (error as { statusCode?: number })?.statusCode;
@@ -126,7 +113,6 @@ export function UserProfile() {
     fetchData();
   }, [authLoading, fetchData]);
 
-  // 정렬 변경 시 노트만 다시 가져오기 (초기 로드 이후)
   useEffect(() => {
     if (!initialLoadDone.current) return;
     setNotePage(1);
@@ -157,7 +143,6 @@ export function UserProfile() {
       navigate('/login');
       return;
     }
-
     if (!user) return;
 
     setIsFollowLoading(true);
@@ -165,31 +150,17 @@ export function UserProfile() {
     const delta = prevIsFollowing ? -1 : 1;
 
     setUser((prev) =>
-      prev
-        ? {
-            ...prev,
-            isFollowing: !prevIsFollowing,
-            followerCount: (prev.followerCount ?? 0) + delta,
-          }
-        : prev,
+      prev ? { ...prev, isFollowing: !prevIsFollowing, followerCount: (prev.followerCount ?? 0) + delta } : prev,
     );
 
     try {
       const result = await followsApi.toggle(userId) as { isFollowing: boolean };
-      // optimistic update already adjusted followerCount; only sync isFollowing from server
-      setUser((prev) =>
-        prev
-          ? { ...prev, isFollowing: result.isFollowing }
-          : prev,
-      );
+      setUser((prev) => prev ? { ...prev, isFollowing: result.isFollowing } : prev);
     } catch (error) {
+      logger.error('Follow toggle failed:', error);
       setUser((prev) =>
         prev
-          ? {
-              ...prev,
-              isFollowing: prevIsFollowing,
-              followerCount: (prev.followerCount ?? 0) - delta,
-            }
+          ? { ...prev, isFollowing: prevIsFollowing, followerCount: (prev.followerCount ?? 0) - delta }
           : prev,
       );
       toast.error('구독 처리 중 오류가 발생했습니다.');
@@ -199,39 +170,19 @@ export function UserProfile() {
   };
 
   const stats = useMemo(() => {
-    if (notes.length === 0) {
-      return {
-        averageRating: 0,
-        totalLikes: 0,
-        noteCount: 0,
-      };
-    }
-
+    if (notes.length === 0) return { averageRating: 0, totalLikes: 0, noteCount: 0 };
     const averageRating = notes.reduce((sum, note) => sum + (note.overallRating || 0), 0) / notes.length;
     const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
-
     const safeAverageRating = isNaN(averageRating) ? 0 : Number(averageRating.toFixed(1));
-
-    return {
-      averageRating: safeAverageRating,
-      totalLikes,
-      noteCount: noteTotal || notes.length,
-    };
+    return { averageRating: safeAverageRating, totalLikes, noteCount: noteTotal || notes.length };
   }, [notes, noteTotal]);
 
-  // 서버에서 정렬된 상태로 반환되므로 클라이언트 정렬 불필요
-  const sortedNotes = notes;
-
   const handleProfileImageUpdate = (imageUrl: string) => {
-    if (user) {
-      setUser({ ...user, profileImageUrl: imageUrl || null });
-    }
+    if (user) setUser({ ...user, profileImageUrl: imageUrl || null });
   };
 
   const handleProfileInfoUpdate = (updatedFields: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...updatedFields });
-    }
+    if (user) setUser({ ...user, ...updatedFields });
   };
 
   if (isLoading) {
@@ -244,8 +195,7 @@ export function UserProfile() {
           title={isOwnProfile ? '내 차록' : '사용자 프로필'}
         />
         <div className="p-6 space-y-6">
-          {/* 프로필 카드 스켈레톤 */}
-          <Card className="p-4 sm:p-6 md:p-8">
+          <Card className="p-4 sm:p-6">
             <div className="flex flex-col items-center gap-3 mb-6">
               <div className="w-20 h-20 rounded-full bg-muted animate-pulse" />
               <div className="flex flex-col items-center gap-2">
@@ -254,7 +204,6 @@ export function UserProfile() {
               </div>
             </div>
           </Card>
-          {/* 통계 스켈레톤 */}
           <div className="grid grid-cols-3 gap-2 sm:gap-3">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="p-3 flex flex-col items-center gap-1">
@@ -263,7 +212,6 @@ export function UserProfile() {
               </Card>
             ))}
           </div>
-          {/* 노트 리스트 스켈레톤 */}
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
@@ -317,164 +265,35 @@ export function UserProfile() {
       />
 
       <div className="p-6 space-y-6">
-        {/* 프로필 헤더 섹션 */}
-        <Card className="p-4 sm:p-6 md:p-8">
-          <div className="flex flex-col items-center gap-3 mb-6">
-            <div className="relative shrink-0">
-              <UserAvatar
-                name={user.name}
-                profileImageUrl={user.profileImageUrl}
-                size="md"
-              />
-              {isOwnProfile && (
-                <Button
-                  onClick={() => setIsEditModalOpen(true)}
-                  size="icon"
-                  className="absolute bottom-0 right-0 rounded-full min-w-[44px] min-h-[44px] w-11 h-11 bg-primary hover:bg-primary/90 shadow-md border-2 border-background"
-                  aria-label="프로필 사진 수정"
-                >
-                  <Camera className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
-            <div className="flex flex-col items-center text-center gap-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-semibold text-primary">{user.name}</h2>
-                {isOwnProfile && (
-                  <Button
-                    onClick={() => setIsProfileEditModalOpen(true)}
-                    size="icon"
-                    variant="ghost"
-                    className="w-7 h-7 rounded-full text-muted-foreground hover:text-foreground"
-                    aria-label="프로필 편집"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                )}
-              </div>
-              {user.bio && (
-                <p className="text-sm text-muted-foreground max-w-[240px] leading-snug">{user.bio}</p>
-              )}
-              {(user.instagramUrl || user.blogUrl) && (
-                <div className="flex items-center gap-2">
-                  {user.instagramUrl && (
-                    <a
-                      href={user.instagramUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="인스타그램"
-                    >
-                      <Instagram className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                  {user.blogUrl && (
-                    <a
-                      href={user.blogUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="블로그"
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-              )}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>구독자 {(user.followerCount ?? 0).toLocaleString('ko-KR')}</span>
-                <span>구독 {(user.followingCount ?? 0).toLocaleString('ko-KR')}</span>
-              </div>
-              {!isOwnProfile && !authLoading && (
-                <Button
-                  onClick={handleFollowToggle}
-                  disabled={isFollowLoading}
-                  variant={user.isFollowing ? 'outline' : 'default'}
-                  size="sm"
-                  className="mt-1 min-w-[88px]"
-                >
-                  {isFollowLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : user.isFollowing ? (
-                    '구독 중'
-                  ) : (
-                    '구독'
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-        </Card>
+        <ProfileHeader
+          user={user}
+          isOwnProfile={isOwnProfile}
+          isFollowLoading={isFollowLoading}
+          onFollowToggle={handleFollowToggle}
+          onEditImage={() => setIsEditModalOpen(true)}
+          onEditProfile={() => setIsProfileEditModalOpen(true)}
+        />
 
-        {/* 프로필 사진 수정 모달 */}
-        {isOwnProfile && user && (
-          <ProfileImageEditModal
-            open={isEditModalOpen}
-            onOpenChange={setIsEditModalOpen}
-            currentImageUrl={user.profileImageUrl}
-            onSuccess={handleProfileImageUpdate}
-            userId={user.id}
-          />
+        {isOwnProfile && (
+          <>
+            <ProfileImageEditModal
+              open={isEditModalOpen}
+              onOpenChange={setIsEditModalOpen}
+              currentImageUrl={user.profileImageUrl}
+              onSuccess={handleProfileImageUpdate}
+              userId={user.id}
+            />
+            <ProfileEditModal
+              open={isProfileEditModalOpen}
+              onOpenChange={setIsProfileEditModalOpen}
+              user={user}
+              onSuccess={handleProfileInfoUpdate}
+            />
+          </>
         )}
 
-        {/* 프로필 정보 편집 모달 */}
-        {isOwnProfile && user && (
-          <ProfileEditModal
-            open={isProfileEditModalOpen}
-            onOpenChange={setIsProfileEditModalOpen}
-            user={user}
-            onSuccess={handleProfileInfoUpdate}
-          />
-        )}
+        <ProfileStats stats={stats} userLevel={userLevel} />
 
-        {/* 통계 카드 섹션 */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <StatCard
-            icon={Star}
-            value={stats.averageRating}
-            label="평균 평점"
-          />
-          <StatCard
-            icon={Heart}
-            value={stats.totalLikes.toLocaleString('ko-KR')}
-            label="총 좋아요"
-          />
-          <StatCard
-            icon={FileText}
-            value={stats.noteCount}
-            label="작성한 차록"
-          />
-        </div>
-
-        {/* 레벨/뱃지 섹션 */}
-        {userLevel && (
-          <div className="flex flex-col gap-3">
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: '차록', info: userLevel.noteLevel },
-                { label: '게시글', info: userLevel.postLevel },
-                { label: '찻장', info: userLevel.cellarLevel },
-              ].map(({ label, info }) => (
-                <div key={label} className="flex flex-col items-center gap-0.5 p-2 rounded-lg bg-muted/40 text-center">
-                  <span className="text-xs text-muted-foreground">{label}</span>
-                  <span className="text-sm font-semibold text-primary">{info.name}</span>
-                  <span className="text-xs text-muted-foreground">Lv.{info.level}</span>
-                </div>
-              ))}
-            </div>
-            {userLevel.badges.length > 0 && (
-              <div className="flex flex-wrap gap-1.5">
-                {userLevel.badges.map((b) => (
-                  <span key={b.id} className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                    {b.name}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* 취향 정보 섹션 - 내 프로필에서만 표시 */}
         {isOwnProfile && onboardingPreference && (
           <Card className="p-4 sm:p-6 space-y-4">
             <div className="flex items-center justify-between mb-2">
@@ -535,8 +354,7 @@ export function UserProfile() {
           </Card>
         )}
 
-        {/* 취향 수정 모달 */}
-        {isOwnProfile && user && (
+        {isOwnProfile && (
           <OnboardingPreferenceEditModal
             open={isOnboardingEditModalOpen}
             onOpenChange={setIsOnboardingEditModalOpen}
@@ -546,74 +364,16 @@ export function UserProfile() {
           />
         )}
 
-        {/* 정렬 드롭다운 */}
-        {notes.length > 0 && (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              총 {noteTotal}개
-            </span>
-            <Select value={sort} onValueChange={(v) => setSort(v as SortType)}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="latest">최신순</SelectItem>
-                <SelectItem value="rating">별점순</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* 노트 목록 섹션 */}
-        <Section
-          title="차록"
-          spacing="lg"
-          headerAction={
-            isOwnProfile ? (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/report')}
-                  className="text-muted-foreground hover:text-foreground gap-1.5"
-                >
-                  <BarChart2 className="w-4 h-4" />
-                  레포트
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/saved')}
-                  className="text-muted-foreground hover:text-foreground gap-1.5"
-                >
-                  <Bookmark className="w-4 h-4" />
-                  저장함
-                </Button>
-              </div>
-            ) : undefined
-          }
-        >
-          {sortedNotes.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {sortedNotes.map(note => (
-                  <NoteCard key={note.id} note={note} showTeaName />
-                ))}
-              </div>
-              <InfiniteScrollSentinel
-                onLoadMore={loadMore}
-                loading={isLoadingMore}
-                hasMore={hasMore}
-              />
-            </>
-          ) : (
-            <EmptyState
-              type="notes"
-              message="아직 작성한 차록이 없어요."
-              action={{ label: '첫 차록 쓰기', onClick: () => navigate('/note/new') }}
-            />
-          )}
-        </Section>
+        <UserNoteList
+          notes={notes}
+          noteTotal={noteTotal}
+          sort={sort}
+          onSortChange={setSort}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={loadMore}
+          isOwnProfile={isOwnProfile}
+        />
       </div>
 
       <BottomNav />
