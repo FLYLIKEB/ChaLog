@@ -515,6 +515,7 @@ class ApiClient {
         logger.info(`[API Request ${requestId}] fetch 호출 시작`, { attempt });
         const response = await fetch(url, {
           ...fetchOptionsWithAddressSpace,
+          credentials: 'include',
           signal: controller.signal,
         });
 
@@ -841,17 +842,10 @@ class ApiClient {
       hasToken: !!token,
     });
 
-    if (!token) {
-      logger.error(`[File Upload ${requestId}] 인증 토큰 없음`);
-      throw {
-        message: '로그인이 필요합니다.',
-        statusCode: 401,
-      } as ApiError;
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-
-    const headers: HeadersInit = {
-      'Authorization': `Bearer ${token}`,
-    };
 
     const url = `${this.baseURL}${endpoint}`;
 
@@ -879,6 +873,7 @@ class ApiClient {
         method: 'POST',
         headers,
         body: formData,
+        credentials: 'include',
         signal: controller.signal,
       });
 

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { UserProfile } from '../UserProfile';
 import { MemoryRouter } from 'react-router-dom';
-import { usersApi, notesApi } from '../../lib/api';
+import { usersApi, notesApi, followsApi } from '../../lib/api';
 import { User, Note, UserOnboardingPreference } from '../../types';
 
 const mockNavigate = vi.fn();
@@ -19,9 +19,13 @@ vi.mock('../../lib/api', async () => {
     usersApi: {
       getById: vi.fn(),
       getOnboardingPreference: vi.fn(),
+      getLevel: vi.fn(() => Promise.resolve(null)),
     },
     notesApi: {
       getAll: vi.fn(),
+    },
+    followsApi: {
+      toggle: vi.fn(),
     },
     notificationsApi: {
       getUnreadCount: vi.fn(() => Promise.resolve({ count: 0 })),
@@ -312,6 +316,64 @@ describe('UserProfile', () => {
       // 다른 사용자면 true (공개 노트만 조회), 기본 정렬은 'latest', 페이지네이션 포함
       expect(notesApi.getAll).toHaveBeenCalledWith(2, true, undefined, undefined, undefined, 'latest', 1, 20);
     }, { timeout: 3000 });
+  });
+
+  describe('팔로우 토글', () => {
+    const mockUserWithFollow: User = {
+      ...mockUser,
+      isFollowing: false,
+      followerCount: 5,
+    };
+
+    it('팔로우 버튼 클릭 시 followsApi.toggle을 호출해야 함', async () => {
+      vi.mocked(usersApi.getById).mockResolvedValue(mockUserWithFollow);
+      vi.mocked(followsApi.toggle).mockResolvedValue({ isFollowing: true });
+
+      const { userEvent } = await import('@testing-library/user-event');
+      const user = userEvent.setup();
+
+      render(
+        <MemoryRouter>
+          <UserProfile />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: '프로필 사용자' })).toBeInTheDocument();
+      });
+
+      const followButton = screen.getByRole('button', { name: /구독/ });
+      await user.click(followButton);
+
+      await waitFor(() => {
+        expect(followsApi.toggle).toHaveBeenCalledWith(2);
+      });
+    });
+
+    it('팔로우 API 실패 시 낙관적 업데이트를 롤백해야 함', async () => {
+      vi.mocked(usersApi.getById).mockResolvedValue(mockUserWithFollow);
+      vi.mocked(followsApi.toggle).mockRejectedValue(new Error('Network error'));
+
+      const { userEvent } = await import('@testing-library/user-event');
+      const user = userEvent.setup();
+
+      render(
+        <MemoryRouter>
+          <UserProfile />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: '프로필 사용자' })).toBeInTheDocument();
+      });
+
+      const followButton = screen.getByRole('button', { name: /구독/ });
+      await user.click(followButton);
+
+      await waitFor(() => {
+        expect(followsApi.toggle).toHaveBeenCalledWith(2);
+      });
+    });
   });
 
   describe('온보딩 취향 태그', () => {
