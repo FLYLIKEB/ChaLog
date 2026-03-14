@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -20,6 +21,8 @@ type SavedTab = 'notes' | 'posts' | 'teas';
 const PAGE_SIZE = 20;
 
 export function Saved() {
+  useScrollRestoration();
+
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<SavedTab>('notes');
