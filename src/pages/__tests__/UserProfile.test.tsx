@@ -17,6 +17,7 @@ vi.mock('../../lib/api', async () => {
   return {
     ...actual,
     usersApi: {
+      getLevel: vi.fn(() => Promise.resolve(null)),
       getById: vi.fn(),
       getOnboardingPreference: vi.fn(),
     },

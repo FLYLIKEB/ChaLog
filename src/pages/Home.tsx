@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Header } from '../components/Header';
 import { HeroSection } from '../components/HeroSection';
 import { BottomNav } from '../components/BottomNav';
-import { Section } from '../components/ui/Section';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import { ForYouFeed } from '../components/feeds/ForYouFeed';
 import { FollowingFeed } from '../components/feeds/FollowingFeed';
@@ -18,6 +17,12 @@ import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 
 type FeedTab = 'forYou' | 'following' | 'tags';
+
+const TAB_LABELS: Record<FeedTab, { label: string; desc: string }> = {
+  forYou: { label: '맞춤', desc: '나를 위한 차록' },
+  following: { label: '구독', desc: '내가 구독한 다우' },
+  tags: { label: '향미', desc: '관심 향미 태그 차록' },
+};
 
 export function Home() {
   const { user: currentUser, isLoading: authLoading } = useAuth();
@@ -129,13 +134,11 @@ export function Home() {
     return (
       <div className="min-h-screen pb-20">
         <Header showProfile showLogo />
-        <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+        <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-4 sm:space-y-6">
           <HeroSection />
-          <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => <NoteCardSkeleton key={i} />)}
-            </div>
-          </Section>
+          <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => <NoteCardSkeleton key={i} />)}
+          </div>
           <footer className="mt-12 pt-8 pb-6 border-t border-border/40">
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
               <span>차멍 v0.1</span><span className="text-border">·</span>
@@ -153,20 +156,26 @@ export function Home() {
   return (
     <div className="min-h-screen pb-20">
       <Header showProfile showLogo />
-      <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-6 sm:space-y-8">
+      <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-4 sm:space-y-6">
         <HeroSection />
         <HomeTrendingSection trendingTeas={trendingTeas} trendingCreators={trendingCreators} />
-        <Section title="📄 차록 흐름" description="다양한 차록을 둘러보세요." spacing="lg">
+        <section aria-label="차록 흐름">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">차록 흐름</h2>
+            <p className="text-xs text-muted-foreground">{TAB_LABELS[activeTab].desc}</p>
+          </div>
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as FeedTab)}>
-            <TabsList className="w-full">
-              <TabsTrigger value="forYou" className="flex-1">맞춤차</TabsTrigger>
-              <TabsTrigger value="following" className="flex-1">구독</TabsTrigger>
-              <TabsTrigger value="tags" className="flex-1">향미</TabsTrigger>
+            <TabsList className="w-full mb-4">
+              {(Object.keys(TAB_LABELS) as FeedTab[]).map((tab) => (
+                <TabsTrigger key={tab} value={tab} className="flex-1 text-sm font-medium">
+                  {TAB_LABELS[tab].label}
+                </TabsTrigger>
+              ))}
             </TabsList>
-            <TabsContent value="forYou" className="mt-4">
+            <TabsContent value="forYou">
               <ForYouFeed notes={publicNotes} />
             </TabsContent>
-            <TabsContent value="following" className="mt-4">
+            <TabsContent value="following">
               <FollowingFeed
                 notes={followingNotes}
                 isLoading={isFollowingLoading}
@@ -174,7 +183,7 @@ export function Home() {
                 authLoading={authLoading}
               />
             </TabsContent>
-            <TabsContent value="tags" className="mt-4">
+            <TabsContent value="tags">
               <TagsFeed
                 notes={tagNotes}
                 followedTags={followedTags}
@@ -184,7 +193,7 @@ export function Home() {
               />
             </TabsContent>
           </Tabs>
-        </Section>
+        </section>
         <HomeFooter recentContributors={recentContributors} />
       </div>
       <BottomNav />

@@ -72,6 +72,9 @@ vi.mock('../../lib/api', () => ({
   usersApi: {
     getTrending: vi.fn(() => Promise.resolve([])),
   },
+  authApi: {
+    getMe: vi.fn(() => Promise.resolve({ user: null })),
+  },
   tagsApi: {
     getFollowedTags: vi.fn(() => Promise.resolve([])),
   },
