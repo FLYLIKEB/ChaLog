@@ -70,6 +70,7 @@ const BlindSessionJoin = lazy(() => import('./pages/BlindSessionJoin').then((m) 
 const BlindSessionDetail = lazy(() => import('./pages/BlindSessionDetail').then((m) => ({ default: m.BlindSessionDetail })));
 const BlindNoteWrite = lazy(() => import('./pages/BlindNoteWrite').then((m) => ({ default: m.BlindNoteWrite })));
 const BlindSessionReport = lazy(() => import('./pages/BlindSessionReport').then((m) => ({ default: m.BlindSessionReport })));
+const TeaCalendar = lazy(() => import('./pages/TeaCalendar').then((m) => ({ default: m.TeaCalendar })));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports').then((m) => ({ default: m.AdminReports })));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then((m) => ({ default: m.AdminUsers })));
@@ -179,6 +180,7 @@ function AppContent() {
                 <Route path="/teahouse/new" element={<NewShop />} />
                 <Route path="/teahouse/:name/edit" element={<EditShop />} />
                 <Route path="/teahouse/:name" element={<ShopDetail />} />
+                <Route path="/calendar" element={<TeaCalendar />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/report" element={<Report />} />
                 <Route path="/settings" element={<Settings />} />

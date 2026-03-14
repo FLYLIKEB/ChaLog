@@ -24,10 +24,11 @@ export class TagsController {
   @Get('popular')
   async getPopularTags(
     @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('category') category: string | undefined,
     @Request() req,
   ) {
     const currentUserId = req.user?.userId;
-    return this.tagsService.getPopularTags(limit, currentUserId);
+    return this.tagsService.getPopularTags(limit, currentUserId, category);
   }
 
   @UseGuards(OptionalJwtAuthGuard)

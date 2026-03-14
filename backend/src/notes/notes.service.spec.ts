@@ -718,4 +718,68 @@ describe('NotesService', () => {
       expect(result).toBeDefined();
     });
   });
+
+  function makeQb(getRawManyResult: object[]) {
+    return {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      orderBy: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([]),
+      getRawOne: jest.fn().mockResolvedValue(null),
+      getRawMany: jest.fn().mockResolvedValue(getRawManyResult),
+    };
+  }
+
+  describe('getCalendarData', () => {
+    it('지정 월의 차록 날짜 목록과 스트릭을 반환해야 함', async () => {
+      const calendarQb = makeQb([
+        { date: '2026-03-01' },
+        { date: '2026-03-02' },
+        { date: '2026-03-05' },
+      ]);
+      const streakQb = makeQb([
+        { date: '2026-03-05' },
+        { date: '2026-03-02' },
+        { date: '2026-03-01' },
+      ]);
+      mockNotesRepository.createQueryBuilder
+        .mockReturnValueOnce(calendarQb)
+        .mockReturnValueOnce(streakQb);
+
+      const result = await service.getCalendarData(1, 2026, 3);
+
+      expect(result.dates).toEqual(['2026-03-01', '2026-03-02', '2026-03-05']);
+      expect(result.streak).toBeDefined();
+      expect(typeof result.streak.current).toBe('number');
+      expect(typeof result.streak.longest).toBe('number');
+    });
+  });
+
+  describe('calculateStreak', () => {
+    it('노트가 없을 때 0,0을 반환해야 함', async () => {
+      mockNotesRepository.createQueryBuilder.mockReturnValueOnce(makeQb([]));
+
+      const result = await service.calculateStreak(1);
+
+      expect(result).toEqual({ current: 0, longest: 0 });
+    });
+
+    it('연속 날짜의 최장 스트릭을 계산해야 함', async () => {
+      mockNotesRepository.createQueryBuilder.mockReturnValueOnce(
+        makeQb([
+          { date: '2026-01-03' },
+          { date: '2026-01-02' },
+          { date: '2026-01-01' },
+        ]),
+      );
+
+      const result = await service.calculateStreak(1);
+
+      expect(result.longest).toBe(3);
+    });
+  });
 });

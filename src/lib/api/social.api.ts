@@ -2,8 +2,11 @@ import { PopularTagItem, TagDetail, TagNoteList, Comment, NotificationListRespon
 import { apiClient } from './client';
 
 export const tagsApi = {
-  getPopularTags: (limit = 20) =>
-    apiClient.get<PopularTagItem[]>(`/tags/popular?limit=${limit}`),
+  getPopularTags: (limit = 20, category?: string) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (category) params.append('category', category);
+    return apiClient.get<PopularTagItem[]>(`/tags/popular?${params.toString()}`);
+  },
   getRecentTags: (limit = 20) =>
     apiClient.get<PopularTagItem[]>(`/tags/recent?limit=${limit}`),
   getFollowedTags: () =>

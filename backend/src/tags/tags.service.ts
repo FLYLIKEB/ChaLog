@@ -124,20 +124,51 @@ export class TagsService {
     return { tag: tagDetail, notes: noteDtos, total, page: page ?? 1, limit: take };
   }
 
-  async getPopularTags(limit: number, currentUserId?: number): Promise<PopularTagDto[]> {
-    const rows = await this.noteTagsRepository
+  async getPopularTags(limit: number, currentUserId?: number, category?: string): Promise<PopularTagDto[]> {
+    const qb = this.noteTagsRepository
       .createQueryBuilder('nt')
       .select('tag.name', 'name')
       .addSelect('COUNT(nt.id)', 'noteCount')
       .innerJoin('nt.tag', 'tag')
       .innerJoin('nt.note', 'note')
-      .where('note.isPublic = :isPublic', { isPublic: true })
+      .where('note.isPublic = :isPublic', { isPublic: true });
+
+    if (category) {
+      qb.andWhere('tag.category = :category', { category });
+    }
+
+    const rows = await qb
       .groupBy('tag.id')
       .orderBy('noteCount', 'DESC')
       .limit(limit)
       .getRawMany();
 
     return this.attachFollowingFlag(rows, currentUserId);
+  }
+
+  async getByCategory(category: string): Promise<PopularTagDto[]> {
+    const tags = await this.tagsRepository.find({
+      where: { category: category as 'general' | 'flavor' },
+      order: { name: 'ASC' },
+    });
+
+    const tagIds = tags.map((t) => t.id);
+    if (tagIds.length === 0) return [];
+
+    const noteCountRows = await this.noteTagsRepository
+      .createQueryBuilder('nt')
+      .select('nt.tagId', 'tagId')
+      .addSelect('COUNT(nt.id)', 'noteCount')
+      .innerJoin('nt.note', 'note')
+      .where('note.isPublic = :isPublic', { isPublic: true })
+      .andWhere('nt.tagId IN (:...tagIds)', { tagIds })
+      .groupBy('nt.tagId')
+      .getRawMany();
+
+    const countMap = new Map<number, number>();
+    noteCountRows.forEach((r) => countMap.set(Number(r.tagId), Number(r.noteCount)));
+
+    return tags.map((t) => ({ name: t.name, noteCount: countMap.get(t.id) ?? 0, isFollowing: false }));
   }
 
   async getRecentTags(limit: number, currentUserId?: number): Promise<PopularTagDto[]> {

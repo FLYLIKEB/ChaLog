@@ -100,6 +100,22 @@ export class NotesController {
   }
 
   @UseGuards(OptionalJwtAuthGuard)
+  @Get('calendar')
+  async getCalendar(
+    @Query('userId') userId: string,
+    @Query('year') year: string,
+    @Query('month') month: string,
+  ) {
+    const userIdNum = parseInt(userId, 10);
+    const yearNum = parseInt(year, 10);
+    const monthNum = parseInt(month, 10);
+    if (Number.isNaN(userIdNum) || Number.isNaN(yearNum) || Number.isNaN(monthNum)) {
+      throw new BadRequestException('userId, year, month are required numbers');
+    }
+    return this.notesService.getCalendarData(userIdNum, yearNum, monthNum);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     const parsedId = parseInt(id, 10);

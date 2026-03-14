@@ -908,6 +908,84 @@ export class NotesService {
     });
   }
 
+  async getCalendarData(userId: number, year: number, month: number): Promise<{ dates: string[]; streak: { current: number; longest: number } }> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+
+    const rows = await this.notesRepository
+      .createQueryBuilder('note')
+      .select('DATE(note.createdAt)', 'date')
+      .where('note.userId = :userId', { userId })
+      .andWhere('note.createdAt >= :startDate', { startDate })
+      .andWhere('note.createdAt <= :endDate', { endDate })
+      .groupBy('DATE(note.createdAt)')
+      .orderBy('date', 'ASC')
+      .getRawMany<{ date: string }>();
+
+    const dates = rows.map((r) => r.date);
+    const streak = await this.calculateStreak(userId);
+
+    return { dates, streak };
+  }
+
+  async calculateStreak(userId: number): Promise<{ current: number; longest: number }> {
+    const rows = await this.notesRepository
+      .createQueryBuilder('note')
+      .select('DATE(note.createdAt)', 'date')
+      .where('note.userId = :userId', { userId })
+      .groupBy('DATE(note.createdAt)')
+      .orderBy('date', 'DESC')
+      .getRawMany<{ date: string }>();
+
+    if (rows.length === 0) {
+      return { current: 0, longest: 0 };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let current = 0;
+    let longest = 0;
+    let streak = 0;
+    let prevDate: Date | null = null;
+
+    for (const row of rows) {
+      const d = new Date(row.date);
+      d.setHours(0, 0, 0, 0);
+
+      if (prevDate === null) {
+        const diffFromToday = Math.round((today.getTime() - d.getTime()) / 86400000);
+        if (diffFromToday <= 1) {
+          streak = 1;
+          current = 1;
+        } else {
+          streak = 1;
+        }
+      } else {
+        const diff = Math.round((prevDate.getTime() - d.getTime()) / 86400000);
+        if (diff === 1) {
+          streak += 1;
+          if (current > 0) {
+            current = streak;
+          }
+        } else {
+          if (streak > longest) {
+            longest = streak;
+          }
+          streak = 1;
+        }
+      }
+
+      prevDate = d;
+    }
+
+    if (streak > longest) {
+      longest = streak;
+    }
+
+    return { current, longest };
+  }
+
   private async updateTeaRating(teaId: number): Promise<void> {
     const result = await this.notesRepository
       .createQueryBuilder('note')
