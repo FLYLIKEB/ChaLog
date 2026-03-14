@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
@@ -34,6 +35,8 @@ import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 type SortType = 'latest' | 'rating';
 
 export function UserProfile() {
+  useScrollRestoration();
+
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: currentUser, isLoading: authLoading } = useAuth();

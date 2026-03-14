@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { Search as SearchIcon, Clock, X } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
@@ -34,6 +35,9 @@ const SECTION_TITLES: Record<string, string> = {
 };
 
 export function Search() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  useScrollRestoration(scrollContainerRef);
+
   const [searchParams, setSearchParams] = useSearchParams();
 
   const { user } = useAuth();
@@ -237,7 +241,7 @@ export function Search() {
         showProfile
       />
 
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           <Input

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { Header } from '../components/Header';
 import { HeroSection } from '../components/HeroSection';
 import { BottomNav } from '../components/BottomNav';
@@ -20,6 +21,8 @@ import { useAuth } from '../contexts/AuthContext';
 type FeedTab = 'forYou' | 'following' | 'tags';
 
 export function Home() {
+  useScrollRestoration();
+
   const { user: currentUser, isLoading: authLoading } = useAuth();
   const [trendingTeas, setTrendingTeas] = useState<Tea[]>([]);
   const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null; followerCount: number }>>([]);

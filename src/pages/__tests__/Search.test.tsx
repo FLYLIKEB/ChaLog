@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { vi, describe, it, expect } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { Search } from '../Search';
 import { renderWithRouter } from '../../test/renderWithRouter';
 
@@ -53,9 +53,19 @@ vi.mock('../../lib/api', () => ({
     getNewRankings: vi.fn(() => Promise.resolve(mockTeas)),
     getCuration: vi.fn(() => Promise.resolve(mockTeas)),
     getSellers: vi.fn(() => Promise.resolve({ sellers: mockSellers })),
+    getTrending: vi.fn(() => Promise.resolve(mockTeas)),
   },
   tagsApi: {
     getPopularTags: vi.fn(() => Promise.resolve(mockPopularTags)),
+  },
+  notesApi: {
+    getAll: vi.fn(() => Promise.resolve([])),
+  },
+  cellarApi: {
+    getAll: vi.fn(() => Promise.resolve([])),
+  },
+  authApi: {
+    getMe: vi.fn(() => Promise.resolve({ user: null })),
   },
 }));
 
@@ -90,15 +100,26 @@ const getNavigateSpy = () => {
 };
 
 describe('Search 페이지', () => {
-  it('탐색 섹션(인기, 신규, 맞춤차, 찻집)을 렌더링한다', async () => {
-    renderWithRouter(<Search />, { route: '/sasaek' });
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('탐색 탭으로 전환 시 인기/신규/맞춤차 섹션이 표시된다', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+
+    // tab switcher is a flex row with 검색/탐색 buttons inside bg-muted rounded-lg
+    const tabContainer = container.querySelector('.bg-muted.rounded-lg');
+    const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
+    const exploreTabBtn = tabButtons.find((b) => b.textContent === '탐색');
+    if (!exploreTabBtn) throw new Error('탐색 tab button not found');
+    await user.click(exploreTabBtn);
 
     await waitFor(() => {
-      expect(screen.getByText(/사랑받는 차/)).toBeInTheDocument();
-    });
-    expect(screen.getByText(/신규 차/)).toBeInTheDocument();
-    expect(screen.getByText(/맞춤차/)).toBeInTheDocument();
-    expect(screen.getByText(/찻집\/다실/)).toBeInTheDocument();
+      expect(screen.getAllByText(/사랑받는 차/).length).toBeGreaterThan(0);
+    }, { timeout: 3000 });
+    expect(screen.getAllByText(/신규 차/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/맞춤차/).length).toBeGreaterThan(0);
   });
 
   it('검색어와 일치하는 차를 렌더링한다', async () => {
@@ -122,8 +143,15 @@ describe('Search 페이지', () => {
     expect(await screen.findByText('검색 결과가 없어요.')).toBeInTheDocument();
   });
 
-  it('찻집/다실 섹션에 찻집 목록을 표시한다', async () => {
-    renderWithRouter(<Search />, { route: '/sasaek' });
+  it('탐색 탭에서 찻집/다실 목록을 표시한다', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const tabContainer = container.querySelector('.bg-muted.rounded-lg');
+    const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
+    const exploreTabBtn = tabButtons.find((b) => b.textContent === '탐색');
+    if (!exploreTabBtn) throw new Error('탐색 tab button not found');
+    await user.click(exploreTabBtn);
 
     await waitFor(() => {
       expect(screen.getByText('탐색전용샵')).toBeInTheDocument();
@@ -160,16 +188,39 @@ describe('Search 페이지', () => {
     expect(getNavigateSpy()).toHaveBeenCalledWith('/tea/new');
   });
 
-  it('필터 UI(차종, 평점, 정렬)가 검색 결과 시 표시된다', async () => {
-    const user = userEvent.setup();
+  it('필터 UI가 초기에도 표시된다 (검색어 없이도 필터 접근 가능)', async () => {
     renderWithRouter(<Search />, { route: '/sasaek' });
-
-    const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
-    await user.type(input, '무이');
 
     await waitFor(() => {
       expect(screen.getByText('필터')).toBeInTheDocument();
     });
-    expect(screen.getByText('인기순')).toBeInTheDocument();
+  });
+
+  it('필터 패널을 클릭하면 정렬 옵션이 표시된다', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const filterButton = await screen.findByText('필터');
+    await user.click(filterButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('인기순')).toBeInTheDocument();
+    });
+  });
+
+  it('검색어 없이 필터 적용 시 getWithFilters가 호출된다', async () => {
+    const { teasApi } = await import('../../lib/api');
+    const user = userEvent.setup();
+    renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const filterButton = await screen.findByText('필터');
+    await user.click(filterButton);
+
+    const applyButton = await screen.findByRole('button', { name: '적용' });
+    await user.click(applyButton);
+
+    await waitFor(() => {
+      expect(teasApi.getWithFilters).toHaveBeenCalled();
+    });
   });
 });
