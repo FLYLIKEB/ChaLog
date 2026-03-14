@@ -34,6 +34,7 @@ export const authApi = {
   loginWithKakao: (data: KakaoLoginRequest) => apiClient.post<AuthResponse>('/auth/kakao', data),
   loginWithGoogle: (data: GoogleLoginRequest) => apiClient.post<AuthResponse>('/auth/google', data),
   getMe: () => apiClient.get<{ user: { id: number; email: string | null; name: string; role?: 'user' | 'admin' } }>('/auth/me'),
+  logout: () => apiClient.post<void>('/auth/logout'),
   getProfile: () => apiClient.post('/auth/profile'),
   linkKakao: (accessToken: string) =>
     apiClient.post<null>('/auth/link/kakao', { accessToken }),
