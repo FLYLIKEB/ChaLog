@@ -45,6 +45,11 @@ export interface CreateNoteRequest {
 
 export interface UpdateNoteRequest extends Partial<CreateNoteRequest> {}
 
+export interface CalendarData {
+  dates: string[];
+  streak: { current: number; longest: number };
+}
+
 export const notesApi = {
   getActiveSchemas: () => apiClient.get<ActiveSchemasResponse>('/notes/schemas/active'),
   getSchemaAxes: (schemaId: number) => apiClient.get(`/notes/schemas/${schemaId}/axes`),
@@ -73,4 +78,6 @@ export const notesApi = {
   toggleLike: (id: number) => apiClient.post<{ liked: boolean; likeCount: number }>(`/notes/${id}/like`),
   toggleBookmark: (id: number) => apiClient.post<{ bookmarked: boolean }>(`/notes/${id}/bookmark`),
   report: (id: number, reason: ReportReason) => apiClient.post<{ id: number; message: string }>(`/notes/${id}/report`, { reason }),
+  getCalendar: (userId: number, year: number, month: number) =>
+    apiClient.get<CalendarData>(`/notes/calendar?userId=${userId}&year=${year}&month=${month}`),
 };

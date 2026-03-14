@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus, Leaf, PenLine, Package, RefreshCw, Eye, EyeOff } from 'lucide-react';
+import { Plus, Leaf, PenLine, Package, RefreshCw, Eye, EyeOff, CalendarDays } from 'lucide-react';
 import { cn } from './ui/utils';
 import { useAppMode } from '../contexts/AppModeContext';
 
@@ -73,6 +73,11 @@ export function SpeedDialFAB() {
       label: '찻장 추가',
       icon: <Package className="w-5 h-5" />,
       onClick: () => navigateTo('/cellar/new'),
+    },
+    {
+      label: '차록 캘린더',
+      icon: <CalendarDays className="w-5 h-5" />,
+      onClick: () => navigateTo('/calendar'),
     },
     {
       label: '다회모드',
