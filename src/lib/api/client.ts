@@ -374,6 +374,7 @@ function supportsTargetAddressSpace(): boolean {
 
 class ApiClient {
   private baseURL: string;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
@@ -387,13 +388,36 @@ class ApiClient {
     }
   }
 
+  private async tryRefreshToken(): Promise<boolean> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
+    }
+    this.refreshPromise = (async () => {
+      try {
+        const url = this.baseURL.startsWith('/')
+          ? `${typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173'}${this.baseURL}/auth/refresh`
+          : `${this.baseURL}/auth/refresh`;
+        const res = await fetch(url, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    })();
+    const result = await this.refreshPromise;
+    this.refreshPromise = null;
+    return result;
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit & { timeout?: number } = {}
   ): Promise<T> {
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    const token = localStorage.getItem('access_token');
     const timeout = options.timeout ?? API_TIMEOUT;
 
     // 모바일 환경 감지
@@ -409,8 +433,6 @@ class ApiClient {
       networkDownlink: networkInfo?.downlink || 'unknown',
       networkRtt: networkInfo?.rtt || 'unknown',
       timeout,
-      hasToken: !!token,
-      tokenLength: token?.length || 0,
     });
 
     // timeout을 제거한 fetch 옵션 생성
@@ -420,16 +442,6 @@ class ApiClient {
       'Content-Type': 'application/json',
       ...fetchOptions.headers,
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-      logger.debug(`[API Request ${requestId}] 인증 토큰 포함`, {
-        tokenPrefix: token.substring(0, 20) + '...',
-      });
-    } else {
-      // 인증 토큰이 없는 것은 공개 API 호출 시 정상적인 상황이므로 debug 레벨로 변경
-      logger.debug(`[API Request ${requestId}] 인증 토큰 없음 (공개 API 호출)`);
-    }
 
     // 테스트 환경에서 상대 URL을 절대 URL로 변환
     let url: string;
@@ -489,6 +501,7 @@ class ApiClient {
     const requestPromise = (async () => {
       const maxRetries = method === 'GET' ? MAX_RETRY_ATTEMPTS : 0;
       let attempt = 0;
+      let authRetried = false;
 
       while (true) {
         // AbortController를 사용한 타임아웃 설정
@@ -543,6 +556,22 @@ class ApiClient {
           attempt += 1;
           continue;
         }
+
+        // 401 시 토큰 갱신 후 1회 재시도 (인증 엔드포인트 제외)
+        if (response.status === 401 && !authRetried && !endpoint.startsWith('/auth/')) {
+          logger.info(`[API Request ${requestId}] 401 → 토큰 갱신 시도`);
+          authRetried = true;
+          const refreshed = await this.tryRefreshToken();
+          if (refreshed) {
+            logger.info(`[API Request ${requestId}] 토큰 갱신 성공, 재시도`);
+            continue;
+          }
+          logger.warn(`[API Request ${requestId}] 토큰 갱신 실패, 로그아웃 처리`);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:logout'));
+          }
+        }
+
         logger.error(`[API Request ${requestId}] 응답 오류`, {
           status: response.status,
           statusText: response.statusText,
@@ -794,7 +823,7 @@ class ApiClient {
         if (inFlightRequests.get(requestKey) === requestPromise) {
           inFlightRequests.delete(requestKey);
         }
-      });
+      }).catch(() => { /* cleanup chain — rejection handled by caller */ });
     }
 
     return requestPromise;
@@ -822,10 +851,9 @@ class ApiClient {
     await this.request<void>(endpoint, { method: 'DELETE' });
   }
 
-  async uploadFile<T>(endpoint: string, file: File): Promise<T> {
+  async uploadFile<T>(endpoint: string, file: File, isRetry = false): Promise<T> {
     const requestId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const startTime = Date.now();
-    const token = localStorage.getItem('access_token');
     const timeout = API_TIMEOUT;
 
     // 모바일 환경 감지
@@ -839,13 +867,9 @@ class ApiClient {
       fileType: file.type,
       isMobile,
       networkType: networkInfo?.effectiveType || 'unknown',
-      hasToken: !!token,
     });
 
     const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     const url = `${this.baseURL}${endpoint}`;
 
@@ -886,6 +910,20 @@ class ApiClient {
       });
 
       if (!response.ok) {
+        // 401 시 토큰 갱신 후 1회 재시도
+        if (response.status === 401 && !isRetry && !endpoint.startsWith('/auth/')) {
+          logger.info(`[File Upload ${requestId}] 401 → 토큰 갱신 시도`);
+          const refreshed = await this.tryRefreshToken();
+          if (refreshed) {
+            logger.info(`[File Upload ${requestId}] 토큰 갱신 성공, 재시도`);
+            clearTimeout(timeoutId);
+            return this.uploadFile<T>(endpoint, file, true);
+          }
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('auth:logout'));
+          }
+        }
+
         logger.error(`[File Upload ${requestId}] 응답 오류`, {
           status: response.status,
           statusText: response.statusText,

@@ -755,7 +755,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     setHasCompletedOnboarding(null);
-    localStorage.removeItem('access_token');
     localStorage.removeItem('user');
 
     // 카카오 로그아웃 (선택사항)

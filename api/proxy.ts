@@ -17,12 +17,40 @@ async function readRawBody(req: any): Promise<Buffer> {
   });
 }
 
-export default async function handler(req: any, res: any) {
-  // CORS 헤더 먼저 설정
-  res.setHeader('Access-Control-Allow-Origin', '*');
+function getAllowedOrigin(req: any): string | null {
+  const origin = req.headers?.origin;
+  if (!origin) return null;
+  const allowed = [
+    'https://cha-log-gilt.vercel.app',
+    process.env.FRONTEND_URL,
+    ...(process.env.FRONTEND_URLS?.split(',').map(u => u.trim()) ?? []),
+  ].filter(Boolean);
+  const localhostRegex = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  if (allowed.includes(origin) || localhostRegex.test(origin)) return origin;
+  return null;
+}
+
+function setCorsHeaders(req: any, res: any): boolean {
+  const origin = req.headers?.origin;
+  if (!origin) return true;
+  const allowedOrigin = getAllowedOrigin(req);
+  if (!allowedOrigin) return false;
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  
+  res.setHeader('Vary', 'Origin');
+  return true;
+}
+
+export default async function handler(req: any, res: any) {
+  // CORS 검증
+  const corsAllowed = setCorsHeaders(req, res);
+  if (!corsAllowed) {
+    res.status(403).json({ error: 'Forbidden', message: 'Origin not allowed', statusCode: 403 });
+    return;
+  }
+
   // OPTIONS 요청 처리
   if (req.method === 'OPTIONS') {
     res.status(200).end();
@@ -139,20 +167,23 @@ export default async function handler(req: any, res: any) {
     const timeoutMs = Number(process.env.BACKEND_TIMEOUT_MS || 30000);
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    const fetchOptions: RequestInit = {
-      method: req.method,
-      headers: {
-        'Content-Type': req.headers['content-type'] || 'application/json',
-      },
-      signal: controller.signal,
+    const forwardHeaders: Record<string, string> = {
+      'Content-Type': req.headers['content-type'] || 'application/json',
     };
 
     if (req.headers.authorization) {
-      fetchOptions.headers = {
-        ...fetchOptions.headers,
-        Authorization: req.headers.authorization,
-      };
+      forwardHeaders['Authorization'] = req.headers.authorization;
     }
+
+    if (req.headers.cookie) {
+      forwardHeaders['Cookie'] = req.headers.cookie;
+    }
+
+    const fetchOptions: RequestInit = {
+      method: req.method,
+      headers: forwardHeaders,
+      signal: controller.signal,
+    };
 
     // body 처리
     if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -201,17 +232,24 @@ export default async function handler(req: any, res: any) {
     // 상태 코드 설정
     res.status(fetchResponse.status);
 
-    // 헤더 복사
+    // 헤더 복사 (Set-Cookie는 별도 처리)
     fetchResponse.headers.forEach((value, key) => {
-      if (key !== 'content-encoding' && key !== 'transfer-encoding') {
-        res.setHeader(key, value);
+      const lower = key.toLowerCase();
+      if (lower === 'content-encoding' || lower === 'transfer-encoding' || lower === 'set-cookie') {
+        return;
       }
+      res.setHeader(key, value);
     });
 
-    // CORS 헤더 재설정 (덮어쓰기 방지)
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // Set-Cookie 헤더 전달 (raw 헤더로 복수 쿠키 지원)
+    const rawSetCookies = fetchResponse.headers.getSetCookie?.() ??
+      (fetchResponse.headers as any).raw?.()?.['set-cookie'] ?? [];
+    if (rawSetCookies.length > 0) {
+      res.setHeader('Set-Cookie', rawSetCookies);
+    }
+
+    // CORS 헤더 재설정
+    setCorsHeaders(req, res);
 
     // 응답 본문 읽기
     const contentType = fetchResponse.headers.get('content-type') || '';
@@ -271,12 +309,9 @@ export default async function handler(req: any, res: any) {
       isNetworkError,
     });
 
-    // CORS 헤더 설정
     if (!res.headersSent) {
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+      setCorsHeaders(req, res); // best-effort CORS on error path
     }
 
     try {
