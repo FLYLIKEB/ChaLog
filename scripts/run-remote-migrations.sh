@@ -73,9 +73,9 @@ echo "--- git stash + pull ---"
 git stash --include-untracked 2>/dev/null || true
 git pull origin main
 echo "--- npm install ---"
-npm ci --omit=dev 2>&1 | tail -3
+npm install 2>&1 | tail -5
 echo "--- build ---"
-npm run build 2>&1 | tail -3
+npm run build 2>&1 | tail -5
 ENDSSH
 echo -e "${GREEN}✅ 배포 완료${NC}"
 echo ""
