@@ -313,7 +313,7 @@ export function useNoteForm({
         await notesApi.create({
           teaId: selectedTea,
           schemaIds: schemaIdsToSend,
-          overallRating: overallRating!,
+          overallRating: Math.round(overallRating! * 2) / 2,
           isRatingIncluded: true,
           axisValues: axisValuesArray,
           memo: processedMemo,
@@ -326,11 +326,14 @@ export function useNoteForm({
         toast.success('기록이 저장되었습니다.');
         setTimeout(() => navigate('/my-notes'), NAVIGATION_DELAY);
       } else {
-        const calculatedOverallRating =
+        const rawOverallRating =
           overallRating ??
           (axisValuesArray.length > 0
             ? axisValuesArray.reduce((sum, av) => sum + av.value, 0) / axisValuesArray.length
             : null);
+        const calculatedOverallRating = rawOverallRating != null
+          ? Math.round(rawOverallRating * 2) / 2
+          : null;
 
         await notesApi.update(noteId!, {
           teaId: selectedTea,

@@ -9,7 +9,7 @@
   --card-shadow-hover: 0 2px 8px rgba(0, 0, 0, 0.04);
   --card-shadow-top: 0 -1px 4px rgba(0, 0, 0, 0.03);
   --card-radius: 1rem;
-  --card-border: rgba(80, 50, 20, 0.03);
+  --card-border: rgba(0, 0, 0, 0.08);
   --background: #f7f3ef;
   --foreground: oklch(0.26 0.012 55);
   --card: #fffcf9;
@@ -55,7 +55,7 @@
   --card-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
   --card-shadow-hover: 0 1px 4px rgba(0, 0, 0, 0.12);
   --card-shadow-top: 0 -1px 4px rgba(0, 0, 0, 0.08);
-  --card-border: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.15);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.145 0 0);

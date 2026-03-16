@@ -5,6 +5,7 @@ import { Header } from '../components/Header';
 import { DetailFallback } from '../components/DetailFallback';
 import { RatingVisualization } from '../components/RatingVisualization';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { ImageCarousel } from '../components/ImageCarousel';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { ReportModal } from '../components/ReportModal';
@@ -203,220 +204,151 @@ export function NoteDetail() {
     }
   };
 
+  const displayDate = note.drinkDate
+    ? new Date(note.drinkDate + 'T00:00:00')
+    : note.createdAt instanceof Date
+      ? note.createdAt
+      : new Date(note.createdAt);
+  const dateYear = displayDate.getFullYear();
+  const dateMonth = displayDate.getMonth() + 1;
+  const dateDay = displayDate.getDate();
+  const dateWeekday = ['일', '월', '화', '수', '목', '금', '토'][displayDate.getDay()];
+
+  const brewColor = note.appearance ? BREW_COLORS.find((c) => c.value === note.appearance) : null;
+
   return (
     <div className="min-h-screen pb-6">
-      <Header showBack title="차록 상세" showProfile />
-      
-      <div className="p-4 space-y-6">
-        {/* 그날의 일기 + 차 정보 */}
-        {(() => {
-          const displayDate = note.drinkDate
-            ? new Date(note.drinkDate + 'T00:00:00')
-            : note.createdAt instanceof Date
-              ? note.createdAt
-              : new Date(note.createdAt);
-          const year = displayDate.getFullYear();
-          const month = displayDate.getMonth() + 1;
-          const day = displayDate.getDate();
-          const weekday = ['일', '월', '화', '수', '목', '금', '토'][displayDate.getDay()];
-          return (
-            <section className="rounded-lg bg-card border overflow-hidden">
-              {/* 날짜 헤더 + 작성자 */}
-              <div className="flex items-baseline gap-2 px-4 pt-4 pb-3 border-b border-dashed border-amber-200/60 dark:border-amber-800/30">
-                <span className="text-2xl font-bold tracking-tight">{month}/{day}</span>
-                <span className="text-sm text-muted-foreground">{weekday}요일</span>
-                <span className="text-xs text-muted-foreground/60 ml-auto">
-                  <button
-                    onClick={() => navigate(`/user/${note.userId}`)}
-                    className="hover:text-primary transition-colors"
-                  >
-                    {note.userName}
-                  </button>
-                  <span className="mx-1">·</span>{year}
+      <Header showBack title="차록" showProfile />
+
+      <div className="p-4">
+        {/* 일기장 카드 - 하나의 통합 카드 */}
+        <article className="rounded-2xl bg-card border border-[var(--card-border)] overflow-hidden shadow-sm">
+
+          {/* 날짜 헤더 */}
+          <div className="px-5 pt-5 pb-3 bg-background/50 dark:bg-muted/20">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold tracking-tight text-foreground">{dateMonth}/{dateDay}</span>
+              <span className="text-sm text-muted-foreground">{dateWeekday}요일</span>
+              <span className="text-xs text-muted-foreground/60 ml-auto flex items-center gap-1.5">
+                {note.isPublic ? (
+                  <Globe className="w-3 h-3" />
+                ) : (
+                  <Lock className="w-3 h-3" />
+                )}
+                <span>{dateYear}</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
+              <button
+                onClick={() => navigate(`/user/${note.userId}`)}
+                className="text-xs text-muted-foreground/70 hover:text-primary transition-colors"
+              >
+                {note.userName}
+              </button>
+            </div>
+          </div>
+
+          {/* 날씨 */}
+          {weather && (
+            <div className="px-5 py-3 bg-muted/30 dark:bg-muted/10">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-lg">{weather.emoji}</span>
+                <span className="text-muted-foreground">{weather.label}</span>
+                {weather.temperatureMin != null && weather.temperatureMax != null && (
+                  <span className="text-muted-foreground">{weather.temperatureMin}°~{weather.temperatureMax}°</span>
+                )}
+                {weather.humidity != null && (
+                  <span className="text-muted-foreground">{weather.humidity}%</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 사진 */}
+          {note.images && note.images.length > 0 && (
+            <ImageCarousel images={note.images} />
+          )}
+
+          {/* 차 정보 */}
+          {tea && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/tea/${tea.id}`)}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(`/tea/${tea.id}`)}
+              className="text-left w-full cursor-pointer px-5 py-3.5 bg-muted/30 dark:bg-muted/10 hover:bg-muted/40 dark:hover:bg-muted/20 transition-colors"
+            >
+              <h2 className="text-base font-semibold text-foreground">{tea.name}</h2>
+              <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                {tea.type && <TeaTypeBadge type={tea.type} />}
+                {tea.year && <span>· {tea.year}년</span>}
+                {tea.seller && (
+                  <span>
+                    ·{' '}
+                    <Link
+                      to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-primary hover:underline"
+                    >
+                      {tea.seller}
+                    </Link>
+                  </span>
+                )}
+                {tea.price != null && tea.price > 0 && (
+                  <span>· {tea.price.toLocaleString()}원{tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}</span>
+                )}
+                {tea.weight != null && tea.weight > 0 && (tea.price == null || tea.price <= 0) && (
+                  <span>· {tea.weight}g</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 평점 */}
+          {note.overallRating !== null && (
+            <div className="px-5 py-3.5 bg-muted/30 dark:bg-muted/10">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 fill-rating text-rating" />
+                <span className="text-xl font-semibold text-foreground">
+                  {use10Scale
+                    ? (Number(note.overallRating) * 2).toFixed(1)
+                    : Number(note.overallRating).toFixed(1)}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  / {use10Scale ? '10' : '5'}
                 </span>
               </div>
-
-              {/* 날씨 정보 */}
-              {weather && (
-                <div className="px-4 py-3 border-b border-dashed border-amber-200/40 dark:border-amber-800/20">
-                  <div className="grid grid-cols-3 gap-3 text-center">
-                    <div>
-                      <span className="text-xl block">{weather.emoji}</span>
-                      <span className="text-xs text-muted-foreground mt-1 block">{weather.label}</span>
-                    </div>
-                    {weather.temperatureMin != null && weather.temperatureMax != null && (
-                      <div>
-                        <span className="text-lg font-medium block">{weather.temperatureMin}°<span className="text-muted-foreground/50">~</span>{weather.temperatureMax}°</span>
-                        <span className="text-xs text-muted-foreground mt-1 block">기온</span>
-                      </div>
-                    )}
-                    {weather.humidity != null && (
-                      <div>
-                        <span className="text-lg font-medium block">{weather.humidity}<span className="text-sm">%</span></span>
-                        <span className="text-xs text-muted-foreground mt-1 block">습도</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 차 정보 */}
-              {tea && (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => navigate(`/tea/${tea.id}`)}
-                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/tea/${tea.id}`)}
-                  className="text-left w-full cursor-pointer px-4 py-3 border-b border-dashed border-amber-200/40 dark:border-amber-800/20"
-                >
-                  <h2 className="mb-1 text-primary text-base">{tea.name}</h2>
-                  <div className="flex flex-wrap gap-1.5 text-xs text-muted-foreground">
-                    {tea.type && <TeaTypeBadge type={tea.type} />}
-                    {tea.year && <span>· {tea.year}년</span>}
-                    {tea.seller && (
-                      <span>
-                        ·{' '}
-                        <Link
-                          to={`/teahouse/${encodeURIComponent(tea.seller)}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-primary hover:underline"
-                        >
-                          {tea.seller}
-                        </Link>
-                      </span>
-                    )}
-                    {tea.price != null && tea.price > 0 && (
-                      <span>· {tea.price.toLocaleString()}원{tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}</span>
-                    )}
-                    {tea.weight != null && tea.weight > 0 && (tea.price == null || tea.price <= 0) && (
-                      <span>· {tea.weight}g</span>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 평점 + 액션 */}
-              <div className="px-4 py-3 border-b border-dashed border-amber-200/40 dark:border-amber-800/20">
-                <div className="flex items-center justify-between">
-              {note.overallRating !== null && (
-                <div className="flex items-center gap-2">
-                  <Star className="w-6 h-6 fill-rating text-rating" />
-                  <span className="text-2xl text-primary">
-                    {use10Scale
-                      ? (Number(note.overallRating) * 2).toFixed(1)
-                      : Number(note.overallRating).toFixed(1)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    /{use10Scale ? '10' : '5'}
-                  </span>
-                </div>
-              )}
-              <Badge variant={note.isPublic ? 'default' : 'secondary'}>
-                {note.isPublic ? (
-                  <><Globe className="w-3 h-3 mr-1" /> 공개</>
-                ) : (
-                  <><Lock className="w-3 h-3 mr-1" /> 비공개</>
-                )}
-              </Badge>
             </div>
-            {user && (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleLikeClick}
-                  disabled={isTogglingLike}
-                  className={`min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                    isLiked 
-                      ? 'text-primary hover:bg-primary/10' 
-                      : 'text-muted-foreground hover:bg-accent'
-                  }`}
-                  title={isLiked ? '좋아요 취소' : '좋아요'}
-                >
-                  <Heart
-                    className={`w-5 h-5 transition-all ${
-                      isLiked 
-                        ? 'fill-primary text-primary stroke-primary' 
-                        : 'fill-none text-muted-foreground stroke-muted-foreground'
-                    }`}
-                  />
-                  {likeCount > 0 && <span className="text-sm font-medium">{likeCount}</span>}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleBookmarkClick}
-                  disabled={isTogglingBookmark}
-                  className={`min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
-                    isBookmarked 
-                      ? 'text-primary hover:bg-primary/10' 
-                      : 'text-muted-foreground hover:bg-accent'
-                  }`}
-                  title={isBookmarked ? '북마크 해제' : '북마크 추가'}
-                >
-                  <Bookmark
-                    className={`w-5 h-5 transition-all ${
-                      isBookmarked
-                        ? 'fill-primary text-primary stroke-primary'
-                        : 'fill-none text-muted-foreground stroke-muted-foreground'
-                    }`}
-                  />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => share(tea?.name ?? '차록', window.location.href)}
-                  className="min-h-[44px] min-w-[44px] flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-colors text-muted-foreground hover:bg-accent"
-                  title="공유하기"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
-            )}
+          )}
 
-          </div>
-          
-
+          {/* 세부 평가 축 */}
           {note.axisValues && note.axisValues.length > 0 && (
-            <div className="space-y-4">
-              {((note.schemas?.length ?? 0) > 0 || note.schema) && (
-                <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-0.5">
-                    사용 템플릿{(note.schemas?.length ?? 0) > 1 ? ` (${note.schemas!.length}개)` : ''}
-                  </p>
-                  {(note.schemas?.length ?? 0) > 0 ? (
-                    <div className="space-y-2">
-                      {note.schemas!.map((s) => (
-                        <div key={s.id}>
-                          <p className="text-sm font-medium text-foreground">{s.nameKo}</p>
-                          {s.descriptionKo?.trim() && (
-                            <p className="text-xs text-muted-foreground mt-0.5">{s.descriptionKo}</p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    note.schema && (
-                      <>
-                        <p className="text-sm font-medium text-foreground">{note.schema.nameKo}</p>
-                        {note.schema.descriptionKo?.trim() && (
-                          <p className="text-xs text-muted-foreground mt-1.5">{note.schema.descriptionKo}</p>
-                        )}
-                      </>
-                    )
-                  )}
-                </div>
-              )}
-              <div className="flex justify-end">
+            <div className="px-5 py-4 bg-muted/30 dark:bg-muted/10 space-y-4">
+              <div className="flex items-center justify-between gap-3">
+                {((note.schemas?.length ?? 0) > 0 || note.schema) ? (
+                  <div className="rounded-lg bg-muted/30 dark:bg-muted/15 px-3 py-2 flex-1 min-w-0">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-0.5">템플릿</p>
+                    {(note.schemas?.length ?? 0) > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {note.schemas!.map((s) => (
+                          <span key={s.id} className="text-xs font-medium text-foreground">{s.nameKo}</span>
+                        ))}
+                      </div>
+                    ) : note.schema && (
+                      <span className="text-xs font-medium text-foreground">{note.schema.nameKo}</span>
+                    )}
+                  </div>
+                ) : <div />}
                 <div
                   role="group"
                   aria-label="점수 표시 단위"
-                  className="flex rounded-lg border border-border bg-muted/30 p-0.5"
+                  className="flex rounded-lg border border-border/40 bg-muted/20 dark:bg-muted/10 p-0.5"
                 >
                   <button
                     type="button"
                     onClick={() => setUse10Scale(false)}
                     className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                      !use10Scale
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                      !use10Scale ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     5점
@@ -425,9 +357,7 @@ export function NoteDetail() {
                     type="button"
                     onClick={() => setUse10Scale(true)}
                     className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                      use10Scale
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
+                      use10Scale ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     10점
@@ -435,23 +365,21 @@ export function NoteDetail() {
                 </div>
               </div>
               <RatingVisualization axisValues={note.axisValues} use10Scale={use10Scale} />
-              <details className="group rounded-lg border border-border/60">
-                <summary className="cursor-pointer list-none px-3 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors [&::-webkit-details-marker]:hidden">
+              <details className="group rounded-lg border border-border/40">
+                <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors [&::-webkit-details-marker]:hidden">
                   <span className="flex items-center gap-2">
                     각 축의 의미
-                    <span className="text-muted-foreground text-xs font-normal">(클릭하여 펼치기)</span>
+                    <span className="text-xs font-normal opacity-60">(펼치기)</span>
                   </span>
                 </summary>
-                <div className="px-3 pb-3 pt-3 space-y-2 border-t border-border/40">
+                <div className="px-3 pb-3 pt-2 space-y-2 border-t border-border/30">
                   {[...note.axisValues]
                     .sort((a, b) => (a.axis?.displayOrder ?? 0) - (b.axis?.displayOrder ?? 0))
                     .map((av) => (
                       <div key={av.axisId} className="text-sm">
                         <p className="font-medium text-foreground">{av.axis?.nameKo ?? `축 ${av.axisId}`}</p>
-                        {av.axis?.descriptionKo?.trim() ? (
+                        {av.axis?.descriptionKo?.trim() && (
                           <p className="text-xs text-muted-foreground mt-0.5">{av.axis.descriptionKo}</p>
-                        ) : (
-                          <p className="text-xs text-muted-foreground/70 mt-0.5 italic">설명 없음</p>
                         )}
                       </div>
                     ))}
@@ -460,127 +388,142 @@ export function NoteDetail() {
             </div>
           )}
 
-              {/* 일기 멘트 */}
-              {weather && (
-                <p className="px-4 py-2.5 text-xs text-amber-900/50 dark:text-amber-200/40 italic bg-amber-50/30 dark:bg-amber-950/10">
-                  &ldquo;{weather.teaComment}&rdquo;
-                </p>
-              )}
-            </section>
-          );
-        })()}
+          {/* 수색 */}
+          {brewColor && (
+            <div className="px-5 py-3.5 bg-muted/30 dark:bg-muted/10 flex items-center gap-3">
+              <span
+                className="inline-block w-6 h-6 rounded-full border border-border/40 shadow-sm"
+                style={{ backgroundColor: brewColor.hex }}
+              />
+              <span className="text-sm text-foreground">{brewColor.label}</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/50 ml-auto">수색</span>
+            </div>
+          )}
 
-        {/* 수색 */}
-        {note.appearance && (() => {
-          const bc = BREW_COLORS.find((c) => c.value === note.appearance);
-          return (
-            <section className="bg-card rounded-lg p-4">
-              <h3 className="mb-3 text-primary">수색</h3>
-              <div className="flex items-center gap-3">
-                <span
-                  className="inline-block w-8 h-8 rounded-full border border-border/50 shadow-sm"
-                  style={{ backgroundColor: bc?.hex ?? '#ccc' }}
-                />
-                <span className="text-sm font-medium">
-                  {bc?.label ?? note.appearance}
-                </span>
+          {/* 향미 태그 */}
+          {note.tags && note.tags.length > 0 && (
+            <div className="px-5 py-3.5 bg-muted/30 dark:bg-muted/10">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mb-2">향미</p>
+              <div className="flex flex-wrap gap-1.5">
+                {note.tags.map((tag, index) => (
+                  <Link key={index} to={`/tag/${encodeURIComponent(tag)}`}>
+                    <Badge variant="secondary" className="cursor-pointer hover:bg-muted/60 dark:hover:bg-muted/20 transition-colors text-xs">
+                      {tag}
+                    </Badge>
+                  </Link>
+                ))}
               </div>
-            </section>
-          );
-        })()}
-
-        {/* 이미지 갤러리 */}
-        {note.images && note.images.length > 0 && (
-          <section className="bg-card rounded-lg p-4">
-            <h3 className="mb-3 text-primary">사진</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {note.images.map((imageUrl, index) => (
-                <div key={index} className="aspect-square rounded-lg overflow-hidden bg-muted w-full">
-                  <ImageWithFallback
-                    src={imageUrl}
-                    alt={`Note image ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ))}
             </div>
-          </section>
-        )}
+          )}
 
-        {/* 태그 */}
-        {note.tags && note.tags.length > 0 && (
-          <section className="bg-card rounded-lg p-4">
-            <h3 className="mb-3 text-primary">향미</h3>
-            <div className="flex flex-wrap gap-2">
-              {note.tags.map((tag, index) => (
-                <Link key={index} to={`/tag/${encodeURIComponent(tag)}`}>
-                  <Badge variant="secondary" className="cursor-pointer hover:bg-muted/80 transition-colors">
-                    {tag}
-                  </Badge>
-                </Link>
-              ))}
+          {/* 메모 */}
+          {note.memo && (
+            <div className="px-5 py-4 bg-muted/30 dark:bg-muted/10">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/50 mb-2">메모</p>
+              <div className="text-sm text-foreground leading-relaxed [&_p]:whitespace-pre-wrap [&_p]:my-1 [&_h1]:text-lg [&_h1]:font-bold [&_h1]:mt-3 [&_h1]:mb-1.5 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:my-0.5 [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded [&_code]:text-xs [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-2 [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-muted-foreground/30 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:my-2 [&_blockquote]:text-muted-foreground [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:px-3 [&_th]:py-1.5 [&_th]:text-left [&_th]:text-xs [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-1.5 [&_td]:text-xs">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.memo}</ReactMarkdown>
+              </div>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* 메모 */}
-        {note.memo && (
-          <section className="bg-card rounded-lg p-4">
-            <h3 className="mb-3 text-primary">메모</h3>
-            <div className="note-memo-markdown text-foreground [&_p]:whitespace-pre-wrap [&_p]:my-1 [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-3 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:my-2 [&_li]:my-0.5 [&_code]:bg-muted [&_code]:px-1 [&_code]:rounded [&_code]:text-sm [&_pre]:bg-muted [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:my-2 [&_a]:text-primary [&_a]:underline [&_a]:hover:opacity-80 [&_blockquote]:border-l-4 [&_blockquote]:border-muted-foreground [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:my-2 [&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_th]:border [&_th]:border-border [&_th]:bg-muted/50 [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-sm [&_th]:font-medium [&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:text-sm">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{note.memo}</ReactMarkdown>
+          {/* 날씨 한줄 코멘트 (일기장 마무리) */}
+          {weather?.teaComment && (
+            <div className="px-5 py-3 bg-muted/30 dark:bg-muted/15">
+              <p className="text-xs text-muted-foreground/60 italic text-center">
+                &ldquo;{weather.teaComment}&rdquo;
+              </p>
             </div>
-          </section>
-        )}
+          )}
 
-        {/* 다른 사람 노트일 때 신고 버튼 */}
-        {user && !isMyNote && (
-          <section className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowReportModal(true)}
-              className="text-muted-foreground hover:text-destructive gap-1.5"
-            >
-              <Flag className="w-3.5 h-3.5" />
-              신고하기
-            </Button>
-          </section>
-        )}
+          {/* 좋아요 / 북마크 / 공유 - 카드 하단 */}
+          {user && (
+            <div className="flex items-center justify-center gap-1 px-5 py-3 bg-muted/20 dark:bg-muted/10">
+              <button
+                type="button"
+                onClick={handleLikeClick}
+                disabled={isTogglingLike}
+                className={`min-h-[40px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                  isLiked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title={isLiked ? '좋아요 취소' : '좋아요'}
+              >
+                <Heart className={`w-4.5 h-4.5 transition-all ${isLiked ? 'fill-primary text-primary' : 'fill-none'}`} />
+                {likeCount > 0 && <span className="text-xs font-medium">{likeCount}</span>}
+              </button>
+              <button
+                type="button"
+                onClick={handleBookmarkClick}
+                disabled={isTogglingBookmark}
+                className={`min-h-[40px] min-w-[40px] flex items-center justify-center px-4 py-2 rounded-lg transition-colors disabled:opacity-50 ${
+                  isBookmarked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title={isBookmarked ? '북마크 해제' : '북마크 추가'}
+              >
+                <Bookmark className={`w-4.5 h-4.5 transition-all ${isBookmarked ? 'fill-primary text-primary' : 'fill-none'}`} />
+              </button>
+              <button
+                type="button"
+                onClick={() => share(tea?.name ?? '차록', window.location.href)}
+                className="min-h-[40px] min-w-[40px] flex items-center justify-center px-4 py-2 rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+                title="공유하기"
+              >
+                <Share2 className="w-4.5 h-4.5" />
+              </button>
+            </div>
+          )}
+        </article>
 
-        {/* 내 노트일 때만 노출되는 액션 */}
-        {isMyNote && !isAuthLoading && (
-          <section className="flex flex-col sm:flex-row gap-3">
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/note/${noteId}/edit`)}
-              className="flex-1 min-h-[44px]"
-            >
-              <Edit className="w-4 h-4 mr-2" />
-              수정
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleTogglePublic}
-              className="flex-1 min-h-[44px]"
-              disabled={isUpdating}
-            >
-              {isUpdating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                note.isPublic ? '비공개로 전환' : '공개하기'
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(true)}
-              className="min-h-[44px] min-w-[44px] px-4"
-              aria-label="삭제"
-            >
-              <Trash2 className="w-5 h-5 text-red-600" />
-            </Button>
-          </section>
-        )}
+        {/* 카드 밖: 신고 / 수정 / 삭제 */}
+        <div className="mt-4 space-y-3">
+          {/* 다른 사람 노트일 때 신고 */}
+          {user && !isMyNote && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowReportModal(true)}
+                className="text-muted-foreground hover:text-destructive gap-1.5"
+              >
+                <Flag className="w-3.5 h-3.5" />
+                신고하기
+              </Button>
+            </div>
+          )}
+
+          {/* 내 노트 액션 */}
+          {isMyNote && !isAuthLoading && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/note/${noteId}/edit`)}
+                className="flex-1 min-h-[44px]"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                수정
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleTogglePublic}
+                className="flex-1 min-h-[44px]"
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  note.isPublic ? '비공개로 전환' : '공개하기'
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(true)}
+                className="min-h-[44px] min-w-[44px] px-3"
+                aria-label="삭제"
+              >
+                <Trash2 className="w-4.5 h-4.5 text-red-500" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 신고 모달 */}
