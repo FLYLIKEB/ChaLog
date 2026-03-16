@@ -72,9 +72,10 @@ cd /home/ubuntu/chalog-backend
 echo "--- git stash + pull ---"
 git stash --include-untracked 2>/dev/null || true
 git pull origin main
-echo "--- npm install ---"
+cd backend
+echo "--- npm install (backend) ---"
 npm install 2>&1 | tail -5
-echo "--- build ---"
+echo "--- build (backend) ---"
 npm run build 2>&1 | tail -5
 ENDSSH
 echo -e "${GREEN}✅ 배포 완료${NC}"
