@@ -26,7 +26,7 @@ export function RecommendedContent() {
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-foreground">추천 차록</span>
         <button
-          onClick={() => navigate('/sasaek')}
+          onClick={() => navigate('/sasaek?tab=explore')}
           className="text-xs text-muted-foreground hover:text-primary transition-colors"
         >
           더보기

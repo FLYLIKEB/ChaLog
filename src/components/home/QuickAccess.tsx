@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { FileText, Search, CalendarDays } from 'lucide-react';
+import { FileText, Search, Package } from 'lucide-react';
 import { cn } from '@/components/ui/utils';
 
 const ITEMS = [
   { label: '내 차록', path: '/my-notes', icon: FileText, color: 'text-primary bg-primary/10' },
   { label: '탐색', path: '/sasaek', icon: Search, color: 'text-blue-500 bg-blue-500/10' },
-  { label: '캘린더', path: '/calendar', icon: CalendarDays, color: 'text-amber-500 bg-amber-500/10' },
+  { label: '내 찻장', path: '/cellar', icon: Package, color: 'text-amber-500 bg-amber-500/10' },
 ] as const;
 
 export function QuickAccess() {
