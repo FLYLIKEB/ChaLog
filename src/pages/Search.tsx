@@ -6,8 +6,8 @@ import { useSearchParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
 import { BottomNav } from '../components/BottomNav';
-import { tagsApi, notesApi, cellarApi, teasApi } from '../lib/api';
-import { Seller, Note, CellarItem } from '../types';
+import { tagsApi, notesApi, cellarApi, teasApi, usersApi } from '../lib/api';
+import { Seller, Note, CellarItem, Tea } from '../types';
 import { SEARCH_DEBOUNCE_DELAY } from '../constants';
 import { cn } from '../components/ui/utils';
 import { useRecentSearches } from '../hooks/useRecentSearches';
@@ -62,6 +62,8 @@ export function Search() {
 
   const [cellarSort, setCellarSort] = useState<'name' | 'quantity' | 'recent'>('recent');
   const [activeTab, setActiveTab] = useState<'search' | 'explore'>('search');
+  const [trendingTeas, setTrendingTeas] = useState<Tea[]>([]);
+  const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null; followerCount: number }>>([]);
   const [searchCategory, setSearchCategory] = useState<SearchCategory>('tea');
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [noteResults, setNoteResults] = useState<Note[]>([]);
@@ -198,6 +200,15 @@ export function Search() {
       fetchSections();
     }
   }, [searchQuery, hasSearched, hasFilterParams, fetchSections]);
+
+  const hasFetchedTrending = useRef(false);
+  useEffect(() => {
+    if (activeTab === 'explore' && !hasFetchedTrending.current) {
+      hasFetchedTrending.current = true;
+      teasApi.getTrending('7d').then(data => setTrendingTeas(Array.isArray(data) ? data : [])).catch(() => setTrendingTeas([]));
+      usersApi.getTrending('7d').then(data => setTrendingCreators(Array.isArray(data) ? data : [])).catch(() => setTrendingCreators([]));
+    }
+  }, [activeTab]);
 
   const handleApplyFilters = useCallback(() => {
     if (searchCategory === 'tea') {
@@ -395,6 +406,8 @@ export function Search() {
             flavorTeas={flavorTeas}
             isFlavorLoading={isFlavorLoading}
             onFlavorTagClick={handleFlavorTagClick}
+            trendingTeas={trendingTeas}
+            trendingCreators={trendingCreators}
           />
         )}
       </div>

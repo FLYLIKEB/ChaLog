@@ -1,26 +1,9 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, vi, describe, it, expect } from 'vitest';
 import { Home } from '../Home';
 import { renderWithRouter } from '../../test/renderWithRouter';
 
 const mockDate = new Date('2024-11-10T00:00:00.000Z');
-
-const mockTeas = [
-  {
-    id: 1,
-    name: '화과향',
-    type: '백차',
-    averageRating: 4.5,
-    reviewCount: 20,
-  },
-  {
-    id: 2,
-    name: '무이암차',
-    type: '청차/우롱차',
-    averageRating: 4.8,
-    reviewCount: 12,
-  },
-];
 
 const mockNotes = [
   {
@@ -62,12 +45,12 @@ const mockNotes = [
 ];
 
 vi.mock('../../lib/api', () => ({
-  teasApi: {
-    getAll: vi.fn(() => Promise.resolve(mockTeas)),
-    getTrending: vi.fn(() => Promise.resolve(mockTeas)),
-  },
   notesApi: {
     getAll: vi.fn(() => Promise.resolve(mockNotes.filter(note => note.isPublic))),
+  },
+  teasApi: {
+    getAll: vi.fn(() => Promise.resolve([])),
+    getTrending: vi.fn(() => Promise.resolve([])),
   },
   usersApi: {
     getTrending: vi.fn(() => Promise.resolve([])),
@@ -110,20 +93,19 @@ describe('Home 페이지', () => {
     mathRandomSpy.mockRestore();
   });
 
-  it('요즘 인기 차 카드와 공개 차록을 렌더링한다', async () => {
+  it('공개 차록을 렌더링하고 인기차 섹션은 표시하지 않는다', async () => {
     renderWithRouter(<Home />, { route: '/' });
 
-    // API 호출이 완료될 때까지 대기 - 로딩 스피너가 사라지고 콘텐츠가 나타날 때까지 기다림
-    await screen.findByText(/요즘 인기 차/, {}, { timeout: 5000 });
-    
-    // 로딩 스피너가 사라졌는지 확인
-    expect(screen.queryByRole('status', { name: /로딩/i })).not.toBeInTheDocument();
-    
-    expect(screen.getByText(/요즘 인기 차/)).toBeInTheDocument();
-    expect(screen.getAllByRole('heading', { name: '화과향' })).toHaveLength(2);
+    // Wait for loading to finish and content to appear
+    await waitFor(() => {
+      expect(screen.getByText('차록 흐름')).toBeInTheDocument();
+    }, { timeout: 5000 });
 
-    expect(screen.getByText('공개 차록입니다.')).toBeInTheDocument();
-    expect(screen.queryByText('비공개 차록입니다.')).not.toBeInTheDocument();
+    // 공개 차록의 차 이름이 NoteCard를 통해 표시됨
+    expect(screen.getByRole('heading', { name: '화과향' })).toBeInTheDocument();
+    // 인기차 섹션은 검색-탐색 페이지로 이동했으므로 없어야 함
+    expect(screen.queryByText(/요즘 인기 차/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/인기 다우/)).not.toBeInTheDocument();
   });
 });
 

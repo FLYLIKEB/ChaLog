@@ -5,6 +5,7 @@ import { TeaCard } from '../TeaCard';
 import { TeaRankingCard } from '../TeaRankingCard';
 import { TeaNewCard } from '../TeaNewCard';
 import { TeaCardSkeleton } from '../TeaCardSkeleton';
+import { CreatorCard } from '../CreatorCard';
 import { Button } from '../ui/button';
 import { Section } from '../ui/Section';
 import { Tea, Seller } from '../../types';
@@ -22,6 +23,8 @@ interface ExploreSectionProps {
   flavorTeas: Tea[];
   isFlavorLoading: boolean;
   onFlavorTagClick: (tagName: string) => void;
+  trendingTeas?: Tea[];
+  trendingCreators?: { id: number; name: string; profileImageUrl?: string | null; followerCount: number }[];
 }
 
 export function ExploreSection({
@@ -35,6 +38,8 @@ export function ExploreSection({
   flavorTeas,
   isFlavorLoading,
   onFlavorTagClick,
+  trendingTeas,
+  trendingCreators,
 }: ExploreSectionProps) {
   const navigate = useNavigate();
 
@@ -58,6 +63,30 @@ export function ExploreSection({
 
   return (
     <div className="space-y-8">
+      {trendingTeas && trendingTeas.length > 0 && (
+        <Section title="🍵 요즘 인기 차" description="최근 7일간 차록이 많은 인기 차예요." spacing="lg">
+          <div className={CARD_CONTAINER_CLASSES}>
+            {trendingTeas.map((tea) => (
+              <div key={tea.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.DEFAULT)}>
+                <TeaCard tea={tea} />
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {trendingCreators && trendingCreators.length > 0 && (
+        <Section title="🌿 인기 다우" description="구독자가 많은 인기 다우를 만나보세요." spacing="lg">
+          <div className={CARD_CONTAINER_CLASSES}>
+            {trendingCreators.map((creator) => (
+              <div key={creator.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.DEFAULT)}>
+                <CreatorCard user={creator} followerCount={creator.followerCount} />
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
       <Section title="🏆 사랑받는 차" description="차록이 많은 순으로 사랑받는 차를 모았어요." spacing="lg">
         {popularTeas.length > 0 ? (
           <div className={CARD_CONTAINER_CLASSES}>

@@ -67,6 +67,9 @@ vi.mock('../../lib/api', () => ({
   authApi: {
     getMe: vi.fn(() => Promise.resolve({ user: null })),
   },
+  usersApi: {
+    getTrending: vi.fn(() => Promise.resolve([])),
+  },
 }));
 
 vi.mock('sonner', () => ({
@@ -206,6 +209,21 @@ describe('Search 페이지', () => {
     await waitFor(() => {
       expect(screen.getByText('인기순')).toBeInTheDocument();
     });
+  });
+
+  it('탐색 탭에서 인기 차 섹션이 표시된다', async () => {
+    const user = userEvent.setup();
+    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const tabContainer = container.querySelector('.bg-muted.rounded-lg');
+    const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
+    const exploreTabBtn = tabButtons.find((b) => b.textContent === '탐색');
+    if (!exploreTabBtn) throw new Error('탐색 tab button not found');
+    await user.click(exploreTabBtn);
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/요즘 인기 차/).length).toBeGreaterThan(0);
+    }, { timeout: 3000 });
   });
 
   it('검색어 없이 필터 적용 시 getWithFilters가 호출된다', async () => {

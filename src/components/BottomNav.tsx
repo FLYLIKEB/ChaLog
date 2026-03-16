@@ -37,7 +37,7 @@ const NAV_ITEMS: BottomNavItem[] = [
   },
 ];
 
-const MORE_PATHS = ['/saved', '/sessions', '/settings'];
+const MORE_PATHS = ['/saved', '/sessions', '/settings', '/calendar', '/notifications', '/sasaek'];
 const isMoreActive = (pathname: string) =>
   MORE_PATHS.includes(pathname) ||
   pathname.startsWith('/session/') ||

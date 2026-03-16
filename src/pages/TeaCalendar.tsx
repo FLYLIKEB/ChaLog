@@ -120,7 +120,7 @@ export function TeaCalendar() {
 
   return (
     <div className="min-h-screen pb-20 flex flex-col">
-      <Header title="차록 캘린더" />
+      <Header title="차록 캘린더" showBack />
 
       <div className="flex-1 px-4 py-6 space-y-6">
         {/* Streak cards */}

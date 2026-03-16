@@ -90,6 +90,14 @@ describe('TeaCalendar 페이지', () => {
     });
   });
 
+  it('뒤로가기 버튼이 표시된다', async () => {
+    renderWithRouter(<TeaCalendar />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '뒤로' })).toBeInTheDocument();
+    });
+  });
+
   it('미인증 사용자는 로그인 페이지로 리다이렉트된다', async () => {
     vi.mocked(useAuth).mockReturnValue({
       ...mockAuthValue,

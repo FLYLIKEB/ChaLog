@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { Header } from '../components/Header';
 import { HeroSection } from '../components/HeroSection';
@@ -7,10 +7,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs'
 import { ForYouFeed } from '../components/feeds/ForYouFeed';
 import { FollowingFeed } from '../components/feeds/FollowingFeed';
 import { TagsFeed } from '../components/feeds/TagsFeed';
-import { HomeTrendingSection } from '../components/HomeTrendingSection';
 import { HomeFooter } from '../components/HomeFooter';
-import { teasApi, notesApi, tagsApi, usersApi } from '../lib/api';
-import { Tea, Note, PopularTagItem } from '../types';
+import { notesApi, tagsApi } from '../lib/api';
+import { Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
 import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { NoteCardSkeleton } from '../components/NoteCardSkeleton';
@@ -29,8 +28,6 @@ export function Home() {
   useScrollRestoration();
 
   const { user: currentUser, isLoading: authLoading } = useAuth();
-  const [trendingTeas, setTrendingTeas] = useState<Tea[]>([]);
-  const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null; followerCount: number }>>([]);
   const [publicNotes, setPublicNotes] = useState<Note[]>([]);
   const [followingNotes, setFollowingNotes] = useState<Note[]>([]);
   const [tagNotes, setTagNotes] = useState<Note[]>([]);
@@ -43,31 +40,8 @@ export function Home() {
   const fetchForYouFeed = useCallback(async (opts?: { silent?: boolean }) => {
     try {
       if (!opts?.silent) setIsLoading(true);
-      const [notesResult, trendingTeasResult, trendingCreatorsResult] = await Promise.allSettled([
-        notesApi.getAll(undefined, true),
-        teasApi.getTrending('7d'),
-        usersApi.getTrending('7d'),
-      ]);
-      if (notesResult.status === 'fulfilled') {
-        setPublicNotes(Array.isArray(notesResult.value) ? notesResult.value as Note[] : []);
-      } else {
-        logger.error('Failed to fetch notes:', notesResult.reason);
-        if (notesResult.reason?.statusCode === 429) {
-          toast.error('요청이 너무 많습니다. 잠시 후 다시 시도해주세요.');
-        } else {
-          toast.error('차록 정보를 불러오는데 실패했습니다.');
-        }
-      }
-      if (trendingTeasResult.status === 'fulfilled') {
-        setTrendingTeas(Array.isArray(trendingTeasResult.value) ? trendingTeasResult.value as Tea[] : []);
-      } else {
-        logger.error('Failed to fetch trending teas:', trendingTeasResult.reason);
-      }
-      if (trendingCreatorsResult.status === 'fulfilled') {
-        setTrendingCreators(Array.isArray(trendingCreatorsResult.value) ? trendingCreatorsResult.value : []);
-      } else {
-        logger.error('Failed to fetch trending creators:', trendingCreatorsResult.reason);
-      }
+      const notesData = await notesApi.getAll(undefined, true);
+      setPublicNotes(Array.isArray(notesData) ? notesData as Note[] : []);
     } catch (error) {
       logger.error('Failed to fetch data:', error);
       toast.error('데이터를 불러오는데 실패했습니다.');
@@ -161,7 +135,6 @@ export function Home() {
       <Header showProfile showLogo />
       <div className="px-4 py-6 pb-20 sm:px-6 sm:py-8 space-y-4 sm:space-y-6">
         <HeroSection />
-        <HomeTrendingSection trendingTeas={trendingTeas} trendingCreators={trendingCreators} />
         <section aria-label="차록 흐름">
           <div className="flex items-baseline justify-between mb-3">
             <h2 className="text-sm font-semibold text-foreground">차록 흐름</h2>

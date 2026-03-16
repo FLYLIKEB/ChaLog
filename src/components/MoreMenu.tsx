@@ -1,7 +1,8 @@
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from './ui/drawer';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Bookmark, Clock, EyeOff, Settings } from 'lucide-react';
+import { Bookmark, Clock, EyeOff, Settings, CalendarDays, Search, Bell } from 'lucide-react';
 import { cn } from './ui/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 interface MoreMenuProps {
   open: boolean;
@@ -11,13 +12,12 @@ interface MoreMenuProps {
 export function MoreMenu({ open, onOpenChange }: MoreMenuProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isAuthenticated } = useAuth();
 
   const isActive = (path: string) => {
-    if (path === '/saved') return pathname === '/saved';
     if (path === '/sessions') return pathname === '/sessions' || pathname.startsWith('/session/');
     if (path === '/blind/new') return pathname.startsWith('/blind/');
-    if (path === '/settings') return pathname === '/settings';
-    return false;
+    return pathname === path;
   };
 
   const handleNavigate = (path: string) => {
@@ -26,7 +26,10 @@ export function MoreMenu({ open, onOpenChange }: MoreMenuProps) {
   };
 
   const menuItems = [
+    { path: '/sasaek', label: '탐색', icon: Search },
+    ...(isAuthenticated ? [{ path: '/notifications', label: '알림', icon: Bell }] : []),
     { path: '/saved', label: '저장함', icon: Bookmark },
+    { path: '/calendar', label: '차록 캘린더', icon: CalendarDays },
     { path: '/sessions', label: '시음 세션', icon: Clock },
     { path: '/blind/new', label: '블라인드 테이스팅', icon: EyeOff },
   ];
