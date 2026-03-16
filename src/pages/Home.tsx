@@ -17,7 +17,7 @@ export function Home() {
   const { user: currentUser } = useAuth();
 
   const handleRefresh = useCallback(async () => {
-    window.location.reload();
+    // 컴포넌트들이 자체 데이터를 관리하므로 no-op (각 컴포넌트가 mount 시 fetch)
   }, []);
 
   usePullToRefreshForPage(handleRefresh, '/');
