@@ -186,9 +186,9 @@ export function Home() {
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             ) : dateNotes.length > 0 ? (
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 {dateNotes.map((note) => (
-                  <NoteCard key={note.id} note={note} showTeaName />
+                  <NoteCard key={note.id} note={note} />
                 ))}
               </div>
             ) : (

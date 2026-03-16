@@ -313,7 +313,7 @@ export function TeaDetail() {
         {topReviews.length > 0 && (
           <section>
             <h2 className="mb-3">대표 차록</h2>
-            <div className="space-y-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-1.5 md:gap-3">
               {topReviews.map((note) => (
                 <NoteCard key={note.id} note={note} />
               ))}
@@ -342,7 +342,7 @@ export function TeaDetail() {
         <section>
           <h2 className="mb-3">공개 차록 전체</h2>
           {remainingNotes.length > 0 || topReviews.length === 0 ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-1.5 md:gap-3">
               {(topReviews.length === 0 ? publicNotes : remainingNotes).map((note) => (
                 <NoteCard key={note.id} note={note} />
               ))}

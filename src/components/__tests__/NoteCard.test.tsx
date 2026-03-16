@@ -43,16 +43,16 @@ const mockNote: Note = {
   createdAt: new Date(),
 };
 
-describe('NoteCard - 이미지 가운데 정렬', () => {
-  it('이미지가 있을 때 이미지 컨테이너에 rounded-xl가 있어야 함', () => {
+describe('NoteCard - 그리드 카드', () => {
+  it('이미지가 있을 때 이미지 컨테이너에 rounded-2xl이 있어야 함', () => {
     render(
       <MemoryRouter>
         <NoteCard note={mockNote} />
       </MemoryRouter>,
     );
 
-    const imageContainer = screen.getByAltText('Note image').parentElement;
-    expect(imageContainer).toHaveClass('rounded-xl', 'overflow-hidden');
+    const imageContainer = screen.getByAltText('테스트 차').parentElement;
+    expect(imageContainer).toHaveClass('rounded-2xl', 'overflow-hidden');
   });
 
   it('imageThumbnails가 있으면 썸네일을 우선 표시해야 함', () => {
@@ -67,7 +67,7 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
       </MemoryRouter>,
     );
 
-    const img = screen.getByAltText('Note image');
+    const img = screen.getByAltText('테스트 차');
     expect(img).toHaveAttribute('src', 'https://example.com/thumb.jpg');
   });
 
@@ -78,11 +78,11 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
       </MemoryRouter>,
     );
 
-    const img = screen.getByAltText('Note image');
+    const img = screen.getByAltText('테스트 차');
     expect(img).toHaveAttribute('src', 'https://example.com/image.jpg');
   });
 
-  it('이미지가 없을 때 이미지 컨테이너가 렌더링되지 않아야 함', () => {
+  it('이미지가 없을 때 로고 플레이스홀더가 렌더링되어야 함', () => {
     const noteWithoutImage = { ...mockNote, images: null };
     render(
       <MemoryRouter>
@@ -90,10 +90,20 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.queryByAltText('Note image')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('테스트 차')).not.toBeInTheDocument();
   });
 
-  it('작성자 이름을 클릭하면 프로필 페이지로 이동해야 함', async () => {
+  it('차 이름을 표시해야 함', () => {
+    render(
+      <MemoryRouter>
+        <NoteCard note={mockNote} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('테스트 차')).toBeInTheDocument();
+  });
+
+  it('카드를 클릭하면 상세 페이지로 이동해야 함', async () => {
     const user = userEvent.setup();
     render(
       <MemoryRouter>
@@ -101,21 +111,21 @@ describe('NoteCard - 이미지 가운데 정렬', () => {
       </MemoryRouter>,
     );
 
-    const authorName = screen.getByText('테스트 사용자');
-    await user.click(authorName);
+    const card = screen.getAllByRole('button')[0];
+    await user.click(card);
 
-    expect(mockNavigate).toHaveBeenCalledWith('/user/1');
+    expect(mockNavigate).toHaveBeenCalledWith('/note/1');
   });
 
-  it('작성자 이름에 호버 효과가 있어야 함', () => {
+  it('별점을 표시해야 함', () => {
     render(
       <MemoryRouter>
         <NoteCard note={mockNote} />
       </MemoryRouter>,
     );
 
-    const authorName = screen.getByText('테스트 사용자');
-    expect(authorName).toHaveClass('hover:text-primary', 'cursor-pointer');
+    const card = screen.getAllByRole('button')[0];
+    const stars = card.querySelectorAll('.fill-rating');
+    expect(stars.length).toBeGreaterThan(0);
   });
 });
-

@@ -2,8 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { NoteCard } from '../NoteCard';
 import { EmptyState } from '../EmptyState';
 import { Note } from '../../types';
-import { cn } from '../ui/utils';
-import { CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES } from '../../constants';
 
 interface ForYouFeedProps {
   notes: Note[];
@@ -12,16 +10,18 @@ interface ForYouFeedProps {
 export function ForYouFeed({ notes }: ForYouFeedProps) {
   const navigate = useNavigate();
 
-  if (notes.length > 0) {
+  const displayNotes = notes.slice(0, 6);
+
+  if (displayNotes.length > 0) {
     return (
-      <div className={CARD_CONTAINER_CLASSES}>
-        {notes.map((note, i) => (
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 -mx-1 px-1 snap-x snap-mandatory">
+        {displayNotes.map((note, i) => (
           <div
             key={note.id}
-            className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE, 'animate-fade-in-up opacity-0')}
+            className="shrink-0 w-[calc((100%-8px)/3)] md:w-[calc((100%-16px)/4)] snap-start animate-fade-in-up opacity-0"
             style={{ animationDelay: `${i * 50}ms` }}
           >
-            <NoteCard note={note} showTeaName />
+            <NoteCard note={note} />
           </div>
         ))}
       </div>

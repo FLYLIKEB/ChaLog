@@ -1,6 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
-import { Calendar } from '@/components/ui/calendar';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { StreakCards } from '@/components/calendar/StreakCards';
 import { DateNotesDrawer } from '@/components/calendar/DateNotesDrawer';
 import { notesApi } from '@/lib/api';
@@ -8,7 +7,8 @@ import type { CalendarData } from '@/lib/api/notes.api';
 import type { Note } from '@/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { formatDateKey } from '@/utils/dateUtils';
+import { cn } from '@/components/ui/utils';
+import { DAY_NAMES, formatDateKey, getMonthWeeks } from '@/utils/dateUtils';
 
 export function CalendarWidget() {
   const { user } = useAuth();
@@ -61,38 +61,23 @@ export function CalendarWidget() {
   }, [user]);
 
   const goToPrevMonth = () => {
-    if (month === 1) {
-      setYear((y) => y - 1);
-      setMonth(12);
-    } else {
-      setMonth((m) => m - 1);
-    }
+    if (month === 1) { setYear((y) => y - 1); setMonth(12); }
+    else { setMonth((m) => m - 1); }
   };
 
   const goToNextMonth = () => {
-    if (month === 12) {
-      setYear((y) => y + 1);
-      setMonth(1);
-    } else {
-      setMonth((m) => m + 1);
-    }
+    if (month === 12) { setYear((y) => y + 1); setMonth(1); }
+    else { setMonth((m) => m + 1); }
   };
 
   if (!user) return null;
 
   const noteDates = new Set(calendarData?.dates ?? []);
-
-  const modifiers = {
-    hasNote: (date: Date) => noteDates.has(formatDateKey(date)),
-  };
-
-  const modifiersClassNames = {
-    hasNote: 'relative after:absolute after:bottom-0.5 after:left-1/2 after:-translate-x-1/2 after:w-1.5 after:h-1.5 after:rounded-full after:bg-primary',
-  };
+  const todayKey = formatDateKey(now);
+  const weeks = getMonthWeeks(year, month);
 
   return (
     <section aria-label="차록 캘린더" className="space-y-4">
-      {/* Streak cards */}
       <StreakCards
         current={calendarData?.streak.current ?? 0}
         longest={calendarData?.streak.longest ?? 0}
@@ -109,12 +94,9 @@ export function CalendarWidget() {
           >
             <ChevronLeft className="w-4 h-4 text-muted-foreground" />
           </button>
-          <div className="flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-primary" />
-            <span className="font-semibold text-sm text-foreground">
-              {year}년 {month}월
-            </span>
-          </div>
+          <span className="font-semibold text-sm text-foreground">
+            {year}년 {month}월
+          </span>
           <button
             onClick={goToNextMonth}
             className="p-1.5 rounded-full hover:bg-muted/50 transition-colors"
@@ -124,24 +106,68 @@ export function CalendarWidget() {
           </button>
         </div>
 
-        {/* Calendar */}
+        {/* Calendar grid */}
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-6 h-6 text-muted-foreground animate-spin" />
           </div>
         ) : (
-          <div className="flex justify-center">
-            <Calendar
-              month={new Date(year, month - 1, 1)}
-              onMonthChange={(d) => {
-                setYear(d.getFullYear());
-                setMonth(d.getMonth() + 1);
-              }}
-              onDayClick={handleDayClick}
-              modifiers={modifiers}
-              modifiersClassNames={modifiersClassNames}
-              showOutsideDays={false}
-            />
+          <div className="space-y-1">
+            {/* Day headers */}
+            <div className="grid grid-cols-7">
+              {DAY_NAMES.map((name, i) => (
+                <span
+                  key={name}
+                  className={cn(
+                    'text-center text-[10px] font-medium pb-2',
+                    i === 0 ? 'text-rose-400' : 'text-muted-foreground',
+                  )}
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+
+            {/* Week rows */}
+            {weeks.map((week, wi) => (
+              <div key={wi} className="grid grid-cols-7">
+                {week.map((day, di) => {
+                  if (!day) {
+                    return <div key={`empty-${di}`} className="aspect-square" />;
+                  }
+                  const dateKey = formatDateKey(day);
+                  const isToday = dateKey === todayKey;
+                  const hasNote = noteDates.has(dateKey);
+                  return (
+                    <button
+                      key={dateKey}
+                      type="button"
+                      onClick={() => handleDayClick(day)}
+                      className="flex flex-col items-center justify-center aspect-square gap-0.5"
+                    >
+                      <span
+                        className={cn(
+                          'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors',
+                          isToday
+                            ? 'bg-primary text-primary-foreground'
+                            : hasNote
+                              ? 'bg-primary/10 text-primary'
+                              : 'text-foreground hover:bg-muted/50',
+                        )}
+                      >
+                        {day.getDate()}
+                      </span>
+                      <span
+                        className={cn(
+                          'w-1.5 h-1.5 rounded-full',
+                          hasNote ? 'bg-primary' : 'bg-transparent',
+                        )}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
 
@@ -153,7 +179,6 @@ export function CalendarWidget() {
         )}
       </div>
 
-      {/* Date Notes Drawer */}
       <DateNotesDrawer
         open={drawerOpen}
         onOpenChange={setDrawerOpen}

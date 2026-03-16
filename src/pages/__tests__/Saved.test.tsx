@@ -56,10 +56,15 @@ vi.mock('../../contexts/AuthContext', async () => {
   };
 });
 
-vi.mock('../../lib/api', () => ({
-  notesApi: { getAll: vi.fn() },
-  postsApi: { getAll: vi.fn().mockResolvedValue([]) },
-}));
+vi.mock('../../lib/api', async () => {
+  const actual = await vi.importActual<Record<string, unknown>>('../../lib/api');
+  return {
+    ...actual,
+    notesApi: { ...((actual.notesApi ?? {}) as Record<string, unknown>), getAll: vi.fn(), toggleBookmark: vi.fn() },
+    postsApi: { ...((actual.postsApi ?? {}) as Record<string, unknown>), getAll: vi.fn().mockResolvedValue([]) },
+    teasApi: { ...((actual.teasApi ?? {}) as Record<string, unknown>), getWishlisted: vi.fn().mockResolvedValue([]) },
+  };
+});
 
 const mockNavigate = vi.fn();
 
@@ -138,8 +143,8 @@ describe('Saved 페이지', () => {
     }, { timeout: 5000 });
 
     expect(screen.getByRole('heading', { name: /저장한 차록/ })).toBeInTheDocument();
-    expect(screen.getByText('저장한 차록 1')).toBeInTheDocument();
-    expect(screen.getByText('저장한 차록 2')).toBeInTheDocument();
+    expect(screen.getByText('화과향')).toBeInTheDocument();
+    expect(screen.getByText('무이암차')).toBeInTheDocument();
   });
 
   it('빈 상태 메시지를 표시한다 (저장한 차록이 없을 때)', async () => {

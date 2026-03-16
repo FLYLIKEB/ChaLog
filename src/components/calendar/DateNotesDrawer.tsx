@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Loader2, PenLine } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '@/components/ui/drawer';
 import { NoteCard } from '@/components/NoteCard';
+import { NoteCardSkeleton } from '@/components/NoteCardSkeleton';
 import { formatDateLabel } from '@/utils/dateUtils';
 import type { Note } from '@/types';
 
@@ -40,10 +41,12 @@ export function DateNotesDrawer({ open, onOpenChange, selectedDate, notes, isLoa
           </button>
         </DrawerHeader>
 
-        <div className="overflow-y-auto px-5 py-4 pb-24 space-y-3">
+        <div className="overflow-y-auto px-5 py-4 pb-24">
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
+            <div className="grid grid-cols-3 gap-1.5">
+              {[1, 2, 3].map((i) => (
+                <NoteCardSkeleton key={i} />
+              ))}
             </div>
           ) : notes.length === 0 ? (
             <div className="text-center py-10 space-y-3">
@@ -60,9 +63,11 @@ export function DateNotesDrawer({ open, onOpenChange, selectedDate, notes, isLoa
               </button>
             </div>
           ) : (
-            notes.map((note) => (
-              <NoteCard key={note.id} note={note} showTeaName />
-            ))
+            <div className="grid grid-cols-3 gap-1.5">
+              {notes.map((note) => (
+                <NoteCard key={note.id} note={note} />
+              ))}
+            </div>
           )}
         </div>
       </DrawerContent>

@@ -150,12 +150,11 @@ export function SavedContent() {
               </div>
             ) : bookmarkedNotes.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 md:gap-3">
                   {displayedNotes.map(note => (
                     <NoteCard
                       key={note.id}
                       note={note}
-                      showTeaName
                       onBookmarkToggle={(isBookmarked) => {
                         if (!isBookmarked) handleNoteBookmarkRemoved(note.id);
                       }}

@@ -5,8 +5,6 @@ import { NoteCard } from '../NoteCard';
 import { EmptyState } from '../EmptyState';
 import { Button } from '../ui/button';
 import { Note, PopularTagItem } from '../../types';
-import { cn } from '../ui/utils';
-import { CARD_WIDTH, CARD_CONTAINER_CLASSES, CARD_ITEM_WRAPPER_CLASSES } from '../../constants';
 
 interface TagsFeedProps {
   notes: Note[];
@@ -57,11 +55,9 @@ export function TagsFeed({ notes, followedTags, isLoading, isLoggedIn, authLoadi
         </div>
       )}
       {notes.length > 0 ? (
-        <div className={CARD_CONTAINER_CLASSES}>
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-1.5 md:gap-3">
           {notes.map((note) => (
-            <div key={note.id} className={cn(CARD_ITEM_WRAPPER_CLASSES, CARD_WIDTH.WIDE)}>
-              <NoteCard note={note} showTeaName />
-            </div>
+            <NoteCard key={note.id} note={note} />
           ))}
         </div>
       ) : followedTags.length === 0 ? (
