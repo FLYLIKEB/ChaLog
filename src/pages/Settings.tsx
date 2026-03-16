@@ -79,6 +79,7 @@ export function Settings() {
   const [changeEmailInput, setChangeEmailInput] = useState('');
   const [isChangeEmailLoading, setIsChangeEmailLoading] = useState(false);
   const [changeEmailSent, setChangeEmailSent] = useState(false);
+  const [emailHasCredential, setEmailHasCredential] = useState(false);
 
   const fetchLinkedAccounts = useCallback(async () => {
     if (!user) return;
@@ -119,6 +120,11 @@ export function Settings() {
   useEffect(() => {
     fetchLinkedAccounts();
   }, [fetchLinkedAccounts]);
+
+  useEffect(() => {
+    const emailAccount = linkedAccounts.find((a) => a.provider === 'email');
+    setEmailHasCredential(emailAccount?.hasCredential ?? false);
+  }, [linkedAccounts]);
 
   // 카카오 연동 콜백 처리 (redirect 후 /settings?code=xxx&state=link_kakao)
   useEffect(() => {
@@ -484,7 +490,7 @@ export function Settings() {
                       </div>
                       {linked ? (
                         <div className="flex items-center gap-2">
-                          {provider === 'email' && linked.hasCredential && (
+                          {provider === 'email' && emailHasCredential && (
                             <Button
                               variant="outline"
                               size="sm"
