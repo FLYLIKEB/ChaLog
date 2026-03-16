@@ -60,7 +60,9 @@ export function RecommendedContent() {
               {/* Info */}
               <div className="p-2.5">
                 <p className="text-xs font-semibold text-foreground truncate">{note.teaName}</p>
-                <p className="text-[10px] text-muted-foreground truncate mt-0.5">{note.userName}</p>
+                <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                  {[note.teaYear ? `${note.teaYear}년` : '*', note.teaSeller || '*'].join(' · ')}
+                </p>
                 {note.overallRating !== null && Number(note.overallRating) > 0 && (
                   <div className="flex items-center gap-0.5 mt-1">
                     <Star className="w-3 h-3 fill-rating text-rating" />

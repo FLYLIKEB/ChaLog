@@ -144,9 +144,7 @@ function NoteGridItem({ note, weatherEmoji }: { note: Note; weatherEmoji?: strin
             </span>
           </div>
           <span className="text-[9px] text-muted-foreground">
-            {(note.teaYear || note.teaSeller)
-              ? [note.teaYear && `${note.teaYear}년`, note.teaSeller].filter(Boolean).join(' · ')
-              : '*'}
+            {[note.teaYear ? `${note.teaYear}년` : '*', note.teaSeller || '*'].join(' · ')}
           </span>
           {note.overallRating !== null && Number(note.overallRating) > 0 && (
             <div className="flex items-center gap-px">

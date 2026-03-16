@@ -240,12 +240,8 @@ const NoteCardComponent: FC<NoteCardProps> = ({ note, showTeaName = false, onBoo
               </div>
             )}
             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-              {note.teaYear && (
-                <span className="text-xs text-muted-foreground">{note.teaYear}년</span>
-              )}
-              {note.teaSeller && (
-                <span className="text-xs text-muted-foreground truncate">{note.teaSeller}</span>
-              )}
+              <span className="text-xs text-muted-foreground">{note.teaYear ? `${note.teaYear}년` : '*'}</span>
+              <span className="text-xs text-muted-foreground truncate">{note.teaSeller || '*'}</span>
             </div>
             <div className="flex items-center gap-2">
               {note.overallRating !== null && (
