@@ -132,6 +132,8 @@ export class AddTagCategory1773474193846 implements MigrationInterface {
         } else {
             await queryRunner.query(`ALTER TABLE \`refresh_tokens\` ADD \`tokenHash\` varchar(255) NOT NULL`);
         }
+        // Clean up invalid refresh tokens with empty tokenHash before creating unique index
+        await queryRunner.query(`DELETE FROM \`refresh_tokens\` WHERE \`tokenHash\` = '' OR \`tokenHash\` IS NULL`);
         await this.createIndexIfNotExists(queryRunner, 'refresh_tokens', 'IDX_c25bc63d248ca90e8dcc1d92d0', '`tokenHash`', true);
         await queryRunner.query(`ALTER TABLE \`refresh_tokens\` CHANGE \`createdAt\` \`createdAt\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)`);
         await this.createIndexIfNotExists(queryRunner, 'tea_wishlists', 'IDX_485ebd115d7891009ef74142ca', '`userId`');
