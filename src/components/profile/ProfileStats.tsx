@@ -1,4 +1,5 @@
-import { FileText, Heart, Star } from 'lucide-react';
+import { FileText, Heart, Star, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { UserLevel } from '@/types';
 import { StatCard } from '@/components/ui/StatCard';
 import { cn } from '@/components/ui/utils';
@@ -44,18 +45,23 @@ export function ProfileStats({ stats, userLevel }: ProfileStatsProps) {
             ))}
           </div>
 
-          {userLevel.badges.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {userLevel.badges.map((b) => (
-                <span
-                  key={b.id}
-                  className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
-                >
-                  {b.name}
-                </span>
-              ))}
+          <Link to="/badges" className="flex items-center justify-between group">
+            <div className="flex flex-wrap gap-1.5 flex-1">
+              {userLevel.badges.length > 0 ? (
+                userLevel.badges.map((b) => (
+                  <span
+                    key={b.id}
+                    className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium"
+                  >
+                    {b.name}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-muted-foreground">뱃지를 획득해보세요</span>
+              )}
             </div>
-          )}
+            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary shrink-0" />
+          </Link>
         </div>
       )}
     </div>
