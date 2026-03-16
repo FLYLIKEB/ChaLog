@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Request, Req, Res, BadRequestException, HttpCode, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, UseGuards, Request, Req, Res, BadRequestException, HttpCode, UnauthorizedException } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -9,6 +9,7 @@ import { GoogleLoginDto } from './dto/google-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { FindEmailDto } from './dto/find-email.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 const COOKIE_OPTIONS = {
@@ -155,5 +156,21 @@ export class AuthController {
         ? '일치하는 계정을 찾았습니다.'
         : '일치하는 계정이 없습니다.',
     };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('change-password')
+  async changePassword(
+    @Request() req,
+    @Body() dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    return this.authService.changePassword(userId, dto);
   }
 }

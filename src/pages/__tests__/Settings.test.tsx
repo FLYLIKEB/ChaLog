@@ -1,10 +1,37 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { useTheme } from 'next-themes';
 import { Settings } from '../Settings';
 import { renderWithRouter } from '../../test/renderWithRouter';
 import { useAuth } from '../../contexts/AuthContext';
+
+const mocks = vi.hoisted(() => ({
+  changePassword: vi.fn(),
+  getLinkedAccounts: vi.fn(),
+  getNotificationSetting: vi.fn(),
+  updateNotificationSetting: vi.fn(),
+  updateProfile: vi.fn(),
+  unlinkAccount: vi.fn(),
+}));
+
+vi.mock('../../lib/api', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/api')>('../../lib/api');
+  return {
+    ...actual,
+    authApi: {
+      ...(actual as { authApi: object }).authApi,
+      changePassword: mocks.changePassword,
+    },
+    usersApi: {
+      getLinkedAccounts: mocks.getLinkedAccounts,
+      getNotificationSetting: mocks.getNotificationSetting,
+      updateNotificationSetting: mocks.updateNotificationSetting,
+      updateProfile: mocks.updateProfile,
+      unlinkAccount: mocks.unlinkAccount,
+    },
+  };
+});
 
 vi.mock('../../contexts/AuthContext', async () => {
   const actual = await vi.importActual<typeof import('../../contexts/AuthContext')>('../../contexts/AuthContext');
@@ -46,9 +73,18 @@ vi.mock('@react-oauth/google', () => ({
   useGoogleLogin: () => vi.fn(),
 }));
 
+const mockLogout = vi.fn();
+
 describe('Settings 페이지', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getLinkedAccounts.mockResolvedValue([
+      { id: 1, provider: 'email', providerId: 'test@example.com', hasCredential: true },
+    ]);
+    mocks.getNotificationSetting.mockResolvedValue({ isNotificationEnabled: true });
+    mocks.updateNotificationSetting.mockResolvedValue({ isNotificationEnabled: true });
+    mocks.updateProfile.mockResolvedValue({});
+    mocks.unlinkAccount.mockResolvedValue({});
     vi.mocked(useTheme).mockReturnValue({
       theme: 'system',
       setTheme: mockSetTheme,
@@ -65,7 +101,7 @@ describe('Settings 페이지', () => {
       register: vi.fn(),
       loginWithKakao: vi.fn(),
       loginWithGoogle: vi.fn(),
-      logout: vi.fn(),
+      logout: mockLogout,
       hasCompletedOnboarding: null,
       isOnboardingLoading: false,
       refreshOnboardingStatus: vi.fn(),
@@ -115,6 +151,52 @@ describe('Settings 페이지', () => {
         await user.click(screen.getByLabelText('시스템 설정 따르기'));
         expect(mockSetTheme).toHaveBeenCalledWith('system');
       });
+    });
+  });
+
+  describe('비밀번호 변경 (이메일 계정)', () => {
+    beforeEach(() => {
+      mocks.getLinkedAccounts.mockResolvedValue([
+        { id: 1, provider: 'email', providerId: 'test@example.com', hasCredential: true },
+      ]);
+      vi.mocked(useAuth).mockReturnValue({
+        user: { id: 1, email: 'test@example.com', name: 'Test User', role: 'user' },
+        isAuthenticated: true,
+        isAdmin: false,
+        isLoading: false,
+        token: 'cookie',
+        login: vi.fn(),
+        register: vi.fn(),
+        loginWithKakao: vi.fn(),
+        loginWithGoogle: vi.fn(),
+        logout: mockLogout,
+        hasCompletedOnboarding: true,
+        isOnboardingLoading: false,
+        refreshOnboardingStatus: vi.fn(),
+      });
+    });
+
+    it('이메일 계정 행에 비밀번호 변경 버튼이 표시되어야 함', async () => {
+      renderWithRouter(<Settings />, { route: '/settings' });
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '비밀번호 변경' })).toBeInTheDocument();
+      });
+    });
+
+    it('비밀번호 변경 버튼 클릭 시 모달이 열려야 함', async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<Settings />, { route: '/settings' });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: '비밀번호 변경' })).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('button', { name: '비밀번호 변경' }));
+
+      expect(screen.getByRole('heading', { name: '비밀번호 변경' })).toBeInTheDocument();
+      expect(screen.getByLabelText('현재 비밀번호')).toBeInTheDocument();
+      expect(screen.getByLabelText('새 비밀번호')).toBeInTheDocument();
+      expect(screen.getByLabelText('새 비밀번호 확인')).toBeInTheDocument();
     });
   });
 });

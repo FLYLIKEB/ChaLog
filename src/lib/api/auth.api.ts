@@ -46,4 +46,6 @@ export const authApi = {
     apiClient.post<{ message: string }>('/auth/reset-password', { token, newPassword }),
   findEmail: (name: string) =>
     apiClient.post<{ maskedEmail: string | null; message: string }>('/auth/find-email', { name }),
+  changePassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) =>
+    apiClient.patch<{ message: string }>('/auth/change-password', data),
 };

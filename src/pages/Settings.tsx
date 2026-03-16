@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard } from 'lucide-react';
+import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard, Lock } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from 'next-themes';
@@ -8,6 +8,9 @@ import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Switch } from '../components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '../components/ui/toggle-group';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { usersApi, authApi, LinkedAccount } from '../lib/api';
@@ -62,6 +65,13 @@ export function Settings() {
   const [unlinkingId, setUnlinkingId] = useState<number | null>(null);
   const [linkKakaoLoading, setLinkKakaoLoading] = useState(false);
   const [linkGoogleLoading, setLinkGoogleLoading] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [changePasswordForm, setChangePasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isChangePasswordLoading, setIsChangePasswordLoading] = useState(false);
 
   const fetchLinkedAccounts = useCallback(async () => {
     if (!user) return;
@@ -238,6 +248,42 @@ export function Settings() {
     }
   };
 
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { currentPassword, newPassword, confirmPassword } = changePasswordForm;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('모든 필드를 입력해주세요.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('비밀번호는 최소 8자 이상이어야 합니다.');
+      return;
+    }
+    if (!/(?=.*[a-zA-Z])(?=.*[0-9])/.test(newPassword)) {
+      toast.error('비밀번호는 영문과 숫자를 포함해야 합니다.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
+    setIsChangePasswordLoading(true);
+    try {
+      const result = await authApi.changePassword({ currentPassword, newPassword, confirmPassword });
+      toast.success(result.message);
+      setIsChangePasswordOpen(false);
+      setChangePasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      await logout();
+      navigate('/login');
+    } catch (e) {
+      toast.error(e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : '비밀번호 변경에 실패했습니다.');
+    } finally {
+      setIsChangePasswordLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -344,23 +390,34 @@ export function Settings() {
                         </div>
                       </div>
                       {linked ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={linkedAccounts.length <= 1 || unlinkingId === linked.id}
-                          onClick={() => handleUnlink(linked)}
-                          title={
-                            linkedAccounts.length <= 1
-                              ? '최소 1개의 로그인 수단은 유지해야 합니다'
-                              : undefined
-                          }
-                        >
-                          {unlinkingId === linked.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            '해제'
+                        <div className="flex items-center gap-2">
+                          {provider === 'email' && linked.hasCredential && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsChangePasswordOpen(true)}
+                            >
+                              비밀번호 변경
+                            </Button>
                           )}
-                        </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={linkedAccounts.length <= 1 || unlinkingId === linked.id}
+                            onClick={() => handleUnlink(linked)}
+                            title={
+                              linkedAccounts.length <= 1
+                                ? '최소 1개의 로그인 수단은 유지해야 합니다'
+                                : undefined
+                            }
+                          >
+                            {unlinkingId === linked.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              '해제'
+                            )}
+                          </Button>
+                        </div>
                       ) : provider === 'kakao' ? (
                         <Button
                           variant="outline"
@@ -473,6 +530,71 @@ export function Settings() {
       </div>
 
       <BottomNav />
+
+      <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>비밀번호 변경</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleChangePasswordSubmit} className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <Label htmlFor="currentPassword">현재 비밀번호</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  placeholder="현재 비밀번호 입력"
+                  value={changePasswordForm.currentPassword}
+                  onChange={(e) => setChangePasswordForm((prev) => ({ ...prev, currentPassword: e.target.value }))}
+                  className="pl-9"
+                  disabled={isChangePasswordLoading}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">새 비밀번호</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="newPassword"
+                  type="password"
+                  placeholder="영문+숫자 포함 8자 이상"
+                  value={changePasswordForm.newPassword}
+                  onChange={(e) => setChangePasswordForm((prev) => ({ ...prev, newPassword: e.target.value }))}
+                  className="pl-9"
+                  disabled={isChangePasswordLoading}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">새 비밀번호 확인</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="새 비밀번호를 다시 입력하세요"
+                  value={changePasswordForm.confirmPassword}
+                  onChange={(e) => setChangePasswordForm((prev) => ({ ...prev, confirmPassword: e.target.value }))}
+                  className="pl-9"
+                  disabled={isChangePasswordLoading}
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={isChangePasswordLoading}>
+              {isChangePasswordLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  변경 중...
+                </>
+              ) : (
+                '비밀번호 변경'
+              )}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

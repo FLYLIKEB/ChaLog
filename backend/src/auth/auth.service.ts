@@ -10,6 +10,7 @@ import { AuthProvider, UserAuthentication } from '../users/entities/user-authent
 import { PasswordReset } from '../users/entities/password-reset.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { MailService } from '../mail/mail.service';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import axios from 'axios';
 
 @Injectable()
@@ -262,6 +263,30 @@ export class AuthService {
       ? local[0] + '***'
       : local.slice(0, 2) + '***';
     return { maskedEmail: `${masked}@${domain}` };
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto): Promise<{ message: string }> {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('새 비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+    }
+
+    const auth = await this.userAuthRepository.findOne({
+      where: { userId, provider: AuthProvider.EMAIL },
+    });
+    if (!auth || !auth.credential) {
+      throw new BadRequestException('이메일 비밀번호 계정이 없습니다. 소셜 로그인 전용 계정입니다.');
+    }
+
+    const isMatch = await bcrypt.compare(dto.currentPassword, auth.credential);
+    if (!isMatch) {
+      throw new UnauthorizedException('현재 비밀번호가 올바르지 않습니다.');
+    }
+
+    auth.credential = await bcrypt.hash(dto.newPassword, 10);
+    await this.userAuthRepository.save(auth);
+    await this.revokeAllRefreshTokens(userId);
+
+    return { message: '비밀번호가 변경되었습니다. 다시 로그인해주세요.' };
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
