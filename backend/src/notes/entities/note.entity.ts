@@ -50,6 +50,9 @@ export class Note {
   @Column({ type: 'json', nullable: true })
   imageThumbnails: string[] | null;
 
+  @Column({ type: 'date', nullable: true })
+  drinkDate: string | null;
+
   @Column({ default: false })
   isPublic: boolean;
 
