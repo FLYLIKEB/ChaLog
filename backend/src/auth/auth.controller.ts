@@ -12,6 +12,7 @@ import { FindEmailDto } from './dto/find-email.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ChangeEmailRequestDto, ChangeEmailConfirmDto } from './dto/change-email.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 const COOKIE_OPTIONS = {
@@ -189,6 +190,40 @@ export class AuthController {
   async resendVerification(@Request() req): Promise<{ message: string }> {
     const userId = parseInt(req.user.userId, 10);
     return this.authService.resendVerification(userId);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 600000 } })
+  @UseGuards(AuthGuard('jwt'))
+  @Post('change-email/request')
+  async requestEmailChange(
+    @Request() req,
+    @Body() dto: ChangeEmailRequestDto,
+  ): Promise<{ message: string }> {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    return this.authService.requestEmailChange(userId, dto.newEmail);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
+  @UseGuards(AuthGuard('jwt'))
+  @Post('change-email/confirm')
+  async confirmEmailChange(
+    @Request() req,
+    @Body() dto: ChangeEmailConfirmDto,
+  ): Promise<{ message: string }> {
+    if (!req.user?.userId) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    const userId = parseInt(req.user.userId, 10);
+    if (Number.isNaN(userId)) {
+      throw new BadRequestException('인증 정보가 올바르지 않습니다.');
+    }
+    return this.authService.confirmEmailChange(userId, dto.token);
   }
 
   @UseGuards(AuthGuard('jwt'))

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard, Lock, UserX } from 'lucide-react';
+import { LogOut, Shield, FileText, Bell, ChevronRight, Link2, Loader2, Sun, Moon, Monitor, LayoutDashboard, Lock, UserX, Mail } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTheme } from 'next-themes';
@@ -75,6 +75,11 @@ export function Settings() {
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [withdrawInput, setWithdrawInput] = useState('');
   const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [isChangeEmailOpen, setIsChangeEmailOpen] = useState(false);
+  const [changeEmailInput, setChangeEmailInput] = useState('');
+  const [isChangeEmailLoading, setIsChangeEmailLoading] = useState(false);
+  const [changeEmailSent, setChangeEmailSent] = useState(false);
+  const [emailHasCredential, setEmailHasCredential] = useState(false);
 
   const fetchLinkedAccounts = useCallback(async () => {
     if (!user) return;
@@ -116,6 +121,11 @@ export function Settings() {
     fetchLinkedAccounts();
   }, [fetchLinkedAccounts]);
 
+  useEffect(() => {
+    const emailAccount = linkedAccounts.find((a) => a.provider === 'email');
+    setEmailHasCredential(emailAccount?.hasCredential ?? false);
+  }, [linkedAccounts]);
+
   // 카카오 연동 콜백 처리 (redirect 후 /settings?code=xxx&state=link_kakao)
   useEffect(() => {
     const code = searchParams.get('code');
@@ -156,6 +166,60 @@ export function Settings() {
     };
     run();
   }, [searchParams, user, fetchLinkedAccounts, setSearchParams]);
+
+  // 이메일 변경 확인 토큰 처리 (/settings?emailChangeToken=xxx)
+  useEffect(() => {
+    const emailChangeToken = searchParams.get('emailChangeToken');
+    if (!emailChangeToken || !user) return;
+
+    const run = async () => {
+      try {
+        const result = await authApi.confirmEmailChange(emailChangeToken);
+        toast.success(result.message);
+        setSearchParams({}, { replace: true });
+        // Refresh user data by re-fetching linked accounts
+        await fetchLinkedAccounts();
+      } catch (e) {
+        toast.error(e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : '이메일 변경에 실패했습니다.');
+        setSearchParams({}, { replace: true });
+      }
+    };
+    run();
+  }, [searchParams, user, fetchLinkedAccounts, setSearchParams]);
+
+  const handleChangeEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!changeEmailInput) {
+      toast.error('새 이메일을 입력해주세요.');
+      return;
+    }
+    setIsChangeEmailLoading(true);
+    try {
+      const result = await authApi.requestEmailChange(changeEmailInput);
+      toast.success(result.message);
+      setChangeEmailSent(true);
+    } catch (e) {
+      toast.error(e && typeof e === 'object' && 'message' in e ? String((e as { message: unknown }).message) : '이메일 변경 요청에 실패했습니다.');
+    } finally {
+      setIsChangeEmailLoading(false);
+    }
+  };
+
+  const handleChangeEmailOpen = () => {
+    setChangeEmailInput('');
+    setChangeEmailSent(false);
+    setIsChangeEmailOpen(true);
+  };
+
+  const handleChangeEmailClose = (open: boolean) => {
+    if (!isChangeEmailLoading) {
+      setIsChangeEmailOpen(open);
+      if (!open) {
+        setChangeEmailInput('');
+        setChangeEmailSent(false);
+      }
+    }
+  };
 
   const handleLinkGoogleSuccess = useCallback(
     async (accessToken: string) => {
@@ -348,7 +412,19 @@ export function Settings() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-1">이메일</p>
-              <p className="text-foreground">{user.email || '미설정'}</p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-foreground">{user.email || '미설정'}</p>
+                {hasEmailAuth && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleChangeEmailOpen}
+                  >
+                    <Mail className="w-3 h-3 mr-1" />
+                    변경
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </Card>
@@ -414,7 +490,7 @@ export function Settings() {
                       </div>
                       {linked ? (
                         <div className="flex items-center gap-2">
-                          {provider === 'email' && linked.hasCredential && (
+                          {provider === 'email' && emailHasCredential && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -631,6 +707,54 @@ export function Settings() {
       </Dialog>
 
       <BottomNav />
+
+      <Dialog open={isChangeEmailOpen} onOpenChange={handleChangeEmailClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>이메일 변경</DialogTitle>
+            <DialogDescription>
+              새 이메일 주소로 인증 메일을 발송합니다.
+            </DialogDescription>
+          </DialogHeader>
+          {changeEmailSent ? (
+            <div className="py-4 text-center space-y-2">
+              <Mail className="w-10 h-10 text-primary mx-auto" />
+              <p className="text-sm font-medium text-foreground">인증 메일이 발송되었습니다</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-medium">{changeEmailInput}</span>으로 발송된 메일의 링크를 클릭하여 변경을 완료하세요.
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleChangeEmailSubmit} className="space-y-4 mt-2">
+              <div className="space-y-2">
+                <Label htmlFor="newEmail">새 이메일 주소</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="newEmail"
+                    type="email"
+                    placeholder="새 이메일 주소 입력"
+                    value={changeEmailInput}
+                    onChange={(e) => setChangeEmailInput(e.target.value)}
+                    className="pl-9"
+                    disabled={isChangeEmailLoading}
+                  />
+                </div>
+              </div>
+              <Button type="submit" className="w-full" disabled={isChangeEmailLoading || !changeEmailInput}>
+                {isChangeEmailLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    발송 중...
+                  </>
+                ) : (
+                  '인증 메일 발송'
+                )}
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
         <DialogContent>

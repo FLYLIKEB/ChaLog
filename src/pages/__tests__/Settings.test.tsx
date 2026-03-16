@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const mocks = vi.hoisted(() => ({
   changePassword: vi.fn(),
+  requestEmailChange: vi.fn(),
+  confirmEmailChange: vi.fn(),
   getLinkedAccounts: vi.fn(),
   getNotificationSetting: vi.fn(),
   updateNotificationSetting: vi.fn(),
@@ -22,6 +24,8 @@ vi.mock('../../lib/api', async () => {
     authApi: {
       ...(actual as { authApi: object }).authApi,
       changePassword: mocks.changePassword,
+      requestEmailChange: mocks.requestEmailChange,
+      confirmEmailChange: mocks.confirmEmailChange,
     },
     usersApi: {
       getLinkedAccounts: mocks.getLinkedAccounts,
@@ -197,6 +201,80 @@ describe('Settings 페이지', () => {
       expect(screen.getByLabelText('현재 비밀번호')).toBeInTheDocument();
       expect(screen.getByLabelText('새 비밀번호')).toBeInTheDocument();
       expect(screen.getByLabelText('새 비밀번호 확인')).toBeInTheDocument();
+    });
+  });
+
+  describe('이메일 변경 (이메일 계정)', () => {
+    beforeEach(() => {
+      mocks.getLinkedAccounts.mockResolvedValue([
+        { id: 1, provider: 'email', providerId: 'test@example.com', hasCredential: true },
+      ]);
+      mocks.requestEmailChange.mockResolvedValue({ message: '인증 메일이 발송되었습니다.' });
+      vi.mocked(useAuth).mockReturnValue({
+        user: { id: 1, email: 'test@example.com', name: 'Test User', role: 'user' },
+        isAuthenticated: true,
+        isAdmin: false,
+        isLoading: false,
+        token: 'cookie',
+        login: vi.fn(),
+        register: vi.fn(),
+        loginWithKakao: vi.fn(),
+        loginWithGoogle: vi.fn(),
+        logout: mockLogout,
+        hasCompletedOnboarding: true,
+        isOnboardingLoading: false,
+        refreshOnboardingStatus: vi.fn(),
+      });
+    });
+
+    it('프로필 섹션에 이메일 변경 버튼이 표시되어야 함', async () => {
+      renderWithRouter(<Settings />, { route: '/settings' });
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /변경/ })).toBeInTheDocument();
+      });
+    });
+
+    it('이메일 변경 버튼 클릭 시 모달이 열려야 함', async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<Settings />, { route: '/settings' });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /변경/ })).toBeInTheDocument();
+      });
+
+      // Find the email change button in the profile section (has Mail icon + 변경 text)
+      const changeButtons = screen.getAllByRole('button', { name: /변경/ });
+      const emailChangeBtn = changeButtons.find((btn) => btn.textContent?.includes('변경') && !btn.textContent?.includes('비밀번호'));
+      if (emailChangeBtn) await user.click(emailChangeBtn);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: '이메일 변경' })).toBeInTheDocument();
+      });
+      expect(screen.getByLabelText('새 이메일 주소')).toBeInTheDocument();
+    });
+
+    it('이메일 변경 모달 닫기', async () => {
+      const user = userEvent.setup();
+      renderWithRouter(<Settings />, { route: '/settings' });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /변경/ })).toBeInTheDocument();
+      });
+
+      const changeButtons = screen.getAllByRole('button', { name: /변경/ });
+      const emailChangeBtn = changeButtons.find((btn) => btn.textContent?.includes('변경') && !btn.textContent?.includes('비밀번호'));
+      if (emailChangeBtn) await user.click(emailChangeBtn);
+
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: '이메일 변경' })).toBeInTheDocument();
+      });
+
+      // Close via ESC
+      await user.keyboard('{Escape}');
+
+      await waitFor(() => {
+        expect(screen.queryByRole('heading', { name: '이메일 변경' })).not.toBeInTheDocument();
+      });
     });
   });
 });

@@ -160,6 +160,7 @@ export async function cleanupDatabase(dataSource: DataSource): Promise<void> {
   try {
     await dataSource.query('SET FOREIGN_KEY_CHECKS = 0');
     // 외래키 의존성이 있는 테이블부터 삭제 (자식 테이블 먼저)
+    await dataSource.query('DELETE FROM email_change_tokens');
     await dataSource.query('DELETE FROM email_verification_tokens');
     await dataSource.query('DELETE FROM note_bookmarks');
     await dataSource.query('DELETE FROM note_likes');

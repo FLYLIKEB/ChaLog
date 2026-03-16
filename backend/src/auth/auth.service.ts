@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, IsNull, DataSource } from 'typeorm';
@@ -11,6 +11,7 @@ import { AuthProvider, UserAuthentication } from '../users/entities/user-authent
 import { PasswordReset } from '../users/entities/password-reset.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { EmailVerificationToken } from './entities/email-verification-token.entity';
+import { EmailChangeToken } from './entities/email-change-token.entity';
 import { NoteReport } from '../reports/entities/note-report.entity';
 import { PostReport } from '../reports/entities/post-report.entity';
 import { MailService } from '../mail/mail.service';
@@ -32,6 +33,8 @@ export class AuthService {
     private refreshTokenRepository: Repository<RefreshToken>,
     @InjectRepository(EmailVerificationToken)
     private emailVerificationTokenRepository: Repository<EmailVerificationToken>,
+    @InjectRepository(EmailChangeToken)
+    private emailChangeTokenRepository: Repository<EmailChangeToken>,
     @InjectDataSource()
     private dataSource: DataSource,
     private mailService: MailService,
@@ -123,8 +126,10 @@ export class AuthService {
     if (record.usedAt) throw new BadRequestException('이미 사용된 인증 링크입니다.');
     if (record.expiresAt < new Date()) throw new BadRequestException('만료된 인증 링크입니다.');
 
-    await this.usersService.updateEmailVerifiedAt(record.userId, new Date());
-    await this.emailVerificationTokenRepository.update({ id: record.id }, { usedAt: new Date() });
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(User, { id: record.userId }, { emailVerifiedAt: new Date() });
+      await manager.update(EmailVerificationToken, { id: record.id }, { usedAt: new Date() });
+    });
 
     return { message: '이메일이 인증되었습니다.' };
   }
@@ -155,6 +160,73 @@ export class AuthService {
     await this.mailService.sendVerificationEmail(email, rawToken!);
 
     return { message: '인증 메일이 재발송되었습니다.' };
+  }
+
+  async requestEmailChange(userId: number, newEmail: string): Promise<{ message: string }> {
+    const emailAuth = await this.userAuthRepository.findOne({
+      where: { userId, provider: AuthProvider.EMAIL },
+    });
+    if (!emailAuth) {
+      throw new BadRequestException('이메일 계정이 없습니다. 소셜 로그인 전용 계정입니다.');
+    }
+
+    const existing = await this.userAuthRepository.findOne({
+      where: { provider: AuthProvider.EMAIL, providerId: newEmail },
+    });
+    if (existing) {
+      throw new ConflictException('이미 사용 중인 이메일입니다.');
+    }
+
+    let rawToken: string;
+
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(
+        EmailChangeToken,
+        { userId, usedAt: IsNull() },
+        { usedAt: new Date() },
+      );
+
+      rawToken = randomBytes(32).toString('hex');
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분
+
+      await manager.save(EmailChangeToken, {
+        userId,
+        tokenHash,
+        newEmail,
+        expiresAt,
+        usedAt: null,
+      });
+    });
+
+    await this.mailService.sendEmailChangeEmail(newEmail, rawToken!);
+    return { message: '인증 메일이 발송되었습니다.' };
+  }
+
+  async confirmEmailChange(userId: number, token: string): Promise<{ message: string }> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const record = await this.emailChangeTokenRepository.findOne({
+      where: { tokenHash, userId },
+    });
+    if (!record) throw new BadRequestException('유효하지 않은 인증 링크입니다.');
+    if (record.usedAt) throw new BadRequestException('이미 사용된 인증 링크입니다.');
+    if (record.expiresAt < new Date()) throw new BadRequestException('만료된 인증 링크입니다.');
+
+    await this.dataSource.transaction(async (manager) => {
+      const existing = await manager.findOne(UserAuthentication, {
+        where: { provider: AuthProvider.EMAIL, providerId: record.newEmail },
+      });
+      if (existing) throw new ConflictException('이미 사용 중인 이메일입니다.');
+
+      await manager.update(UserAuthentication,
+        { userId, provider: AuthProvider.EMAIL },
+        { providerId: record.newEmail },
+      );
+      await manager.update(EmailChangeToken, { id: record.id }, { usedAt: new Date() });
+    });
+
+    return { message: '이메일이 변경되었습니다.' };
   }
 
   async loginWithKakao(accessToken: string) {

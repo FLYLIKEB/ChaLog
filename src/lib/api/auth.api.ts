@@ -54,4 +54,8 @@ export const authApi = {
     apiClient.post<{ message: string }>('/auth/verify-email', { token }),
   resendVerification: () =>
     apiClient.post<{ message: string }>('/auth/resend-verification'),
+  requestEmailChange: (newEmail: string) =>
+    apiClient.post<{ message: string }>('/auth/change-email/request', { newEmail }),
+  confirmEmailChange: (token: string) =>
+    apiClient.post<{ message: string }>('/auth/change-email/confirm', { token }),
 };

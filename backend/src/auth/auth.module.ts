@@ -12,6 +12,7 @@ import { UserAuthentication } from '../users/entities/user-authentication.entity
 import { PasswordReset } from '../users/entities/password-reset.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { EmailVerificationToken } from './entities/email-verification-token.entity';
+import { EmailChangeToken } from './entities/email-change-token.entity';
 import { MailModule } from '../mail/mail.module';
 import { NotesModule } from '../notes/notes.module';
 
@@ -21,7 +22,7 @@ import { NotesModule } from '../notes/notes.module';
     PassportModule,
     MailModule,
     NotesModule,
-    TypeOrmModule.forFeature([UserAuthentication, PasswordReset, RefreshToken, EmailVerificationToken]),
+    TypeOrmModule.forFeature([UserAuthentication, PasswordReset, RefreshToken, EmailVerificationToken, EmailChangeToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService): JwtModuleOptions => {
