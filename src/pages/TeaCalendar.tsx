@@ -1,14 +1,29 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CalendarDays, Flame, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays, Flame, Trophy, ChevronLeft, ChevronRight, Plus, Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { Calendar } from '../components/ui/calendar';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '../components/ui/drawer';
+import { NoteCard } from '../components/NoteCard';
 import { notesApi } from '../lib/api';
 import type { CalendarData } from '../lib/api/notes.api';
+import type { Note } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+function formatDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatDateLabel(date: Date): string {
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+  const day = DAY_NAMES[date.getDay()];
+  return `${m}월 ${d}일(${day})`;
+}
 
 export function TeaCalendar() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -19,6 +34,11 @@ export function TeaCalendar() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [calendarData, setCalendarData] = useState<CalendarData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [dateNotes, setDateNotes] = useState<Note[]>([]);
+  const [isLoadingNotes, setIsLoadingNotes] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -43,6 +63,22 @@ export function TeaCalendar() {
     fetchCalendar();
   }, [fetchCalendar]);
 
+  const handleDayClick = useCallback(async (date: Date) => {
+    if (!user) return;
+    setSelectedDate(date);
+    setDrawerOpen(true);
+    setIsLoadingNotes(true);
+    setDateNotes([]);
+    try {
+      const notes = await notesApi.getByDate(user.id, formatDateKey(date));
+      setDateNotes(notes);
+    } catch {
+      toast.error('차록을 불러오지 못했습니다.');
+    } finally {
+      setIsLoadingNotes(false);
+    }
+  }, [user]);
+
   const goToPrevMonth = () => {
     if (month === 1) {
       setYear((y) => y - 1);
@@ -64,10 +100,7 @@ export function TeaCalendar() {
   const noteDates = new Set(calendarData?.dates ?? []);
 
   const modifiers = {
-    hasNote: (date: Date) => {
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      return noteDates.has(key);
-    },
+    hasNote: (date: Date) => noteDates.has(formatDateKey(date)),
   };
 
   const modifiersClassNames = {
@@ -138,6 +171,7 @@ export function TeaCalendar() {
                 setYear(d.getFullYear());
                 setMonth(d.getMonth() + 1);
               }}
+              onDayClick={handleDayClick}
               modifiers={modifiers}
               modifiersClassNames={modifiersClassNames}
               showOutsideDays={false}
@@ -152,6 +186,52 @@ export function TeaCalendar() {
           </p>
         )}
       </div>
+
+      {/* Date Notes Drawer */}
+      <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DrawerContent className="max-h-[80vh]">
+          <DrawerHeader className="flex items-center justify-between px-4 py-3 border-b">
+            <DrawerTitle className="text-lg font-semibold">
+              {selectedDate ? formatDateLabel(selectedDate) : ''}
+            </DrawerTitle>
+            <button
+              onClick={() => {
+                setDrawerOpen(false);
+                navigate('/note/new');
+              }}
+              className="text-primary font-medium text-sm flex items-center gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              기록 추가
+            </button>
+          </DrawerHeader>
+
+          <div className="overflow-y-auto px-4 py-3 space-y-3">
+            {isLoadingNotes ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              </div>
+            ) : dateNotes.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p className="text-sm">이 날의 차록이 없습니다.</p>
+                <button
+                  onClick={() => {
+                    setDrawerOpen(false);
+                    navigate('/note/new');
+                  }}
+                  className="mt-3 text-primary font-medium text-sm"
+                >
+                  차록 작성하기
+                </button>
+              </div>
+            ) : (
+              dateNotes.map((note) => (
+                <NoteCard key={note.id} note={note} showTeaName />
+              ))
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
 
       <BottomNav />
     </div>

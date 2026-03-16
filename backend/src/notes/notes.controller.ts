@@ -116,6 +116,22 @@ export class NotesController {
   }
 
   @UseGuards(OptionalJwtAuthGuard)
+  @Get('by-date')
+  async findByDate(
+    @Query('userId') userId: string,
+    @Query('date') date: string,
+    @Request() req?: any,
+  ) {
+    const userIdNum = parseInt(userId, 10);
+    if (Number.isNaN(userIdNum) || !date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      throw new BadRequestException('userId(number)와 date(YYYY-MM-DD)가 필요합니다.');
+    }
+    const currentUserId = req?.user?.userId ? parseInt(req.user.userId, 10) : undefined;
+    const isOwner = currentUserId === userIdNum;
+    return this.notesService.findByDate(userIdNum, date, isOwner);
+  }
+
+  @UseGuards(OptionalJwtAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string, @Request() req) {
     const parsedId = parseInt(id, 10);

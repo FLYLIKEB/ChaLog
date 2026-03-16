@@ -1,4 +1,4 @@
-import { RatingSchema } from '../../types';
+import { RatingSchema, Note } from '../../types';
 import { apiClient } from './client';
 import { ReportReason } from './users.api';
 
@@ -80,4 +80,6 @@ export const notesApi = {
   report: (id: number, reason: ReportReason) => apiClient.post<{ id: number; message: string }>(`/notes/${id}/report`, { reason }),
   getCalendar: (userId: number, year: number, month: number) =>
     apiClient.get<CalendarData>(`/notes/calendar?userId=${userId}&year=${year}&month=${month}`),
+  getByDate: (userId: number, date: string) =>
+    apiClient.get<Note[]>(`/notes/by-date?userId=${userId}&date=${date}`),
 };

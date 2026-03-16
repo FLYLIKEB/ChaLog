@@ -780,6 +780,33 @@ describe('NotesService', () => {
     });
   });
 
+  describe('findByDate', () => {
+    it('특정 날짜의 노트 목록을 반환해야 함', async () => {
+      const mockNotes = [
+        { id: 1, createdAt: new Date('2026-03-10T05:00:00Z'), user: { id: 1 }, tea: { id: 1 } },
+        { id: 2, createdAt: new Date('2026-03-10T12:00:00Z'), user: { id: 1 }, tea: { id: 2 } },
+      ];
+      const qb = makeQb([]);
+      qb.getMany.mockResolvedValueOnce(mockNotes);
+      mockNotesRepository.createQueryBuilder.mockReturnValueOnce(qb);
+
+      const result = await service.findByDate(1, '2026-03-10');
+
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe(1);
+    });
+
+    it('노트가 없으면 빈 배열을 반환해야 함', async () => {
+      const qb = makeQb([]);
+      qb.getMany.mockResolvedValueOnce([]);
+      mockNotesRepository.createQueryBuilder.mockReturnValueOnce(qb);
+
+      const result = await service.findByDate(1, '2026-03-11');
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('calculateStreak', () => {
     it('노트가 없을 때 0,0을 반환해야 함', async () => {
       mockNotesRepository.createQueryBuilder.mockReturnValueOnce(makeQb([]));

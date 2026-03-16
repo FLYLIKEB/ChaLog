@@ -928,6 +928,23 @@ export class NotesService {
     return { dates, streak };
   }
 
+  async findByDate(userId: number, date: string, isOwner = false): Promise<any[]> {
+    const startOfDay = new Date(`${date}T00:00:00`);
+    const endOfDay = new Date(`${date}T23:59:59.999`);
+
+    const qb = this.buildListQueryBuilder()
+      .where('note.userId = :userId', { userId })
+      .andWhere('note.createdAt >= :startOfDay', { startOfDay })
+      .andWhere('note.createdAt <= :endOfDay', { endOfDay })
+      .orderBy('note.createdAt', 'DESC');
+
+    if (!isOwner) {
+      qb.andWhere('note.isPublic = :isPublic', { isPublic: true });
+    }
+
+    return qb.getMany();
+  }
+
   private normalizeRawDate(raw: unknown): string {
     if (raw instanceof Date) {
       const y = raw.getFullYear();
