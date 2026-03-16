@@ -11,6 +11,7 @@ import { AppModeProvider } from './contexts/AppModeContext';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { AdminLayout } from './components/AdminLayout';
+import { EmailVerificationBanner } from './components/EmailVerificationBanner';
 import { AppSidebar } from './components/AppSidebar';
 import { DesktopHeader } from './components/DesktopHeader';
 import { SidebarProvider } from './contexts/SidebarContext';
@@ -53,6 +54,7 @@ const EditPost = lazy(() => import('./pages/EditPost').then((m) => ({ default: m
 const Register = lazy(() => import('./pages/Register').then((m) => ({ default: m.Register })));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword').then((m) => ({ default: m.ForgotPassword })));
 const ResetPassword = lazy(() => import('./pages/ResetPassword').then((m) => ({ default: m.ResetPassword })));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail').then((m) => ({ default: m.VerifyEmail })));
 const FindEmail = lazy(() => import('./pages/FindEmail').then((m) => ({ default: m.FindEmail })));
 const Onboarding = lazy(() => import('./pages/Onboarding').then((m) => ({ default: m.Onboarding })));
 const TagDetail = lazy(() => import('./pages/TagDetail').then((m) => ({ default: m.TagDetail })));
@@ -86,7 +88,7 @@ const AdminMaster = lazy(() => import('./pages/admin/AdminMaster').then((m) => (
 function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { user, isLoading, hasCompletedOnboarding, isOnboardingLoading } = useAuth();
-  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/onboarding', '/find-email'];
+  const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/onboarding', '/find-email', '/verify-email'];
 
   if (isLoading || isOnboardingLoading) {
     return null;
@@ -104,6 +106,18 @@ function OnboardingRouteGuard({ children }: { children: React.ReactNode }) {
 }
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+
+function EmailVerificationBannerWrapper() {
+  const { user, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const hiddenPaths = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password', '/onboarding'];
+
+  if (!isAuthenticated || !user || user.emailVerifiedAt !== null || hiddenPaths.includes(location.pathname)) {
+    return null;
+  }
+
+  return <EmailVerificationBanner />;
+}
 
 function AppContent() {
   const location = useLocation();
@@ -143,6 +157,8 @@ function AppContent() {
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* 데스크톱 헤더 (md 이상에서만 표시) */}
         <DesktopHeader />
+
+        <EmailVerificationBannerWrapper />
 
         <OnboardingRouteGuard>
           <PullToRefreshProvider>
@@ -190,6 +206,7 @@ function AppContent() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
                 <Route path="/find-email" element={<FindEmail />} />
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/admin/*" element={<Navigate to="/admin" replace />} />

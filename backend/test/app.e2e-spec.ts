@@ -15,6 +15,7 @@ import './suites/notes-schemas.e2e-spec';
 import './suites/cellar.e2e-spec';
 import './suites/auth-change-password.e2e-spec';
 import './suites/auth-withdraw.e2e-spec';
+import './suites/auth-email-verification.e2e-spec';
 
 describe('AppController (e2e)', () => {
   let context: TestContext;

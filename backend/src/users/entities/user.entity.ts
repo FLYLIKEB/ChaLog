@@ -44,6 +44,9 @@ export class User {
   @Column({ type: 'boolean', default: true })
   isProfilePublic: boolean;
 
+  @Column({ type: 'datetime', nullable: true, default: null })
+  emailVerifiedAt: Date | null;
+
   @OneToMany(() => UserAuthentication, (auth) => auth.user, { cascade: true })
   authentications: UserAuthentication[];
 

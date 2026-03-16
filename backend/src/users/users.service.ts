@@ -465,4 +465,8 @@ export class UsersService {
 
     return result;
   }
+
+  async updateEmailVerifiedAt(userId: number, verifiedAt: Date): Promise<void> {
+    await this.usersRepository.update({ id: userId }, { emailVerifiedAt: verifiedAt });
+  }
 }

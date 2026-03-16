@@ -17,6 +17,8 @@ import { TeasModule } from '../teas/teas.module';
 import { StorageModule } from '../common/storage/storage.module';
 import { FollowsModule } from '../follows/follows.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
+import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
 
 @Module({
   imports: [
@@ -25,8 +27,9 @@ import { NotificationsModule } from '../notifications/notifications.module';
     StorageModule,
     FollowsModule,
     NotificationsModule,
+    UsersModule,
   ],
-  providers: [NotesService],
+  providers: [NotesService, EmailVerifiedGuard],
   controllers: [NotesController],
   exports: [NotesService],
 })

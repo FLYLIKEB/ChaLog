@@ -61,9 +61,8 @@ export function Register() {
 
     try {
       setIsLoading(true);
-      const onboardingCompleted = await register(email, name, password);
-      const shouldGoOnboarding = onboardingCompleted === false || onboardingCompleted === null;
-      navigate(shouldGoOnboarding ? '/onboarding' : '/');
+      await register(email, name, password);
+      navigate('/verify-email', { replace: true });
     } catch (error) {
       // 에러는 AuthContext에서 이미 처리됨
     } finally {

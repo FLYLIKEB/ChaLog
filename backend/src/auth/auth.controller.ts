@@ -11,6 +11,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { FindEmailDto } from './dto/find-email.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 const COOKIE_OPTIONS = {
@@ -174,6 +175,20 @@ export class AuthController {
       throw new BadRequestException('인증 정보가 올바르지 않습니다.');
     }
     return this.authService.changePassword(userId, dto);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
+  @Post('verify-email')
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ message: string }> {
+    return this.authService.verifyEmail(dto.token);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Throttle({ default: { limit: 5, ttl: 600000 } })
+  @Post('resend-verification')
+  async resendVerification(@Request() req): Promise<{ message: string }> {
+    const userId = parseInt(req.user.userId, 10);
+    return this.authService.resendVerification(userId);
   }
 
   @UseGuards(AuthGuard('jwt'))

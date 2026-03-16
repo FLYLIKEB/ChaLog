@@ -33,7 +33,7 @@ export const authApi = {
   register: (data: RegisterRequest) => apiClient.post<AuthResponse>('/auth/register', data),
   loginWithKakao: (data: KakaoLoginRequest) => apiClient.post<AuthResponse>('/auth/kakao', data),
   loginWithGoogle: (data: GoogleLoginRequest) => apiClient.post<AuthResponse>('/auth/google', data),
-  getMe: () => apiClient.get<{ user: { id: number; email: string | null; name: string; role?: 'user' | 'admin' } }>('/auth/me'),
+  getMe: () => apiClient.get<{ user: { id: number; email: string | null; name: string; role?: 'user' | 'admin'; emailVerifiedAt?: string | null } }>('/auth/me'),
   logout: () => apiClient.post<void>('/auth/logout'),
   getProfile: () => apiClient.post('/auth/profile'),
   linkKakao: (accessToken: string) =>
@@ -50,4 +50,8 @@ export const authApi = {
     apiClient.patch<{ message: string }>('/auth/change-password', data),
   withdraw: (data?: { password?: string; confirmText?: string }) =>
     apiClient.delete<{ message: string }>('/auth/withdraw', { data }),
+  verifyEmail: (token: string) =>
+    apiClient.post<{ message: string }>('/auth/verify-email', { token }),
+  resendVerification: () =>
+    apiClient.post<{ message: string }>('/auth/resend-verification'),
 };

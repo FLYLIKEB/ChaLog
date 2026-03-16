@@ -10,6 +10,7 @@ import { User, UserRole } from '../users/entities/user.entity';
 import { AuthProvider, UserAuthentication } from '../users/entities/user-authentication.entity';
 import { PasswordReset } from '../users/entities/password-reset.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { EmailVerificationToken } from './entities/email-verification-token.entity';
 import { NoteReport } from '../reports/entities/note-report.entity';
 import { PostReport } from '../reports/entities/post-report.entity';
 import { MailService } from '../mail/mail.service';
@@ -29,6 +30,8 @@ export class AuthService {
     private passwordResetRepository: Repository<PasswordReset>,
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
+    @InjectRepository(EmailVerificationToken)
+    private emailVerificationTokenRepository: Repository<EmailVerificationToken>,
     @InjectDataSource()
     private dataSource: DataSource,
     private mailService: MailService,
@@ -46,6 +49,7 @@ export class AuthService {
       email: email || null,
       name: user.name,
       role: user.role,
+      emailVerifiedAt: user.emailVerifiedAt ?? null,
     };
   }
 
@@ -66,6 +70,7 @@ export class AuthService {
         email: email || null,
         name: user.name,
         role: user.role,
+        emailVerifiedAt: user.emailVerifiedAt ?? null,
       },
     };
   }
@@ -99,7 +104,57 @@ export class AuthService {
 
   async register(email: string, name: string, password: string) {
     const user = await this.usersService.create(email, name, password);
+
+    // 이메일 인증 토큰 생성 및 발송
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간
+    await this.emailVerificationTokenRepository.save({ userId: user.id, tokenHash, expiresAt, usedAt: null });
+    await this.mailService.sendVerificationEmail(email, rawToken);
+
     return this.login(user);
+  }
+
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    const record = await this.emailVerificationTokenRepository.findOne({ where: { tokenHash } });
+
+    if (!record) throw new BadRequestException('유효하지 않은 인증 링크입니다.');
+    if (record.usedAt) throw new BadRequestException('이미 사용된 인증 링크입니다.');
+    if (record.expiresAt < new Date()) throw new BadRequestException('만료된 인증 링크입니다.');
+
+    await this.usersService.updateEmailVerifiedAt(record.userId, new Date());
+    await this.emailVerificationTokenRepository.update({ id: record.id }, { usedAt: new Date() });
+
+    return { message: '이메일이 인증되었습니다.' };
+  }
+
+  async resendVerification(userId: number): Promise<{ message: string }> {
+    const user = await this.usersService.findOne(userId);
+    if (user.emailVerifiedAt) throw new BadRequestException('이미 인증된 이메일입니다.');
+
+    const email = await this.usersService.getUserEmail(userId);
+    if (!email) throw new BadRequestException('이메일 정보가 없습니다.');
+
+    let rawToken: string;
+
+    await this.dataSource.transaction(async (manager) => {
+      // 기존 미사용 토큰 무효화
+      await manager.update(
+        EmailVerificationToken,
+        { userId, usedAt: IsNull() },
+        { usedAt: new Date() },
+      );
+
+      rawToken = randomBytes(32).toString('hex');
+      const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await manager.save(EmailVerificationToken, { userId, tokenHash, expiresAt, usedAt: null });
+    });
+
+    await this.mailService.sendVerificationEmail(email, rawToken!);
+
+    return { message: '인증 메일이 재발송되었습니다.' };
   }
 
   async loginWithKakao(accessToken: string) {

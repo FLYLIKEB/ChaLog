@@ -24,6 +24,7 @@ interface User {
   email: string | null;
   name: string;
   role?: 'user' | 'admin';
+  emailVerifiedAt?: string | null;
 }
 
 interface AuthContextType {

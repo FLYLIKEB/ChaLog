@@ -23,6 +23,7 @@ import { UpdateNoteDto } from './dto/update-note.dto';
 import { CreateRatingSchemaDto } from './dto/create-rating-schema.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
+import { EmailVerifiedGuard } from '../auth/guards/email-verified.guard';
 import { ImageUploadService } from '../common/storage/image-upload.service';
 import { ValidatedUserId } from '../common/decorators/validated-user-id.decorator';
 
@@ -61,7 +62,7 @@ export class NotesController {
     }
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, EmailVerifiedGuard)
   @Post()
   create(@ValidatedUserId() userId: number, @Body() createNoteDto: CreateNoteDto) {
     return this.notesService.create(userId, createNoteDto);

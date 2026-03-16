@@ -11,6 +11,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { UserAuthentication } from '../users/entities/user-authentication.entity';
 import { PasswordReset } from '../users/entities/password-reset.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { EmailVerificationToken } from './entities/email-verification-token.entity';
 import { MailModule } from '../mail/mail.module';
 import { NotesModule } from '../notes/notes.module';
 
@@ -20,7 +21,7 @@ import { NotesModule } from '../notes/notes.module';
     PassportModule,
     MailModule,
     NotesModule,
-    TypeOrmModule.forFeature([UserAuthentication, PasswordReset, RefreshToken]),
+    TypeOrmModule.forFeature([UserAuthentication, PasswordReset, RefreshToken, EmailVerificationToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService): JwtModuleOptions => {

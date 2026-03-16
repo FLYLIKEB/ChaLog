@@ -18,7 +18,7 @@ backend/test/
 ## Test DB 격리
 - 반드시 별도 테스트 DB 사용 (`TEST_DATABASE_URL` in `.env.test`)
 - DB 이름에 반드시 `test` 포함 (예: `chalog_test`)
-- Cleanup 순서: `note_bookmarks` → `note_likes` → `note_axis_value` → `note_tags` → `tags` → `notes` → `rating_axis` → `rating_schema` → `teas` → `user_authentications` → `users`
+- Cleanup 순서: `note_bookmarks` → `note_likes` → `note_axis_value` → `note_tags` → `tags` → `notes` → `rating_axis` → `rating_schema` → `teas` → `user_authentications` → `email_verification_tokens` → `users`
 - Cleanup 전 `SET FOREIGN_KEY_CHECKS = 0`
 
 ## 실행

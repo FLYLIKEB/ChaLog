@@ -1,10 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { getRepositoryToken, getDataSourceToken } from '@nestjs/typeorm';
 import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+import { NotesService } from '../notes/notes.service';
 import { User } from '../users/entities/user.entity';
+import { UserAuthentication } from '../users/entities/user-authentication.entity';
+import { PasswordReset } from '../users/entities/password-reset.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { EmailVerificationToken } from './entities/email-verification-token.entity';
+import { MailService } from '../mail/mail.service';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -39,7 +46,16 @@ describe('AuthService', () => {
     validateUser: jest.fn(),
     create: jest.fn(),
     getUserEmail: jest.fn(),
+    findOne: jest.fn(),
+    findByEmail: jest.fn(),
+    findByName: jest.fn(),
+    linkOAuthAccount: jest.fn(),
     createOrUpdateKakaoUser: jest.fn(),
+    createOrUpdateGoogleUser: jest.fn(),
+  };
+
+  const mockNotesService = {
+    removeByAdmin: jest.fn(),
   };
 
   const mockJwtService = {
@@ -48,6 +64,23 @@ describe('AuthService', () => {
 
   const mockConfigService = {
     get: jest.fn(),
+  };
+
+  const mockRepository = {
+    findOne: jest.fn(),
+    save: jest.fn().mockResolvedValue({}),
+    update: jest.fn().mockResolvedValue({}),
+    delete: jest.fn().mockResolvedValue({}),
+  };
+
+  const mockMailService = {
+    sendPasswordResetEmail: jest.fn(),
+    sendVerificationEmail: jest.fn(),
+  };
+
+  const mockDataSource = {
+    query: jest.fn(),
+    transaction: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -59,12 +92,40 @@ describe('AuthService', () => {
           useValue: mockUsersService,
         },
         {
+          provide: NotesService,
+          useValue: mockNotesService,
+        },
+        {
           provide: JwtService,
           useValue: mockJwtService,
         },
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: getRepositoryToken(UserAuthentication),
+          useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(PasswordReset),
+          useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(RefreshToken),
+          useValue: mockRepository,
+        },
+        {
+          provide: getRepositoryToken(EmailVerificationToken),
+          useValue: mockRepository,
+        },
+        {
+          provide: MailService,
+          useValue: mockMailService,
+        },
+        {
+          provide: getDataSourceToken(),
+          useValue: mockDataSource,
         },
       ],
     }).compile();
@@ -109,7 +170,7 @@ describe('AuthService', () => {
         email,
         sub: mockUser.id,
       });
-      expect(result).toEqual({
+      expect(result).toMatchObject({
         access_token: token,
         user: {
           id: mockUser.id,
