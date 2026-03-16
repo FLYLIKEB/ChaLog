@@ -104,6 +104,10 @@ import path from 'path';
           // 백엔드에 setGlobalPrefix('api')가 설정되어 있으므로 rewrite 제거
           // 프론트엔드: /api/teas -> 백엔드: /api/teas
         },
+        '/adminjs': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+        },
       },
     },
     test: {
