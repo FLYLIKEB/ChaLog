@@ -922,10 +922,20 @@ export class NotesService {
       .orderBy('date', 'ASC')
       .getRawMany<{ date: string }>();
 
-    const dates = rows.map((r) => r.date);
+    const dates = rows.map((r) => this.normalizeRawDate(r.date));
     const streak = await this.calculateStreak(userId);
 
     return { dates, streak };
+  }
+
+  private normalizeRawDate(raw: unknown): string {
+    if (raw instanceof Date) {
+      const y = raw.getFullYear();
+      const m = String(raw.getMonth() + 1).padStart(2, '0');
+      const d = String(raw.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    return String(raw).slice(0, 10);
   }
 
   async calculateStreak(userId: number): Promise<{ current: number; longest: number }> {
@@ -950,7 +960,7 @@ export class NotesService {
     let prevDate: Date | null = null;
 
     for (const row of rows) {
-      const d = new Date(row.date);
+      const d = new Date(this.normalizeRawDate(row.date));
       d.setHours(0, 0, 0, 0);
 
       if (prevDate === null) {

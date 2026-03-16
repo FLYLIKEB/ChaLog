@@ -757,6 +757,27 @@ describe('NotesService', () => {
       expect(typeof result.streak.current).toBe('number');
       expect(typeof result.streak.longest).toBe('number');
     });
+
+    it('DATE()가 Date 객체를 반환해도 YYYY-MM-DD 문자열로 변환해야 함', async () => {
+      const calendarQb = makeQb([
+        { date: new Date(2026, 2, 10) },
+        { date: new Date(2026, 2, 15) },
+      ]);
+      const streakQb = makeQb([
+        { date: '2026-03-15' },
+        { date: '2026-03-10' },
+      ]);
+      mockNotesRepository.createQueryBuilder
+        .mockReturnValueOnce(calendarQb)
+        .mockReturnValueOnce(streakQb);
+
+      const result = await service.getCalendarData(1, 2026, 3);
+
+      expect(result.dates).toEqual(['2026-03-10', '2026-03-15']);
+      result.dates.forEach((d) => {
+        expect(d).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      });
+    });
   });
 
   describe('calculateStreak', () => {
