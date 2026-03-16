@@ -68,7 +68,7 @@ echo ""
 echo -e "${BLUE}[2/4] 최신 코드 배포 중...${NC}"
 ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no -o LogLevel=QUIET ubuntu@"$LIGHTSAIL_IP" 'bash -s' << 'ENDSSH'
 set -e
-cd /home/ubuntu/chalog-backend/backend
+cd /home/ubuntu/chalog-backend
 echo "--- git stash + pull ---"
 git stash --include-untracked 2>/dev/null || true
 git pull origin main
