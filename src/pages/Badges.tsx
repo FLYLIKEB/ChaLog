@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Award, Loader2 } from 'lucide-react';
+import { ArrowLeft, Lock, Award, Loader2, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usersApi } from '@/lib/api';
 import { UserLevel } from '@/types';
@@ -15,6 +15,7 @@ export function Badges() {
   const navigate = useNavigate();
   const [userLevel, setUserLevel] = useState<UserLevel | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showUnearned, setShowUnearned] = useState(false);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -143,28 +144,34 @@ export function Badges() {
         )}
       </section>
 
-      {/* Unearned Badges */}
+      {/* Unearned Badges - Toggle */}
       {unearnedBadges.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            미보유 뱃지 ({unearnedBadges.length})
-          </h2>
-          <div className="grid grid-cols-2 gap-3">
-            {unearnedBadges.map((badge) => (
-              <div
-                key={badge.id}
-                data-testid="badge-locked"
-                className="rounded-xl border border-transparent bg-muted/30 p-4 flex flex-col items-center gap-2 text-center opacity-60"
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-muted">
-                  <Lock className="w-5 h-5 text-muted-foreground" />
+          <button
+            onClick={() => setShowUnearned((v) => !v)}
+            className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors w-full"
+          >
+            <span>미보유 뱃지 ({unearnedBadges.length})</span>
+            <ChevronDown className={cn('w-4 h-4 transition-transform', showUnearned && 'rotate-180')} />
+          </button>
+          {showUnearned && (
+            <div className="grid grid-cols-2 gap-3">
+              {unearnedBadges.map((badge) => (
+                <div
+                  key={badge.id}
+                  data-testid="badge-locked"
+                  className="rounded-xl border border-transparent bg-muted/30 p-4 flex flex-col items-center gap-2 text-center opacity-60"
+                >
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center bg-muted">
+                    <Lock className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                  <span className="text-sm font-semibold text-muted-foreground">{badge.name}</span>
+                  <span className="text-xs text-muted-foreground">{badge.threshold}</span>
+                  <span className="text-xs text-muted-foreground/70">{badge.description}</span>
                 </div>
-                <span className="text-sm font-semibold text-muted-foreground">{badge.name}</span>
-                <span className="text-xs text-muted-foreground">{badge.threshold}</span>
-                <span className="text-xs text-muted-foreground/70">{badge.description}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
     </div>

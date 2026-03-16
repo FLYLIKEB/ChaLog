@@ -1,5 +1,5 @@
 import React from 'react';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, fireEvent } from '@testing-library/react';
 import { afterEach, beforeEach, vi, describe, it, expect } from 'vitest';
 import { Badges } from '../Badges';
 import { renderWithRouter } from '../../test/renderWithRouter';
@@ -101,11 +101,17 @@ describe('Badges 페이지', () => {
   it('전체 뱃지 6종을 렌더링한다', async () => {
     renderWithRouter(<Badges />, { route: '/badges' });
 
+    // 보유 뱃지는 바로 표시
     await waitFor(() => {
-      for (const badge of ALL_BADGES) {
-        expect(screen.getByText(badge.name)).toBeInTheDocument();
-      }
+      expect(screen.getByText('첫 차록')).toBeInTheDocument();
     });
+
+    // 미보유 뱃지 토글 열기
+    fireEvent.click(screen.getByText(/미보유 뱃지/));
+
+    for (const badge of ALL_BADGES) {
+      expect(screen.getByText(badge.name)).toBeInTheDocument();
+    }
   });
 
   it('획득한 뱃지와 미획득 뱃지를 구분한다', async () => {
@@ -120,10 +126,12 @@ describe('Badges 페이지', () => {
     const unearnedCount = ALL_BADGES.length - earnedCount;
 
     const earnedElements = screen.getAllByTestId('badge-earned');
-    const unearnedElements = screen.getAllByTestId('badge-locked');
-
     expect(earnedElements).toHaveLength(earnedCount);
-    expect(unearnedElements).toHaveLength(unearnedCount);
+
+    // 미보유 뱃지는 토글 클릭 후 표시
+    expect(screen.queryAllByTestId('badge-locked')).toHaveLength(0);
+    fireEvent.click(screen.getByText(`미보유 뱃지 (${unearnedCount})`));
+    expect(screen.getAllByTestId('badge-locked')).toHaveLength(unearnedCount);
   });
 
   it('레벨 진행률을 표시한다', async () => {
@@ -142,10 +150,15 @@ describe('Badges 페이지', () => {
     renderWithRouter(<Badges />, { route: '/badges' });
 
     await waitFor(() => {
-      for (const badge of ALL_BADGES) {
-        expect(screen.getByText(badge.threshold)).toBeInTheDocument();
-      }
+      expect(screen.getByText('첫 차록')).toBeInTheDocument();
     });
+
+    // 미보유 뱃지 토글 열기
+    fireEvent.click(screen.getByText(/미보유 뱃지/));
+
+    for (const badge of ALL_BADGES) {
+      expect(screen.getByText(badge.threshold)).toBeInTheDocument();
+    }
   });
 
   it('로딩 상태를 표시한다', () => {
