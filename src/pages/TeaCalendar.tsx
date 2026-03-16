@@ -4,7 +4,7 @@ import { CalendarDays, Flame, Trophy, ChevronLeft, ChevronRight, Plus, Loader2 }
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { Calendar } from '../components/ui/calendar';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '../components/ui/drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from '../components/ui/drawer';
 import { NoteCard } from '../components/NoteCard';
 import { notesApi } from '../lib/api';
 import type { CalendarData } from '../lib/api/notes.api';
@@ -65,6 +65,9 @@ export function TeaCalendar() {
 
   const handleDayClick = useCallback(async (date: Date) => {
     if (!user) return;
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
     setSelectedDate(date);
     setDrawerOpen(true);
     setIsLoadingNotes(true);
@@ -191,9 +194,14 @@ export function TeaCalendar() {
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
         <DrawerContent className="max-h-[80vh]">
           <DrawerHeader className="flex items-center justify-between px-4 py-3 border-b">
-            <DrawerTitle className="text-lg font-semibold">
-              {selectedDate ? formatDateLabel(selectedDate) : ''}
-            </DrawerTitle>
+            <div>
+              <DrawerTitle className="text-lg font-semibold">
+                {selectedDate ? formatDateLabel(selectedDate) : ''}
+              </DrawerTitle>
+              <DrawerDescription className="sr-only">
+                선택한 날짜의 차록 목록
+              </DrawerDescription>
+            </div>
             <button
               onClick={() => {
                 setDrawerOpen(false);
