@@ -91,6 +91,16 @@ describe('/auth/withdraw - 회원탈퇴 API', () => {
     expect(notesAfter).toHaveLength(0);
   });
 
+  it('DELETE /auth/withdraw - password와 confirmText 모두 없을 때 400', async () => {
+    const user = await context.testHelper.createUser('탈퇴테스트유저4');
+
+    await request(context.app.getHttpServer())
+      .delete('/auth/withdraw')
+      .set('Authorization', `Bearer ${user.token}`)
+      .send({})
+      .expect(401);
+  });
+
   it('DELETE /auth/withdraw - 탈퇴 후 로그인 시도 시 401', async () => {
     const uniqueEmail = `withdraw-${Date.now()}@example.com`;
     const registerRes = await request(context.app.getHttpServer())

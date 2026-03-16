@@ -6,7 +6,7 @@ import { randomBytes, createHash } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { NotesService } from '../notes/notes.service';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { AuthProvider, UserAuthentication } from '../users/entities/user-authentication.entity';
 import { PasswordReset } from '../users/entities/password-reset.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
@@ -50,7 +50,6 @@ export class AuthService {
   }
 
   async login(user: User) {
-    // 이메일 인증 정보 가져오기 (없을 수도 있음)
     const email = await this.usersService.getUserEmail(user.id);
 
     const payload = {
@@ -85,7 +84,6 @@ export class AuthService {
     if (!stored || stored.isRevoked || stored.expiresAt < new Date()) {
       throw new UnauthorizedException('유효하지 않은 리프레시 토큰입니다.');
     }
-    // Rotate: revoke old, issue new
     stored.isRevoked = true;
     await this.refreshTokenRepository.save(stored);
 
@@ -106,14 +104,12 @@ export class AuthService {
 
   async loginWithKakao(accessToken: string) {
     try {
-      // 카카오 사용자 정보 조회
       const kakaoUserInfo = await this.getKakaoUserInfo(accessToken);
 
       if (!kakaoUserInfo || !kakaoUserInfo.id) {
         throw new UnauthorizedException('카카오 사용자 정보를 가져올 수 없습니다.');
       }
 
-      // 카카오 ID로 사용자 찾기 또는 생성
       const user = await this.usersService.createOrUpdateKakaoUser(
         String(kakaoUserInfo.id),
         kakaoUserInfo.kakao_account?.email || null,
@@ -234,13 +230,11 @@ export class AuthService {
     });
     if (!auth) return;
 
-    // 기존 미사용 토큰 무효화
     await this.passwordResetRepository.update(
       { userId: user.id, usedAt: IsNull() },
       { usedAt: new Date() },
     );
 
-    // 새 토큰 생성 (32바이트 랜덤 -> SHA-256 해시)
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = createHash('sha256').update(rawToken).digest('hex');
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30분
@@ -318,6 +312,12 @@ export class AuthService {
   }
 
   async withdraw(userId: number, dto: WithdrawDto): Promise<{ message: string }> {
+    const user = await this.usersService.findOne(userId);
+
+    if (user.role === UserRole.ADMIN) {
+      throw new BadRequestException('운영자 계정은 탈퇴할 수 없습니다.');
+    }
+
     const emailAuth = await this.userAuthRepository.findOne({
       where: { userId, provider: AuthProvider.EMAIL },
     });
