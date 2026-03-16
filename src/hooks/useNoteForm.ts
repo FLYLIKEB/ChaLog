@@ -40,6 +40,7 @@ export function useNoteForm({
   const [images, setImages] = useState<string[]>([]);
   const [imageThumbnails, setImageThumbnails] = useState<(string | null)[]>([]);
   const [tags, setTags] = useState<string[]>([]);
+  const [drinkDate, setDrinkDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [addTemplateOpen, setAddTemplateOpen] = useState(false);
@@ -164,6 +165,9 @@ export function useNoteForm({
             : noteImages.map(() => null),
         );
         setTags(normalizedNote.tags || []);
+        if (normalizedNote.drinkDate) {
+          setDrinkDate(String(normalizedNote.drinkDate).slice(0, 10));
+        }
         setIsPublic(normalizedNote.isPublic);
       } catch (error: unknown) {
         logger.error('Failed to fetch note:', error);
@@ -316,6 +320,7 @@ export function useNoteForm({
           images: imagePayload,
           imageThumbnails: thumbnailPayload,
           tags: tags.length > 0 ? tags : undefined,
+          drinkDate: drinkDate || undefined,
           isPublic,
         });
         toast.success('기록이 저장되었습니다.');
@@ -337,6 +342,7 @@ export function useNoteForm({
           images: imagePayload,
           imageThumbnails: thumbnailPayload,
           tags: tags.length > 0 ? tags : undefined,
+          drinkDate: drinkDate || undefined,
           isPublic,
         });
         toast.success('차록이 수정되었습니다.');
@@ -381,6 +387,8 @@ export function useNoteForm({
     },
     tags,
     setTags,
+    drinkDate,
+    setDrinkDate,
     isPublic,
     setIsPublic,
     // ui state

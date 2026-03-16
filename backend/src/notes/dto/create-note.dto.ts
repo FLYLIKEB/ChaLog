@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, MaxLength, registerDecorator, ValidationOptions } from 'class-validator';
+import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, MaxLength, Matches, registerDecorator, ValidationOptions } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { VALIDATION } from '../../common/constants/validation';
 
@@ -93,6 +93,12 @@ export class CreateNoteDto {
   @ArrayMaxSize(10, { message: 'tags must contain at most 10 items' })
   @IsString({ each: true, message: 'each tag must be a string' })
   tags?: string[];
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, { message: 'drinkDate는 YYYY-MM-DD 형식이어야 합니다' })
+  @Transform(({ value }) => value === null ? null : value)
+  drinkDate?: string | null;
 
   @IsBoolean()
   isPublic: boolean;

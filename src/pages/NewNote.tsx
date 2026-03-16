@@ -45,6 +45,8 @@ export function NewNote() {
     setImagesAndThumbnails,
     tags,
     setTags,
+    drinkDate,
+    setDrinkDate,
     isPublic,
     setIsPublic,
     isSaving,
@@ -148,6 +150,17 @@ export function NewNote() {
                 imageThumbnails={imageThumbnails}
                 onChange={setImagesAndThumbnails}
                 maxImages={5}
+              />
+            </section>
+
+            <section className="bg-card rounded-lg p-4">
+              <Label className="mb-2 block">음용 날짜</Label>
+              <input
+                type="date"
+                value={drinkDate}
+                onChange={(e) => setDrinkDate(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
             </section>
 

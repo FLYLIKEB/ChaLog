@@ -29,6 +29,7 @@ import { useShare } from '../hooks/useShare';
 import { TeaTypeBadge } from '../components/TeaTypeBadge';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { fetchWeather, type WeatherInfo } from '../utils/weather';
 
 export function NoteDetail() {
   const { id } = useParams();
@@ -47,6 +48,7 @@ export function NoteDetail() {
   const [isTogglingLike, setIsTogglingLike] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isTogglingBookmark, setIsTogglingBookmark] = useState(false);
+  const [weather, setWeather] = useState<WeatherInfo | null>(null);
   const [showReportModal, setShowReportModal] = useState(false);
   const [use10Scale, setUse10Scale] = useState(false);
   const { share } = useShare();
@@ -85,6 +87,17 @@ export function NoteDetail() {
     if (isDeleted) return;
     fetchData();
   }, [noteId, isDeleted, fetchData]);
+
+  const weatherDateStr = note?.drinkDate
+    ? String(note.drinkDate).slice(0, 10)
+    : note?.createdAt
+      ? (note.createdAt instanceof Date ? note.createdAt.toISOString().slice(0, 10) : String(note.createdAt).slice(0, 10))
+      : null;
+
+  useEffect(() => {
+    if (!weatherDateStr) return;
+    fetchWeather(weatherDateStr).then(setWeather).catch(() => {});
+  }, [weatherDateStr]);
 
   if (isLoading) {
     return (
@@ -311,6 +324,14 @@ export function NoteDetail() {
 
           </div>
           
+          {note.drinkDate && (
+            <p className="text-sm mb-2">
+              {weather ? `${weather.emoji} ` : ''}
+              {new Date(note.drinkDate + 'T00:00:00').toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+              {weather ? ` ${weather.label}` : ''}
+              {weather?.temperatureMin != null && weather?.temperatureMax != null && ` ${weather.temperatureMin}°~${weather.temperatureMax}°`}
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mb-4">
             {note.createdAt.toLocaleDateString('ko-KR')} ·{' '}
             <button

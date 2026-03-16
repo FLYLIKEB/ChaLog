@@ -135,6 +135,7 @@ export interface Note {
   images?: string[] | null;
   imageThumbnails?: string[] | null;
   tags?: string[] | null;
+  drinkDate?: string | null;
   isPublic: boolean;
   createdAt: Date;
   likeCount?: number;
