@@ -46,6 +46,8 @@ const AdminJSModulePromise = (async () => {
       return {
         adminJsOptions: {
           rootPath: '/adminjs',
+          loginPath: '/adminjs/login',
+          logoutPath: '/adminjs/logout',
           resources: [Tea, Seller, Tag],
         },
         auth: {

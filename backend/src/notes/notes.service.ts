@@ -148,7 +148,8 @@ export class NotesService {
     return this.notesRepository
       .createQueryBuilder('note')
       .leftJoinAndSelect('note.user', 'user')
-      .leftJoinAndSelect('note.tea', 'tea');
+      .leftJoinAndSelect('note.tea', 'tea')
+      .leftJoinAndSelect('tea.seller', 'seller');
   }
 
   private async findFollowingFeed(currentUserId?: number): Promise<any[]> {
@@ -282,7 +283,7 @@ export class NotesService {
   async findOne(id: number, userId?: number): Promise<any> {
     const note = await this.notesRepository.findOne({
       where: { id },
-      relations: ['user', 'tea', 'schema', 'noteSchemas', 'noteSchemas.schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
+      relations: ['user', 'tea', 'tea.seller', 'schema', 'noteSchemas', 'noteSchemas.schema', 'noteTags', 'noteTags.tag', 'axisValues', 'axisValues.axis'],
     });
 
     if (!note) {

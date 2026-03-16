@@ -54,7 +54,7 @@ export function Community() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [selectedGroup, setSelectedGroup] = useState<GroupKey>('all');
+  const [selectedGroup, setSelectedGroup] = useState<GroupKey>(isMobile ? 'qna' : 'all');
   const [sort, setSort] = useState<PostSort>('latest');
 
   const fetchPosts = useCallback(async () => {
@@ -190,7 +190,7 @@ export function Community() {
                   action={{ label: '✍️ 첫 글 쓰기', onClick: () => navigate('/chadam/new') }}
                 />
               ) : (
-                <div className="space-y-0 divide-y divide-border/30 pt-2">
+                <div className="space-y-0 divide-y divide-foreground/15 pt-2">
                   {posts.map((post, i) => (
                     <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${Math.min(i, 5) * 50}ms` }}>
                       <PostCard post={post} />
@@ -228,7 +228,7 @@ export function Community() {
                         {boardPosts.length === 0 ? (
                           <p className="text-sm text-muted-foreground py-4 text-center">아직 게시글이 없어요.</p>
                         ) : (
-                          <div className="divide-y divide-border/30">
+                          <div className="divide-y divide-foreground/15">
                             {boardPosts.map((post, i) => (
                               <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${i * 50}ms` }}>
                                 <PostCard post={post} />
@@ -242,7 +242,7 @@ export function Community() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-0 divide-y divide-border/30">
+                  <div className="space-y-0 divide-y divide-foreground/15">
                     {posts.map((post, i) => (
                       <div key={post.id} className="animate-fade-in-up opacity-0" style={{ animationDelay: `${Math.min(i, 5) * 50}ms` }}>
                         <PostCard post={post} />

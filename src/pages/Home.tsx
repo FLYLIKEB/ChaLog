@@ -8,6 +8,7 @@ import { ForYouFeed } from '../components/feeds/ForYouFeed';
 import { FollowingFeed } from '../components/feeds/FollowingFeed';
 import { TagsFeed } from '../components/feeds/TagsFeed';
 import { HomeFooter } from '../components/HomeFooter';
+import { CalendarWidget } from '../components/home/CalendarWidget';
 import { notesApi, tagsApi } from '../lib/api';
 import { Note, PopularTagItem } from '../types';
 import { logger } from '../lib/logger';
@@ -170,6 +171,7 @@ export function Home() {
             </TabsContent>
           </Tabs>
         </section>
+        {currentUser && <CalendarWidget />}
         <HomeFooter recentContributors={recentContributors} />
       </div>
       <BottomNav />

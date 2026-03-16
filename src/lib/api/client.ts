@@ -265,6 +265,8 @@ function normalizeNote(note: BackendNote): NormalizedNote {
     ...note,
     teaName: note.tea?.name || '',
     teaType: note.tea?.type || undefined,
+    teaYear: note.tea?.year || undefined,
+    teaSeller: note.tea?.seller?.name || undefined,
     userName: note.user?.name || '',
     // memo는 null을 유지 (이제 nullable)
     memo: note.memo,

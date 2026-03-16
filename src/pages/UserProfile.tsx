@@ -9,7 +9,6 @@ import { User, Note, UserOnboardingPreference, UserLevel } from '../types';
 import { toast } from 'sonner';
 import { Pencil } from 'lucide-react';
 import { logger } from '../lib/logger';
-import { Card } from '../components/ui/card';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { OnboardingPreferenceEditModal } from '../components/OnboardingPreferenceEditModal';
@@ -174,7 +173,10 @@ export function UserProfile() {
 
   const stats = useMemo(() => {
     if (notes.length === 0) return { averageRating: 0, totalLikes: 0, noteCount: 0 };
-    const averageRating = notes.reduce((sum, note) => sum + (note.overallRating || 0), 0) / notes.length;
+    const ratedNotes = notes.filter((n) => n.overallRating != null && Number(n.overallRating) > 0);
+    const averageRating = ratedNotes.length > 0
+      ? ratedNotes.reduce((sum, note) => sum + Number(note.overallRating), 0) / ratedNotes.length
+      : 0;
     const totalLikes = notes.reduce((sum, note) => sum + (note.likeCount || 0), 0);
     const safeAverageRating = isNaN(averageRating) ? 0 : Number(averageRating.toFixed(1));
     return { averageRating: safeAverageRating, totalLikes, noteCount: noteTotal || notes.length };
@@ -197,29 +199,30 @@ export function UserProfile() {
           showLogo={isOwnProfile}
           title={isOwnProfile ? '내 차록' : '사용자 프로필'}
         />
-        <div className="p-6 space-y-6">
-          <Card className="p-4 sm:p-6">
-            <div className="flex flex-col items-center gap-3 mb-6">
-              <div className="w-20 h-20 rounded-full bg-muted animate-pulse" />
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-6 w-24 rounded bg-muted animate-pulse" />
-                <div className="h-4 w-36 rounded bg-muted animate-pulse" />
-              </div>
+        <div className="px-4 pt-4">
+          <div className="flex items-center gap-6">
+            <div className="w-24 h-24 rounded-full bg-muted animate-pulse shrink-0" />
+            <div className="flex-1 flex justify-around">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <div className="h-5 w-8 rounded bg-muted animate-pulse" />
+                  <div className="h-3 w-10 rounded bg-muted animate-pulse" />
+                </div>
+              ))}
             </div>
-          </Card>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="p-3 flex flex-col items-center gap-1">
-                <div className="h-5 w-8 rounded bg-muted animate-pulse" />
-                <div className="h-3 w-12 rounded bg-muted animate-pulse" />
-              </Card>
-            ))}
           </div>
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-24 rounded-lg bg-muted animate-pulse" />
-            ))}
+          <div className="mt-3 space-y-2">
+            <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+            <div className="h-3 w-40 rounded bg-muted animate-pulse" />
           </div>
+          <div className="mt-4 flex gap-2">
+            <div className="flex-1 h-9 rounded-lg bg-muted animate-pulse" />
+          </div>
+        </div>
+        <div className="mt-6 grid grid-cols-3 gap-px">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="aspect-square bg-muted animate-pulse" />
+          ))}
         </div>
         <BottomNav />
       </div>
@@ -267,117 +270,104 @@ export function UserProfile() {
         title={isOwnProfile ? '내 차록' : '사용자 프로필'}
       />
 
-      <div className="p-6 space-y-6">
-        <ProfileHeader
-          user={user}
-          isOwnProfile={isOwnProfile}
-          isFollowLoading={isFollowLoading}
-          onFollowToggle={handleFollowToggle}
-          onEditImage={() => setIsEditModalOpen(true)}
-          onEditProfile={() => setIsProfileEditModalOpen(true)}
-        />
+      <ProfileHeader
+        user={user}
+        isOwnProfile={isOwnProfile}
+        isFollowLoading={isFollowLoading}
+        noteCount={noteTotal}
+        onFollowToggle={handleFollowToggle}
+        onEditImage={() => setIsEditModalOpen(true)}
+        onEditProfile={() => setIsProfileEditModalOpen(true)}
+      />
 
-        {isOwnProfile && (
-          <>
-            <ProfileImageEditModal
-              open={isEditModalOpen}
-              onOpenChange={setIsEditModalOpen}
-              currentImageUrl={user.profileImageUrl}
-              onSuccess={handleProfileImageUpdate}
-              userId={user.id}
-            />
-            <ProfileEditModal
-              open={isProfileEditModalOpen}
-              onOpenChange={setIsProfileEditModalOpen}
-              user={user}
-              onSuccess={handleProfileInfoUpdate}
-            />
-          </>
-        )}
-
-        <ProfileStats stats={stats} userLevel={userLevel} />
-
-        {isOwnProfile && onboardingPreference && (
-          <Card className="p-4 sm:p-6 space-y-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground">취향</span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOnboardingEditModalOpen(true)}
-                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
-                aria-label="취향 수정"
-              >
-                <Pencil className="w-3 h-3" />
-                {onboardingPreference.preferredTeaTypes?.length || onboardingPreference.preferredFlavorTags?.length
-                  ? '수정'
-                  : '설정'}
-              </Button>
-            </div>
-            {onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0 ? (
-              <>
-                {onboardingPreference.preferredTeaTypes?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">관심 차종</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {[...new Set(onboardingPreference.preferredTeaTypes)]
-                        .sort((a, b) => {
-                          const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
-                          const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
-                          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-                        })
-                        .map((tag) => {
-                          const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
-                          return (
-                            <span key={tag} className="inline-flex items-center gap-1.5">
-                              {colorClass && (
-                                <span className={cn('w-1.5 h-4 rounded-full shrink-0', colorClass)} aria-hidden />
-                              )}
-                              <Badge variant="secondary">{tag}</Badge>
-                            </span>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-                {onboardingPreference.preferredFlavorTags?.length > 0 && (
-                  <div>
-                    <p className="text-xs font-medium text-muted-foreground mb-2">향미</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {onboardingPreference.preferredFlavorTags.map(tag => (
-                        <Badge key={tag} variant="outline">{tag}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground py-2">관심 차종과 향미를 설정해주세요.</p>
-            )}
-          </Card>
-        )}
-
-        {isOwnProfile && (
-          <OnboardingPreferenceEditModal
-            open={isOnboardingEditModalOpen}
-            onOpenChange={setIsOnboardingEditModalOpen}
+      {isOwnProfile && (
+        <>
+          <ProfileImageEditModal
+            open={isEditModalOpen}
+            onOpenChange={setIsEditModalOpen}
+            currentImageUrl={user.profileImageUrl}
+            onSuccess={handleProfileImageUpdate}
             userId={user.id}
-            preference={onboardingPreference}
-            onSuccess={setOnboardingPreference}
           />
-        )}
+          <ProfileEditModal
+            open={isProfileEditModalOpen}
+            onOpenChange={setIsProfileEditModalOpen}
+            user={user}
+            onSuccess={handleProfileInfoUpdate}
+          />
+        </>
+      )}
 
-        <UserNoteList
-          notes={notes}
-          noteTotal={noteTotal}
-          sort={sort}
-          onSortChange={setSort}
-          hasMore={hasMore}
-          isLoadingMore={isLoadingMore}
-          onLoadMore={loadMore}
-          isOwnProfile={isOwnProfile}
+      {/* Preference tags */}
+      {isOwnProfile && onboardingPreference &&
+        (onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0) && (
+        <div className="px-4 py-3 border-b border-border/40">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-xs font-medium text-muted-foreground">취향</span>
+            <button
+              type="button"
+              onClick={() => setIsOnboardingEditModalOpen(true)}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Pencil className="w-3 h-3" />
+              수정
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {[...new Set(onboardingPreference.preferredTeaTypes)]
+              .sort((a, b) => {
+                const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
+                const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
+                return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+              })
+              .map((tag) => {
+                const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
+                return (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 text-xs font-medium text-foreground"
+                  >
+                    {colorClass && (
+                      <span className={cn('w-2 h-2 rounded-full shrink-0', colorClass)} aria-hidden />
+                    )}
+                    {tag}
+                  </span>
+                );
+              })}
+            {onboardingPreference.preferredFlavorTags?.map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 rounded-full border border-border/60 bg-muted/30 text-xs text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {isOwnProfile && (
+        <OnboardingPreferenceEditModal
+          open={isOnboardingEditModalOpen}
+          onOpenChange={setIsOnboardingEditModalOpen}
+          userId={user.id}
+          preference={onboardingPreference}
+          onSuccess={setOnboardingPreference}
         />
-      </div>
+      )}
+
+      <ProfileStats stats={stats} userLevel={userLevel} />
+
+      <UserNoteList
+        notes={notes}
+        noteTotal={noteTotal}
+        sort={sort}
+        onSortChange={setSort}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        onLoadMore={loadMore}
+        isOwnProfile={isOwnProfile}
+      />
 
       <BottomNav />
     </div>

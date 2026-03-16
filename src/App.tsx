@@ -74,6 +74,7 @@ const BlindNoteWrite = lazy(() => import('./pages/BlindNoteWrite').then((m) => (
 const BlindSessionReport = lazy(() => import('./pages/BlindSessionReport').then((m) => ({ default: m.BlindSessionReport })));
 const Badges = lazy(() => import('./pages/Badges').then((m) => ({ default: m.Badges })));
 const TeaCalendar = lazy(() => import('./pages/TeaCalendar').then((m) => ({ default: m.TeaCalendar })));
+const LevelInfo = lazy(() => import('./pages/LevelInfo').then((m) => ({ default: m.LevelInfo })));
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard })));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports').then((m) => ({ default: m.AdminReports })));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers').then((m) => ({ default: m.AdminUsers })));
@@ -199,6 +200,7 @@ function AppContent() {
                 <Route path="/teahouse/:name" element={<ShopDetail />} />
                 <Route path="/badges" element={<Badges />} />
                 <Route path="/calendar" element={<TeaCalendar />} />
+                <Route path="/level-info" element={<LevelInfo />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/report" element={<Report />} />
                 <Route path="/settings" element={<Settings />} />

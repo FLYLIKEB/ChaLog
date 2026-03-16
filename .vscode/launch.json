@@ -93,7 +93,10 @@
             "name": "🗄️ 원격 DB 마이그레이션 실행 (run-remote-migrations.sh)",
             "request": "launch",
             "command": "bash scripts/run-remote-migrations.sh",
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "LIGHTSAIL_IP": "3.39.48.139"
+            }
         },
         {
             "type": "node-terminal",
