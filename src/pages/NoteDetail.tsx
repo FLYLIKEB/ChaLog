@@ -221,11 +221,19 @@ export function NoteDetail() {
           const weekday = ['일', '월', '화', '수', '목', '금', '토'][displayDate.getDay()];
           return (
             <section className="rounded-lg bg-card border overflow-hidden">
-              {/* 날짜 헤더 */}
+              {/* 날짜 헤더 + 작성자 */}
               <div className="flex items-baseline gap-2 px-4 pt-4 pb-3 border-b border-dashed border-amber-200/60 dark:border-amber-800/30">
                 <span className="text-2xl font-bold tracking-tight">{month}/{day}</span>
                 <span className="text-sm text-muted-foreground">{weekday}요일</span>
-                <span className="text-xs text-muted-foreground/60 ml-auto">{year}</span>
+                <span className="text-xs text-muted-foreground/60 ml-auto">
+                  <button
+                    onClick={() => navigate(`/user/${note.userId}`)}
+                    className="hover:text-primary transition-colors"
+                  >
+                    {note.userName}
+                  </button>
+                  <span className="mx-1">·</span>{year}
+                </span>
               </div>
 
               {/* 날씨 정보 */}
@@ -365,15 +373,6 @@ export function NoteDetail() {
 
           </div>
           
-          <p className="text-xs text-muted-foreground mb-4">
-            {note.createdAt.toLocaleDateString('ko-KR')} ·{' '}
-            <button
-              onClick={() => navigate(`/user/${note.userId}`)}
-              className="hover:text-primary cursor-pointer transition-colors"
-            >
-              {note.userName}
-            </button>
-          </p>
 
           {note.axisValues && note.axisValues.length > 0 && (
             <div className="space-y-4">
