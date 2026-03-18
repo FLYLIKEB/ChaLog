@@ -239,8 +239,7 @@ export class NotesService {
 
     if (sort === 'rating') {
       queryBuilder
-        .orderBy('note.overallRating IS NULL', 'ASC')
-        .addOrderBy('note.overallRating', 'DESC')
+        .orderBy('note.overallRating', 'DESC')
         .addOrderBy('note.createdAt', 'DESC');
     } else {
       queryBuilder.orderBy('note.createdAt', 'DESC');
