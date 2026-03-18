@@ -117,7 +117,7 @@ export function NewNote() {
                 <SelectItem value="none">선택 안 함</SelectItem>
                 {teawares.map((t) => (
                   <SelectItem key={t.id} value={String(t.id)}>
-                    {t.name}{t.isPinned ? ' 📌' : ''}
+                    {t.name}{t.isPinned ? ' [핀]' : ''}
                   </SelectItem>
                 ))}
               </SelectContent>

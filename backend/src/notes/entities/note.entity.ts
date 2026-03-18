@@ -57,7 +57,7 @@ export class Note {
   @Column({ nullable: true })
   teawareId: number | null;
 
-  @ManyToOne(() => Teaware, { nullable: true })
+  @ManyToOne(() => Teaware, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'teawareId' })
   teaware: Teaware | null;
 

@@ -128,4 +128,35 @@ describe('/teaware - 다구 관리 API', () => {
       .get('/teaware')
       .expect(401);
   });
+
+  it('다른 사용자의 다구에 접근/수정/삭제/핀 시 404', async () => {
+    const userA = testUser;
+    const userB = await context.testHelper.createUser('Teaware User B');
+
+    const createResponse = await context.testHelper.authenticatedRequest(userA.token)
+      .post('/teaware')
+      .send({ name: '사용자A 전용 다구', category: 'GAIWAN' })
+      .expect(201);
+
+    const id = createResponse.body.id;
+
+    await context.testHelper.authenticatedRequest(userB.token)
+      .get(`/teaware/${id}`)
+      .expect(404);
+
+    await context.testHelper.authenticatedRequest(userB.token)
+      .patch(`/teaware/${id}`)
+      .send({ name: '탈취 시도' })
+      .expect(404);
+
+    await context.testHelper.authenticatedRequest(userB.token)
+      .delete(`/teaware/${id}`)
+      .expect(404);
+
+    await context.testHelper.authenticatedRequest(userB.token)
+      .patch(`/teaware/${id}/pin`)
+      .expect(404);
+
+    await context.dataSource.query('DELETE FROM users WHERE id = ?', [userB.id]);
+  });
 });

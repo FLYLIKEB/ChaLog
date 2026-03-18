@@ -30,5 +30,6 @@ export class CreateTeawareDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   memo?: string | null;
 }

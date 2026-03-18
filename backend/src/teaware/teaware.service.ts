@@ -50,9 +50,9 @@ export class TeawareService {
     return this.findOneOrFail(id, userId);
   }
 
-  async remove(id: number, userId: number): Promise<Teaware> {
+  async remove(id: number, userId: number): Promise<void> {
     const item = await this.findOneOrFail(id, userId);
-    return this.teawareRepository.remove(item);
+    await this.teawareRepository.remove(item);
   }
 
   async togglePin(id: number, userId: number): Promise<Teaware> {

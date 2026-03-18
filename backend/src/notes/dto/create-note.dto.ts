@@ -1,4 +1,4 @@
-import { IsString, IsNumber, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, MaxLength, Matches, registerDecorator, ValidationOptions } from 'class-validator';
+import { IsString, IsNumber, IsInt, IsPositive, Min, Max, IsBoolean, ValidateNested, IsOptional, IsArray, ArrayMaxSize, MaxLength, Matches, registerDecorator, ValidationOptions } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { VALIDATION } from '../../common/constants/validation';
 
@@ -101,7 +101,8 @@ export class CreateNoteDto {
   drinkDate?: string | null;
 
   @IsOptional()
-  @IsNumber()
+  @IsInt()
+  @IsPositive()
   teawareId?: number | null;
 
   @IsBoolean()
