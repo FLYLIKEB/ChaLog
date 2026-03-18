@@ -3,7 +3,6 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { AxisStarRow } from '../components/AxisStarRow';
-import { StarRating } from '../components/StarRating';
 import { TagInput } from '../components/TagInput';
 import { TemplateSelect } from '../components/TemplateSelect';
 import { Textarea } from '../components/ui/textarea';
@@ -11,6 +10,7 @@ import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
 import { BrewColorPicker, BrewColor } from '../components/BrewColorPicker';
 import { blindSessionsApi, notesApi } from '../lib/api';
+import { cn } from '../components/ui/utils';
 import { RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,10 +28,11 @@ export function BlindNoteWrite() {
   const [selectedSchemaIds, setSelectedSchemaIds] = useState<number[]>([]);
   const [axes, setAxes] = useState<RatingAxis[]>([]);
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
-  const [overallRating, setOverallRating] = useState<number | null>(null);
+  const [overallRating, setOverallRating] = useState<number>(RATING_DEFAULT);
   const [brewColor, setBrewColor] = useState<BrewColor | null>(null);
   const [memo, setMemo] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [scale, setScale] = useState<5 | 10>(5);
   const [isSaving, setIsSaving] = useState(false);
   const [schemasLoading, setSchemasLoading] = useState(false);
   const [sessionData, setSessionData] = useState<{
@@ -128,10 +129,7 @@ export function BlindNoteWrite() {
 
   const handleSave = async () => {
     if (!id || !isAuthenticated) return;
-    if (overallRating === null) {
-      toast.error('1~5점 평점을 선택해주세요.');
-      return;
-    }
+
     if (roundId === null) {
       toast.error('라운드 정보가 없습니다.');
       return;
@@ -220,21 +218,34 @@ export function BlindNoteWrite() {
         </div>
 
         <section className="bg-card rounded-lg p-4">
-          <Label className="mb-3 block text-base font-semibold">
-            평점 <span className="text-destructive">*</span>
-          </Label>
-          <StarRating value={overallRating} onChange={setOverallRating} max={5} size="lg" />
+          <AxisStarRow
+            label="평점"
+            value={overallRating}
+            onChange={setOverallRating}
+          />
         </section>
 
-        {overallRating !== null && (
-          <>
-            <section className="bg-card rounded-lg p-4">
+        <section className="bg-card rounded-lg p-4">
               <Label className="mb-3 block text-base font-semibold">수색</Label>
               <BrewColorPicker value={brewColor} onChange={setBrewColor} />
             </section>
 
             <section className="bg-card rounded-lg p-4">
-              <Label className="mb-2 block text-base font-semibold">테이스팅 템플릿</Label>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex rounded-md border border-border overflow-hidden text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setScale(5)}
+                    className={cn('px-2 py-0.5 transition-colors', scale === 5 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
+                  >5점</button>
+                  <button
+                    type="button"
+                    onClick={() => setScale(10)}
+                    className={cn('px-2 py-0.5 transition-colors', scale === 10 ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground')}
+                  >10점</button>
+                </div>
+                <Label className="text-base font-semibold">테이스팅 템플릿</Label>
+              </div>
               {schemas.length > 0 ? (
                 <TemplateSelect
                   schemas={schemas}
@@ -250,12 +261,8 @@ export function BlindNoteWrite() {
               ) : (
                 <p className="text-sm text-muted-foreground py-2">사용 가능한 템플릿이 없습니다.</p>
               )}
-            </section>
-
-            {selectedSchemaIds.length > 0 && axes.length > 0 && (
-              <section className="bg-card rounded-lg p-4">
-                <h3 className="text-base font-semibold mb-2">구체적 평가</h3>
-                <div className="space-y-4">
+              {selectedSchemaIds.length > 0 && axes.length > 0 && (
+                <div className="space-y-4 mt-4">
                   {selectedSchemaIds.map((schemaId) => {
                     const schemaAxes = axes
                       .filter((a) => a.schemaId === schemaId)
@@ -280,14 +287,15 @@ export function BlindNoteWrite() {
                             onChange={(value) =>
                               setAxisValues((prev) => ({ ...prev, [axis.id]: value }))
                             }
+                            displayMultiplier={scale === 10 ? 2 : 1}
                           />
                         ))}
                       </div>
                     );
                   })}
                 </div>
-              </section>
-            )}
+              )}
+            </section>
 
             <section className="bg-card rounded-lg p-4">
               <TagInput tags={tags} onChange={setTags} maxTags={10} />
@@ -302,15 +310,13 @@ export function BlindNoteWrite() {
                 rows={6}
               />
             </section>
-          </>
-        )}
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 p-4 pb-safe bg-background/80 backdrop-blur-sm z-40">
         <Button
           onClick={handleSave}
           className="w-full"
-          disabled={isSaving || schemasLoading || overallRating === null}
+          disabled={isSaving || schemasLoading}
         >
           {isSaving ? (
             <>

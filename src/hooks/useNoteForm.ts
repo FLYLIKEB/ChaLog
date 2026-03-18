@@ -34,7 +34,7 @@ export function useNoteForm({
   const [axes, setAxes] = useState<RatingAxis[]>([]);
   const [axisValues, setAxisValues] = useState<Record<number, number>>({});
   const [overallRating, setOverallRating] = useState<number | null>(() =>
-    isSampleMode ? RATING_DEFAULT : null,
+    mode === 'new' ? RATING_DEFAULT : null,
   );
   const [memo, setMemo] = useState('');
   const [images, setImages] = useState<string[]>([]);
@@ -313,7 +313,7 @@ export function useNoteForm({
         await notesApi.create({
           teaId: selectedTea,
           schemaIds: schemaIdsToSend,
-          overallRating: Math.round(overallRating! * 2) / 2,
+          overallRating: overallRating!,
           isRatingIncluded: true,
           axisValues: axisValuesArray,
           memo: processedMemo,
@@ -332,7 +332,7 @@ export function useNoteForm({
             ? axisValuesArray.reduce((sum, av) => sum + av.value, 0) / axisValuesArray.length
             : null);
         const calculatedOverallRating = rawOverallRating != null
-          ? Math.round(rawOverallRating * 2) / 2
+          ? rawOverallRating
           : null;
 
         await notesApi.update(noteId!, {
