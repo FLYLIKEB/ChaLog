@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Bell, Package, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2, MoreHorizontal, BookOpen, Coffee } from 'lucide-react';
+import { Plus, Bell, Package, Trash2, ChevronUp, ChevronDown, ChevronLeft, Pencil, CheckCircle2, BookOpen, Coffee } from 'lucide-react';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { Button } from '../components/ui/button';
@@ -16,7 +16,6 @@ import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
 import { cn } from '../components/ui/utils';
 import { InfiniteScrollSentinel } from '../components/InfiniteScrollSentinel';
 import { FilterTabBar } from '../components/FilterTabBar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '../components/ui/dropdown-menu';
 
 const UNIT_LABELS: Record<string, string> = {
   g: 'g',
@@ -189,45 +188,8 @@ function CellarRow({
           <span className="text-[11px] text-muted-foreground ml-0.5">{UNIT_LABELS[item.unit] ?? item.unit}</span>
         </span>
 
-        {/* ⋮ 드롭다운 (수정 + 전체 액션, 데스크톱/폴백용) */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="p-1 -mr-1 rounded-full hover:bg-muted/60 transition-colors text-muted-foreground/40 hover:text-muted-foreground"
-              aria-label="더보기"
-            >
-              {deleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <MoreHorizontal className="w-4 h-4" />
-              )}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onNoteClick(item.teaId)}>
-              <BookOpen className="w-4 h-4 mr-2" />
-              차록 쓰기
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSessionClick(item.teaId)}>
-              <Coffee className="w-4 h-4 mr-2" />
-              다회 시작
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onEdit(item.id)}>
-              <Pencil className="w-4 h-4 mr-2" />
-              수정
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleDelete}
-              disabled={deleting}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              삭제
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* 스와이프 어포던스 힌트 */}
+        <ChevronLeft className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0 -mr-1" aria-hidden />
       </div>
     </div>
   );

@@ -16,9 +16,18 @@ const sizeClasses = {
   xl: "w-24 h-24 text-2xl",
 };
 
+const textSizeClasses = {
+  xs: "text-[10px]",
+  sm: "text-base",
+  md: "text-lg",
+  lg: "text-xl",
+  xl: "text-2xl",
+};
+
 export function UserAvatar({ name, profileImageUrl, size = "md", className, ...props }: UserAvatarProps) {
   const userInitial = (name.charAt(0) || '?').toUpperCase();
   const sizeClass = sizeClasses[size];
+  const textSizeClass = textSizeClasses[size];
   const [imageError, setImageError] = React.useState(false);
 
   // profileImageUrl이 변경되면 에러 상태 리셋
@@ -51,7 +60,7 @@ export function UserAvatar({ name, profileImageUrl, size = "md", className, ...p
       <AvatarFallback
         className={cn(
           "bg-primary text-primary-foreground font-semibold shadow-sm",
-          sizeClass
+          textSizeClass
         )}
       >
         {userInitial}

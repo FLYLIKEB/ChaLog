@@ -144,15 +144,12 @@ export class UsersController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get(':id/onboarding')
-  async getOnboardingPreference(@Param('id') id: string, @ValidatedUserId() userId: number) {
+  async getOnboardingPreference(@Param('id') id: string) {
     const parsedId = parseInt(id, 10);
     if (Number.isNaN(parsedId)) {
       throw new BadRequestException('Invalid id');
     }
-    if (parsedId !== userId) {
-      throw new ForbiddenException('이 온보딩 정보를 조회할 권한이 없습니다.');
-    }
-    return this.usersService.getOnboardingPreference(userId);
+    return this.usersService.getOnboardingPreference(parsedId);
   }
 
   @UseGuards(AuthGuard('jwt'))

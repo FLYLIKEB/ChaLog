@@ -72,10 +72,10 @@ export function ProfileZone({
       {/* Gradient banner */}
       <div className="h-16 bg-gradient-to-br from-primary/8 via-amber-50/30 to-transparent dark:from-primary/10 dark:via-stone-900/20 dark:to-transparent" />
 
-      <div className="px-4 -mt-8 pb-4 space-y-4">
+      <div className="px-4 -mt-8 pb-4 space-y-3">
 
-        {/* A. Identity Row */}
-        <div className="flex items-end gap-3">
+        {/* A. Instagram-style: Avatar (left) + Stats (right) */}
+        <div className="flex items-center gap-4">
           {/* Avatar */}
           <div className="relative shrink-0">
             <div className="ring-2 ring-background rounded-full shadow-sm">
@@ -97,99 +97,97 @@ export function ProfileZone({
             )}
           </div>
 
-          {/* Name + bio */}
-          <div className="flex-1 min-w-0 pb-1">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-bold text-base text-foreground leading-tight">{user.name}</span>
-              {isOwnProfile && (
-                <button
-                  onClick={onEditProfile}
-                  className="p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                  aria-label="프로필 편집"
-                >
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
-              )}
-              {(user.instagramUrl || user.blogUrl) && (
-                <div className="flex items-center gap-1">
-                  {user.instagramUrl && (
-                    <a href={user.instagramUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="인스타그램">
-                      <Instagram className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                  {user.blogUrl && (
-                    <a href={user.blogUrl} target="_blank" rel="noopener noreferrer"
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="블로그">
-                      <Globe className="w-3.5 h-3.5" />
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-            {user.bio && (
-              <div className="mt-0.5">
-                <p className={cn(
-                  'text-sm text-muted-foreground leading-snug',
-                  !bioExpanded && 'line-clamp-2',
-                )}>
-                  {user.bio}
-                </p>
-                {bioIsLong && (
-                  <button
-                    onClick={() => setBioExpanded(v => !v)}
-                    className="text-xs text-primary mt-0.5"
-                  >
-                    {bioExpanded ? '접기' : '더보기'}
-                  </button>
-                )}
-              </div>
-            )}
+          {/* Stats — right of avatar */}
+          <div className="flex-1 flex items-center justify-around pt-6">
+            <StatItem value={noteCount} label="차록" />
+            <div className="w-px h-6 bg-border/40" />
+            <StatItem
+              value={stats.averageRating > 0 ? `★${stats.averageRating}` : '—'}
+              label="평균 별점"
+            />
+            <div className="w-px h-6 bg-border/40" />
+            <button
+              type="button"
+              onClick={() => setFollowersOpen(true)}
+              className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity"
+            >
+              <span className="text-[22px] font-bold leading-none text-foreground tracking-tight">
+                {(user.followerCount ?? 0).toLocaleString('ko-KR')}
+              </span>
+              <span className="text-[11px] text-muted-foreground mt-0.5">구독자</span>
+            </button>
           </div>
+        </div>
 
-          {/* Follow button — 타인 프로필 */}
-          {!isOwnProfile && (
-            <div className="shrink-0 pb-1">
-              <Button
-                onClick={onFollowToggle}
-                disabled={isFollowLoading}
-                variant={user.isFollowing ? 'secondary' : 'default'}
-                size="sm"
-                className="h-8 px-4 text-sm font-semibold rounded-xl"
-              >
-                {isFollowLoading
-                  ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  : user.isFollowing ? '구독 중' : '구독'
-                }
-              </Button>
+        {/* B. Name + social links */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="font-bold text-base text-foreground leading-tight">{user.name}</span>
+          {isOwnProfile && (
+            <button
+              onClick={onEditProfile}
+              className="p-0.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+              aria-label="프로필 편집"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {(user.instagramUrl || user.blogUrl) && (
+            <div className="flex items-center gap-1">
+              {user.instagramUrl && (
+                <a href={user.instagramUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="인스타그램">
+                  <Instagram className="w-3.5 h-3.5" />
+                </a>
+              )}
+              {user.blogUrl && (
+                <a href={user.blogUrl} target="_blank" rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="블로그">
+                  <Globe className="w-3.5 h-3.5" />
+                </a>
+              )}
             </div>
           )}
         </div>
 
-        {/* B. Stats Row — Toss 스타일 */}
-        <div className="flex items-center justify-around py-1">
-          <StatItem value={noteCount} label="차록" />
-          <div className="w-px h-7 bg-border/40" />
-          <StatItem
-            value={stats.averageRating > 0 ? `★${stats.averageRating}` : '—'}
-            label="평균 별점"
-          />
-          <div className="w-px h-7 bg-border/40" />
-          <button
-            type="button"
-            onClick={() => setFollowersOpen(true)}
-            className="flex flex-col items-center gap-0.5 hover:opacity-70 transition-opacity"
-          >
-            <span className="text-[26px] font-bold leading-none text-foreground tracking-tight">
-              {(user.followerCount ?? 0).toLocaleString('ko-KR')}
-            </span>
-            <span className="text-[11px] text-muted-foreground mt-0.5">구독자</span>
-          </button>
-        </div>
+        {/* C. Bio */}
+        {user.bio && (
+          <div className="-mt-1">
+            <p className={cn(
+              'text-sm text-muted-foreground leading-snug',
+              !bioExpanded && 'line-clamp-2',
+            )}>
+              {user.bio}
+            </p>
+            {bioIsLong && (
+              <button
+                onClick={() => setBioExpanded(v => !v)}
+                className="text-xs text-primary mt-0.5"
+              >
+                {bioExpanded ? '접기' : '더보기'}
+              </button>
+            )}
+          </div>
+        )}
 
-        {/* C. Level Progress — Banksalad 스타일 */}
+        {/* D. Follow / Edit button */}
+        {!isOwnProfile ? (
+          <Button
+            onClick={onFollowToggle}
+            disabled={isFollowLoading}
+            variant={user.isFollowing ? 'secondary' : 'default'}
+            size="sm"
+            className="w-full h-8 text-sm font-semibold rounded-xl"
+          >
+            {isFollowLoading
+              ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              : user.isFollowing ? '구독 중' : '구독'
+            }
+          </Button>
+        ) : null}
+
+        {/* E. Level Progress — Banksalad 스타일 */}
         {userLevel && noteLevel && (
           <div className="space-y-1.5">
             <button
@@ -237,7 +235,7 @@ export function ProfileZone({
           </div>
         )}
 
-        {/* D. Preference Tags — Fruits Family 스타일 */}
+        {/* F. Preference Tags — Fruits Family 스타일 */}
         {hasPrefs && (
           <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
             {visibleTeaTypes.map(tag => {
@@ -265,12 +263,18 @@ export function ProfileZone({
               </span>
             ))}
             {overflow > 0 && (
-              <button
-                onClick={onEditPreference}
-                className="shrink-0 px-2 py-1 text-xs text-primary font-medium hover:text-primary/80 transition-colors"
-              >
-                +{overflow}
-              </button>
+              isOwnProfile ? (
+                <button
+                  onClick={onEditPreference}
+                  className="shrink-0 px-2 py-1 text-xs text-primary font-medium hover:text-primary/80 transition-colors"
+                >
+                  +{overflow}
+                </button>
+              ) : (
+                <span className="shrink-0 px-2 py-1 text-xs text-muted-foreground">
+                  +{overflow}
+                </span>
+              )
             )}
             {isOwnProfile && (
               <button
@@ -290,6 +294,7 @@ export function ProfileZone({
         onOpenChange={setFollowersOpen}
         userId={user.id}
         followerCount={user.followerCount ?? 0}
+        followingCount={user.followingCount ?? 0}
       />
     </div>
   );
@@ -298,7 +303,7 @@ export function ProfileZone({
 function StatItem({ value, label }: { value: number | string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[26px] font-bold leading-none text-foreground tracking-tight">
+      <span className="text-[22px] font-bold leading-none text-foreground tracking-tight">
         {value}
       </span>
       <span className="text-[11px] text-muted-foreground mt-0.5">{label}</span>

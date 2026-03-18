@@ -76,14 +76,12 @@ export function UserProfile() {
       const promises: [Promise<unknown>, Promise<void>, Promise<UserOnboardingPreference | null>] = [
         usersApi.getById(userId),
         fetchNotes(sort),
-        isOwnProfile
-          ? usersApi.getOnboardingPreference(userId).catch((error) => {
-              if ((error as { statusCode?: number })?.statusCode !== 404) {
-                logger.warn('Failed to fetch onboarding preference:', error);
-              }
-              return null;
-            })
-          : Promise.resolve(null),
+        usersApi.getOnboardingPreference(userId).catch((error) => {
+          if ((error as { statusCode?: number })?.statusCode !== 404) {
+            logger.warn('Failed to fetch onboarding preference:', error);
+          }
+          return null;
+        }),
       ];
       const [userData, , pref] = await Promise.all(promises);
       setUser(userData as User);
@@ -195,22 +193,19 @@ export function UserProfile() {
         />
         {/* Profile Zone skeleton */}
         <div className="h-16 bg-gradient-to-br from-primary/8 via-amber-50/30 to-transparent dark:from-primary/10 dark:via-stone-900/20 dark:to-transparent" />
-        <div className="px-4 -mt-8 pb-4 space-y-4">
-          <div className="flex items-end gap-3">
+        <div className="px-4 -mt-8 pb-4 space-y-3">
+          <div className="flex items-center gap-4">
             <div className="w-[72px] h-[72px] rounded-full bg-muted animate-pulse shrink-0 ring-2 ring-background" />
-            <div className="flex-1 space-y-1.5 pb-1">
-              <div className="h-4 w-28 rounded bg-muted animate-pulse" />
-              <div className="h-3 w-44 rounded bg-muted animate-pulse" />
+            <div className="flex-1 flex items-center justify-around pt-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5">
+                  <div className="h-6 w-8 rounded bg-muted animate-pulse" />
+                  <div className="h-2.5 w-10 rounded bg-muted animate-pulse" />
+                </div>
+              ))}
             </div>
           </div>
-          <div className="flex items-center justify-around py-1">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-1.5">
-                <div className="h-7 w-10 rounded bg-muted animate-pulse" />
-                <div className="h-2.5 w-12 rounded bg-muted animate-pulse" />
-              </div>
-            ))}
-          </div>
+          <div className="h-4 w-28 rounded bg-muted animate-pulse" />
           <div className="h-1.5 w-full rounded-full bg-muted animate-pulse" />
           <div className="flex gap-1.5">
             {[1, 2, 3].map((i) => (
@@ -276,7 +271,7 @@ export function UserProfile() {
         noteCount={noteTotal}
         stats={stats}
         userLevel={userLevel}
-        onboardingPreference={isOwnProfile ? onboardingPreference : null}
+        onboardingPreference={onboardingPreference}
         onFollowToggle={handleFollowToggle}
         onEditImage={() => setIsEditModalOpen(true)}
         onEditProfile={() => setIsProfileEditModalOpen(true)}
