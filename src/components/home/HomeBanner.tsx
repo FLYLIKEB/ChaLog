@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, PenLine } from 'lucide-react';
+import { CtaButton } from '@/components/ui/CtaButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/components/ui/utils';
 
@@ -47,13 +48,7 @@ export function HomeBanner() {
           </p>
         </div>
       </div>
-      <button
-        onClick={() => navigate('/note/new')}
-        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold transition-colors hover:bg-primary/90 active:scale-[0.98]"
-      >
-        <PenLine className="w-4 h-4" />
-        차록 쓰기
-      </button>
+      <CtaButton onClick={() => navigate('/note/new')} icon={PenLine} label="차록 쓰기" variant="primary" />
     </div>
   );
 }

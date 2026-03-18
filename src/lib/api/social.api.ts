@@ -15,6 +15,8 @@ export const tagsApi = {
     apiClient.get<TagDetail>(`/tags/${encodeURIComponent(name)}`),
   getTagNotes: (name: string, page = 1, limit = 20) =>
     apiClient.get<TagNoteList>(`/tags/${encodeURIComponent(name)}/notes?page=${page}&limit=${limit}`),
+  createTag: (name: string, category: 'general' | 'flavor' = 'general') =>
+    apiClient.post<PopularTagItem>('/tags', { name, category }),
   followTag: (name: string) =>
     apiClient.post<void>(`/tags/${encodeURIComponent(name)}/follow`),
   unfollowTag: (name: string) =>

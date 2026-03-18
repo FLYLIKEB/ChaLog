@@ -18,9 +18,10 @@ import { FilterPanel } from '../components/search/FilterPanel';
 import { SearchResults } from '../components/search/SearchResults';
 import { ExploreSection } from '../components/search/ExploreSection';
 
-type SearchCategory = 'tea' | 'note' | 'cellar' | 'seller' | 'tag';
+type SearchCategory = 'all' | 'tea' | 'note' | 'cellar' | 'seller' | 'tag';
 
 const SEARCH_CATEGORIES: { key: SearchCategory; label: string }[] = [
+  { key: 'all', label: '전체' },
   { key: 'tea', label: '차' },
   { key: 'note', label: '내 차록' },
   { key: 'cellar', label: '찻장' },
@@ -36,7 +37,13 @@ const SECTION_TITLES: Record<string, string> = {
 
 export function Search() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   useScrollRestoration(scrollContainerRef);
+
+  useEffect(() => {
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -61,11 +68,9 @@ export function Search() {
   } = useTeaSearch();
 
   const [cellarSort, setCellarSort] = useState<'name' | 'quantity' | 'recent'>('recent');
-  const initialTab = searchParams.get('tab') === 'explore' ? 'explore' : 'search';
-  const [activeTab, setActiveTab] = useState<'search' | 'explore'>(initialTab);
   const [trendingTeas, setTrendingTeas] = useState<Tea[]>([]);
   const [trendingCreators, setTrendingCreators] = useState<Array<{ id: number; name: string; profileImageUrl?: string | null; followerCount: number }>>([]);
-  const [searchCategory, setSearchCategory] = useState<SearchCategory>('tea');
+  const [searchCategory, setSearchCategory] = useState<SearchCategory>('all');
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [noteResults, setNoteResults] = useState<Note[]>([]);
   const [allNotes, setAllNotes] = useState<Note[]>([]);
@@ -84,17 +89,42 @@ export function Search() {
   useTeaSearchDebounce(searchQuery, search, addSearch, resetSearch);
 
   useEffect(() => {
-    if (activeTab !== 'search' || searchCategory === 'tea' || searchCategory === 'seller') return;
+    if (searchCategory !== 'note' && searchCategory !== 'tag' && searchCategory !== 'cellar' && searchCategory !== 'all') return;
     setCategoryLoading(true);
     const q = searchQuery.trim().toLowerCase();
-    if (searchCategory === 'note') {
+    if (searchCategory === 'all') {
+      Promise.all([
+        notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, noteSort, 1, 200)
+          .then((data: unknown) => {
+            const notes: Note[] = Array.isArray(data)
+              ? data
+              : (data as { data?: Note[] })?.data ?? (data as { notes?: Note[] })?.notes ?? [];
+            setAllNotes(notes);
+            setNoteResults(q ? notes.filter((n) => n.teaName?.toLowerCase().includes(q) || n.memo?.toLowerCase().includes(q) || n.sellerName?.toLowerCase().includes(q)) : notes.slice(0, 6));
+          })
+          .catch(() => { setAllNotes([]); setNoteResults([]); }),
+        tagsApi.getPopularTags(100)
+          .then((data) => {
+            const tags = Array.isArray(data) ? data : [];
+            setTagResults(q ? tags.filter((t) => t.name?.toLowerCase().includes(q)) : tags.slice(0, 8));
+          })
+          .catch(() => setTagResults([])),
+        cellarApi.getAll()
+          .then((data: unknown) => {
+            const items: CellarItem[] = Array.isArray(data) ? data : [];
+            setAllCellar(items);
+            setCellarResults(q ? items.filter((c) => c.tea?.name?.toLowerCase().includes(q)) : items.slice(0, 4));
+          })
+          .catch(() => { setAllCellar([]); setCellarResults([]); }),
+      ]).finally(() => setCategoryLoading(false));
+    } else if (searchCategory === 'note') {
       notesApi.getAll(user?.id, undefined, undefined, undefined, undefined, noteSort, 1, 200)
         .then((data: unknown) => {
           const notes: Note[] = Array.isArray(data)
             ? data
             : (data as { data?: Note[] })?.data ?? (data as { notes?: Note[] })?.notes ?? [];
           setAllNotes(notes);
-          setNoteResults(q ? notes.filter((n) => n.teaName?.toLowerCase().includes(q) || n.memo?.toLowerCase().includes(q)) : notes);
+          setNoteResults(q ? notes.filter((n) => n.teaName?.toLowerCase().includes(q) || n.memo?.toLowerCase().includes(q) || n.sellerName?.toLowerCase().includes(q)) : notes);
         })
         .catch(() => { setAllNotes([]); setNoteResults([]); })
         .finally(() => setCategoryLoading(false));
@@ -116,10 +146,10 @@ export function Search() {
         .catch(() => { setAllCellar([]); setCellarResults([]); })
         .finally(() => setCategoryLoading(false));
     }
-  }, [searchCategory, activeTab, user?.id, noteSort]);
+  }, [searchCategory, user?.id, noteSort]);
 
   useEffect(() => {
-    if (activeTab !== 'search' || searchCategory !== 'seller') return;
+    if (searchCategory !== 'seller' && searchCategory !== 'all') return;
     setCategoryLoading(true);
     const q = searchQuery.trim();
     const id = setTimeout(() => {
@@ -129,44 +159,49 @@ export function Search() {
         .finally(() => setCategoryLoading(false));
     }, SEARCH_DEBOUNCE_DELAY);
     return () => clearTimeout(id);
-  }, [searchQuery, searchCategory, activeTab]);
+  }, [searchQuery, searchCategory]);
 
   useEffect(() => {
-    if (activeTab !== 'search') return;
     const q = searchQuery.trim().toLowerCase();
-    if (searchCategory === 'note') {
-      setNoteResults(
-        allNotes.filter((n) => {
-          if (q && !n.teaName?.toLowerCase().includes(q) && !n.memo?.toLowerCase().includes(q)) return false;
-          if (filterType && n.teaType !== filterType) return false;
-          if (filterMinRating != null && (n.overallRating == null || n.overallRating < filterMinRating)) return false;
-          if (urlTags.length > 0 && !urlTags.every((tag) => n.tags?.includes(tag))) return false;
-          return true;
-        }),
-      );
-    } else if (searchCategory === 'cellar') {
+    if (searchCategory === 'note' || searchCategory === 'all') {
+      const filtered = allNotes.filter((n) => {
+        if (q && !n.teaName?.toLowerCase().includes(q) && !n.memo?.toLowerCase().includes(q) && !n.sellerName?.toLowerCase().includes(q)) return false;
+        if (filterType && n.teaType !== filterType) return false;
+        if (filterMinRating != null && (n.overallRating == null || n.overallRating < filterMinRating)) return false;
+        if (urlTags.length > 0 && !urlTags.every((tag) => n.tags?.includes(tag))) return false;
+        return true;
+      });
+      setNoteResults(searchCategory === 'all' ? filtered.slice(0, 6) : filtered);
+    }
+    if (searchCategory === 'cellar' || searchCategory === 'all') {
       let filtered = allCellar.filter((c) => {
         if (q && !c.tea?.name?.toLowerCase().includes(q)) return false;
         if (filterType && c.tea?.type !== filterType) return false;
         return true;
       });
-      if (cellarSort === 'name') filtered = [...filtered].sort((a, b) => (a.tea?.name ?? '').localeCompare(b.tea?.name ?? ''));
-      else if (cellarSort === 'quantity') filtered = [...filtered].sort((a, b) => b.quantity - a.quantity);
-      else filtered = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setCellarResults(filtered);
-    } else if (searchCategory === 'tag') {
-      setTagResults(q ? popularTags.filter((t) => t.name?.toLowerCase().includes(q)) : popularTags);
+      if (searchCategory === 'cellar') {
+        if (cellarSort === 'name') filtered = [...filtered].sort((a, b) => (a.tea?.name ?? '').localeCompare(b.tea?.name ?? ''));
+        else if (cellarSort === 'quantity') filtered = [...filtered].sort((a, b) => b.quantity - a.quantity);
+        else filtered = [...filtered].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      }
+      setCellarResults(searchCategory === 'all' ? filtered.slice(0, 4) : filtered);
     }
-  }, [searchQuery, searchCategory, activeTab, allNotes, allCellar, popularTags, filterType, filterMinRating, urlTagsStr, cellarSort]);
+    if (searchCategory === 'tag' || searchCategory === 'all') {
+      const filtered = q ? popularTags.filter((t) => t.name?.toLowerCase().includes(q)) : popularTags;
+      setTagResults(searchCategory === 'all' ? filtered.slice(0, 8) : filtered);
+    }
+  }, [searchQuery, searchCategory, allNotes, allCellar, popularTags, filterType, filterMinRating, urlTagsStr, cellarSort]);
 
   const noteHasFilters = !!(filterType || filterMinRating != null || urlTags.length > 0);
   const cellarHasFilters = !!filterType;
   const showResults =
     searchCategory === 'tea'
       ? searchQuery.length > 0 || hasSearched || hasFilterParams
-      : searchQuery.trim().length >= 2 ||
-        (searchCategory === 'note' && noteHasFilters) ||
-        (searchCategory === 'cellar' && cellarHasFilters);
+      : searchCategory === 'all'
+        ? searchQuery.trim().length >= 2
+        : searchQuery.trim().length >= 2 ||
+          (searchCategory === 'note' && noteHasFilters) ||
+          (searchCategory === 'cellar' && cellarHasFilters);
 
   const handleRefresh = useCallback(async () => {
     if (showResults) {
@@ -204,16 +239,16 @@ export function Search() {
 
   const hasFetchedTrending = useRef(false);
   useEffect(() => {
-    if (activeTab === 'explore' && !hasFetchedTrending.current) {
+    if (!hasFetchedTrending.current) {
       hasFetchedTrending.current = true;
       teasApi.getTrending('7d').then(data => setTrendingTeas(Array.isArray(data) ? data : [])).catch(() => setTrendingTeas([]));
       usersApi.getTrending('7d').then(data => setTrendingCreators(Array.isArray(data) ? data : [])).catch(() => setTrendingCreators([]));
     }
-  }, [activeTab]);
+  }, []);
 
 
   const handleApplyFilters = useCallback(() => {
-    if (searchCategory === 'tea') {
+    if (searchCategory === 'tea' || searchCategory === 'all') {
       applyFilters('tea', searchQuery, filterCallbacks);
     } else {
       setFilterOpen(false);
@@ -258,6 +293,7 @@ export function Search() {
         <div className="relative">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
           <Input
+            ref={searchInputRef}
             type="text"
             placeholder="차 이름, 종류, 구매처로 검색..."
             value={searchQuery}
@@ -281,29 +317,7 @@ export function Search() {
           )}
         </div>
 
-        <div className="flex gap-1 p-1 bg-muted rounded-lg">
-          {([
-            { key: 'search' as const, label: '검색' },
-            { key: 'explore' as const, label: '탐색' },
-          ]).map(({ key, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setActiveTab(key)}
-              className={cn(
-                'flex-1 py-1.5 text-sm font-medium rounded-md transition-colors',
-                activeTab === key
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'search' && (
-          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 -mx-1 px-1">
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 -mx-1 px-1">
             {SEARCH_CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
@@ -320,42 +334,47 @@ export function Search() {
               </button>
             ))}
           </div>
-        )}
 
-        {activeTab === 'search' && !showResults && searchQuery.trim().length === 0 && recentSearches.length > 0 && (
+        {!showResults && searchQuery.trim().length === 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-medium text-muted-foreground">최근 검색어</span>
-              <button type="button" onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                전체 삭제
-              </button>
+              {recentSearches.length > 0 && (
+                <button type="button" onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  전체 삭제
+                </button>
+              )}
             </div>
-            <ul className="space-y-1">
-              {recentSearches.map((term) => (
-                <li key={term} className="flex items-center gap-2 py-2">
-                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                  <button
-                    type="button"
-                    onClick={() => { setSearchQuery(term); search(term, addSearch); }}
-                    className="flex-1 text-left text-sm truncate"
-                  >
-                    {term}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeSearch(term)}
-                    className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label={`${term} 삭제`}
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </li>
-              ))}
-            </ul>
+            {recentSearches.length > 0 ? (
+              <ul className="space-y-1">
+                {recentSearches.map((term) => (
+                  <li key={term} className="flex items-center gap-2 py-2">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                    <button
+                      type="button"
+                      onClick={() => { setSearchQuery(term); search(term, addSearch); }}
+                      className="flex-1 text-left text-sm truncate"
+                    >
+                      {term}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeSearch(term)}
+                      className="p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label={`${term} 삭제`}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground py-2">아직 검색어가 없어요.</p>
+            )}
           </div>
         )}
 
-        {activeTab === 'search' && (searchCategory === 'tea' || searchCategory === 'note' || searchCategory === 'cellar') && (
+        {(searchCategory === 'tea' || searchCategory === 'note' || searchCategory === 'cellar' || searchCategory === 'all') && (
           <FilterPanel
             category={searchCategory}
             filterOpen={filterOpen}
@@ -383,7 +402,7 @@ export function Search() {
           />
         )}
 
-        {showResults && activeTab === 'search' && (
+        {showResults && (
           <SearchResults
             searchCategory={searchCategory}
             isLoading={isLoading}
@@ -399,7 +418,7 @@ export function Search() {
           />
         )}
 
-        {activeTab === 'explore' && (
+        {!showResults && searchQuery.trim().length === 0 && (
           <ExploreSection
             sectionsLoading={sectionsLoading}
             popularTeas={popularTeas}

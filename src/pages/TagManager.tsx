@@ -1,11 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { tagsApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, TrendingUp, Clock, Heart } from 'lucide-react';
+import { Loader2, TrendingUp, Clock, Heart, Plus } from 'lucide-react';
 import { cn } from '../components/ui/utils';
 
 interface TagItem {
@@ -22,6 +22,9 @@ export function TagManager() {
   const [activeTab, setActiveTab] = useState<TabType>('popular');
   const [tags, setTags] = useState<TagItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [newTagName, setNewTagName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fetchTags = useCallback(async (tab: TabType) => {
     setIsLoading(true);
@@ -50,6 +53,27 @@ export function TagManager() {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
+  };
+
+  const handleCreateTag = async () => {
+    const trimmed = newTagName.trim();
+    if (!trimmed) return;
+    if (!isAuthenticated) { toast.error('로그인이 필요합니다.'); return; }
+    setIsCreating(true);
+    try {
+      const created = await tagsApi.createTag(trimmed);
+      setNewTagName('');
+      toast.success(`#${created.name} 태그가 추가되었습니다.`);
+      if (activeTab === 'recent') {
+        setTags((prev) => [{ ...created, isFollowing: false }, ...prev]);
+      }
+    } catch (err: unknown) {
+      const msg = (err as { message?: string })?.message;
+      toast.error(msg?.includes('이미') ? `'${trimmed}' 태그가 이미 존재합니다.` : '태그 추가에 실패했습니다.');
+    } finally {
+      setIsCreating(false);
+      inputRef.current?.focus();
+    }
   };
 
   const handleToggleFollow = async (tagName: string, isFollowing: boolean) => {
@@ -83,6 +107,30 @@ export function TagManager() {
 
       <div className="px-4 py-4 md:px-8 space-y-4">
         <p className="text-sm text-muted-foreground">향미 태그를 탐색하고 팔로우하세요.</p>
+
+        {/* Add tag */}
+        {isAuthenticated && (
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              type="text"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !isCreating) handleCreateTag(); }}
+              placeholder="새 태그 이름"
+              maxLength={50}
+              className="flex-1 h-9 px-3 text-sm rounded-md border border-input bg-background outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground"
+            />
+            <button
+              onClick={handleCreateTag}
+              disabled={!newTagName.trim() || isCreating}
+              className="flex items-center gap-1.5 h-9 px-3 text-sm font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isCreating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+              추가
+            </button>
+          </div>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 p-1 bg-muted rounded-lg">

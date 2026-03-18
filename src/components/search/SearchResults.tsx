@@ -1,21 +1,23 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Store, Package, Plus } from 'lucide-react';
+import { Store, Package, PenLine, Leaf, ShoppingBag, Tag } from 'lucide-react';
 import { TeaCard } from '../TeaCard';
 import { TeaCardSkeleton } from '../TeaCardSkeleton';
 import { NoteCard } from '../NoteCard';
 import { NoteCardSkeleton } from '../NoteCardSkeleton';
 import { EmptyState } from '../EmptyState';
-import { Button } from '../ui/button';
+import { CtaButton } from '../ui/CtaButton';
 import { Tea, Seller, Note, CellarItem } from '../../types';
+import { LucideIcon } from 'lucide-react';
 
-type SearchCategory = 'tea' | 'note' | 'cellar' | 'seller' | 'tag';
+type SearchCategory = 'all' | 'tea' | 'note' | 'cellar' | 'seller' | 'tag';
 
-const CATEGORY_CREATE_CONFIG: Partial<Record<SearchCategory, { label: string; path: string }>> = {
-  tea: { label: '🍵 새 차 등록', path: '/tea/new' },
-  note: { label: '📝 새 차록 쓰기', path: '/note/new' },
-  cellar: { label: '📦 새 찻장 항목 추가', path: '/cellar/new' },
-  seller: { label: '🏪 새 찻집 등록', path: '/teahouse/new' },
+const CATEGORY_CREATE_CONFIG: Partial<Record<SearchCategory, { label: string; path: string; icon: LucideIcon }>> = {
+  tea: { label: '새 차 등록하기', path: '/tea/new', icon: Leaf },
+  note: { label: '차록 쓰기', path: '/note/new', icon: PenLine },
+  cellar: { label: '찻장에 추가하기', path: '/cellar/new', icon: ShoppingBag },
+  seller: { label: '찻집 등록하기', path: '/teahouse/new', icon: Store },
+  tag: { label: '향미 추가하기', path: '/tags', icon: Tag },
 };
 
 function CategoryCreateButton({ category }: { category: SearchCategory }) {
@@ -23,10 +25,12 @@ function CategoryCreateButton({ category }: { category: SearchCategory }) {
   const config = CATEGORY_CREATE_CONFIG[category];
   if (!config) return null;
   return (
-    <Button variant="outline" className="w-full mt-3" onClick={() => navigate(config.path)}>
-      <Plus className="w-4 h-4 mr-2" />
-      {config.label}
-    </Button>
+    <CtaButton
+      onClick={() => navigate(config.path)}
+      icon={config.icon}
+      label={config.label}
+      variant="primary"
+    />
   );
 }
 
@@ -61,6 +65,77 @@ export function SearchResults({
 
   return (
     <>
+      {searchCategory === 'all' && (
+        <>
+          {isLoading && categoryLoading ? (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 gap-3">
+                {[1, 2, 3].map((i) => <TeaCardSkeleton key={i} />)}
+              </div>
+            </div>
+          ) : teas.length === 0 && noteResults.length === 0 && sellerResults.length === 0 && tagResults.length === 0 ? (
+            <>
+              <EmptyState type="search" message="검색 결과가 없어요." action={{ label: '검색어 바꿔보기', onClick: onGoBack }} />
+              <CategoryCreateButton category="tea" />
+            </>
+          ) : (
+            <div className="space-y-6">
+              {teas.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">차 {teas.length}개</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {teas.slice(0, 5).map((tea) => <TeaCard key={tea.id} tea={tea} />)}
+                  </div>
+                </section>
+              )}
+              {noteResults.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">차록 {noteResults.length}개</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {noteResults.slice(0, 6).map((note) => <NoteCard key={note.id} note={note} />)}
+                  </div>
+                </section>
+              )}
+              {sellerResults.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">찻집 {sellerResults.length}개</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sellerResults.slice(0, 6).map((seller) => (
+                      <button
+                        key={seller.name}
+                        type="button"
+                        onClick={() => navigate(`/teahouse/${encodeURIComponent(seller.name)}`)}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/50 transition-colors"
+                      >
+                        <Store className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-sm">{seller.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {tagResults.length > 0 && (
+                <section>
+                  <p className="text-xs font-medium text-muted-foreground mb-2">향미 태그 {tagResults.length}개</p>
+                  <div className="flex flex-wrap gap-2">
+                    {tagResults.slice(0, 8).map((tag) => (
+                      <button
+                        key={tag.name}
+                        type="button"
+                        onClick={() => navigate(`/tag/${encodeURIComponent(tag.name)}`)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium border border-border/60 bg-background hover:bg-muted/60 transition-colors"
+                      >
+                        #{tag.name}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+            </div>
+          )}
+        </>
+      )}
+
       {searchCategory === 'tea' && (
         <>
           {isLoading ? (
@@ -80,7 +155,7 @@ export function SearchResults({
             </>
           ) : hasSearched || hasFilterParams ? (
             <>
-              <EmptyState type="search" message="검색 결과가 없어요." action={{ label: '검색어 바꿔보기', onClick: onGoBack }} />
+              <EmptyState type="search" message="검색 결과가 없어요." />
               <CategoryCreateButton category="tea" />
             </>
           ) : null}
@@ -202,7 +277,10 @@ export function SearchResults({
               </div>
             </>
           ) : (
-            <EmptyState type="search" message="향미 검색 결과가 없어요." />
+            <>
+              <EmptyState type="search" message="향미 검색 결과가 없어요." />
+              <CategoryCreateButton category="tag" />
+            </>
           )}
         </>
       )}

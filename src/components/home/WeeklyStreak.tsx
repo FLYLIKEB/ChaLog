@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Flame, PenLine, Loader2, Plus } from 'lucide-react';
+import { CtaButton } from '@/components/ui/CtaButton';
 import { notesApi } from '@/lib/api';
 import type { CalendarData } from '@/lib/api/notes.api';
 import type { Note } from '@/types';
@@ -174,13 +175,7 @@ export function WeeklyStreak({ onTodayNoteStatus, onStreakLoaded }: WeeklyStreak
       </div>
 
       {/* CTA */}
-      <button
-        onClick={() => navigate('/note/new')}
-        className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground text-sm font-medium transition-colors active:scale-[0.98]"
-      >
-        <PenLine className="w-3.5 h-3.5" />
-        오늘 차록 쓰기
-      </button>
+      <CtaButton onClick={() => navigate('/note/new')} icon={PenLine} label="오늘 차록 쓰기" />
     </div>
   );
 }

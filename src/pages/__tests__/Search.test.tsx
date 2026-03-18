@@ -108,16 +108,9 @@ describe('Search 페이지', () => {
   });
 
   it('탐색 탭으로 전환 시 인기/신규/맞춤차 섹션이 표시된다', async () => {
-    const user = userEvent.setup();
-    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
-    // tab switcher is a flex row with 검색/탐색 buttons inside bg-muted rounded-lg
-    const tabContainer = container.querySelector('.bg-muted.rounded-lg');
-    const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
-    const exploreTabBtn = tabButtons.find((b) => b.textContent === '탐색');
-    if (!exploreTabBtn) throw new Error('탐색 tab button not found');
-    await user.click(exploreTabBtn);
-
+    // 탭 제거 후 검색바가 비어있으면 ExploreSection이 자동으로 표시됨
     await waitFor(() => {
       expect(screen.getAllByText(/사랑받는 차/).length).toBeGreaterThan(0);
     }, { timeout: 3000 });
@@ -147,15 +140,9 @@ describe('Search 페이지', () => {
   });
 
   it('탐색 탭에서 찻집/다실 목록을 표시한다', async () => {
-    const user = userEvent.setup();
-    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
-    const tabContainer = container.querySelector('.bg-muted.rounded-lg');
-    const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
-    const exploreTabBtn = tabButtons.find((b) => b.textContent === '탐색');
-    if (!exploreTabBtn) throw new Error('탐색 tab button not found');
-    await user.click(exploreTabBtn);
-
+    // 탭 제거 후 검색바가 비어있으면 ExploreSection이 자동으로 표시됨
     await waitFor(() => {
       expect(screen.getByText('탐색전용샵')).toBeInTheDocument();
     });
@@ -212,15 +199,9 @@ describe('Search 페이지', () => {
   });
 
   it('탐색 탭에서 인기 차 섹션이 표시된다', async () => {
-    const user = userEvent.setup();
-    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+    renderWithRouter(<Search />, { route: '/sasaek' });
 
-    const tabContainer = container.querySelector('.bg-muted.rounded-lg');
-    const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
-    const exploreTabBtn = tabButtons.find((b) => b.textContent === '탐색');
-    if (!exploreTabBtn) throw new Error('탐색 tab button not found');
-    await user.click(exploreTabBtn);
-
+    // 탭 제거 후 검색바가 비어있으면 ExploreSection이 자동으로 표시됨
     await waitFor(() => {
       expect(screen.getAllByText(/요즘 인기 차/).length).toBeGreaterThan(0);
     }, { timeout: 3000 });
@@ -239,6 +220,39 @@ describe('Search 페이지', () => {
 
     await waitFor(() => {
       expect(teasApi.getWithFilters).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('탭 토글 제거 + 자동 전환 (#276)', () => {
+  it('탭 토글 UI가 존재하지 않는다', async () => {
+    const { container } = renderWithRouter(<Search />, { route: '/sasaek' });
+    await waitFor(() => {
+      const tabContainer = container.querySelector('.bg-muted.rounded-lg');
+      const tabButtons = tabContainer ? Array.from(tabContainer.querySelectorAll('button')) : [];
+      const hasSearchTab = tabButtons.some((b) => b.textContent?.includes('검색'));
+      const hasExploreTab = tabButtons.some((b) => b.textContent?.includes('탐색'));
+      expect(hasSearchTab && hasExploreTab).toBe(false);
+    });
+  });
+
+  it('검색바가 비어있으면 ExploreSection이 렌더링된다', async () => {
+    renderWithRouter(<Search />, { route: '/sasaek' });
+    await waitFor(() => {
+      // ExploreSection의 향미 태그 섹션이 보여야 함
+      expect(screen.getByTestId('explore-section')).toBeInTheDocument();
+    });
+  });
+
+  it('검색바에 입력하면 SearchResults가 표시된다', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<Search />, { route: '/sasaek' });
+
+    const input = screen.getByPlaceholderText('차 이름, 종류, 구매처로 검색...');
+    await user.type(input, '무이');
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('explore-section')).not.toBeInTheDocument();
     });
   });
 });

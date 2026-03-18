@@ -5,6 +5,7 @@ import {
   Delete,
   Param,
   Query,
+  Body,
   Request,
   UseGuards,
   ParseIntPipe,
@@ -15,10 +16,17 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt.guard';
 import { TagsService } from './tags.service';
+import { CreateTagDto } from './dto/create-tag.dto';
 
 @Controller('tags')
 export class TagsController {
   constructor(private readonly tagsService: TagsService) {}
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post()
+  async createTag(@Body() dto: CreateTagDto) {
+    return this.tagsService.createTag(dto.name, dto.category);
+  }
 
   @UseGuards(OptionalJwtAuthGuard)
   @Get('popular')

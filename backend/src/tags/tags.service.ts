@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
 import { PaginationHelper } from '../common/utils/pagination.helper';
@@ -26,6 +26,18 @@ export class TagsService {
     @InjectRepository(TagFollow)
     private tagFollowsRepository: Repository<TagFollow>,
   ) {}
+
+  async createTag(name: string, category: 'general' | 'flavor' = 'general'): Promise<PopularTagDto> {
+    const trimmed = name.trim();
+    if (!trimmed) throw new BadRequestException('태그 이름을 입력해주세요.');
+
+    const existing = await this.tagsRepository.findOne({ where: { name: trimmed } });
+    if (existing) throw new ConflictException(`태그 '${trimmed}'이(가) 이미 존재합니다.`);
+
+    const tag = this.tagsRepository.create({ name: trimmed, category });
+    await this.tagsRepository.save(tag);
+    return { name: tag.name, noteCount: 0, isFollowing: false };
+  }
 
   async getTagDetail(name: string, currentUserId?: number): Promise<TagDetailDto> {
     const tag = await this.tagsRepository.findOne({ where: { name } });
