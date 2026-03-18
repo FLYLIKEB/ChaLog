@@ -47,7 +47,6 @@ export function UserNoteList({
             onClick={() => setActiveTab('grid')}
             icon={<Grid3X3 className="w-4 h-4" />}
             label="차록"
-            badge={noteTotal > 0 ? noteTotal : undefined}
           />
           {isOwnProfile && (
             <>

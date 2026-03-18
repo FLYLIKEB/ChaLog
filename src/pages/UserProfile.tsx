@@ -7,18 +7,12 @@ import { BottomNav } from '../components/BottomNav';
 import { usersApi, notesApi, followsApi } from '../lib/api';
 import { User, Note, UserOnboardingPreference, UserLevel } from '../types';
 import { toast } from 'sonner';
-import { Pencil } from 'lucide-react';
 import { logger } from '../lib/logger';
 import { ProfileImageEditModal } from '../components/ProfileImageEditModal';
 import { ProfileEditModal } from '../components/ProfileEditModal';
 import { OnboardingPreferenceEditModal } from '../components/OnboardingPreferenceEditModal';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { TEA_TYPES, TEA_TYPE_COLORS } from '../constants';
-import { cn } from '../components/ui/utils';
-import { ProfileHeader } from '../components/profile/ProfileHeader';
-import { ProfileStats } from '../components/profile/ProfileStats';
+import { ProfileZone } from '../components/profile/ProfileZone';
 import { UserNoteList } from '../components/profile/UserNoteList';
 
 type SortType = 'latest' | 'rating';
@@ -199,26 +193,32 @@ export function UserProfile() {
           showLogo={isOwnProfile}
           title={isOwnProfile ? '내 차록' : '사용자 프로필'}
         />
-        {/* Banner skeleton */}
-        <div className="h-20 bg-gradient-to-br from-primary/8 via-amber-50/30 to-transparent dark:from-primary/10 dark:via-stone-900/20 dark:to-transparent" />
-        <div className="px-4 -mt-10">
-          <div className="flex items-end gap-4">
-            <div className="w-24 h-24 rounded-full bg-muted animate-pulse shrink-0 ring-2 ring-background" />
-            <div className="flex-1 flex justify-around pb-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5">
-                  <div className="h-5 w-8 rounded bg-muted animate-pulse" />
-                  <div className="h-3 w-10 rounded bg-muted animate-pulse" />
-                </div>
-              ))}
+        {/* Profile Zone skeleton */}
+        <div className="h-16 bg-gradient-to-br from-primary/8 via-amber-50/30 to-transparent dark:from-primary/10 dark:via-stone-900/20 dark:to-transparent" />
+        <div className="px-4 -mt-8 pb-4 space-y-4">
+          <div className="flex items-end gap-3">
+            <div className="w-[72px] h-[72px] rounded-full bg-muted animate-pulse shrink-0 ring-2 ring-background" />
+            <div className="flex-1 space-y-1.5 pb-1">
+              <div className="h-4 w-28 rounded bg-muted animate-pulse" />
+              <div className="h-3 w-44 rounded bg-muted animate-pulse" />
             </div>
           </div>
-          <div className="mt-3 space-y-2">
-            <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-            <div className="h-3 w-40 rounded bg-muted animate-pulse" />
+          <div className="flex items-center justify-around py-1">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-1.5">
+                <div className="h-7 w-10 rounded bg-muted animate-pulse" />
+                <div className="h-2.5 w-12 rounded bg-muted animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted animate-pulse" />
+          <div className="flex gap-1.5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-6 w-14 rounded-full bg-muted animate-pulse" />
+            ))}
           </div>
         </div>
-        <div className="mt-6 grid grid-cols-3 gap-2 px-2">
+        <div className="grid grid-cols-3 gap-2 px-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="aspect-[3/4] rounded-2xl bg-muted animate-pulse" />
           ))}
@@ -269,93 +269,44 @@ export function UserProfile() {
         title={isOwnProfile ? '내 차록' : '사용자 프로필'}
       />
 
-      <ProfileHeader
+      <ProfileZone
         user={user}
         isOwnProfile={isOwnProfile}
         isFollowLoading={isFollowLoading}
         noteCount={noteTotal}
+        stats={stats}
+        userLevel={userLevel}
+        onboardingPreference={isOwnProfile ? onboardingPreference : null}
         onFollowToggle={handleFollowToggle}
         onEditImage={() => setIsEditModalOpen(true)}
         onEditProfile={() => setIsProfileEditModalOpen(true)}
+        onEditPreference={() => setIsOnboardingEditModalOpen(true)}
       />
 
+      <ProfileImageEditModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        currentImageUrl={user.profileImageUrl}
+        onSuccess={handleProfileImageUpdate}
+        userId={user.id}
+      />
       {isOwnProfile && (
         <>
-          <ProfileImageEditModal
-            open={isEditModalOpen}
-            onOpenChange={setIsEditModalOpen}
-            currentImageUrl={user.profileImageUrl}
-            onSuccess={handleProfileImageUpdate}
-            userId={user.id}
-          />
           <ProfileEditModal
             open={isProfileEditModalOpen}
             onOpenChange={setIsProfileEditModalOpen}
             user={user}
             onSuccess={handleProfileInfoUpdate}
           />
+          <OnboardingPreferenceEditModal
+            open={isOnboardingEditModalOpen}
+            onOpenChange={setIsOnboardingEditModalOpen}
+            userId={user.id}
+            preference={onboardingPreference}
+            onSuccess={setOnboardingPreference}
+          />
         </>
       )}
-
-      {/* Preference tags */}
-      {isOwnProfile && onboardingPreference &&
-        (onboardingPreference.preferredTeaTypes?.length > 0 || onboardingPreference.preferredFlavorTags?.length > 0) && (
-        <div className="px-4 py-3 md:px-8 border-b border-border/40">
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="text-xs font-medium text-muted-foreground">취향</span>
-            <button
-              type="button"
-              onClick={() => setIsOnboardingEditModalOpen(true)}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <Pencil className="w-3 h-3" />
-              수정
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {[...new Set(onboardingPreference.preferredTeaTypes)]
-              .sort((a, b) => {
-                const ia = TEA_TYPES.indexOf(a as (typeof TEA_TYPES)[number]);
-                const ib = TEA_TYPES.indexOf(b as (typeof TEA_TYPES)[number]);
-                return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
-              })
-              .map((tag) => {
-                const colorClass = tag in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[tag as keyof typeof TEA_TYPE_COLORS] : undefined;
-                return (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 text-xs font-medium text-foreground"
-                  >
-                    {colorClass && (
-                      <span className={cn('w-2 h-2 rounded-full shrink-0', colorClass)} aria-hidden />
-                    )}
-                    {tag}
-                  </span>
-                );
-              })}
-            {onboardingPreference.preferredFlavorTags?.map((tag) => (
-              <span
-                key={tag}
-                className="px-2.5 py-1 rounded-full border border-border/60 bg-muted/30 text-xs text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isOwnProfile && (
-        <OnboardingPreferenceEditModal
-          open={isOnboardingEditModalOpen}
-          onOpenChange={setIsOnboardingEditModalOpen}
-          userId={user.id}
-          preference={onboardingPreference}
-          onSuccess={setOnboardingPreference}
-        />
-      )}
-
-      <ProfileStats stats={stats} userLevel={userLevel} />
 
       <UserNoteList
         notes={notes}
