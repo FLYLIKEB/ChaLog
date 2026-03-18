@@ -156,14 +156,13 @@ describe('Cellar 페이지', () => {
 
     renderCellar();
 
-    // CellarCard 내의 "차록" 버튼 찾기 (BottomNav의 "내 차록" 버튼과 구별)
+    // CellarCard 내의 "차록 쓰기" 버튼 찾기
     await waitFor(() => {
       expect(screen.getByText('테스트 차')).toBeInTheDocument();
     });
-    const cardButtons = screen.getAllByRole('button', { name: /차록/ });
-    const noteBtn = cardButtons.find((btn) => btn.textContent?.trim() === '차록');
+    const noteBtn = screen.getByRole('button', { name: '차록 쓰기' });
     expect(noteBtn).toBeDefined();
-    await userEvent.click(noteBtn!);
+    await userEvent.click(noteBtn);
 
     expect(mockNavigate).toHaveBeenCalledWith('/note/new?teaId=5');
   });
@@ -294,9 +293,9 @@ describe('Cellar 페이지', () => {
 
     // 클릭 시 옵션 목록 표시
     await userEvent.click(sortBtn);
-    expect(screen.getByRole('listbox', { name: '정렬 옵션' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '리마인더' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: '이름' })).toBeInTheDocument();
+    expect(screen.getByRole('menu', { name: '정렬 옵션' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: '리마인더' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: '이름' })).toBeInTheDocument();
   });
 
   it('정렬 옵션 선택 시 해당 기준으로 목록이 정렬된다', async () => {
@@ -313,7 +312,7 @@ describe('Cellar 페이지', () => {
     await userEvent.click(sortBtn);
 
     // "잔량" 옵션 선택 (desc 기본 → 많은순)
-    await userEvent.click(screen.getByRole('option', { name: '잔량' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: '잔량' }));
 
     await waitFor(() => {
       expect(sortBtn).toHaveTextContent('잔량');
@@ -324,11 +323,40 @@ describe('Cellar 페이지', () => {
     // 같은 옵션 다시 선택 → 방향 토글 (desc → asc, 적은순)
     const sortBtn2 = screen.getByRole('button', { name: '정렬 기준' });
     await userEvent.click(sortBtn2); // 목록 열기
-    await userEvent.click(screen.getByRole('option', { name: '잔량' })); // 같은 옵션 → 방향 토글
+    await userEvent.click(screen.getByRole('menuitem', { name: '잔량' })); // 같은 옵션 → 방향 토글
 
     await waitFor(() => {
       const cards = screen.getAllByRole('heading', { level: 3 });
       expect(cards[0]).toHaveTextContent('적은차');
+    });
+  });
+
+  // ── Hero 섹션 테스트 ────────────────────────────────────────────────────
+
+  it('아이템이 있으면 hero 섹션에 N종 보관 중 텍스트가 표시된다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '청차/우롱차') as any, quantity: 50, unit: 'g' }),
+      makeItem({ id: 2, teaId: 2, tea: makeTea(2, '보성 녹차', '녹차') as any, quantity: 30, unit: 'g' }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    await waitFor(() => {
+      expect(screen.getByText(/2종 보관 중/)).toBeInTheDocument();
+    });
+  });
+
+  it('totalGrams > 0일 때 차 종류 비율 바가 DOM에 존재한다', async () => {
+    const items = [
+      makeItem({ id: 1, tea: makeTea(1, '동방미인', '청차/우롱차') as any, quantity: 50, unit: 'g' }),
+    ];
+    vi.mocked(cellarApi.getAll).mockResolvedValue(items);
+
+    renderCellar();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('type-ratio-bar')).toBeInTheDocument();
     });
   });
 

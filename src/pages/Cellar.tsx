@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Bell, Package, FileText, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2, Coffee, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Bell, Package, Trash2, ChevronUp, ChevronDown, Pencil, CheckCircle2 } from 'lucide-react';
 import { Header } from '../components/Header';
 import { BottomNav } from '../components/BottomNav';
 import { Button } from '../components/ui/button';
@@ -75,94 +74,108 @@ function CellarCard({
 
   const tea = item.tea;
   return (
-    <div className="bg-card rounded-xl border border-border p-4 space-y-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
+    <div className="relative bg-card rounded-2xl p-4 group">
+      {/* 좌측 accent bar */}
+      <div
+        className={cn(
+          'absolute left-0 top-3 bottom-3 w-[3px] rounded-full',
+          tea.type in TEA_TYPE_COLORS
+            ? TEA_TYPE_COLORS[tea.type as keyof typeof TEA_TYPE_COLORS]
+            : 'bg-muted-foreground/30'
+        )}
+        aria-hidden
+      />
+
+      <div className="pl-4 pr-10">
+        {/* 상단: 이름 + 잔량 */}
+        <div className="flex items-baseline justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <h3 className="truncate font-medium text-base text-foreground">{tea.name}</h3>
             {tea.type && <TeaTypeBadge type={tea.type} className="shrink-0" />}
           </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {Number(item.quantity)}{UNIT_LABELS[item.unit] ?? item.unit}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1.5 truncate whitespace-nowrap">
-            <span className={!tea.year ? 'text-muted-foreground/50' : undefined}>
-              {tea.year ? `${tea.year}년` : '연도미상'}
-            </span>
-            {' · '}
-            <span className={!(tea.price != null && tea.price > 0) ? 'text-muted-foreground/50' : undefined}>
-              {tea.price != null && tea.price > 0 ? `${tea.price.toLocaleString()}원` : '가격미상'}
-            </span>
-            {' · '}
-            <span className={!(tea.weight != null && tea.weight > 0) ? 'text-muted-foreground/50' : undefined}>
-              {tea.weight != null && tea.weight > 0 ? `${tea.weight}g` : '용량미상'}
-            </span>
-          </p>
-          {tea.seller && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate whitespace-nowrap">
-              <Link
-                to={`/teahouse/${encodeURIComponent(tea.seller)}`}
-                onClick={(e) => e.stopPropagation()}
-                className="text-primary hover:underline"
-              >
-                {tea.seller}
-              </Link>
-            </p>
-          )}
-          {!tea.seller && (
-            <p className="text-xs text-muted-foreground/50 mt-0.5">판매처 미상</p>
-          )}
+          <span className="text-lg font-light tabular-nums text-foreground shrink-0">
+            {Number(item.quantity)}<span className="text-xs ml-0.5 text-muted-foreground">{UNIT_LABELS[item.unit] ?? item.unit}</span>
+          </span>
         </div>
-        <div className="flex items-center gap-1">
+
+        {/* 메타 정보 */}
+        <p className="text-xs text-muted-foreground mt-1 truncate whitespace-nowrap">
+          <span className={!tea.year ? 'text-muted-foreground/50' : undefined}>
+            {tea.year ? `${tea.year}년` : '연도미상'}
+          </span>
+          {' · '}
+          <span className={!(tea.price != null && tea.price > 0) ? 'text-muted-foreground/50' : undefined}>
+            {tea.price != null && tea.price > 0 ? `${tea.price.toLocaleString()}원` : '가격미상'}
+          </span>
+          {' · '}
+          <span className={!(tea.weight != null && tea.weight > 0) ? 'text-muted-foreground/50' : undefined}>
+            {tea.weight != null && tea.weight > 0 ? `${tea.weight}g` : '용량미상'}
+          </span>
+        </p>
+        {tea.seller && (
+          <p className="text-xs mt-0.5">
+            <Link
+              to={`/teahouse/${encodeURIComponent(tea.seller)}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-primary hover:underline"
+            >
+              {tea.seller}
+            </Link>
+          </p>
+        )}
+        {!tea.seller && (
+          <p className="text-xs text-muted-foreground/50 mt-0.5">판매처 미상</p>
+        )}
+
+        {item.openedAt && (
+          <p className="text-xs text-muted-foreground mt-1">
+            개봉일: {formatDate(item.openedAt)}
+          </p>
+        )}
+
+        {item.memo && (
+          <p className="text-sm text-foreground/70 mt-2 line-clamp-2">{item.memo}</p>
+        )}
+
+        {/* 액션 — 텍스트 링크 */}
+        <div className="flex items-center gap-4 mt-3">
           <button
-            onClick={() => onEdit(item.id)}
-            className="text-muted-foreground hover:text-foreground transition-colors p-1"
-            aria-label="수정"
+            type="button"
+            onClick={() => onNoteClick(item.teaId)}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
           >
-            <Pencil className="w-4 h-4" />
+            차록 쓰기
           </button>
           <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-muted-foreground hover:text-destructive transition-colors p-1"
-            aria-label="삭제"
+            type="button"
+            onClick={() => onSessionClick(item.teaId)}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors"
           >
-            {deleting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}
+            다회 시작
           </button>
         </div>
       </div>
 
-      {item.openedAt && (
-        <p className="text-xs text-muted-foreground">
-          개봉일: {formatDate(item.openedAt)}
-        </p>
-      )}
-
-      {item.memo && (
-        <p className="text-sm text-foreground/80 line-clamp-2">{item.memo}</p>
-      )}
-
-      <div className="flex gap-0 pt-1 overflow-hidden rounded-lg border border-border">
+      {/* Edit/Delete — 우측 상단 */}
+      <div className="absolute top-3 right-3 flex gap-1">
         <button
-          type="button"
-          onClick={() => onNoteClick(item.teaId)}
-          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 text-xs font-medium border-r border-border bg-background hover:bg-muted/50 transition-colors"
+          onClick={() => onEdit(item.id)}
+          className="text-muted-foreground hover:text-foreground transition-colors p-1"
+          aria-label="수정"
         >
-          <FileText className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">차록</span>
+          <Pencil className="w-4 h-4" />
         </button>
         <button
-          type="button"
-          onClick={() => onSessionClick(item.teaId)}
-          className="flex-1 flex items-center justify-center gap-1 py-2 px-2 text-xs font-medium bg-background hover:bg-muted/50 transition-colors"
-          title="다회 모드"
+          onClick={handleDelete}
+          disabled={deleting}
+          className="text-muted-foreground hover:text-destructive transition-colors p-1"
+          aria-label="삭제"
         >
-          <Coffee className="w-3.5 h-3.5 shrink-0" />
-          <span className="truncate">다회</span>
+          {deleting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
         </button>
       </div>
     </div>
@@ -376,54 +389,48 @@ export function Cellar() {
           </div>
         )}
 
-        {/* 찻장 요약 카드 */}
-        {activeItems.length > 0 && totalGrams > 0 && (
-          <div className="mx-4 mt-4 sm:mx-6 sm:mt-6 bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-muted-foreground">찻장 요약</span>
-              <span className="text-base font-semibold text-foreground" aria-label={`전체 ${totalGrams}그램`}>
-                총 {totalGrams.toLocaleString()}g
-              </span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-              {summaryByType.map(([type, grams]) => {
-                const colorClass = type in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[type as keyof typeof TEA_TYPE_COLORS] : 'bg-muted-foreground/50';
-                return (
+        {/* 찻장 요약 */}
+        {activeItems.length > 0 && (
+          <div className="px-4 sm:px-6 pt-4 pb-2">
+            <p className="text-sm text-muted-foreground">
+              {activeItems.length}종 보관 중{totalGrams > 0 ? ` · ${totalGrams.toLocaleString()}g` : ''}
+            </p>
+            {totalGrams > 0 && (
+              <div
+                data-testid="type-ratio-bar"
+                className="mt-2 flex h-0.5 rounded-full overflow-hidden"
+                aria-hidden
+              >
+                {summaryByType.map(([type, g]) => (
                   <div
                     key={type}
-                    className="flex items-center gap-2 rounded-lg px-3 py-2 bg-muted/30"
-                    role="listitem"
-                    aria-label={`${type} ${grams}그램`}
-                  >
-                    <span className={cn('w-1.5 h-6 rounded-full shrink-0', colorClass)} aria-hidden />
-                    <span className="text-xs text-muted-foreground truncate">{type}</span>
-                    <span className="text-sm font-medium text-foreground ml-auto shrink-0">
-                      {grams.toLocaleString()}g
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+                    style={{ flex: g }}
+                    className={cn('h-full', type in TEA_TYPE_COLORS ? TEA_TYPE_COLORS[type as keyof typeof TEA_TYPE_COLORS] : 'bg-muted-foreground/50')}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* 차 종류 필터 칩 */}
+        {/* 차 종류 필터 탭 */}
         {activeItems.length > 0 && (
           <div
-            className="flex gap-2 overflow-x-auto px-4 sm:px-6 py-3 no-scrollbar"
+            className="flex gap-1 overflow-x-auto px-4 sm:px-6 pb-4 no-scrollbar border-b border-border"
             role="group"
             aria-label="차 종류 필터"
           >
-            {/* 전체 칩 */}
+            {/* 전체 탭 */}
             <button
               type="button"
               onClick={() => setActiveType('all')}
-              className={[
-                'shrink-0 px-3 py-1 rounded-full text-sm font-medium transition-colors border',
+              aria-pressed={activeType === 'all'}
+              className={cn(
+                'shrink-0 px-2 pb-2 text-sm transition-all border-b-2',
                 activeType === 'all'
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-background text-foreground border-border hover:bg-secondary',
-              ].join(' ')}
+                  ? 'border-foreground text-foreground font-medium'
+                  : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
               aria-label={`전체 ${activeItems.length}개 ${totalGrams}그램`}
             >
               전체 {activeItems.length}
@@ -434,29 +441,26 @@ export function Cellar() {
               )}
             </button>
 
-            {/* 각 차 종류 칩 - 차가 있는 종류 먼저 */}
+            {/* 각 차 종류 탭 - 차가 있는 종류 먼저 */}
             {[...TEA_TYPES].sort((a, b) => (typeCounts[b] ?? 0) - (typeCounts[a] ?? 0)).map((type) => {
               const count = typeCounts[type] ?? 0;
               const grams = typeGramsMap[type] ?? 0;
               const isActive = activeType === type;
-              const colorClass = TEA_TYPE_COLORS[type];
               return (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setActiveType(type)}
+                  aria-pressed={isActive}
                   className={cn(
-                    'shrink-0 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors border',
+                    'shrink-0 inline-flex items-center gap-1 px-2 pb-2 text-sm transition-all border-b-2',
                     isActive
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-foreground border-border hover:bg-secondary',
+                      ? 'border-foreground text-foreground font-medium'
+                      : 'border-transparent text-muted-foreground hover:text-foreground',
                     count === 0 ? 'opacity-40' : '',
                   )}
                   aria-label={`${type} ${count}개 ${grams}그램`}
                 >
-                  {!isActive && (
-                    <span className={cn('w-1.5 h-5 rounded-full shrink-0', colorClass)} aria-hidden />
-                  )}
                   {type} {count}
                   {grams > 0 && (
                     <span className="ml-0.5 opacity-80">
@@ -498,7 +502,7 @@ export function Cellar() {
                     onClick={() => setSortOpen(false)}
                   />
                   <ul
-                    role="listbox"
+                    role="menu"
                     aria-label="정렬 옵션"
                     className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-xl shadow-sm py-1 min-w-28 overflow-hidden"
                   >
@@ -506,8 +510,8 @@ export function Cellar() {
                       <li key={opt.key}>
                         <button
                           type="button"
-                          role="option"
-                          aria-selected={sortKey === opt.key}
+                          role="menuitem"
+                          aria-checked={sortKey === opt.key}
                           onClick={() => handleSortChange(opt.key)}
                           className={[
                             'w-full text-left px-4 py-2 text-sm transition-colors',
