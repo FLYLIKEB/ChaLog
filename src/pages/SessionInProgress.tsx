@@ -8,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { teaSessionsApi } from '../lib/api';
 import { TeaSession, TeaSessionSteep } from '../types';
 import { toast } from 'sonner';
+import { useAppMode } from '../contexts/AppModeContext';
 import { logger } from '../lib/logger';
 
 const AROMA_OPTIONS = [
@@ -23,6 +24,7 @@ const BODY_FEELING_OPTIONS = [
 export function SessionInProgress() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { clearSession } = useAppMode();
   const sessionId = id ? parseInt(id, 10) : NaN;
 
   const [session, setSession] = useState<TeaSession | null>(null);
@@ -137,6 +139,12 @@ export function SessionInProgress() {
   const sortedSteeps = [...steeps].sort(
     (a, b) => (a.steepNumber ?? 0) - (b.steepNumber ?? 0)
   );
+
+  useEffect(() => {
+    if (session?.noteId) {
+      clearSession();
+    }
+  }, [session?.noteId, clearSession]);
 
   if (loading || !session) {
     return (

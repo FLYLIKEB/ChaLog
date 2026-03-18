@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { blindSessionsApi } from '../lib/api';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppMode } from '../contexts/AppModeContext';
 import { logger } from '../lib/logger';
 
 type SessionData = {
@@ -28,6 +29,7 @@ export function BlindSessionDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { isAuthenticated, user } = useAuth();
+  const { clearBlind } = useAppMode();
   const [session, setSession] = useState<SessionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [ending, setEnding] = useState(false);
@@ -62,6 +64,7 @@ export function BlindSessionDetail() {
     try {
       setEnding(true);
       await blindSessionsApi.endSession(parseInt(id, 10));
+      clearBlind();
       toast.success('세션이 종료되었습니다.');
       setSession((prev) => (prev ? { ...prev, status: 'ended' } : null));
     } catch (err) {
@@ -102,6 +105,12 @@ export function BlindSessionDetail() {
   const hasWrittenCurrentRound =
     session?.currentRoundId != null &&
     (currentUserParticipant?.completedRounds ?? []).includes(session.currentRoundId);
+
+  useEffect(() => {
+    if (session?.status === 'ended') {
+      clearBlind();
+    }
+  }, [session?.status, clearBlind]);
 
   if (loading || !session) {
     return (

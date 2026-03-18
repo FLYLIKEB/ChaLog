@@ -14,6 +14,7 @@ import { teaSessionsApi, notesApi } from '../lib/api';
 import { TeaSession, TeaSessionSteep, RatingSchema, RatingAxis } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
+import { useAppMode } from '../contexts/AppModeContext';
 import { logger } from '../lib/logger';
 import { RATING_DEFAULT, RATING_MIN, RATING_MAX, NAVIGATION_DELAY } from '../constants';
 
@@ -21,6 +22,7 @@ export function SessionSummary() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { clearSession } = useAppMode();
   const sessionId = id ? parseInt(id, 10) : NaN;
 
   const [session, setSession] = useState<TeaSession | null>(null);
@@ -142,6 +144,7 @@ export function SessionSummary() {
         isPublic,
       });
 
+      clearSession();
       toast.success('노트로 발행되었습니다.');
       setTimeout(() => navigate(`/note/${noteId}`), NAVIGATION_DELAY);
     } catch (error) {
