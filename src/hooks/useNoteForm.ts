@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { notesApi } from '../lib/api';
-import { Note, RatingSchema, RatingAxis } from '../types';
+import { notesApi, teawareApi } from '../lib/api';
+import { Note, RatingSchema, RatingAxis, Teaware } from '../types';
 import { toast } from 'sonner';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
@@ -42,6 +42,8 @@ export function useNoteForm({
   const [tags, setTags] = useState<string[]>([]);
   const [drinkDate, setDrinkDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [isPublic, setIsPublic] = useState(false);
+  const [teawareId, setTeawareId] = useState<number | null>(null);
+  const [teawares, setTeawares] = useState<Teaware[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [addTemplateOpen, setAddTemplateOpen] = useState(false);
 
@@ -55,6 +57,25 @@ export function useNoteForm({
   const selectedTea = isSampleMode ? SAMPLE_TEA_ID : teaSelector.selectedTea;
 
   const defaultSchema = schemas.length > 0 ? schemas[0] : null;
+
+  // Fetch teawares
+  useEffect(() => {
+    if (isSampleMode) return;
+    const fetchTeawares = async () => {
+      try {
+        const data = await teawareApi.getAll();
+        const list = Array.isArray(data) ? (data as Teaware[]) : [];
+        setTeawares(list);
+        if (mode === 'new') {
+          const pinned = list.find((t) => t.isPinned);
+          if (pinned) setTeawareId(pinned.id);
+        }
+      } catch (error) {
+        logger.error('Failed to fetch teawares:', error);
+      }
+    };
+    fetchTeawares();
+  }, [isSampleMode]);
 
   // Fetch schemas
   useEffect(() => {
@@ -169,6 +190,9 @@ export function useNoteForm({
           setDrinkDate(String(normalizedNote.drinkDate).slice(0, 10));
         }
         setIsPublic(normalizedNote.isPublic);
+        if (normalizedNote.teawareId != null) {
+          setTeawareId(normalizedNote.teawareId);
+        }
       } catch (error: unknown) {
         logger.error('Failed to fetch note:', error);
         const err = error as { statusCode?: number };
@@ -321,6 +345,7 @@ export function useNoteForm({
           imageThumbnails: thumbnailPayload,
           tags: tags.length > 0 ? tags : undefined,
           drinkDate: drinkDate || undefined,
+          teawareId: teawareId ?? undefined,
           isPublic,
         });
         toast.success('기록이 저장되었습니다.');
@@ -346,6 +371,7 @@ export function useNoteForm({
           imageThumbnails: thumbnailPayload,
           tags: tags.length > 0 ? tags : undefined,
           drinkDate: drinkDate || undefined,
+          teawareId: teawareId ?? undefined,
           isPublic,
         });
         toast.success('차록이 수정되었습니다.');
@@ -394,6 +420,9 @@ export function useNoteForm({
     setDrinkDate,
     isPublic,
     setIsPublic,
+    teawareId,
+    setTeawareId,
+    teawares,
     // ui state
     isSaving,
     addTemplateOpen,

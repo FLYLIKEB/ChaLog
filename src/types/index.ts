@@ -108,6 +108,19 @@ export interface AxisValue {
   value: number;
 }
 
+export interface Teaware {
+  id: number;
+  userId: number;
+  name: string;
+  category: string;
+  capacity?: number | null;
+  material?: string | null;
+  memo?: string | null;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Note {
   id: number;
   teaId: number;
@@ -136,6 +149,8 @@ export interface Note {
   imageThumbnails?: string[] | null;
   tags?: string[] | null;
   drinkDate?: string | null;
+  teawareId?: number | null;
+  teaware?: Teaware | null;
   isPublic: boolean;
   createdAt: Date;
   likeCount?: number;

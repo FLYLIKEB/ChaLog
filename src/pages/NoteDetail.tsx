@@ -304,6 +304,24 @@ export function NoteDetail() {
             </div>
           )}
 
+          {/* 사용 다구 */}
+          {note.teaware && (
+            <div className="px-5 py-3 bg-muted/30 dark:bg-muted/10">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">사용 다구</p>
+              <div className="flex items-center gap-2 text-sm">
+                <span className="font-medium text-foreground">{note.teaware.name}</span>
+                <span className="text-muted-foreground">·</span>
+                <span className="text-muted-foreground">{note.teaware.category}</span>
+                {note.teaware.capacity != null && (
+                  <>
+                    <span className="text-muted-foreground">·</span>
+                    <span className="text-muted-foreground">{note.teaware.capacity}ml</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* 평점 */}
           {note.overallRating !== null && (
             <div className="px-5 py-3.5 bg-muted/30 dark:bg-muted/10">

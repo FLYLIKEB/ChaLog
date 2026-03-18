@@ -100,6 +100,10 @@ export class CreateNoteDto {
   @Transform(({ value }) => value === null ? null : value)
   drinkDate?: string | null;
 
+  @IsOptional()
+  @IsNumber()
+  teawareId?: number | null;
+
   @IsBoolean()
   isPublic: boolean;
 }

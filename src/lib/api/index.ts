@@ -38,5 +38,9 @@ export type { PostImageItemRequest, CreatePostRequest, UpdatePostRequest, PostSo
 // Social (Tags, Comments, Notifications)
 export { tagsApi, commentsApi, notificationsApi } from './social.api';
 
+// Teaware
+export { teawareApi } from './teaware.api';
+export type { CreateTeawareRequest, UpdateTeawareRequest } from './teaware.api';
+
 // Admin
 export { adminApi } from './admin.api';

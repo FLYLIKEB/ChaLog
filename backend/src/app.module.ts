@@ -18,6 +18,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { TeaSessionsModule } from './tea-sessions/tea-sessions.module';
 import { BlindTastingModule } from './blind-tasting/blind-tasting.module';
+import { TeawareModule } from './teaware/teaware.module';
 import { getTypeOrmConfig } from './database/typeorm.config';
 import { HealthController } from './health/health.controller';
 import { User } from './users/entities/user.entity';
@@ -116,6 +117,7 @@ const AdminJSModulePromise = (async () => {
     AdminModule,
     TeaSessionsModule,
     BlindTastingModule,
+    TeawareModule,
     AdminJSModulePromise,
   ],
   controllers: [HealthController],

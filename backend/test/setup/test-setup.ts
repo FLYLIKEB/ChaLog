@@ -35,7 +35,6 @@ export async function setupTestApp(): Promise<TestContext> {
   try {
     const url = new URL(testDbUrl);
     testDatabaseName = url.pathname.slice(1);
-    console.log(`[TEST] Using test database: ${testDatabaseName}`);
     
     // 프로덕션 DB 사용 방지: DB 이름에 "test"가 없으면 에러 발생
     if (!testDatabaseName.includes('test') && !testDatabaseName.includes('_test')) {
@@ -92,9 +91,7 @@ export async function setupTestApp(): Promise<TestContext> {
  */
 export async function teardownTestApp(context: TestContext): Promise<void> {
   try {
-    console.log(`[TEST] Cleaning up test database: ${context.testDatabaseName}`);
     await cleanupDatabase(context.dataSource);
-    console.log(`[TEST] Test database cleaned up: ${context.testDatabaseName}`);
   } catch (error) {
     console.error('[ERROR] Failed to clean up test database:', error);
   } finally {
@@ -168,6 +165,7 @@ export async function cleanupDatabase(dataSource: DataSource): Promise<void> {
     await dataSource.query('DELETE FROM note_tags');
     await dataSource.query('DELETE FROM tags');
     await dataSource.query('DELETE FROM notes');
+    await dataSource.query('DELETE FROM teaware');
     await dataSource.query('DELETE FROM cellar_items');
     await dataSource.query('DELETE FROM rating_axis');
     await dataSource.query('DELETE FROM rating_schema');

@@ -15,6 +15,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { usersApi, authApi, LinkedAccount } from '../lib/api';
 import { BottomNav } from '../components/BottomNav';
+import { TeawareSection } from '../components/teaware/TeawareSection';
 
 const PROVIDER_LABELS: Record<string, string> = {
   email: '이메일',
@@ -592,6 +593,11 @@ export function Settings() {
               disabled={isProfilePublicLoading}
             />
           </div>
+        </Card>
+
+        {/* 내 다구 */}
+        <Card className="p-4">
+          <TeawareSection />
         </Card>
 
         {/* 약관 및 정책 */}

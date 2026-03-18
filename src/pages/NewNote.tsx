@@ -17,6 +17,13 @@ import { AxisRatingSection } from '../components/AxisRatingSection';
 import { useAuth } from '../contexts/AuthContext';
 import { useNoteForm } from '../hooks/useNoteForm';
 import { RATING_DEFAULT } from '../constants';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 export function NewNote() {
   const { isAuthenticated } = useAuth();
@@ -49,6 +56,9 @@ export function NewNote() {
     setDrinkDate,
     isPublic,
     setIsPublic,
+    teawareId,
+    setTeawareId,
+    teawares,
     isSaving,
     addTemplateOpen,
     setAddTemplateOpen,
@@ -91,6 +101,28 @@ export function NewNote() {
             onSelectTea={selectTea}
             newTeaBasePath="/tea/new?returnTo=/note/new"
           />
+        )}
+
+        {teawares.length > 0 && (
+          <section className="bg-card rounded-lg p-3">
+            <Label className="mb-1.5 block text-sm">사용 다구</Label>
+            <Select
+              value={teawareId != null ? String(teawareId) : 'none'}
+              onValueChange={(v) => setTeawareId(v === 'none' ? null : parseInt(v, 10))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="다구 선택 (선택사항)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">선택 안 함</SelectItem>
+                {teawares.map((t) => (
+                  <SelectItem key={t.id} value={String(t.id)}>
+                    {t.name}{t.isPinned ? ' 📌' : ''}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </section>
         )}
 
         <section className="bg-card rounded-lg p-4">

@@ -1,6 +1,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Tea } from '../../teas/entities/tea.entity';
+import { Teaware } from '../../teaware/entities/teaware.entity';
 import { NoteTag } from './note-tag.entity';
 import { RatingSchema } from './rating-schema.entity';
 import { NoteAxisValue } from './note-axis-value.entity';
@@ -52,6 +53,13 @@ export class Note {
 
   @Column({ type: 'date', nullable: true })
   drinkDate: string | null;
+
+  @Column({ nullable: true })
+  teawareId: number | null;
+
+  @ManyToOne(() => Teaware, { nullable: true })
+  @JoinColumn({ name: 'teawareId' })
+  teaware: Teaware | null;
 
   @Column({ default: false })
   isPublic: boolean;
