@@ -55,7 +55,7 @@ export function EditNote() {
     handleSave,
   } = useNoteForm({ mode: 'edit', noteId });
 
-  const { query: searchQuery, setQuery: setSearchQuery, results: filteredTeas, selectedTeaData, selectTea } = teaSelector;
+  const { query: searchQuery, setQuery: setSearchQuery, results: filteredTeas, selectedTeaData, selectTea, clearSelection } = teaSelector;
 
   if (isLoading) {
     return (
@@ -80,7 +80,7 @@ export function EditNote() {
     <div className="min-h-screen">
       <Header showBack title="차록 수정" showProfile showLogo />
 
-      <div className="p-4 pb-24 space-y-6">
+      <div className="p-4 pb-24 space-y-4">
         <TeaSearchSection
           inputRef={teaInputRef}
           searchQuery={searchQuery}
@@ -89,18 +89,17 @@ export function EditNote() {
           filteredTeas={filteredTeas}
           selectedTeaData={selectedTeaData}
           onSelectTea={selectTea}
+          onClearTea={clearSelection}
           newTeaBasePath={`/tea/new?returnTo=/note/${noteId}/edit`}
         />
 
         <section className="bg-card rounded-lg p-4">
-          <Label className="mb-3 block text-base font-semibold text-foreground">
-            평점 <span className="text-destructive">*</span>
-          </Label>
-          <p className="text-sm text-muted-foreground mb-2">이 차에 몇 점을 주시겠어요?</p>
-          <p className="text-xs text-muted-foreground mb-3">
-            같은 온도·시간에서 비교하면 일관된 평가가 가능해요.{' '}
+          <div className="flex items-center gap-2 mb-3">
+            <Label className="text-base font-semibold text-foreground">
+              평점 <span className="text-destructive">*</span>
+            </Label>
             <RatingGuideModal />
-          </p>
+          </div>
           <StarRating value={overallRating} onChange={setOverallRating} max={5} size="lg" />
         </section>
 
@@ -108,9 +107,6 @@ export function EditNote() {
           <Label className="mb-2 block text-base font-semibold text-foreground">
             테이스팅 템플릿
           </Label>
-          <p className="text-sm text-muted-foreground mb-2">
-            템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 검색·핀 고정 가능.
-          </p>
           {schemas.length > 0 ? (
             <TemplateSelect
               schemas={schemas}
@@ -163,23 +159,18 @@ export function EditNote() {
         </section>
 
         <section className="bg-card rounded-lg p-4">
-          <Label className="mb-2 block">메모</Label>
+          <Label className="mb-2 block text-sm font-medium">메모</Label>
           <Textarea
             placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
             value={memo}
             onChange={(e) => setMemo(e.target.value)}
-            rows={6}
+            rows={5}
           />
         </section>
 
         <section className="bg-card rounded-lg p-4">
           <div className="flex items-center justify-between">
-            <div>
-              <Label>공개 설정</Label>
-              <p className="text-xs text-muted-foreground mt-1">
-                다른 사용자에게 이 차록을 공개합니다
-              </p>
-            </div>
+            <Label>공개 설정</Label>
             <Switch checked={isPublic} onCheckedChange={setIsPublic} />
           </div>
         </section>

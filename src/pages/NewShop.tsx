@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, Store } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -26,6 +26,12 @@ export function NewShop() {
   const [description, setDescription] = useState('');
   const [businessHours, setBusinessHours] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => nameInputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -102,6 +108,7 @@ export function NewShop() {
                 찻집 이름 <span className="text-red-500">*</span>
               </Label>
               <Input
+                ref={nameInputRef}
                 id="shop-name"
                 type="text"
                 placeholder="예: OO 찻집, OO몰"

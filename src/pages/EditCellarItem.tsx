@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '../components/Header';
 import { Input } from '../components/ui/input';
@@ -10,9 +10,9 @@ import { teasApi, cellarApi } from '../lib/api';
 import { Tea } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { logger } from '../lib/logger';
-import { TeaTypeBadge } from '../components/TeaTypeBadge';
+import { TeaSearchSection } from '../components/TeaSearchSection';
 
 function toDateInputValue(iso: string | null): string {
   if (!iso) return '';
@@ -44,6 +44,15 @@ export function EditCellarItem() {
   const [memo, setMemo] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const quantityRef = useRef<HTMLInputElement>(null);
+  const teaSearchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => quantityRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -141,83 +150,33 @@ export function EditCellarItem() {
       <Header showBack title="찻장 아이템 수정" showProfile showLogo />
 
       <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 pb-10">
-        {/* 차 선택 */}
-        <div className="space-y-2">
-          <Label htmlFor="tea-search">차 선택 *</Label>
-          {selectedTea ? (
-            <div className="flex items-center justify-between bg-secondary/50 rounded-lg px-3 py-2">
-              <div>
-                <p className="font-medium text-sm">{selectedTea.name}</p>
-                <p className="text-xs text-muted-foreground">{selectedTea.type}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedTeaId(null);
-                  setTeaSearch('');
-                }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                변경
-              </button>
-            </div>
-          ) : (
-            <>
-              <Input
-                id="tea-search"
-                placeholder="차 이름으로 검색..."
-                value={teaSearch}
-                onChange={(e) => setTeaSearch(e.target.value)}
-              />
-              <div className="max-h-48 overflow-y-auto border border-border rounded-lg divide-y divide-border bg-card">
-                {filteredTeas.length === 0 ? (
-                  <div className="p-3 text-center space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      {teaSearch ? '검색 결과가 없습니다.' : '차 목록이 없습니다.'}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/tea/new?returnTo=/cellar/${itemId}/edit${teaSearch.trim() ? `&searchQuery=${encodeURIComponent(teaSearch.trim())}` : ''}`,
-                        )
-                      }
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-                    >
-                      <PlusCircle className="w-4 h-4" />
-                      새 차 등록하기
-                    </button>
-                  </div>
-                ) : (
-                  filteredTeas.map((tea) => (
-                    <button
-                      key={tea.id}
-                      type="button"
-                      className="w-full text-left px-3 py-2 hover:bg-secondary/50 transition-colors"
-                      onClick={() => {
-                        setSelectedTeaId(tea.id);
-                        setTeaSearch('');
-                      }}
-                    >
-                      <p className="text-sm font-medium">{tea.name}</p>
-                      <p className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-                        {tea.type && <TeaTypeBadge type={tea.type} />}
-                        {tea.price != null && tea.price > 0 &&
-                          ` · ${tea.price.toLocaleString()}원${tea.weight != null && tea.weight > 0 ? ` · ${tea.weight}g` : ''}`}
-                      </p>
-                    </button>
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        <TeaSearchSection
+          inputRef={teaSearchRef}
+          label="차 선택 *"
+          variant="inline"
+          showAllWhenEmpty={true}
+          searchQuery={teaSearch}
+          onSearchChange={setTeaSearch}
+          selectedTea={selectedTeaId}
+          filteredTeas={filteredTeas}
+          selectedTeaData={selectedTea ? { name: selectedTea.name, type: selectedTea.type } : null}
+          onSelectTea={(id) => {
+            setSelectedTeaId(id);
+            setTeaSearch('');
+          }}
+          onClearTea={() => {
+            setSelectedTeaId(null);
+            setTeaSearch('');
+          }}
+          newTeaBasePath={`/tea/new?returnTo=/cellar/${itemId}/edit`}
+        />
 
         {/* 잔량 */}
         <div className="space-y-2">
           <Label htmlFor="quantity">잔량 (g)</Label>
           <div className="flex gap-2">
             <Input
+              ref={quantityRef}
               id="quantity"
               type="number"
               min="0"

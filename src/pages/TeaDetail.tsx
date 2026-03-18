@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Loader2, Pencil, Heart } from 'lucide-react';
+import { Star, Loader2, Pencil, Heart, Bell, Package } from 'lucide-react';
 import { Header } from '../components/Header';
 import { NoteCard } from '../components/NoteCard';
 import { TeaCard } from '../components/TeaCard';
@@ -8,9 +8,9 @@ import { EmptyState } from '../components/EmptyState';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { DetailFallback } from '../components/DetailFallback';
-import { teasApi, notesApi } from '../lib/api';
+import { teasApi, notesApi, cellarApi } from '../lib/api';
 import { cn } from '../components/ui/utils';
-import { Tea, Note, PopularTag } from '../types';
+import { Tea, Note, PopularTag, CellarItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { logger } from '../lib/logger';
 import { calculateTopTags, MIN_REVIEWS_FOR_TAGS } from '../utils/teaTags';
@@ -53,6 +53,7 @@ export function TeaDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [cellarItem, setCellarItem] = useState<CellarItem | null>(null);
 
   const handleWishlistToggle = useCallback(async () => {
     if (!user) {
@@ -91,7 +92,11 @@ export function TeaDetail() {
       ]);
 
       if (user) {
-        teasApi.isWishlisted(teaId).then((r) => setIsWishlisted(r.wishlisted)).catch(() => {})
+        teasApi.isWishlisted(teaId).then((r) => setIsWishlisted(r.wishlisted)).catch(() => {});
+        cellarApi.getAll().then((items) => {
+          const found = (Array.isArray(items) ? items : []).find((item) => item.teaId === teaId);
+          setCellarItem(found ?? null);
+        }).catch(() => {});
       }
 
       const [tagsResult, reviewsResult, similarResult] = await Promise.allSettled([
@@ -241,6 +246,60 @@ export function TeaDetail() {
             <p className="text-xs text-muted-foreground mt-2">정확한 정보가 아닐 수 있습니다</p>
           )}
         </section>
+
+        {/* 내 찻장 정보 */}
+        {cellarItem && (
+          <section className="bg-card rounded-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-4 h-4 text-primary" />
+                <h2 className="text-base font-semibold">내 찻장</h2>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/cellar/${cellarItem.id}/edit`)}
+              >
+                <Pencil className="w-3.5 h-3.5 mr-1" />
+                수정
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">잔량</p>
+                <p className="text-sm font-medium">
+                  {Number(cellarItem.quantity)}
+                  <span className="text-xs text-muted-foreground ml-0.5">
+                    {{ g: 'g', ml: 'ml', bag: '개', cake: '병' }[cellarItem.unit] ?? cellarItem.unit}
+                  </span>
+                </p>
+              </div>
+              {cellarItem.openedAt && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">개봉일</p>
+                  <p className="text-sm">{new Date(cellarItem.openedAt).toLocaleDateString('ko-KR')}</p>
+                </div>
+              )}
+              {cellarItem.remindAt && (() => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const remind = new Date(cellarItem.remindAt); remind.setHours(0,0,0,0);
+                const diff = Math.round((remind.getTime() - today.getTime()) / 86400000);
+                const label = diff === 0 ? 'D-Day' : diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`;
+                return (
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">리마인더</p>
+                    <p className={cn('text-sm flex items-center gap-1', diff < 0 ? 'text-destructive' : 'text-rating')}>
+                      <Bell className="w-3.5 h-3.5" />{label}
+                    </p>
+                  </div>
+                );
+              })()}
+            </div>
+            {cellarItem.memo && (
+              <p className="mt-3 text-xs text-muted-foreground border-t border-border pt-3">{cellarItem.memo}</p>
+            )}
+          </section>
+        )}
 
         {/* 평균 평점 */}
         <section className="bg-card rounded-lg p-4">

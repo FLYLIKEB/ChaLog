@@ -26,6 +26,13 @@ export function TagManager() {
   const [isCreating, setIsCreating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [authLoading, isAuthenticated]);
+
   const fetchTags = useCallback(async (tab: TabType) => {
     setIsLoading(true);
     try {

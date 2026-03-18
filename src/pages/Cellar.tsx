@@ -43,6 +43,18 @@ function formatDate(dateStr: string | null): string {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function getReminderDiff(remindAt: string | null): { label: string; overdue: boolean } | null {
+  if (!remindAt) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const remind = new Date(remindAt);
+  remind.setHours(0, 0, 0, 0);
+  const diff = Math.round((remind.getTime() - today.getTime()) / 86400000);
+  if (diff === 0) return { label: 'D-Day', overdue: false };
+  if (diff > 0) return { label: `D-${diff}`, overdue: false };
+  return { label: `D+${Math.abs(diff)}`, overdue: true };
+}
+
 function CellarRow({
   item,
   onDelete,
@@ -157,7 +169,13 @@ function CellarRow({
         {/* 이름 + 메타 */}
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1.5 min-w-0">
-            <span className="text-sm font-medium text-foreground truncate">{tea.name}</span>
+            <Link
+              to={`/tea/${item.teaId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm font-medium text-foreground truncate hover:text-primary hover:underline transition-colors"
+            >
+              {tea.name}
+            </Link>
             {tea.type && (
               <span className="text-[10px] text-muted-foreground shrink-0">{tea.type}</span>
             )}
@@ -177,6 +195,15 @@ function CellarRow({
               <span className="opacity-50">판매처 미상</span>
             )}
             {item.openedAt && ` · 개봉 ${formatDate(item.openedAt)}`}
+            {(() => {
+              const r = getReminderDiff(item.remindAt ?? null);
+              if (!r) return null;
+              return (
+                <span className={cn('inline-flex items-center gap-0.5 ml-1', r.overdue ? 'text-destructive' : 'text-rating')}>
+                  {' · '}<Bell className="w-2.5 h-2.5 inline" />{r.label}
+                </span>
+              );
+            })()}
           </div>
           {item.memo && (
             <p className="text-[11px] text-foreground/60 truncate mt-0.5">{item.memo}</p>

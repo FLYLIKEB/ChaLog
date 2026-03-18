@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { Header } from '../components/Header';
@@ -24,6 +24,13 @@ export function NewNote() {
   const preselectedTeaId = searchParams.get('teaId');
   const isSampleMode = searchParams.get('sample') === '1';
   const teaInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!preselectedTeaId && !isSampleMode) {
+      const timer = setTimeout(() => teaInputRef.current?.focus(), 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const {
     teaSelector,
@@ -60,13 +67,13 @@ export function NewNote() {
     isSampleMode,
   });
 
-  const { query: searchQuery, setQuery: setSearchQuery, results: filteredTeas, selectedTeaData, selectTea } = teaSelector;
+  const { query: searchQuery, setQuery: setSearchQuery, results: filteredTeas, selectedTeaData, selectTea, clearSelection } = teaSelector;
 
   return (
     <div className="min-h-screen">
       <Header showBack title="새 차록 작성" showProfile showLogo />
 
-      <div className="p-4 pb-24 space-y-6">
+      <div className="p-4 pb-24 space-y-4">
         {isSampleMode && (
           <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 px-4 py-2.5 text-sm text-amber-800 dark:text-amber-200">
             샘플 평가 체험 중입니다. 저장되지 않아요.
@@ -89,19 +96,18 @@ export function NewNote() {
             filteredTeas={filteredTeas}
             selectedTeaData={selectedTeaData}
             onSelectTea={selectTea}
+            onClearTea={clearSelection}
             newTeaBasePath="/tea/new?returnTo=/note/new"
           />
         )}
 
         <section className="bg-card rounded-lg p-4">
-          <Label className="mb-3 block text-base font-semibold text-foreground">
-            평점 <span className="text-destructive">*</span>
-          </Label>
-          <p className="text-sm text-muted-foreground mb-2">이 차에 몇 점을 주시겠어요?</p>
-          <p className="text-xs text-muted-foreground mb-3">
-            같은 온도·시간에서 비교하면 일관된 평가가 가능해요.{' '}
+          <div className="flex items-center gap-2 mb-3">
+            <Label className="text-base font-semibold text-foreground">
+              평점 <span className="text-destructive">*</span>
+            </Label>
             <RatingGuideModal />
-          </p>
+          </div>
           <StarRating value={overallRating} onChange={setOverallRating} max={5} size="lg" />
         </section>
 
@@ -111,9 +117,6 @@ export function NewNote() {
               <Label className="mb-2 block text-base font-semibold text-foreground">
                 테이스팅 템플릿
               </Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                템플릿을 선택하면 향·맛·여운 등을 기록할 수 있어요. 검색·핀 고정 가능.
-              </p>
               {schemas.length > 0 ? (
                 <TemplateSelect
                   schemas={schemas}
@@ -154,7 +157,7 @@ export function NewNote() {
             </section>
 
             <section className="bg-card rounded-lg p-4">
-              <Label className="mb-2 block">음용 날짜</Label>
+              <Label className="mb-2 block text-sm font-medium">음용 날짜</Label>
               <input
                 type="date"
                 value={drinkDate}
@@ -177,23 +180,18 @@ export function NewNote() {
             </section>
 
             <section className="bg-card rounded-lg p-4">
-              <Label className="mb-2 block">메모</Label>
+              <Label className="mb-2 block text-sm font-medium">메모</Label>
               <Textarea
                 placeholder="향·맛·여운에 대해 자유롭게 기록해보세요."
                 value={memo}
                 onChange={(e) => setMemo(e.target.value)}
-                rows={6}
+                rows={5}
               />
             </section>
 
             <section className="bg-card rounded-lg p-4">
               <div className="flex items-center justify-between">
-                <div>
-                  <Label>공개 설정</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    다른 사용자에게 이 차록을 공개합니다
-                  </p>
-                </div>
+                <Label>공개 설정</Label>
                 <Switch checked={isPublic} onCheckedChange={setIsPublic} />
               </div>
             </section>

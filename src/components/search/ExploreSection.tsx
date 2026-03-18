@@ -106,13 +106,18 @@ export function ExploreSection({
         {popularTags.length > 0 ? (
           <>
             <div className="flex flex-wrap gap-1.5">
-              {popularTags.slice(0, 15).map((tag) => (
+              {popularTags.slice(0, 15).map((tag, i, arr) => {
+                const maxCount = arr[0]?.noteCount ?? 1;
+                const ratio = maxCount > 0 ? (tag.noteCount ?? 0) / maxCount : 0;
+                const sizeClass = ratio >= 0.6 ? 'text-lg' : ratio >= 0.3 ? 'text-base' : 'text-sm';
+                return (
                 <button
                   key={tag.name}
                   type="button"
                   onClick={() => onFlavorTagClick(tag.name)}
                   className={cn(
-                    'inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm border transition-colors',
+                    'inline-flex items-center gap-1 px-3 py-1.5 rounded-full border transition-colors font-medium',
+                    sizeClass,
                     selectedFlavorTag === tag.name
                       ? 'bg-primary text-primary-foreground border-primary'
                       : 'border-primary/25 text-foreground hover:bg-primary/5 hover:border-primary/50',
@@ -121,7 +126,8 @@ export function ExploreSection({
                   <span className={cn('text-xs', selectedFlavorTag === tag.name ? 'text-primary-foreground/70' : 'text-primary')}>#</span>
                   {tag.name}
                 </button>
-              ))}
+                );
+              })}
             </div>
             {selectedFlavorTag && (
               <div className="mt-3">
@@ -179,7 +185,7 @@ export function ExploreSection({
                     'w-5 text-sm font-bold tabular-nums text-center',
                     index === 0 ? 'text-foreground' : 'text-muted-foreground/40',
                   )}>
-                    {index + 1}
+                    {String(index + 1).padStart(2, '0')}
                   </span>
                 }
               />
@@ -203,19 +209,19 @@ export function ExploreSection({
       {/* 인기 다우 */}
       {trendingCreators && trendingCreators.length > 0 && (
         <Section title="인기 다우" spacing="md">
-          <div>
+          <div className="grid grid-cols-2 gap-2">
             {trendingCreators.map((creator) => (
               <button
                 key={creator.id}
                 type="button"
                 onClick={() => navigate(`/user/${creator.id}`)}
-                className="w-full flex items-center gap-3 py-3 border-b border-border/30 last:border-0 hover:opacity-70 active:opacity-50 transition-opacity text-left"
+                className="flex items-center gap-2 p-3 rounded-xl border border-border/40 hover:bg-muted/40 active:opacity-70 transition-colors text-left"
               >
                 <UserAvatar name={creator.name} profileImageUrl={creator.profileImageUrl} size="sm" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{creator.name}</p>
+                  <p className="text-xs text-muted-foreground">구독자 {creator.followerCount}명</p>
                 </div>
-                <span className="shrink-0 text-xs text-muted-foreground">구독자 {creator.followerCount}명</span>
               </button>
             ))}
           </div>
