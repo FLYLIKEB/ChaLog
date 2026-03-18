@@ -443,12 +443,16 @@ export function Cellar() {
                     tabClassName: count === 0 ? 'opacity-40' : undefined,
                     ariaLabel: `${type} ${count}개 ${grams}그램`,
                     label: (
-                      <>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className={cn('w-1.5 h-1.5 rounded-full shrink-0', TEA_TYPE_COLORS[type])}
+                          aria-hidden
+                        />
                         {type} {count}
                         {grams > 0 && (
-                          <span className="ml-1 opacity-70">· {grams.toLocaleString()}g</span>
+                          <span className="opacity-70">· {grams.toLocaleString()}g</span>
                         )}
-                      </>
+                      </span>
                     ),
                   };
                 }),
