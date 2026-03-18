@@ -85,6 +85,7 @@ export function TemplateSelect({
           ? selectedIds.filter(id => id !== schemaId)
           : [...selectedIds, schemaId];
         onChange(next.length > 0 ? next : null);
+        setOpen(false);
       }
       if (schemaId == null) setOpen(false);
     } else {
