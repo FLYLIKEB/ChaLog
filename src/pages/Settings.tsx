@@ -55,6 +55,10 @@ export function Settings() {
   const { user, logout, isAuthenticated, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [defaultTeaLeafWeight, setDefaultTeaLeafWeightState] = useState<number | null>(() => {
+    const stored = localStorage.getItem('defaultTeaLeafWeight');
+    return stored ? parseFloat(stored) : null;
+  });
   const [isNotificationEnabled, setIsNotificationEnabled] = useState<boolean | null>(null);
   const [isNotificationLoaded, setIsNotificationLoaded] = useState(false);
   const [isNotificationLoading, setIsNotificationLoading] = useState(false);
@@ -570,6 +574,38 @@ export function Settings() {
               onCheckedChange={handleNotificationToggle}
               disabled={!isNotificationLoaded || isNotificationLoading}
             />
+          </div>
+        </Card>
+
+        {/* 차록 기본값 */}
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold text-foreground mb-4">차록 기본값</h3>
+          <div className="space-y-2">
+            <Label htmlFor="defaultTeaLeafWeight">기본 찻잎 사용량</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="defaultTeaLeafWeight"
+                type="number"
+                step="0.1"
+                min="0.1"
+                max="999.9"
+                placeholder="0.0"
+                value={defaultTeaLeafWeight ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const parsed = val === '' ? null : parseFloat(val);
+                  setDefaultTeaLeafWeightState(parsed);
+                  if (parsed === null) {
+                    localStorage.removeItem('defaultTeaLeafWeight');
+                  } else {
+                    localStorage.setItem('defaultTeaLeafWeight', String(parsed));
+                  }
+                }}
+                className="w-32"
+              />
+              <span className="text-sm text-muted-foreground">g</span>
+            </div>
+            <p className="text-xs text-muted-foreground">새 차록 작성 시 기본으로 입력됩니다.</p>
           </div>
         </Card>
 

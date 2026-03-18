@@ -136,6 +136,7 @@ export interface Note {
   imageThumbnails?: string[] | null;
   tags?: string[] | null;
   drinkDate?: string | null;
+  teaLeafWeight?: number | null;
   isPublic: boolean;
   createdAt: Date;
   likeCount?: number;

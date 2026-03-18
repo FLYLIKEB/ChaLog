@@ -53,6 +53,9 @@ export class Note {
   @Column({ type: 'date', nullable: true })
   drinkDate: string | null;
 
+  @Column({ type: 'decimal', precision: 5, scale: 1, nullable: true })
+  teaLeafWeight: number | null;
+
   @Column({ default: false })
   isPublic: boolean;
 

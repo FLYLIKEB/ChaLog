@@ -7,6 +7,7 @@ import { AddTemplateModal } from '../components/AddTemplateModal';
 import { ImageUploader } from '../components/ImageUploader';
 import { TagInput } from '../components/TagInput';
 import { Textarea } from '../components/ui/textarea';
+import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Switch } from '../components/ui/switch';
 import { Label } from '../components/ui/label';
@@ -47,6 +48,8 @@ export function NewNote() {
     setTags,
     drinkDate,
     setDrinkDate,
+    teaLeafWeight,
+    setTeaLeafWeight,
     isPublic,
     setIsPublic,
     isSaving,
@@ -162,6 +165,28 @@ export function NewNote() {
                 max={new Date().toISOString().slice(0, 10)}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               />
+            </section>
+
+            <section className="bg-card rounded-lg p-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">찻잎 사용량</label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    max="999.9"
+                    placeholder="0.0"
+                    value={teaLeafWeight ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setTeaLeafWeight(val === '' ? null : parseFloat(val));
+                    }}
+                    className="w-32"
+                  />
+                  <span className="text-sm text-muted-foreground">g</span>
+                </div>
+              </div>
             </section>
 
             <section

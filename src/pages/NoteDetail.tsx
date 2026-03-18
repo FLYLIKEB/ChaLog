@@ -416,6 +416,16 @@ export function NoteDetail() {
             </div>
           )}
 
+          {/* 찻잎 사용량 */}
+          {note.teaLeafWeight != null && (
+            <div className="px-5 py-3.5 bg-muted/30 dark:bg-muted/10">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <span>찻잎 사용량</span>
+                <span className="font-medium text-foreground">{note.teaLeafWeight}g</span>
+              </div>
+            </div>
+          )}
+
           {/* 메모 */}
           {note.memo && (
             <div className="px-5 py-4 bg-muted/30 dark:bg-muted/10">

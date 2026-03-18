@@ -330,5 +330,80 @@ describe('/notes - 노트 CRUD API', () => {
     await context.dataSource.query('DELETE FROM notes WHERE id = ?', [testNote.id]);
     await context.dataSource.query('DELETE FROM users WHERE id = ?', [otherTestUser.id]);
   });
+
+  it('POST /notes - teaLeafWeight 포함하여 노트 생성 성공', async () => {
+    const schema = await context.testHelper.getActiveSchema();
+    const axes = await context.testHelper.getSchemaAxes(schema.id);
+
+    const noteData = {
+      teaId: testTea.id,
+      schemaId: schema.id,
+      overallRating: 4.0,
+      isRatingIncluded: true,
+      axisValues: axes.map((axis) => ({ axisId: axis.id, value: 4 })),
+      memo: '찻잎 무게 테스트',
+      isPublic: false,
+      teaLeafWeight: 5.0,
+    };
+
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/notes')
+      .send(noteData)
+      .expect(201);
+
+    expect(response.body).toHaveProperty('teaLeafWeight');
+    expect(parseFloat(response.body.teaLeafWeight)).toBe(5.0);
+  });
+
+  it('POST /notes - teaLeafWeight 없이 생성 시 null 저장', async () => {
+    const schema = await context.testHelper.getActiveSchema();
+    const axes = await context.testHelper.getSchemaAxes(schema.id);
+
+    const noteData = {
+      teaId: testTea.id,
+      schemaId: schema.id,
+      overallRating: 3.5,
+      isRatingIncluded: true,
+      axisValues: axes.map((axis) => ({ axisId: axis.id, value: 3 })),
+      memo: '찻잎 무게 없는 테스트',
+      isPublic: false,
+    };
+
+    const response = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/notes')
+      .send(noteData)
+      .expect(201);
+
+    expect(response.body.teaLeafWeight).toBeNull();
+  });
+
+  it('PATCH /notes/:id - teaLeafWeight 업데이트', async () => {
+    const schema = await context.testHelper.getActiveSchema();
+    const axes = await context.testHelper.getSchemaAxes(schema.id);
+
+    // 먼저 노트 생성
+    const createResponse = await context.testHelper.authenticatedRequest(testUser.token)
+      .post('/notes')
+      .send({
+        teaId: testTea.id,
+        schemaId: schema.id,
+        overallRating: 4.0,
+        isRatingIncluded: true,
+        axisValues: axes.map((axis) => ({ axisId: axis.id, value: 4 })),
+        memo: '업데이트 테스트',
+        isPublic: false,
+      })
+      .expect(201);
+
+    const createdNoteId = createResponse.body.id;
+
+    // teaLeafWeight 업데이트
+    const updateResponse = await context.testHelper.authenticatedRequest(testUser.token)
+      .patch(`/notes/${createdNoteId}`)
+      .send({ teaLeafWeight: 3.5 })
+      .expect(200);
+
+    expect(parseFloat(updateResponse.body.teaLeafWeight)).toBe(3.5);
+  });
 });
 

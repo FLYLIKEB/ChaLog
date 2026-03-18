@@ -100,6 +100,12 @@ export class CreateNoteDto {
   @Transform(({ value }) => value === null ? null : value)
   drinkDate?: string | null;
 
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @Min(0.1)
+  @Max(999.9)
+  teaLeafWeight?: number | null;
+
   @IsBoolean()
   isPublic: boolean;
 }

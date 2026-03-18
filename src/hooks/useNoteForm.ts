@@ -41,6 +41,11 @@ export function useNoteForm({
   const [imageThumbnails, setImageThumbnails] = useState<(string | null)[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [drinkDate, setDrinkDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [teaLeafWeight, setTeaLeafWeight] = useState<number | null>(() => {
+    if (mode === 'edit') return null;
+    const stored = localStorage.getItem('defaultTeaLeafWeight');
+    return stored ? parseFloat(stored) : null;
+  });
   const [isPublic, setIsPublic] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [addTemplateOpen, setAddTemplateOpen] = useState(false);
@@ -167,6 +172,13 @@ export function useNoteForm({
         setTags(normalizedNote.tags || []);
         if (normalizedNote.drinkDate) {
           setDrinkDate(String(normalizedNote.drinkDate).slice(0, 10));
+        }
+        if (normalizedNote.teaLeafWeight != null) {
+          setTeaLeafWeight(
+            typeof normalizedNote.teaLeafWeight === 'string'
+              ? parseFloat(normalizedNote.teaLeafWeight)
+              : normalizedNote.teaLeafWeight,
+          );
         }
         setIsPublic(normalizedNote.isPublic);
       } catch (error: unknown) {
@@ -321,6 +333,7 @@ export function useNoteForm({
           imageThumbnails: thumbnailPayload,
           tags: tags.length > 0 ? tags : undefined,
           drinkDate: drinkDate || undefined,
+          teaLeafWeight: teaLeafWeight ?? undefined,
           isPublic,
         });
         toast.success('기록이 저장되었습니다.');
@@ -346,6 +359,7 @@ export function useNoteForm({
           imageThumbnails: thumbnailPayload,
           tags: tags.length > 0 ? tags : undefined,
           drinkDate: drinkDate || undefined,
+          teaLeafWeight: teaLeafWeight ?? undefined,
           isPublic,
         });
         toast.success('차록이 수정되었습니다.');
@@ -392,6 +406,8 @@ export function useNoteForm({
     setTags,
     drinkDate,
     setDrinkDate,
+    teaLeafWeight,
+    setTeaLeafWeight,
     isPublic,
     setIsPublic,
     // ui state

@@ -40,6 +40,8 @@ export interface CreateNoteRequest {
   images?: string[] | null;
   imageThumbnails?: string[] | null;
   tags?: string[];
+  drinkDate?: string | null;
+  teaLeafWeight?: number | null;
   isPublic: boolean;
 }
 
