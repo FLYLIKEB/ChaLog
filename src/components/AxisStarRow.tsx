@@ -5,7 +5,7 @@ import { cn } from './ui/utils';
 
 const MIN = 1;
 const MAX = 5;
-const STEP = 0.25;
+const STEP = 0.5;
 const STAR_COLOR = 'var(--rating)';
 
 interface AxisStarRowProps {
@@ -61,7 +61,7 @@ export const AxisStarRow: FC<AxisStarRowProps> = ({
   return (
     <div className="flex items-center gap-3 py-2.5 px-0">
       {/* 라벨 */}
-      <div className="flex w-16 shrink-0 items-center gap-1">
+      <div className="flex w-24 shrink-0 items-center gap-1">
         <span className="text-sm font-medium text-foreground truncate">{label}</span>
         {description?.trim() && (
           <Popover open={helpOpen} onOpenChange={setHelpOpen}>
