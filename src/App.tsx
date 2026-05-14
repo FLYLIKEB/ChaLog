@@ -12,7 +12,6 @@ import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { AdminRouteGuard } from './components/AdminRouteGuard';
 import { AdminLayout } from './components/AdminLayout';
 import { EmailVerificationBanner } from './components/EmailVerificationBanner';
-import { PullToRefreshProvider } from './contexts/PullToRefreshContext';
 
 function CommunityRedirect() {
   const { pathname } = useLocation();
@@ -148,17 +147,15 @@ function AppContent() {
 
   return (
     <AppModeProvider>
-    <div className={`h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
-      {/* 메인 콘텐츠 영역 */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 md:pl-[160px]">
+      <div className={`h-screen flex flex-col overflow-hidden ${PAGE_BG_GRADIENT}`}>
+        {/* 메인 콘텐츠 영역 */}
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 md:pl-[160px]">
+          <EmailVerificationBannerWrapper />
 
-        <EmailVerificationBannerWrapper />
-
-        <OnboardingRouteGuard>
-          <PullToRefreshProvider>
+          <OnboardingRouteGuard>
             <Suspense fallback={<PageFallback />}>
-            <main className="flex-1 overflow-y-auto max-w-2xl md:max-w-5xl lg:max-w-6xl mx-auto w-full">
-              <Routes>
+              <main className="flex-1 overflow-y-auto max-w-2xl md:max-w-5xl lg:max-w-6xl mx-auto w-full">
+                <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/preview_page.html" element={<Navigate to="/" replace />} />
                 <Route path="/sasaek" element={<Search />} />
@@ -209,17 +206,16 @@ function AppContent() {
                 <Route path="/admin/*" element={<Navigate to="/admin" replace />} />
                 <Route path="/search" element={<Navigate to="/sasaek" replace />} />
                 <Route path="/community/*" element={<CommunityRedirect />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </main>
             </Suspense>
-          </PullToRefreshProvider>
-        </OnboardingRouteGuard>
-      </div>
+          </OnboardingRouteGuard>
+        </div>
 
-      <SpeedDialFAB />
-      <PWAInstallBanner />
-    </div>
+        <SpeedDialFAB />
+        <PWAInstallBanner />
+      </div>
     </AppModeProvider>
   );
 }
