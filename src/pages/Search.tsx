@@ -1,6 +1,5 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAutoFocus } from '../hooks/useAutoFocus';
-import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { Search as SearchIcon, Clock, X } from 'lucide-react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -237,20 +236,6 @@ export function Search() {
       setSelectedIndex(-1);
     }
   }, [navigableItems, selectedIndex, navigate]);
-
-  const handleRefresh = useCallback(async () => {
-    if (showResults) {
-      if (hasTagParams) {
-        await fetchWithFilters({ tags: urlTags, sort: ['match', 'popular', 'recent'].includes(filterSort) ? filterSort : 'match' }, { setTeas, setIsLoading });
-      } else {
-        await fetchWithFilters({ q: searchQuery || undefined, type: filterType || undefined, minRating: filterMinRating, sort: filterSort }, { setTeas, setIsLoading });
-      }
-    } else {
-      await fetchSections();
-    }
-  }, [showResults, hasTagParams, urlTagsStr, searchQuery, filterType, filterMinRating, filterSort, fetchSections, fetchWithFilters, setTeas, setIsLoading, urlTags]);
-
-  usePullToRefreshForPage(handleRefresh, '/sasaek');
 
   useEffect(() => {
     if (hasFilterParams) {

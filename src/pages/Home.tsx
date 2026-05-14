@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollRestoration } from '../hooks/useScrollRestoration';
 import { Header } from '../components/Header';
@@ -11,7 +11,6 @@ import { ForYouFeed } from '../components/feeds/ForYouFeed';
 import { FollowingFeed } from '../components/feeds/FollowingFeed';
 import { TagsFeed } from '../components/feeds/TagsFeed';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { usePullToRefreshForPage } from '../contexts/PullToRefreshContext';
 import { useAuth } from '../contexts/AuthContext';
 import { notesApi, tagsApi } from '../lib/api';
 import { Note, PopularTagItem } from '../types';
@@ -66,13 +65,6 @@ export function Home() {
         .finally(() => setIsTagsLoading(false));
     }
   }, [feedTab, currentUser, authLoading]);
-
-  const handleRefresh = useCallback(async () => {
-    const data = await notesApi.getAll(undefined, true);
-    setPublicNotes(Array.isArray(data) ? data as Note[] : []);
-  }, []);
-
-  usePullToRefreshForPage(handleRefresh, '/');
 
   return (
     <div className="min-h-screen pb-20">

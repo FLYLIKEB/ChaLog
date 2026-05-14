@@ -51,6 +51,9 @@ vi.mock('../../contexts/AuthContext', async () => {
 
 vi.mock('../../lib/api', () => ({
   postsApi: { getAll: vi.fn() },
+  authApi: {
+    getMe: vi.fn(() => Promise.resolve({ user: null })),
+  },
 }));
 
 const mockNavigate = vi.fn();

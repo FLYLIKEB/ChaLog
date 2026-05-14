@@ -59,10 +59,10 @@ describe('Home 페이지', () => {
     expect(container).toBeTruthy();
   });
 
-  it('퀵 액세스의 찻장 버튼이 표시된다', async () => {
+  it('모드 카드가 표시된다', async () => {
     renderWithRouter(<Home />, { route: '/' });
     await waitFor(() => {
-      expect(screen.getByText('내 찻장')).toBeInTheDocument();
+      expect(screen.getByText('다회 모드')).toBeInTheDocument();
     });
   });
 
