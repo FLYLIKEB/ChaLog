@@ -45,6 +45,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function isKakaoLoginCallbackUrl(location: Pick<Location, 'pathname' | 'search'>): boolean {
+  const code = new URLSearchParams(location.search).get('code');
+  return location.pathname === '/login' && !!code?.trim();
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -53,21 +58,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isOnboardingLoading, setIsOnboardingLoading] = useState(false);
 
   useEffect(() => {
-    // 쿠키 기반 인증: getMe()로 초기 인증 상태 확인
-    authApi.getMe()
-      .then((res) => {
-        setUser(res.user);
-        setToken('cookie'); // 쿠키 인증 활성화 표시
-        localStorage.setItem('user', JSON.stringify(res.user));
-      })
-      .catch(() => {
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('user');
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    const shouldSkipInitialSessionCheck =
+      typeof window !== 'undefined' && isKakaoLoginCallbackUrl(window.location);
+
+    if (shouldSkipInitialSessionCheck) {
+      // 카카오 리다이렉트 직후에는 아직 서버 세션 쿠키가 발급되기 전이다.
+      // 콜백 처리 전에 /auth/me → /auth/refresh 를 먼저 때리면 정상 로그인 직전 401 노이즈만 만든다.
+      setIsLoading(false);
+    } else {
+      // 쿠키 기반 인증: getMe()로 초기 인증 상태 확인
+      authApi.getMe()
+        .then((res) => {
+          setUser(res.user);
+          setToken('cookie'); // 쿠키 인증 활성화 표시
+          localStorage.setItem('user', JSON.stringify(res.user));
+        })
+        .catch(() => {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem('user');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
 
     // interval 추적을 위한 변수
     let checkInterval: NodeJS.Timeout | null = null;
@@ -817,4 +831,3 @@ export function useAuth() {
   }
   return context;
 }
-
