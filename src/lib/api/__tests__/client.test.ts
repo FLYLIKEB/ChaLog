@@ -116,6 +116,19 @@ describe('ApiClient', () => {
       expect(fetchSpy.mock.calls[2][0]).toContain('/auth/me');
     });
 
+    it('쿼리나 trailing slash가 붙은 /auth/me도 토큰 갱신 후 다시 시도해야 한다', async () => {
+      fetchSpy.mockResolvedValueOnce(mockResponse(401, { message: 'Unauthorized' }));
+      fetchSpy.mockResolvedValueOnce(mockResponse(200, { message: '토큰이 갱신되었습니다.' }));
+      fetchSpy.mockResolvedValueOnce(mockResponse(200, { user: { id: 1, email: 'user@example.com', name: 'User' } }));
+
+      const result = await apiClient.get<{ user: { id: number; email: string; name: string } }>('/auth/me/?source=boot');
+
+      expect(result).toEqual({ user: { id: 1, email: 'user@example.com', name: 'User' } });
+      expect(fetchSpy).toHaveBeenCalledTimes(3);
+      expect(fetchSpy.mock.calls[1][0]).toContain('/auth/refresh');
+      expect(fetchSpy.mock.calls[2][0]).toContain('/auth/me/?source=boot');
+    });
+
     it('동시 401 요청 시 토큰 갱신은 1회만 수행해야 한다', async () => {
       // Suppress auth:logout from reaching other listeners
       const suppressLogout = (e: Event) => e.stopImmediatePropagation();

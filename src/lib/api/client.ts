@@ -567,7 +567,12 @@ class ApiClient {
         }
 
         // 401 시 토큰 갱신 후 1회 재시도 (/auth/me 포함, 그 외 인증 엔드포인트 제외)
-        if (response.status === 401 && !authRetried && (!endpoint.startsWith('/auth/') || endpoint === '/auth/me')) {
+        const normalizedEndpoint = endpoint.split('?')[0].replace(/\/+$/, '') || '/';
+        if (
+          response.status === 401 &&
+          !authRetried &&
+          (!normalizedEndpoint.startsWith('/auth/') || normalizedEndpoint === '/auth/me')
+        ) {
           logger.info(`[API Request ${requestId}] 401 → 토큰 갱신 시도`);
           authRetried = true;
           const refreshed = await this.tryRefreshToken();
